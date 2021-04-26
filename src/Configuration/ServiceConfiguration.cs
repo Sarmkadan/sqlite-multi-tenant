@@ -61,17 +61,3 @@ public static class ServiceConfiguration
         return services.AddSqliteMultiTenant(masterConnectionString);
     }
 }
-
-/// <summary>
-/// Configuration options for multi-tenant system
-/// </summary>
-public class MultiTenantOptions
-{
-    public int MaxConnections { get; set; } = 10;
-    public int ConnectionTimeoutSeconds { get; set; } = 30;
-    public int BackupRetentionDays { get; set; } = 30;
-    public bool EnableEncryption { get; set; } = false;
-    public string BackupDirectory { get; set; } = "backups";
-    public string DatabaseDirectory { get; set; } = "databases";
-    public bool EnableLogging { get; set; } = true;
-}
