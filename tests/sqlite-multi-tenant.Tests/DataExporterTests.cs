@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ using System.Collections.Generic; // Added for Dictionary<string, object>
 
 namespace SqliteMultiTenant.Tests
 {
-    public class DataExporterTests : IDisposable
-    {
+    public sealed class DataExporterTests : IDisposable {
         private readonly ILogger<DataExporter> _mockLogger;
         private readonly DataExporter _sut;
         private SQLiteConnection _connection;

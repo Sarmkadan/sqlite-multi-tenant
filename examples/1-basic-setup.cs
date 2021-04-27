@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -74,7 +75,7 @@ class BasicSetupExample
             // Retrieve and display tenant
             logger.LogInformation("Retrieving tenant details...");
             var retrievedTenant = await tenantService.GetTenantAsync(tenant1.TenantId);
-            if (retrievedTenant != null)
+            if (retrievedTenant is not null)
             {
                 logger.LogInformation($"✓ Retrieved: {retrievedTenant.Name}");
                 logger.LogInformation($"  Email: {retrievedTenant.ContactEmail}");

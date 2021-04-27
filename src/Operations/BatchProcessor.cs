@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -23,8 +24,7 @@ public interface IBatchProcessor
         int maxConcurrency = 4);
 }
 
-public class BatchProcessor : IBatchProcessor
-{
+public sealed class BatchProcessor : IBatchProcessor {
     private readonly ILogger<BatchProcessor> _logger;
 
     public BatchProcessor(ILogger<BatchProcessor> logger)
@@ -123,8 +123,7 @@ public class BatchProcessor : IBatchProcessor
     }
 }
 
-public class BatchProcessResult<T> where T : class
-{
+public sealed class BatchProcessResult<T> where T : class {
     public List<T> SuccessfulResults { get; set; } = new();
     public List<BatchErrorItem> Errors { get; set; } = new();
     public int SuccessCount => SuccessfulResults.Count;
@@ -155,8 +154,7 @@ public class BatchProcessResult<T> where T : class
     }
 }
 
-public class BatchErrorItem
-{
+public sealed class BatchErrorItem {
     public string ItemId { get; set; } = string.Empty;
     public string Exception { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;

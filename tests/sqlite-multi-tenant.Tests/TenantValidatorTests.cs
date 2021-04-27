@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,8 +12,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class TenantValidatorTests
-    {
+    public sealed class TenantValidatorTests {
         private readonly TenantValidator _validator;
 
         public TenantValidatorTests()

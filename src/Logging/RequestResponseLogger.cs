@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -18,8 +19,7 @@ public interface IRequestResponseLogger
     Task<List<ResponseLog>> GetResponseLogsAsync(LogFilter filter);
 }
 
-public class RequestResponseLogger : IRequestResponseLogger
-{
+public sealed class RequestResponseLogger : IRequestResponseLogger {
     private readonly List<RequestLog> _requestLogs;
     private readonly List<ResponseLog> _responseLogs;
     private readonly ILogger<RequestResponseLogger> _logger;
@@ -191,8 +191,7 @@ public class RequestResponseLogger : IRequestResponseLogger
     }
 }
 
-public class RequestLog
-{
+public sealed class RequestLog {
     public string Id { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
     public string Method { get; set; } = string.Empty;
@@ -204,8 +203,7 @@ public class RequestLog
     public string IpAddress { get; set; } = string.Empty;
 }
 
-public class ResponseLog
-{
+public sealed class ResponseLog {
     public string Id { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
     public int StatusCode { get; set; }
@@ -215,8 +213,7 @@ public class ResponseLog
     public Dictionary<string, string> Headers { get; set; } = new();
 }
 
-public class LogFilter
-{
+public sealed class LogFilter {
     public string? Method { get; set; }
     public string? Path { get; set; }
     public int? StatusCode { get; set; }
@@ -226,8 +223,7 @@ public class LogFilter
     public int Limit { get; set; } = 100;
 }
 
-public class LoggingStatistics
-{
+public sealed class LoggingStatistics {
     public int TotalRequestsLogged { get; set; }
     public int TotalResponsesLogged { get; set; }
     public double AverageRequestSize { get; set; }

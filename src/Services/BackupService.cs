@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Services;
 /// <summary>
 /// Service implementation for database backup management
 /// </summary>
-public class BackupService : IBackupService
-{
+public sealed class BackupService : IBackupService {
     private readonly IBackupRepository _repository;
     private readonly ILogger<BackupService> _logger;
 
@@ -134,7 +134,7 @@ public class BackupService : IBackupService
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
-            if (backup == null)
+            if (backup is null)
                 throw new BackupException.NotFound(backupId);
 
             backup.MarkAsCompleted(sizeBytes, durationMs);
@@ -156,7 +156,7 @@ public class BackupService : IBackupService
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
-            if (backup == null)
+            if (backup is null)
                 throw new BackupException.NotFound(backupId);
 
             backup.MarkAsFailed(errorMessage);
@@ -181,7 +181,7 @@ public class BackupService : IBackupService
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
-            if (backup == null)
+            if (backup is null)
                 throw new BackupException.NotFound(backupId);
 
             backup.MarkAsVerified(verifiedBy);
@@ -203,7 +203,7 @@ public class BackupService : IBackupService
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
-            if (backup == null)
+            if (backup is null)
                 throw new BackupException.NotFound(backupId);
 
             backup.SetExpiration(expirationDate);
@@ -254,7 +254,7 @@ public class BackupService : IBackupService
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
-            if (backup == null)
+            if (backup is null)
                 throw new BackupException.NotFound(backupId);
 
             await _repository.DeleteAsync(backupId, cancellationToken);
@@ -278,7 +278,7 @@ public class BackupService : IBackupService
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
-            if (backup == null)
+            if (backup is null)
                 throw new BackupException.NotFound(backupId);
 
             backup.AddTag(tag);

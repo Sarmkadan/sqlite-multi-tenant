@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -18,8 +19,7 @@ public interface IDomainEventHandler<T> where T : DomainEvent
 /// Handles tenant created events.
 /// Logs creation, sends notifications, and initializes tenant resources.
 /// </summary>
-public class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedEvent>
-{
+public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedEvent> {
     private readonly ILogger<TenantCreatedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -57,8 +57,7 @@ public class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedEvent>
 /// Handles tenant deleted events.
 /// Performs cleanup operations and notifies subscribers.
 /// </summary>
-public class TenantDeletedEventHandler : IDomainEventHandler<TenantDeletedEvent>
-{
+public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDeletedEvent> {
     private readonly ILogger<TenantDeletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -96,8 +95,7 @@ public class TenantDeletedEventHandler : IDomainEventHandler<TenantDeletedEvent>
 /// Handles backup completed events.
 /// Verifies backup and sends notifications.
 /// </summary>
-public class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedEvent>
-{
+public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedEvent> {
     private readonly ILogger<BackupCompletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -137,8 +135,7 @@ public class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedEv
 /// Handles migration completed events.
 /// Logs migration success and updates schema versions.
 /// </summary>
-public class MigrationCompletedEventHandler : IDomainEventHandler<MigrationCompletedEvent>
-{
+public sealed class MigrationCompletedEventHandler : IDomainEventHandler<MigrationCompletedEvent> {
     private readonly ILogger<MigrationCompletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -174,21 +171,18 @@ public class MigrationCompletedEventHandler : IDomainEventHandler<MigrationCompl
 }
 
 // Domain event types
-public class TenantCreatedEvent : DomainEvent
-{
+public sealed class TenantCreatedEvent : DomainEvent {
     public string TenantId { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
     public string? TenantDescription { get; set; }
 }
 
-public class TenantDeletedEvent : DomainEvent
-{
+public sealed class TenantDeletedEvent : DomainEvent {
     public string TenantId { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
 }
 
-public class BackupCompletedEvent : DomainEvent
-{
+public sealed class BackupCompletedEvent : DomainEvent {
     public string BackupId { get; set; } = string.Empty;
     public string DatabaseId { get; set; } = string.Empty;
     public long SizeBytes { get; set; }
@@ -196,8 +190,7 @@ public class BackupCompletedEvent : DomainEvent
     public bool IsVerified { get; set; }
 }
 
-public class MigrationCompletedEvent : DomainEvent
-{
+public sealed class MigrationCompletedEvent : DomainEvent {
     public string DatabaseId { get; set; } = string.Empty;
     public string MigrationVersion { get; set; } = string.Empty;
     public string MigrationName { get; set; } = string.Empty;

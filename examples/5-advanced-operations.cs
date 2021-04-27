@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -71,7 +72,7 @@ class AdvancedOperationsExample
         });
 
         var tenantResults = await Task.WhenAll(tenantTasks);
-        createdTenants = tenantResults.Where(t => t != null).ToList();
+        createdTenants = tenantResults.Where(t => t is not null).ToList();
 
         logger.LogInformation($"  ✓ Created {createdTenants.Count} tenants\n");
 
@@ -193,12 +194,12 @@ class AdvancedOperationsExample
         var oldestTenant = allTenants.OrderBy(t => t.CreatedAt).FirstOrDefault();
         var newestTenant = allTenants.OrderByDescending(t => t.CreatedAt).FirstOrDefault();
 
-        if (oldestTenant != null)
+        if (oldestTenant is not null)
         {
             logger.LogInformation($"  Oldest Tenant: {oldestTenant.Name} ({oldestTenant.CreatedAt:O})");
         }
 
-        if (newestTenant != null)
+        if (newestTenant is not null)
         {
             logger.LogInformation($"  Newest Tenant: {newestTenant.Name} ({newestTenant.CreatedAt:O})");
         }

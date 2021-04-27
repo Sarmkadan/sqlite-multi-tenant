@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ namespace SqliteMultiTenant.Security
 {
     // Manages encryption keys for tenant data with rotation and versioning support
     // Stores keys securely and enables key rotation without data loss
-    public class EncryptionKeyManager
-    {
+    public sealed class EncryptionKeyManager {
         private readonly ILogger<EncryptionKeyManager> _logger;
         private readonly string _keyStorePath;
         private readonly ConcurrentDictionary<string, EncryptionKey> _keyCache;
@@ -124,7 +124,7 @@ namespace SqliteMultiTenant.Security
             try
             {
                 var oldKey = await GetActiveKeyAsync(tenantId);
-                if (oldKey != null)
+                if (oldKey is not null)
                 {
                     oldKey.IsActive = false;
                     oldKey.DeactivatedAt = DateTime.UtcNow;
@@ -263,8 +263,7 @@ namespace SqliteMultiTenant.Security
                 System.Runtime.InteropServices.OSPlatform.Windows);
     }
 
-    public class EncryptionKey
-    {
+    public sealed class EncryptionKey {
         public string KeyId { get; set; }
         public string TenantId { get; set; }
         public byte[] KeyMaterial { get; set; }

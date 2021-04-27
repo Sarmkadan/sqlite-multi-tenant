@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -8,8 +9,7 @@ namespace SqliteMultiTenant.Exceptions;
 /// <summary>
 /// Thrown when a tenant is not found in the system
 /// </summary>
-public class TenantNotFoundException : Exception
-{
+public sealed class TenantNotFoundException : Exception {
     public string? TenantId { get; }
 
     public TenantNotFoundException(string tenantId)

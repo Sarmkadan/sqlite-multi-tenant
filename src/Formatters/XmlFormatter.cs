@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.Formatters;
 /// Handles nested objects, arrays, and preserves type information.
 /// Useful for system integration and data interchange.
 /// </summary>
-public class XmlFormatter
-{
+public sealed class XmlFormatter {
     private readonly bool _includeDeclaration;
     private readonly ILogger<XmlFormatter> _logger;
 
@@ -33,7 +33,7 @@ public class XmlFormatter
     {
         try
         {
-            if (data == null)
+            if (data is null)
                 return BuildXmlString(new XElement(rootName));
 
             XElement root;
@@ -59,7 +59,7 @@ public class XmlFormatter
 
         foreach (var item in collection)
         {
-            if (item == null)
+            if (item is null)
                 continue;
 
             var itemElement = FormatObject(item, itemName);
@@ -78,7 +78,7 @@ public class XmlFormatter
         {
             var value = prop.GetValue(obj);
 
-            if (value == null)
+            if (value is null)
                 continue;
 
             var propElement = new XElement(ToCamelCase(prop.Name));

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ using System.Collections.Generic;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class MigrationRepositoryIntegrationTests : IDisposable
-    {
+    public sealed class MigrationRepositoryIntegrationTests : IDisposable {
         private readonly SqliteConnection _connection;
         private readonly DbContextOptions<TenantContext> _dbContextOptions;
         private readonly MigrationRepository _migrationRepository;

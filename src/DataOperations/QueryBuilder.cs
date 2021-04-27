@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ namespace SqliteMultiTenant.DataOperations
 {
     // Fluent SQL query builder for type-safe database operations
     // Supports WHERE, ORDER BY, LIMIT, and JOIN clauses
-    public class QueryBuilder
-    {
+    public sealed class QueryBuilder {
         private readonly StringBuilder _query;
         private readonly List<(string name, object value)> _parameters;
         private string _tableName;
@@ -201,7 +201,7 @@ namespace SqliteMultiTenant.DataOperations
         // Applies parameters to a command
         public void ApplyParameters(SQLiteCommand command)
         {
-            if (command == null)
+            if (command is null)
                 throw new ArgumentNullException(nameof(command));
 
             foreach (var param in _parameters)
@@ -227,8 +227,7 @@ namespace SqliteMultiTenant.DataOperations
     }
 
     // Helper builder for INSERT operations
-    public class InsertBuilder
-    {
+    public sealed class InsertBuilder {
         private readonly string _tableName;
         private readonly Dictionary<string, object> _values;
 
@@ -283,8 +282,7 @@ namespace SqliteMultiTenant.DataOperations
     }
 
     // Helper builder for UPDATE operations
-    public class UpdateBuilder
-    {
+    public sealed class UpdateBuilder {
         private readonly string _tableName;
         private readonly Dictionary<string, object> _values;
         private string _whereClause;

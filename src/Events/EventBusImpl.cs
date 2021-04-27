@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Events
 {
     // Production event bus implementation with support for async handlers and priorities
-    public class EventBusImpl
-    {
+    public sealed class EventBusImpl {
         private readonly ConcurrentDictionary<string, List<EventSubscription>> _subscriptions;
         private readonly ILogger<EventBusImpl> _logger;
         private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
@@ -30,7 +30,7 @@ namespace SqliteMultiTenant.Events
         public IDisposable Subscribe<TEvent>(Func<TEvent, Task> handler, int priority = 0)
             where TEvent : DomainEvent
         {
-            if (handler == null)
+            if (handler is null)
                 throw new ArgumentNullException(nameof(handler));
 
             var eventType = typeof(TEvent).Name;
@@ -60,7 +60,7 @@ namespace SqliteMultiTenant.Events
         // Publishes an event to all subscribers
         public async Task PublishAsync<TEvent>(TEvent @event) where TEvent : DomainEvent
         {
-            if (@event == null)
+            if (@event is null)
                 throw new ArgumentNullException(nameof(@event));
 
             var eventType = typeof(TEvent).Name;
@@ -194,7 +194,7 @@ namespace SqliteMultiTenant.Events
                 if (_eventBus._subscriptions.TryGetValue(_eventType, out var handlers))
                 {
                     var toRemove = handlers.FirstOrDefault(h => h.Id == _subscriptionId);
-                    if (toRemove != null)
+                    if (toRemove is not null)
                     {
                         handlers.Remove(toRemove);
                     }
@@ -203,8 +203,7 @@ namespace SqliteMultiTenant.Events
         }
     }
 
-    public class PublishedEvent
-    {
+    public sealed class PublishedEvent {
         public Guid Id { get; set; }
         public string EventType { get; set; }
         public DateTime PublishedAt { get; set; }
@@ -212,8 +211,7 @@ namespace SqliteMultiTenant.Events
         public int SuccessfulHandlers { get; set; }
     }
 
-    public class EventStatistics
-    {
+    public sealed class EventStatistics {
         public string EventType { get; set; }
         public int SubscriberCount { get; set; }
         public int TotalPublished { get; set; }

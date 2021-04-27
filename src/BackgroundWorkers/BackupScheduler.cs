@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// Runs on configurable intervals (default: daily at 2 AM UTC).
 /// Ensures all tenant databases are backed up for disaster recovery.
 /// </summary>
-public class BackupSchedulerService : BackgroundService
-{
+public sealed class BackupSchedulerService : BackgroundService {
     private readonly IBackupService _backupService;
     private readonly ITenantService _tenantService;
     private readonly ILogger<BackupSchedulerService> _logger;
@@ -137,8 +137,7 @@ public class BackupSchedulerService : BackgroundService
 /// Background service for cleaning up expired backups.
 /// Removes backups older than retention period to save disk space.
 /// </summary>
-public class BackupCleanupService : BackgroundService
-{
+public sealed class BackupCleanupService : BackgroundService {
     private readonly IBackupService _backupService;
     private readonly ILogger<BackupCleanupService> _logger;
     private readonly int _retentionDays;

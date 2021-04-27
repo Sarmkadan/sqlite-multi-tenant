@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -18,8 +19,7 @@ public interface IDataMapper
     List<TTarget> MapList<TSource, TTarget>(List<TSource> sources) where TTarget : class, new();
 }
 
-public class DataMapper : IDataMapper
-{
+public sealed class DataMapper : IDataMapper {
     private readonly ILogger<DataMapper> _logger;
     private readonly Dictionary<string, PropertyInfo[]> _propertyCache;
 
@@ -37,7 +37,7 @@ public class DataMapper : IDataMapper
     {
         try
         {
-            if (source == null)
+            if (source is null)
                 return new TTarget();
 
             var target = new TTarget();
@@ -52,14 +52,14 @@ public class DataMapper : IDataMapper
                 var targetProperty = targetProperties
                     .FirstOrDefault(p => p.Name.Equals(sourceProperty.Name, StringComparison.OrdinalIgnoreCase));
 
-                if (targetProperty != null && targetProperty.CanWrite && sourceProperty.CanRead)
+                if (targetProperty is not null && targetProperty.CanWrite && sourceProperty.CanRead)
                 {
                     try
                     {
                         var value = sourceProperty.GetValue(source);
 
                         // Handle type conversion
-                        if (value != null && targetProperty.PropertyType != sourceProperty.PropertyType)
+                        if (value is not null && targetProperty.PropertyType != sourceProperty.PropertyType)
                         {
                             value = ConvertValue(value, targetProperty.PropertyType);
                         }
@@ -90,7 +90,7 @@ public class DataMapper : IDataMapper
     {
         try
         {
-            if (sources == null || sources.Count == 0)
+            if (sources is null || sources.Count == 0)
                 return new List<TTarget>();
 
             return sources.Select(s => Map<TSource, TTarget>(s)).ToList();
@@ -122,7 +122,7 @@ public class DataMapper : IDataMapper
     {
         try
         {
-            if (value == null)
+            if (value is null)
                 return null;
 
             if (targetType == typeof(string))
@@ -161,8 +161,7 @@ public class DataMapper : IDataMapper
 /// <summary>
 /// Custom property mapping configurations.
 /// </summary>
-public class MappingProfile
-{
+public sealed class MappingProfile {
     private readonly Dictionary<string, Func<object, object>> _customMappings;
 
     public MappingProfile()

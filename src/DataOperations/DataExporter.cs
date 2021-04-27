@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ namespace SqliteMultiTenant.DataOperations
 {
     // Exports tenant data in multiple formats (JSON, CSV, SQL)
     // Enables data portability and integration with external systems
-    public class DataExporter
-    {
+    public sealed class DataExporter {
         private readonly ILogger<DataExporter> _logger;
 
         public DataExporter(ILogger<DataExporter> logger)
@@ -28,7 +28,7 @@ namespace SqliteMultiTenant.DataOperations
         public async Task<string> ExportAsJsonAsync(SQLiteConnection connection, string tableName,
             bool includeMeta = true)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(tableName))
@@ -82,7 +82,7 @@ namespace SqliteMultiTenant.DataOperations
         public async Task<string> ExportAsCsvAsync(SQLiteConnection connection, string tableName,
             bool includeHeaders = true)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(tableName))
@@ -138,7 +138,7 @@ namespace SqliteMultiTenant.DataOperations
         // Exports entire database as SQL INSERT statements
         public async Task<string> ExportAsSqlAsync(SQLiteConnection connection, string tableName)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(tableName))

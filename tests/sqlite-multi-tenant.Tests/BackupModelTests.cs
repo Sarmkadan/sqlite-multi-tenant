@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class BackupModelTests
-{
+public sealed class BackupModelTests {
     private static Backup CreateBackup(string id = "bkp-001") =>
         new() { BackupId = id, DatabaseId = "db-001", BackupPath = $"/data/{id}.sqlite" };
 
