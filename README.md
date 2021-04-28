@@ -808,7 +808,7 @@ Copyright © 2026 Vladyslav Zaiets
 
 For issues, questions, or suggestions:
 - GitHub Issues: [Report an issue](https://github.com/Sarmkadan/sqlite-multi-tenant/issues)
-- Email: vladyslav.zaiets@amdaris.com
+- Email: rutova2@gmail.com
 - Website: https://sarmkadan.com
 
 ---
