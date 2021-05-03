@@ -3,6 +3,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Buffers;
+using System.Collections.Frozen;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,6 +18,14 @@ namespace SqliteMultiTenant.Utilities;
 /// </summary>
 public static class StringUtilities
 {
+    // Compiled once — ToSnakeCase is called on every schema-mapping round-trip.
+    private static readonly Regex SnakeCaseRegex =
+        new Regex(@"([a-z0-9])([A-Z])", RegexOptions.Compiled);
+
+    // Cached once; Path.GetInvalidFileNameChars() allocates a new array on each call.
+    private static readonly FrozenSet<char> InvalidFileNameCharSet =
+        Path.GetInvalidFileNameChars().ToFrozenSet();
+
     /// <summary>
     /// Computes SHA256 hash of the input string.
     /// Returns hexadecimal representation of hash.
@@ -25,10 +35,18 @@ public static class StringUtilities
         if (string.IsNullOrEmpty(input))
             return string.Empty;
 
-        using (var sha256 = SHA256.Create())
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(input.Length);
+        var rentedBuffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+        try
         {
-            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var bytesEncoded = Encoding.UTF8.GetBytes(input, 0, input.Length, rentedBuffer, 0);
+            Span<byte> hashBytes = stackalloc byte[32];
+            SHA256.HashData(rentedBuffer.AsSpan(0, bytesEncoded), hashBytes);
             return Convert.ToHexString(hashBytes);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rentedBuffer);
         }
     }
 
@@ -41,10 +59,18 @@ public static class StringUtilities
         if (string.IsNullOrEmpty(input))
             return string.Empty;
 
-        using (var md5 = MD5.Create())
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(input.Length);
+        var rentedBuffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
+        try
         {
-            var hashBytes = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+            var bytesEncoded = Encoding.UTF8.GetBytes(input, 0, input.Length, rentedBuffer, 0);
+            Span<byte> hashBytes = stackalloc byte[16];
+            MD5.HashData(rentedBuffer.AsSpan(0, bytesEncoded), hashBytes);
             return Convert.ToHexString(hashBytes);
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(rentedBuffer);
         }
     }
 
@@ -83,8 +109,7 @@ public static class StringUtilities
         if (string.IsNullOrEmpty(input))
             return input;
 
-        var regex = new Regex(@"([a-z0-9])([A-Z])");
-        return regex.Replace(input, "$1_$2").ToLower();
+        return SnakeCaseRegex.Replace(input, "$1_$2").ToLower();
     }
 
     /// <summary>
@@ -127,11 +152,25 @@ public static class StringUtilities
         if (string.IsNullOrEmpty(input))
             return input;
 
-        var invalidChars = Path.GetInvalidFileNameChars();
-        foreach (var character in invalidChars)
-            input = input.Replace(character.ToString(), string.Empty);
-
-        return input.Replace(" ", "_");
+        // Single pass over the input with a pooled char buffer avoids the O(k)
+        // chained string.Replace calls (one allocation per invalid-char category).
+        var buffer = ArrayPool<char>.Shared.Rent(input.Length);
+        try
+        {
+            int writeIdx = 0;
+            foreach (var c in input.AsSpan())
+            {
+                if (c == ' ')
+                    buffer[writeIdx++] = '_';
+                else if (!InvalidFileNameCharSet.Contains(c))
+                    buffer[writeIdx++] = c;
+            }
+            return new string(buffer, 0, writeIdx);
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
     }
 
     /// <summary>

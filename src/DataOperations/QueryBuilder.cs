@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Linq;
 using System.Text;
 
 namespace SqliteMultiTenant.DataOperations
@@ -30,21 +29,19 @@ namespace SqliteMultiTenant.DataOperations
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be empty", nameof(tableName));
 
-            _tableName = tableName;
-            _query = new StringBuilder();
+            _tableName  = tableName;
+            _query      = new StringBuilder(256);
             _parameters = new List<(string, object)>();
-            _columns = new List<string>();
-            _joins = new List<string>();
-            _orderBy = new List<(string, string)>();
+            _columns    = new List<string>();
+            _joins      = new List<string>();
+            _orderBy    = new List<(string, string)>();
         }
 
         // Selects specific columns (if empty, selects all)
         public QueryBuilder Select(params string[] columns)
         {
             if (columns.Length > 0)
-            {
                 _columns.AddRange(columns);
-            }
 
             return this;
         }
@@ -58,9 +55,7 @@ namespace SqliteMultiTenant.DataOperations
             _whereClause = condition;
 
             if (parameters.Length > 0)
-            {
                 _parameters.AddRange(parameters);
-            }
 
             return this;
         }
@@ -71,19 +66,12 @@ namespace SqliteMultiTenant.DataOperations
             if (string.IsNullOrWhiteSpace(condition))
                 throw new ArgumentException("Condition cannot be empty", nameof(condition));
 
-            if (!string.IsNullOrEmpty(_whereClause))
-            {
-                _whereClause = $"({_whereClause}) AND ({condition})";
-            }
-            else
-            {
-                _whereClause = condition;
-            }
+            _whereClause = !string.IsNullOrEmpty(_whereClause)
+                ? $"({_whereClause}) AND ({condition})"
+                : condition;
 
             if (parameters.Length > 0)
-            {
                 _parameters.AddRange(parameters);
-            }
 
             return this;
         }
@@ -94,19 +82,12 @@ namespace SqliteMultiTenant.DataOperations
             if (string.IsNullOrWhiteSpace(condition))
                 throw new ArgumentException("Condition cannot be empty", nameof(condition));
 
-            if (!string.IsNullOrEmpty(_whereClause))
-            {
-                _whereClause = $"({_whereClause}) OR ({condition})";
-            }
-            else
-            {
-                _whereClause = condition;
-            }
+            _whereClause = !string.IsNullOrEmpty(_whereClause)
+                ? $"({_whereClause}) OR ({condition})"
+                : condition;
 
             if (parameters.Length > 0)
-            {
                 _parameters.AddRange(parameters);
-            }
 
             return this;
         }
@@ -170,11 +151,15 @@ namespace SqliteMultiTenant.DataOperations
         {
             _query.Clear();
 
-            // SELECT clause
+            // SELECT clause — direct appends avoid string.Join + LINQ delegate allocation
             if (_columns.Count > 0)
             {
                 _query.Append("SELECT ");
-                _query.Append(string.Join(", ", _columns.Select(c => $"[{c}]")));
+                for (int i = 0; i < _columns.Count; i++)
+                {
+                    if (i > 0) _query.Append(", ");
+                    _query.Append('[').Append(_columns[i]).Append(']');
+                }
             }
             else
             {
@@ -182,40 +167,33 @@ namespace SqliteMultiTenant.DataOperations
             }
 
             // FROM clause
-            _query.Append($" FROM [{_tableName}]");
+            _query.Append(" FROM [").Append(_tableName).Append(']');
 
             // JOIN clauses
             foreach (var join in _joins)
-            {
-                _query.Append(" ");
-                _query.Append(join);
-            }
+                _query.Append(' ').Append(join);
 
             // WHERE clause
             if (!string.IsNullOrEmpty(_whereClause))
-            {
-                _query.Append($" WHERE {_whereClause}");
-            }
+                _query.Append(" WHERE ").Append(_whereClause);
 
             // ORDER BY clause
             if (_orderBy.Count > 0)
             {
                 _query.Append(" ORDER BY ");
-                _query.Append(string.Join(", ",
-                    _orderBy.Select(o => $"[{o.column}] {o.direction}")));
+                for (int i = 0; i < _orderBy.Count; i++)
+                {
+                    if (i > 0) _query.Append(", ");
+                    _query.Append('[').Append(_orderBy[i].column).Append("] ").Append(_orderBy[i].direction);
+                }
             }
 
-            // LIMIT clause
+            // LIMIT / OFFSET clauses
             if (_limit.HasValue)
-            {
-                _query.Append($" LIMIT {_limit.Value}");
-            }
+                _query.Append(" LIMIT ").Append(_limit.Value);
 
-            // OFFSET clause
             if (_offset.HasValue)
-            {
-                _query.Append($" OFFSET {_offset.Value}");
-            }
+                _query.Append(" OFFSET ").Append(_offset.Value);
 
             return _query.ToString();
         }
@@ -227,9 +205,7 @@ namespace SqliteMultiTenant.DataOperations
                 throw new ArgumentNullException(nameof(command));
 
             foreach (var param in _parameters)
-            {
                 command.Parameters.AddWithValue($"@{param.name}", param.value ?? DBNull.Value);
-            }
         }
 
         // Resets the builder for reuse
@@ -241,7 +217,7 @@ namespace SqliteMultiTenant.DataOperations
             _whereClause = null;
             _joins.Clear();
             _orderBy.Clear();
-            _limit = null;
+            _limit  = null;
             _offset = null;
 
             return this;
@@ -262,7 +238,7 @@ namespace SqliteMultiTenant.DataOperations
                 throw new ArgumentException("Table name cannot be empty", nameof(tableName));
 
             _tableName = tableName;
-            _values = new Dictionary<string, object>();
+            _values    = new Dictionary<string, object>();
         }
 
         // Adds a column-value pair
@@ -281,11 +257,28 @@ namespace SqliteMultiTenant.DataOperations
             if (_values.Count == 0)
                 throw new InvalidOperationException("No values specified for insert");
 
-            var columns = string.Join(", ", _values.Keys.Select(c => $"[{c}]"));
-            var paramList = string.Join(", ", _values.Keys.Select(c => $"@{c}"));
-            var query = $"INSERT INTO [{_tableName}] ({columns}) VALUES ({paramList})";
+            var sb = new StringBuilder(128);
+            sb.Append("INSERT INTO [").Append(_tableName).Append("] (");
 
-            return (query, _values);
+            bool first = true;
+            foreach (var col in _values.Keys)
+            {
+                if (!first) sb.Append(", ");
+                sb.Append('[').Append(col).Append(']');
+                first = false;
+            }
+
+            sb.Append(") VALUES (");
+            first = true;
+            foreach (var col in _values.Keys)
+            {
+                if (!first) sb.Append(", ");
+                sb.Append('@').Append(col);
+                first = false;
+            }
+            sb.Append(')');
+
+            return (sb.ToString(), _values);
         }
     }
 
@@ -302,7 +295,7 @@ namespace SqliteMultiTenant.DataOperations
                 throw new ArgumentException("Table name cannot be empty", nameof(tableName));
 
             _tableName = tableName;
-            _values = new Dictionary<string, object>();
+            _values    = new Dictionary<string, object>();
         }
 
         // Sets a column value
@@ -334,10 +327,20 @@ namespace SqliteMultiTenant.DataOperations
             if (string.IsNullOrEmpty(_whereClause))
                 throw new InvalidOperationException("WHERE condition is required for safety");
 
-            var setList = string.Join(", ", _values.Keys.Select(c => $"[{c}] = @{c}"));
-            var query = $"UPDATE [{_tableName}] SET {setList} WHERE {_whereClause}";
+            var sb = new StringBuilder(128);
+            sb.Append("UPDATE [").Append(_tableName).Append("] SET ");
 
-            return (query, _values);
+            bool first = true;
+            foreach (var col in _values.Keys)
+            {
+                if (!first) sb.Append(", ");
+                sb.Append('[').Append(col).Append("] = @").Append(col);
+                first = false;
+            }
+
+            sb.Append(" WHERE ").Append(_whereClause);
+
+            return (sb.ToString(), _values);
         }
     }
 }
