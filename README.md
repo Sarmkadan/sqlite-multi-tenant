@@ -20,6 +20,8 @@ A production-grade .NET library and framework for managing multi-tenant SQLite d
 - [Advanced Topics](#advanced-topics)
 - [Troubleshooting](#troubleshooting)
 - [Performance](#performance)
+- [Testing](#testing)
+- [Ecosystem](#ecosystem)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -836,6 +838,79 @@ dotnet run -c Release -- --filter "*"
 dotnet run -c Release -- --filter "*TenantValidation*"
 dotnet run -c Release -- --filter "*StringOperations*"
 dotnet run -c Release -- --filter "*QueryBuilder*"
+```
+
+## Testing
+
+The test suite covers core services, model behaviour, and validation logic.
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test
+
+# Run with verbose output
+dotnet test --verbosity normal
+
+# Filter to a specific class
+dotnet test --filter "ClassName=TenantServiceTests"
+
+# Collect code coverage
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+### Test Coverage
+
+| Test File | What it covers |
+|---|---|
+| `TenantServiceTests.cs` | Tenant CRUD, lifecycle transitions, metadata |
+| `TenantNameValidatorTests.cs` | Name validation rules, reserved words, edge cases |
+| `BackupModelTests.cs` | Backup model properties, tag management, expiration |
+
+## Ecosystem
+
+Part of a collection of .NET libraries and tools. See more at [github.com/sarmkadan](https://github.com/sarmkadan).
+
+### Integration Examples
+
+**ASP.NET Core minimal API** — register once, resolve anywhere:
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSqliteMultiTenant("Data Source=master.db;", options =>
+{
+    options.MaxConnections = 20;
+    options.DatabaseDirectory = "databases";
+    options.EnableCaching = true;
+    options.BackupRetentionDays = 30;
+});
+
+var app = builder.Build();
+
+app.MapGet("/tenants/{id}", async (string id, ITenantService svc) =>
+    await svc.GetTenantAsync(id));
+
+await app.RunAsync();
+```
+
+**Generic host / background worker** — automated backup scheduling:
+
+```csharp
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices(services =>
+    {
+        services.AddSqliteMultiTenant("Data Source=master.db;", options =>
+        {
+            options.BackupRetentionDays = 30;
+            options.MaxBackupsPerDatabase = 50;
+        });
+        services.AddHostedService<BackupScheduler>();
+    })
+    .Build();
+
+await host.RunAsync();
 ```
 
 ## Contributing
