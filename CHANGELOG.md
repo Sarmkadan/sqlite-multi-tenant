@@ -5,118 +5,156 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-05-03
+## [1.0.0] - 2025-11-10
 
 ### Added
+- Stable public release of SQLite Multi-Tenant
 - Comprehensive documentation suite (getting-started, architecture, deployment guides)
-- 5 example applications demonstrating various features
+- 5 example applications covering basic setup through advanced operations
 - Docker support with Dockerfile and docker-compose.yml
-- GitHub Actions CI/CD pipeline with build, test, and publish workflow
-- Health check endpoints for monitoring
-- Batch operations API for high-volume processing
-- Caching service with TTL and LRU eviction
-- Event bus for pub-sub messaging
-- Rate limiting middleware
-- Audit logging with retention policies
-- Metadata storage for custom tenant attributes
-- Search functionality for tenants
-- Backup tagging system for organization
-- Performance metrics collection
-- Correlation ID tracking for distributed tracing
+- GitHub Actions CI/CD pipeline (build, test, NuGet publish, CodeQL)
+- NuGet packaging with README embed and source link
 
 ### Changed
-- Enhanced error handling with detailed exception types
-- Improved logging with structured format
-- Optimized database queries with pagination
-- Connection pooling strategy updated
+- Promoted all beta APIs to stable; finalized public surface
+- Locked down `MultiTenantOptions` property names for 1.x compatibility
 
 ### Fixed
-- Database lock timeout handling
-- Migration rollback error recovery
-- Backup verification process
+- Race condition when two threads first-open the same tenant database simultaneously
+- `ArchiveTenantAsync` now validates tenant exists before state transition
 
-## [1.1.0] - 2026-04-15
+## [0.9.0] - 2025-10-27
 
 ### Added
-- REST API controllers for all core operations
-- CLI interface for automation
-- Request/response logging middleware
-- Error handling middleware with standardized responses
-- Correlation ID middleware for distributed tracing
-- Multiple output formatters (JSON, CSV, XML)
-- Integration with external HTTP services
-- Webhook support for event notifications
-- Generic repository pattern for data access
-- Batch processing support
-- Encryption service for sensitive data
-- Validation framework with fluent API
+- BenchmarkDotNet suite for tenant validation, string operations, and query builder hot paths
+- `FrozenSet<string>` for O(1) reserved-ID lookup in `TenantNameValidator`
+- `ArrayPool<byte>` buffer reuse in SHA-256/MD5 hash helpers
+- `StringBuilder`-based `QueryBuilder.Build()` replacing LINQ + string interpolation
 
 ### Changed
-- Refactored service layer for better testability
-- Improved async/await implementation
-- Enhanced error messages with actionable guidance
+- `RegexOptions.Compiled` applied to all static patterns in `StringUtilities`
+- `SanitizeForFilePath` rewritten as single-pass `ArrayPool<char>` write
 
 ### Fixed
-- Race condition in connection management
-- Null reference exception in migration tracking
+- Edge case: tenant names consisting entirely of whitespace now rejected
+- `MigrationService` no longer throws `NullReferenceException` when `DownScript` is omitted
+- Backup expiration query included backups with `null` `ExpiresAt`; now correctly excluded
 
-## [1.0.0] - 2026-03-20
+## [0.8.0] - 2025-10-13
+
+### Added
+- Background workers: `BackupScheduler`, `DatabaseMaintenanceWorker`, `DataRetentionPolicy`, `BackupRotationManager`
+- `AuditLogger` with configurable retention and trend analysis
+- `MetricsService` and `StatisticsService` for real-time counters and aggregates
+- `PerformanceMonitor` for per-operation timing
+- `ReportGenerator` producing structured diagnostic reports
+
+### Changed
+- `HealthCheckService` now surfaces per-tenant database reachability in addition to system-level status
+
+### Fixed
+- `BackupRotationManager` leaked file handles when an expired backup file was already deleted on disk
+
+## [0.7.0] - 2025-09-29
+
+### Added
+- `CacheService` (in-memory LRU with TTL) and `DistributedCacheService` abstractions
+- `EncryptionService` (AES-256-CBC) and `EncryptionKeyManager`
+- `RateLimiter` with token-bucket algorithm
+- `HealthCheckService` with system diagnostics endpoint
+- `DataConsistencyChecker` for cross-database integrity validation
+- `DataExporter` (JSON, CSV) and `DataImporter` with conflict resolution
+
+### Fixed
+- Cache eviction under concurrent reads could produce duplicate entries; now lock-free via `ConcurrentDictionary`
+
+## [0.6.0] - 2025-09-15
+
+### Added
+- `IEventBus` / `EventBusImpl` pub-sub with async handlers
+- Domain events: `TenantCreatedEvent`, `TenantStatusChangedEvent`, `BackupCompletedEvent`
+- `WebhookService` and `WebhookHandler` for outbound HTTP event delivery
+- `ScheduledTaskService` with cron-style timer support
+- `MultiTenantHttpClientFactory` for per-tenant `HttpClient` instances
+
+### Changed
+- `EventPublisher` now batches delivery failures and retries up to three times with exponential backoff
+
+## [0.5.0] - 2025-09-01
+
+### Added
+- REST API controllers: `TenantController`, `DatabaseController`, `MigrationController`, `BackupController`, `AdminController`, `SettingsController`
+- `RequestInterceptor` for authentication enforcement
+- `CorrelationIdMiddleware`, `LoggingMiddleware`, `ErrorHandlingMiddleware`, `PerformanceMiddleware`, `RateLimitingMiddleware`
+- `ApiResponseBuilder` and `ResultWrapper<T>` for uniform response envelope
+- `RequestResponseLogger` with configurable body capture
+
+### Changed
+- All service methods now accept `CancellationToken` consistently
+
+### Fixed
+- `ErrorHandlingMiddleware` swallowed inner exception details in production mode; now logs full chain at Debug level
+
+## [0.4.0] - 2025-08-18
+
+### Added
+- CLI interface: `CliApplication`, `CommandLineParser`, `CommandParser`, `CommandExecutor`
+- Commands for all tenant, database, migration, backup, and system operations
+- `OutputFormatter` with JSON, CSV, and XML renderers
+- `BatchOperationHandler` and `BulkInsertBuilder` for high-volume writes
+- `ConflictResolutionService` with configurable strategies (Skip, Overwrite, Merge)
+
+### Changed
+- `ConnectionManager` now pre-warms connections during `AddSqliteMultiTenant` registration
+
+## [0.3.0] - 2025-08-04
+
+### Added
+- `IBackupService` / `BackupService` with Full, Incremental, and Differential backup types
+- Backup verification, expiration policy, and tagging system
+- `IBackupRepository` / `BackupRepository` backed by SQLite master database
+- `BackupScheduler` skeleton integrated into `IHostedService`
+- `BackupException` for backup-specific error paths
+
+### Fixed
+- `MigrationService.RollbackMigrationAsync` left status as `Applied` when `DownScript` execution threw; now correctly sets `Failed`
+
+## [0.2.0] - 2025-07-21
+
+### Added
+- `IMigrationService` / `MigrationService`: create, execute, rollback, history
+- `IMigrationRepository` / `MigrationRepository` with pending/applied queries
+- `SchemaManager` for raw DDL execution against tenant databases
+- `ConnectionPoolManager` and `ConnectionPoolOptions`
+- `GenericRepository<T>` with query builder integration
+- `MigrationException` for migration-specific error paths
+
+### Changed
+- `TenantRepository` switched from direct `SqliteConnection` to pooled `ConnectionManager`
+
+### Fixed
+- `TenantService.SearchTenantsAsync` returned duplicates when search term matched both `Name` and `Description`
+
+## [0.1.0] - 2025-07-07
 
 ### Added
 - Initial release of SQLite Multi-Tenant
-- Core multi-tenant database management
-  - Tenant creation, update, delete, lifecycle management
-  - Per-tenant SQLite database isolation
-  - Tenant metadata storage
-  - Tenant search and filtering
-- Database migration system
-  - Migration creation and tracking
-  - Up/down script execution
-  - Migration history and rollback support
-  - Pending migration queries
-- Backup management
-  - Multiple backup types (Full, Incremental, Differential)
-  - Backup creation and verification
-  - Backup expiration policies
-  - Backup statistics and queries
-- Connection management
-  - Per-tenant connection pooling
-  - Configurable connection limits
-  - Connection timeout handling
-- Service layer architecture
-  - ITenantService interface and implementation
-  - IMigrationService interface and implementation
-  - IBackupService interface and implementation
-- Repository pattern
-  - ITenantRepository interface
-  - IMigrationRepository interface
-  - IBackupRepository interface
-  - SQLite-specific implementations
-- Exception handling
-  - TenantNotFoundException
-  - DatabaseAccessException
-  - MigrationException
-  - BackupException
-- Dependency injection integration
-  - Extension methods for service registration
-  - Configuration options builder pattern
-- Logging support
-  - ILogger integration
-  - Structured logging
-- Validation framework
-  - Entity validation
-  - Custom validation rules
-- Documentation
-  - README with quick start guide
-  - API reference documentation
-  - Configuration reference
-
-## [0.9.0] - 2026-03-01 (Beta)
-
-### Added
-- Beta release for community feedback
-- Core functionality implementation
-- Basic documentation
+- Core tenant management
+  - `Tenant` model with `TenantId`, `Name`, `Status`, `Metadata`, lifecycle timestamps
+  - `TenantStatus` enum: Active, Inactive, Suspended, Archived, Deleted
+  - `ITenantService` / `TenantService`: create, read, update, delete, activate, suspend, archive, search
+  - `ITenantRepository` / `TenantRepository` backed by SQLite master database
+- Database model
+  - `TenantDatabase` with `FilePath`, `SchemaVersion`, `IsReadOnly`, `SizeBytes`
+  - `ConnectionManager` for per-tenant `SqliteConnection` lifecycle
+- Domain models: `Migration`, `Backup`, `TenantContext`, `TenantSettings`
+- Exception types: `TenantNotFoundException`, `DatabaseAccessException`
+- Dependency injection: `ServiceCollectionExtensions.AddSqliteMultiTenant`
+- `MultiTenantOptions` configuration builder
+- `TenantNameValidator` with slug rules and reserved-word rejection
+- Structured `ILogger` integration throughout service layer
+- `QueryBuilder` for parameterised SELECT / INSERT / UPDATE / DELETE
+- MIT license, README, and initial CONTRIBUTING guide
 
 ---
 
@@ -128,68 +166,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Support
 
-| Version | Status | .NET | Support Until |
-|---------|--------|------|---------------|
-| 1.2.0   | Active | 8.0+ | 2027-05-03   |
-| 1.1.0   | Active | 8.0+ | 2026-10-15   |
-| 1.0.0   | Active | 8.0+ | 2026-09-20   |
-| 0.9.0   | Deprecated | 8.0+ | 2026-06-01 |
+| Version | Status    | .NET | Support Until |
+|---------|-----------|------|---------------|
+| 1.0.0   | Current   | 8.0+ | 2027-11-10   |
+| 0.9.0   | Deprecated | 8.0+ | 2026-05-10  |
 
 ## Migration Guide
 
-### From 1.1.0 to 1.2.0
+### From 0.9.0 to 1.0.0
 
 No breaking changes. Update via NuGet:
 
 ```bash
-dotnet add package SqliteMultiTenant --version 1.2.0
+dotnet add package SqliteMultiTenant --version 1.0.0
 ```
 
-### From 1.0.0 to 1.1.0
+### From 0.8.x to 0.9.0
 
-No breaking changes. All APIs remain compatible.
-
-### From 0.9.0 to 1.0.0
-
-Minor API adjustments:
-- `Tenant.Status` property now uses enum
-- `Backup.BackupType` property now uses enum
-- Service registration method signatures simplified
-
-```csharp
-// Old (0.9.0)
-services.RegisterMultiTenantServices(connectionString);
-
-// New (1.0.0+)
-services.AddSqliteMultiTenant(connectionString, options => {});
-```
-
-## Future Roadmap
-
-### 1.3.0 (Q3 2026)
-- [ ] Sharding support for very large deployments
-- [ ] Distributed caching (Redis integration)
-- [ ] Advanced analytics and reporting
-- [ ] GDPR compliance features
-
-### 2.0.0 (Q4 2026)
-- [ ] PostgreSQL backend support
-- [ ] MySQL backend support
-- [ ] Kubernetes operators
-- [ ] OpenTelemetry integration
-- [ ] GraphQL API
+No breaking changes. Benchmark projects require BenchmarkDotNet 0.14.0+.
 
 ## Known Issues
 
-- SQLite has 30-second file lock timeout (see troubleshooting)
-- Network storage performance degrades with high concurrency
-- Large batch operations (>10000 items) may consume significant memory
+- SQLite has a 30-second file lock timeout (see Troubleshooting in README)
+- Network-attached storage degrades under high write concurrency
+- Batch operations over 10 000 items may consume significant heap; increase `BatchSize` incrementally
 
 ## Getting Help
 
 - **Issues**: [GitHub Issues](https://github.com/Sarmkadan/sqlite-multi-tenant/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Sarmkadan/sqlite-multi-tenant/discussions)
-- **Email**: rutova2@gmail.com
 
 ## Contributing
 
@@ -197,5 +202,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-**Last Updated**: 2026-05-03  
 **Maintained by**: Vladyslav Zaiets ([https://sarmkadan.com](https://sarmkadan.com))

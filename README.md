@@ -21,7 +21,7 @@ A production-grade .NET library and framework for managing multi-tenant SQLite d
 - [Troubleshooting](#troubleshooting)
 - [Performance](#performance)
 - [Testing](#testing)
-- [Ecosystem](#ecosystem)
+- [Related Projects](#related-projects)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -868,7 +868,7 @@ dotnet test --collect:"XPlat Code Coverage"
 | `TenantNameValidatorTests.cs` | Name validation rules, reserved words, edge cases |
 | `BackupModelTests.cs` | Backup model properties, tag management, expiration |
 
-## Ecosystem
+## Related Projects
 
 Part of a collection of .NET libraries and tools. See more at [github.com/sarmkadan](https://github.com/sarmkadan).
 
