@@ -1,0 +1,303 @@
+// =============================================================================
+// Author: Vladyslav Zaiets | https://sarmkadan.com
+// CTO & Software Architect
+// =============================================================================
+
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Exceptions;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
+
+namespace SqliteMultiTenant.Services;
+
+/// <summary>
+/// Service implementation for database backup management
+/// </summary>
+public class BackupService : IBackupService
+{
+    private readonly IBackupRepository _repository;
+    private readonly ILogger<BackupService> _logger;
+
+    public BackupService(IBackupRepository repository, ILogger<BackupService> logger)
+    {
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public async Task<Backup?> GetBackupAsync(string backupId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        try
+        {
+            return await _repository.GetByIdAsync(backupId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving backup {backupId}: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<List<Backup>> GetDatabaseBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(databaseId))
+            throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        try
+        {
+            return await _repository.GetByDatabaseAsync(databaseId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving backups for database {databaseId}: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<List<Backup>> GetCompletedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(databaseId))
+            throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        try
+        {
+            return await _repository.GetCompletedBackupsAsync(databaseId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving completed backups: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<Backup?> GetLatestBackupAsync(string databaseId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(databaseId))
+            throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        try
+        {
+            return await _repository.GetLatestBackupAsync(databaseId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving latest backup: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<Backup> CreateBackupAsync(string databaseId, BackupType backupType, string createdBy, string? backupPath = null, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(databaseId))
+            throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        if (string.IsNullOrWhiteSpace(createdBy))
+            throw new ArgumentException("CreatedBy cannot be empty", nameof(createdBy));
+
+        try
+        {
+            string finalBackupPath = backupPath ?? GenerateBackupPath(databaseId);
+
+            var backup = new Backup
+            {
+                BackupId = Guid.NewGuid().ToString(),
+                DatabaseId = databaseId,
+                BackupPath = finalBackupPath,
+                BackupType = backupType,
+                Status = BackupStatus.Pending,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = createdBy,
+                ExpiresAt = DateTime.UtcNow.AddDays(TenantConstants.BackupRetentionDays)
+            };
+
+            if (!backup.Validate(out var errors))
+                throw new ArgumentException($"Backup validation failed: {string.Join(", ", errors)}");
+
+            var createdBackup = await _repository.AddAsync(backup, cancellationToken);
+            _logger.LogInformation($"Backup created: {backup.BackupId}");
+            return createdBackup;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error creating backup: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task MarkBackupAsCompletedAsync(string backupId, long sizeBytes, long durationMs, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        try
+        {
+            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            if (backup == null)
+                throw new BackupException.NotFound(backupId);
+
+            backup.MarkAsCompleted(sizeBytes, durationMs);
+            await _repository.UpdateAsync(backup, cancellationToken);
+            _logger.LogInformation($"Backup completed: {backupId} ({sizeBytes} bytes in {durationMs}ms)");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error marking backup as completed: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task MarkBackupAsFailedAsync(string backupId, string errorMessage, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        try
+        {
+            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            if (backup == null)
+                throw new BackupException.NotFound(backupId);
+
+            backup.MarkAsFailed(errorMessage);
+            await _repository.UpdateAsync(backup, cancellationToken);
+            _logger.LogError($"Backup failed: {backupId} - {errorMessage}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error marking backup as failed: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        if (string.IsNullOrWhiteSpace(verifiedBy))
+            throw new ArgumentException("VerifiedBy cannot be empty", nameof(verifiedBy));
+
+        try
+        {
+            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            if (backup == null)
+                throw new BackupException.NotFound(backupId);
+
+            backup.MarkAsVerified(verifiedBy);
+            await _repository.UpdateAsync(backup, cancellationToken);
+            _logger.LogInformation($"Backup verified: {backupId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error verifying backup: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task SetBackupExpirationAsync(string backupId, DateTime expirationDate, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        try
+        {
+            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            if (backup == null)
+                throw new BackupException.NotFound(backupId);
+
+            backup.SetExpiration(expirationDate);
+            await _repository.UpdateAsync(backup, cancellationToken);
+            _logger.LogInformation($"Backup expiration set: {backupId} -> {expirationDate:O}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error setting backup expiration: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<List<Backup>> GetExpiredBackupsAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await _repository.GetExpiredBackupsAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error retrieving expired backups: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<int> GetBackupCountAsync(string databaseId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(databaseId))
+            throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        try
+        {
+            return await _repository.GetCountByDatabaseAsync(databaseId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error getting backup count: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task DeleteBackupAsync(string backupId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        try
+        {
+            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            if (backup == null)
+                throw new BackupException.NotFound(backupId);
+
+            await _repository.DeleteAsync(backupId, cancellationToken);
+            _logger.LogInformation($"Backup deleted: {backupId}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting backup: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task AddBackupTagAsync(string backupId, string tag, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(backupId))
+            throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        if (string.IsNullOrWhiteSpace(tag))
+            throw new ArgumentException("Tag cannot be empty", nameof(tag));
+
+        try
+        {
+            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            if (backup == null)
+                throw new BackupException.NotFound(backupId);
+
+            backup.AddTag(tag);
+            await _repository.UpdateAsync(backup, cancellationToken);
+            _logger.LogInformation($"Tag added to backup: {backupId} -> {tag}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error adding backup tag: {ex.Message}");
+            throw;
+        }
+    }
+
+    private string GenerateBackupPath(string databaseId)
+    {
+        string backupDir = Path.Combine(Directory.GetCurrentDirectory(), TenantConstants.DefaultBackupDirectory);
+        Directory.CreateDirectory(backupDir);
+
+        string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+        return Path.Combine(backupDir, $"{databaseId}_{timestamp}{TenantConstants.BackupFileExtension}");
+    }
+}
