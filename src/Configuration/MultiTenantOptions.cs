@@ -92,4 +92,4 @@ namespace SqliteMultiTenant.Configuration
         public bool EnableExternalIntegrations { get; set; } = false;
         public bool EnableAdvancedAnalytics { get; set; } = false;
     }
-
+}
