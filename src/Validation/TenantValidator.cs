@@ -165,7 +165,8 @@ public sealed class ConnectionStringValidator {
             var end = connectionString.IndexOf(";", start);
             if (end == -1) end = connectionString.Length;
 
-            var path = connectionString[start..end];
+            // Hotfix: Trim quotes to handle quoted connection strings
+            var path = connectionString[start..end].Trim('"', '\'');
 
             if (!path.IsValidRelativePath())
                 errors.Add("Path", "Database path contains invalid characters or patterns");
