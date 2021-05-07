@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// Runs on configurable intervals to optimize database performance and reclaim space.
 /// SQLite requires explicit maintenance for efficiency.
 /// </summary>
-public class DatabaseMaintenanceWorker : BackgroundService
-{
+public sealed class DatabaseMaintenanceWorker : BackgroundService {
     private readonly ILogger<DatabaseMaintenanceWorker> _logger;
     private readonly TimeSpan _interval;
 
@@ -126,8 +126,7 @@ public class DatabaseMaintenanceWorker : BackgroundService
 /// Configuration for database maintenance operations.
 /// Allows tuning maintenance behavior without code changes.
 /// </summary>
-public class DatabaseMaintenanceOptions
-{
+public sealed class DatabaseMaintenanceOptions {
     /// <summary>
     /// Enable VACUUM operation to reclaim disk space.
     /// Default: true (recommended for production).

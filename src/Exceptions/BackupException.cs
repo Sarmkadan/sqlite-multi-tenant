@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -8,8 +9,7 @@ namespace SqliteMultiTenant.Exceptions;
 /// <summary>
 /// Thrown when backup operations fail
 /// </summary>
-public class BackupException : Exception
-{
+public sealed class BackupException : Exception {
     public string? BackupId { get; }
     public string? DatabaseId { get; }
 

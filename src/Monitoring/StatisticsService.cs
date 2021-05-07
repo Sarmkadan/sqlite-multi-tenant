@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -18,8 +19,7 @@ public interface IStatisticsService
     Task<TrendAnalysis> AnalyzeTrendAsync(string metricName, TimeSpan period);
 }
 
-public class StatisticsService : IStatisticsService
-{
+public sealed class StatisticsService : IStatisticsService {
     private readonly List<SystemEvent> _events;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<StatisticsService> _logger;
@@ -210,8 +210,7 @@ public class StatisticsService : IStatisticsService
     }
 }
 
-public class SystemEvent
-{
+public sealed class SystemEvent {
     public string Id { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
     public double Value { get; set; }
@@ -220,8 +219,7 @@ public class SystemEvent
     public Dictionary<string, string> Tags { get; set; } = new();
 }
 
-public class SystemStatistics
-{
+public sealed class SystemStatistics {
     public TimeSpan Period { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
@@ -231,8 +229,7 @@ public class SystemStatistics
     public int PeakEventCount { get; set; }
 }
 
-public class AggregatedMetric
-{
+public sealed class AggregatedMetric {
     public DateTime Timestamp { get; set; }
     public double Value { get; set; }
     public int Count { get; set; }
@@ -240,8 +237,7 @@ public class AggregatedMetric
     public double Max { get; set; }
 }
 
-public class TrendAnalysis
-{
+public sealed class TrendAnalysis {
     public string MetricName { get; set; } = string.Empty;
     public TimeSpan Period { get; set; }
     public int DataPoints { get; set; }

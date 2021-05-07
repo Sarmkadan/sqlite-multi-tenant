@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -36,7 +37,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static object GetPropertyValue(this object obj, string propertyName)
     {
-        if (obj == null || string.IsNullOrWhiteSpace(propertyName))
+        if (obj is null || string.IsNullOrWhiteSpace(propertyName))
             return null;
 
         var property = obj.GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
@@ -49,12 +50,12 @@ public static class ReflectionExtensions
     /// </summary>
     public static bool SetPropertyValue(this object obj, string propertyName, object value)
     {
-        if (obj == null || string.IsNullOrWhiteSpace(propertyName))
+        if (obj is null || string.IsNullOrWhiteSpace(propertyName))
             return false;
 
         var property = obj.GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
-        if (property == null || !property.CanWrite)
+        if (property is null || !property.CanWrite)
             return false;
 
         try
@@ -99,7 +100,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static bool IsNullable(this Type type)
     {
-        return Nullable.GetUnderlyingType(type) != null;
+        return Nullable.GetUnderlyingType(type) is not null;
     }
 
     /// <summary>
@@ -157,7 +158,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static bool HasAttribute<T>(this Type type) where T : Attribute
     {
-        return type.GetCustomAttribute<T>() != null;
+        return type.GetCustomAttribute<T>() is not null;
     }
 
     /// <summary>
@@ -174,7 +175,7 @@ public static class ReflectionExtensions
     /// </summary>
     public static void CopyPropertiesTo<T>(this object source, T destination) where T : class
     {
-        if (source == null || destination == null)
+        if (source is null || destination is null)
             return;
 
         var sourceType = source.GetType();
@@ -186,7 +187,7 @@ public static class ReflectionExtensions
         {
             var destProp = destType.GetProperty(sourceProp.Name, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
-            if (destProp != null && destProp.CanWrite && sourceProp.CanRead)
+            if (destProp is not null && destProp.CanWrite && sourceProp.CanRead)
             {
                 try
                 {

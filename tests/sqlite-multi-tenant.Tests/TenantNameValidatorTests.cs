@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -9,8 +10,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class TenantNameValidatorTests
-{
+public sealed class TenantNameValidatorTests {
     [Fact]
     public void ValidateTenantId_WithValidId_ReturnsValidResult()
     {

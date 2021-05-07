@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -149,7 +150,7 @@ public static class ValidationExtensions
     /// </summary>
     public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection)
     {
-        return collection == null || !collection.Any();
+        return collection is null || !collection.Any();
     }
 
     /// <summary>

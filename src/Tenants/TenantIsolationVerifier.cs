@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Tenants
 {
     // Verifies that multi-tenant data isolation is maintained
     // Prevents unauthorized cross-tenant data access
-    public class TenantIsolationVerifier
-    {
+    public sealed class TenantIsolationVerifier {
         private readonly ILogger<TenantIsolationVerifier> _logger;
 
         public TenantIsolationVerifier(ILogger<TenantIsolationVerifier> logger)
@@ -26,7 +26,7 @@ namespace SqliteMultiTenant.Tenants
         public async Task<IsolationVerificationResult> VerifyTenantIsolationAsync(
             SQLiteConnection connection, string tenantId)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -125,7 +125,7 @@ namespace SqliteMultiTenant.Tenants
         public async Task<QueryValidationResult> ValidateQueryTenantIsolationAsync(
             SQLiteConnection connection, string query, string tenantId)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrWhiteSpace(query))
@@ -252,7 +252,7 @@ namespace SqliteMultiTenant.Tenants
                     }
                 }
             }
-            catch { }
+            catch { /* Ignored */ }
 
             return false;
         }
@@ -316,8 +316,7 @@ namespace SqliteMultiTenant.Tenants
         }
     }
 
-    public class IsolationVerificationResult
-    {
+    public sealed class IsolationVerificationResult {
         public string TenantId { get; set; }
         public bool IsIsolated { get; set; }
         public bool AuditLogIsolationValid { get; set; }
@@ -326,15 +325,13 @@ namespace SqliteMultiTenant.Tenants
         public DateTime VerifiedAt { get; set; }
     }
 
-    public class DataLeakageSuspicion
-    {
+    public sealed class DataLeakageSuspicion {
         public string Type { get; set; }
         public string Description { get; set; }
         public string Severity { get; set; }
     }
 
-    public class QueryValidationResult
-    {
+    public sealed class QueryValidationResult {
         public string Query { get; set; }
         public string TenantId { get; set; }
         public bool ContainsTenantFilter { get; set; }

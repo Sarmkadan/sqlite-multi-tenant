@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,7 +18,7 @@ namespace SqliteMultiTenant.Utilities
         // Enables all pragmas for optimal multi-tenant performance
         public static async Task ConfigureOptimalSettingsAsync(SQLiteConnection connection)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (connection.State != System.Data.ConnectionState.Open)
@@ -66,7 +67,7 @@ namespace SqliteMultiTenant.Utilities
         // Compacts database by removing deleted space
         public static async Task CompactDatabaseAsync(SQLiteConnection connection)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             using (var command = connection.CreateCommand())
@@ -79,7 +80,7 @@ namespace SqliteMultiTenant.Utilities
         // Analyzes query performance
         public static async Task AnalyzeQueryPerformanceAsync(SQLiteConnection connection, string query)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(query))
@@ -104,7 +105,7 @@ namespace SqliteMultiTenant.Utilities
         {
             var stats = new DatabaseStatistics();
 
-            if (connection == null)
+            if (connection is null)
                 return stats;
 
             try
@@ -139,7 +140,7 @@ namespace SqliteMultiTenant.Utilities
 
                 stats.EstimatedSize = stats.PageCount * stats.PageSize;
             }
-            catch { }
+            catch { /* Ignored */ }
 
             return stats;
         }
@@ -147,7 +148,7 @@ namespace SqliteMultiTenant.Utilities
         // Checks if a table exists
         public static async Task<bool> TableExistsAsync(SQLiteConnection connection, string tableName)
         {
-            if (connection == null || string.IsNullOrEmpty(tableName))
+            if (connection is null || string.IsNullOrEmpty(tableName))
                 return false;
 
             try
@@ -172,7 +173,7 @@ namespace SqliteMultiTenant.Utilities
         public static async Task<bool> ColumnExistsAsync(SQLiteConnection connection,
             string tableName, string columnName)
         {
-            if (connection == null || string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(columnName))
+            if (connection is null || string.IsNullOrEmpty(tableName) || string.IsNullOrEmpty(columnName))
                 return false;
 
             try
@@ -191,7 +192,7 @@ namespace SqliteMultiTenant.Utilities
                     }
                 }
             }
-            catch { }
+            catch { /* Ignored */ }
 
             return false;
         }
@@ -202,7 +203,7 @@ namespace SqliteMultiTenant.Utilities
         {
             var columns = new List<ColumnInfo>();
 
-            if (connection == null || string.IsNullOrEmpty(tableName))
+            if (connection is null || string.IsNullOrEmpty(tableName))
                 return columns;
 
             try
@@ -227,7 +228,7 @@ namespace SqliteMultiTenant.Utilities
                     }
                 }
             }
-            catch { }
+            catch { /* Ignored */ }
 
             return columns;
         }
@@ -248,8 +249,7 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    public class DatabaseStatistics
-    {
+    public sealed class DatabaseStatistics {
         public long TableCount { get; set; }
         public long IndexCount { get; set; }
         public long PageCount { get; set; }
@@ -257,8 +257,7 @@ namespace SqliteMultiTenant.Utilities
         public long EstimatedSize { get; set; }
     }
 
-    public class ColumnInfo
-    {
+    public sealed class ColumnInfo {
         public string Name { get; set; }
         public string Type { get; set; }
         public bool NotNull { get; set; }

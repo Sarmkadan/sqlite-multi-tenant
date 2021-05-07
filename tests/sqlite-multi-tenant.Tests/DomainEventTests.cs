@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class DomainEventTests
-{
+public sealed class DomainEventTests {
     [Fact]
     public void TenantCreatedEvent_Initialization_HasCorrectName()
     {

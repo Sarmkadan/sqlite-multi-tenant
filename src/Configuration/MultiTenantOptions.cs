@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -9,8 +10,7 @@ using System.Collections.Generic;
 namespace SqliteMultiTenant.Configuration
 {
     // Configuration options for multi-tenant SQLite setup
-    public class MultiTenantOptions
-    {
+    public sealed class MultiTenantOptions {
         public string BasePath { get; set; } = "./databases";
         public int MaxConnectionsPerTenant { get; set; } = 10;
         public int MaxBackupCount { get; set; } = 20;
@@ -28,8 +28,7 @@ namespace SqliteMultiTenant.Configuration
     }
 
     // Backup-specific configuration
-    public class BackupOptions
-    {
+    public sealed class BackupOptions {
         public string BackupPath { get; set; } = "./backups";
         public int MaxConcurrentBackups { get; set; } = 3;
         public int BackupTimeoutSeconds { get; set; } = 300;
@@ -39,8 +38,7 @@ namespace SqliteMultiTenant.Configuration
     }
 
     // Monitoring and alerting configuration
-    public class MonitoringOptions
-    {
+    public sealed class MonitoringOptions {
         public bool Enabled { get; set; } = true;
         public TimeSpan MetricsCollectionInterval { get; set; } = TimeSpan.FromSeconds(60);
         public int MaxMetricsHistory { get; set; } = 1000;
@@ -50,8 +48,7 @@ namespace SqliteMultiTenant.Configuration
     }
 
     // Alert threshold configuration
-    public class AlertThreshold
-    {
+    public sealed class AlertThreshold {
         public string MetricName { get; set; }
         public double WarningLevel { get; set; }
         public double CriticalLevel { get; set; }
@@ -60,8 +57,7 @@ namespace SqliteMultiTenant.Configuration
     }
 
     // Security configuration
-    public class SecurityOptions
-    {
+    public sealed class SecurityOptions {
         public bool RequireTenantIdValidation { get; set; } = true;
         public bool EnableQueryLogging { get; set; } = false;
         public bool EnableConnectionEncryption { get; set; } = false;
@@ -72,8 +68,7 @@ namespace SqliteMultiTenant.Configuration
     }
 
     // Database maintenance configuration
-    public class MaintenanceOptions
-    {
+    public sealed class MaintenanceOptions {
         public bool EnableAutomaticVacuum { get; set; } = true;
         public TimeSpan VacuumInterval { get; set; } = TimeSpan.FromDays(1);
         public bool EnableIndexRebuild { get; set; } = true;
@@ -83,8 +78,7 @@ namespace SqliteMultiTenant.Configuration
     }
 
     // Feature flags
-    public class FeatureFlags
-    {
+    public sealed class FeatureFlags {
         public bool EnableCaching { get; set; } = true;
         public bool EnableBatching { get; set; } = true;
         public bool EnableAsyncOperations { get; set; } = true;

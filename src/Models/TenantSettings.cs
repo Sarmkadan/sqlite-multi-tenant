@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -8,8 +9,7 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents configuration settings for a tenant
 /// </summary>
-public class TenantSettings
-{
+public sealed class TenantSettings {
     public string SettingId { get; set; } = string.Empty;
     public string TenantId { get; set; } = string.Empty;
     public string SettingKey { get; set; } = string.Empty;

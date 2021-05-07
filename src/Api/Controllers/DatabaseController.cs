@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/databases")]
-public class DatabaseController : ControllerBase
-{
+public sealed class DatabaseController : ControllerBase {
     private readonly ILogger<DatabaseController> _logger;
 
     public DatabaseController(ILogger<DatabaseController> logger)
@@ -226,8 +226,7 @@ public class DatabaseController : ControllerBase
     }
 }
 
-public class DatabaseStats
-{
+public sealed class DatabaseStats {
     public string DatabaseId { get; set; } = string.Empty;
     public long FileSizeBytes { get; set; }
     public int TableCount { get; set; }
@@ -237,16 +236,14 @@ public class DatabaseStats
     public DateTime Timestamp { get; set; }
 }
 
-public class OptimizationResult
-{
+public sealed class OptimizationResult {
     public string DatabaseId { get; set; } = string.Empty;
     public long DurationMs { get; set; }
     public string Message { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
 }
 
-public class IntegrityCheckResult
-{
+public sealed class IntegrityCheckResult {
     public string DatabaseId { get; set; } = string.Empty;
     public bool IsValid { get; set; }
     public int ErrorCount { get; set; }
@@ -255,30 +252,26 @@ public class IntegrityCheckResult
     public DateTime Timestamp { get; set; }
 }
 
-public class DatabaseSchema
-{
+public sealed class DatabaseSchema {
     public string DatabaseId { get; set; } = string.Empty;
     public List<TableSchema> Tables { get; set; } = new();
     public DateTime Timestamp { get; set; }
 }
 
-public class TableSchema
-{
+public sealed class TableSchema {
     public string TableName { get; set; } = string.Empty;
     public List<ColumnSchema> Columns { get; set; } = new();
     public int RowCount { get; set; }
 }
 
-public class ColumnSchema
-{
+public sealed class ColumnSchema {
     public string ColumnName { get; set; } = string.Empty;
     public string DataType { get; set; } = string.Empty;
     public bool IsNullable { get; set; }
     public bool IsPrimaryKey { get; set; }
 }
 
-public class ExportResult
-{
+public sealed class ExportResult {
     public string DatabaseId { get; set; } = string.Empty;
     public string Format { get; set; } = string.Empty;
     public DateTime ExportedAt { get; set; }

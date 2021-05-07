@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -18,8 +19,7 @@ public interface IAuditLogger
     Task PurgeOldEntriesAsync(TimeSpan retentionPeriod);
 }
 
-public class AuditLogger : IAuditLogger
-{
+public sealed class AuditLogger : IAuditLogger {
     private readonly List<AuditLogEntry> _entries;
     private readonly ILogger<AuditLogger> _logger;
     private readonly SemaphoreSlim _semaphore;
@@ -178,8 +178,7 @@ public class AuditLogger : IAuditLogger
     }
 }
 
-public class AuditLogEntry
-{
+public sealed class AuditLogEntry {
     public string Id { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
     public string EventType { get; set; } = string.Empty;
@@ -203,8 +202,7 @@ public enum AuditAction
     Import
 }
 
-public class AuditLogFilter
-{
+public sealed class AuditLogFilter {
     public string? EventType { get; set; }
     public string? Actor { get; set; }
     public string? ResourceId { get; set; }
@@ -214,8 +212,7 @@ public class AuditLogFilter
     public int Limit { get; set; } = 100;
 }
 
-public class AuditLogStatistics
-{
+public sealed class AuditLogStatistics {
     public int TotalEntries { get; set; }
     public int UniqueActors { get; set; }
     public int UniqueEventTypes { get; set; }

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Formatters;
 /// Handles nested objects, arrays, and special character escaping.
 /// Useful for exporting data to spreadsheet applications.
 /// </summary>
-public class CsvFormatter
-{
+public sealed class CsvFormatter {
     private readonly string _delimiter;
     private readonly bool _includeHeader;
     private readonly ILogger<CsvFormatter> _logger;
@@ -35,7 +35,7 @@ public class CsvFormatter
     {
         try
         {
-            if (data == null)
+            if (data is null)
                 return string.Empty;
 
             if (data is IEnumerable enumerable && !(data is string))
@@ -58,7 +58,7 @@ public class CsvFormatter
 
         foreach (var item in collection)
         {
-            if (item == null)
+            if (item is null)
                 continue;
 
             var itemType = item.GetType();

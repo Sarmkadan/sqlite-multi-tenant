@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ namespace SqliteMultiTenant.Cli;
 /// Provides structured error handling and output formatting for CLI operations.
 /// Uses dependency injection to access tenant, backup, migration, and health services.
 /// </summary>
-public class CommandExecutor
-{
+public sealed class CommandExecutor {
     private readonly Services.ITenantService _tenantService;
     private readonly Services.IBackupService _backupService;
     private readonly Services.IMigrationService _migrationService;
@@ -135,7 +135,7 @@ public class CommandExecutor
         string tenantId = args[0];
         var tenant = await _tenantService.GetTenantAsync(tenantId);
 
-        if (tenant == null)
+        if (tenant is null)
             return new CommandResult { Success = false, Message = $"Tenant {tenantId} not found" };
 
         return new CommandResult
@@ -162,7 +162,7 @@ public class CommandExecutor
         string tenantId = args[0];
         var tenant = await _tenantService.GetTenantAsync(tenantId);
 
-        if (tenant == null)
+        if (tenant is null)
             return new CommandResult { Success = false, Message = $"Tenant {tenantId} not found" };
 
         return new CommandResult
@@ -349,8 +349,7 @@ public class CommandExecutor
     }
 }
 
-public class CommandResult
-{
+public sealed class CommandResult {
     public bool Success { get; set; }
     public string Message { get; set; } = string.Empty;
     public int ExitCode => Success ? 0 : 1;

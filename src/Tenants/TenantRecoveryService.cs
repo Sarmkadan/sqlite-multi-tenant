@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ namespace SqliteMultiTenant.Tenants
 {
     // Provides disaster recovery capabilities for tenant databases
     // Includes point-in-time recovery, backup restoration, and corruption repair
-    public class TenantRecoveryService
-    {
+    public sealed class TenantRecoveryService {
         private readonly ITenantRepository _tenantRepository;
         private readonly ILogger<TenantRecoveryService> _logger;
 
@@ -35,7 +35,7 @@ namespace SqliteMultiTenant.Tenants
             try
             {
                 var tenant = await _tenantRepository.GetByIdAsync(tenantId);
-                if (tenant == null)
+                if (tenant is null)
                 {
                     _logger.LogWarning("Tenant not found for repair: {TenantId}", tenantId);
                     return false;
@@ -120,7 +120,7 @@ namespace SqliteMultiTenant.Tenants
             try
             {
                 var tenant = await _tenantRepository.GetByIdAsync(tenantId);
-                if (tenant == null)
+                if (tenant is null)
                 {
                     _logger.LogWarning("Tenant not found for restore: {TenantId}", tenantId);
                     return false;
@@ -194,7 +194,7 @@ namespace SqliteMultiTenant.Tenants
             try
             {
                 var tenant = await _tenantRepository.GetByIdAsync(tenantId);
-                if (tenant == null)
+                if (tenant is null)
                     return 0;
 
                 var dbPath = tenant.DatabasePath;
@@ -261,7 +261,7 @@ namespace SqliteMultiTenant.Tenants
                     {
                         if (backupTime <= targetTime)
                         {
-                            if (closestBackupTime == null ||
+                            if (closestBackupTime is null ||
                                 (targetTime - backupTime) < (targetTime - closestBackupTime))
                             {
                                 closestBackupTime = backupTime;
@@ -271,7 +271,7 @@ namespace SqliteMultiTenant.Tenants
                     }
                 }
 
-                if (closestBackupPath == null)
+                if (closestBackupPath is null)
                 {
                     _logger.LogWarning(
                         "No backup found for point-in-time recovery to {TargetTime} for tenant {TenantId}",

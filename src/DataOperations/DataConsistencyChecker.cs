@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.DataOperations
 {
     // Verifies data integrity and consistency across tenant databases
     // Detects orphaned records, constraint violations, and missing indexes
-    public class DataConsistencyChecker
-    {
+    public sealed class DataConsistencyChecker {
         private readonly ILogger<DataConsistencyChecker> _logger;
 
         public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
@@ -26,7 +26,7 @@ namespace SqliteMultiTenant.DataOperations
         // Runs complete consistency check on database
         public async Task<ConsistencyCheckResult> CheckDatabaseIntegrityAsync(SQLiteConnection connection)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             try
@@ -338,8 +338,7 @@ namespace SqliteMultiTenant.DataOperations
         }
     }
 
-    public class ConsistencyCheckResult
-    {
+    public sealed class ConsistencyCheckResult {
         public bool IsHealthy { get; set; }
         public bool IntegrityCheckPassed { get; set; }
         public List<string> OrphanedRecords { get; set; } = new List<string>();
@@ -349,22 +348,19 @@ namespace SqliteMultiTenant.DataOperations
         public DateTime CheckedAt { get; set; }
     }
 
-    public class ConstraintViolation
-    {
+    public sealed class ConstraintViolation {
         public string Table { get; set; }
         public long Rowid { get; set; }
         public string ParentTable { get; set; }
         public long ParentRowid { get; set; }
     }
 
-    public class TableStatistics
-    {
+    public sealed class TableStatistics {
         public string TableName { get; set; }
         public long RowCount { get; set; }
     }
 
-    public class DuplicateRecord
-    {
+    public sealed class DuplicateRecord {
         public string TableName { get; set; }
         public int RecordIndex1 { get; set; }
         public int RecordIndex2 { get; set; }

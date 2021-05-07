@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -21,8 +22,7 @@ public interface IRequestInterceptor
 /// Tenant context interceptor that extracts tenant ID from request.
 /// Populates HttpContext.Items with tenant information for downstream use.
 /// </summary>
-public class TenantContextInterceptor : IRequestInterceptor
-{
+public sealed class TenantContextInterceptor : IRequestInterceptor {
     private const string TenantIdHeader = "X-Tenant-Id";
     private const string TenantContextKey = "TenantContext";
     private readonly ILogger<TenantContextInterceptor> _logger;
@@ -78,8 +78,7 @@ public class TenantContextInterceptor : IRequestInterceptor
 /// <summary>
 /// Tenant context information extracted from request.
 /// </summary>
-public class TenantContext
-{
+public sealed class TenantContext {
     public string TenantId { get; set; }
     public DateTime ExtractedAt { get; set; } = DateTime.UtcNow;
 }
@@ -88,8 +87,7 @@ public class TenantContext
 /// Request validation interceptor that enforces business rules.
 /// Examples: rate limiting per tenant, quota enforcement.
 /// </summary>
-public class RequestValidationInterceptor : IRequestInterceptor
-{
+public sealed class RequestValidationInterceptor : IRequestInterceptor {
     private readonly ILogger<RequestValidationInterceptor> _logger;
 
     public RequestValidationInterceptor(ILogger<RequestValidationInterceptor> logger)
@@ -138,8 +136,7 @@ public class RequestValidationInterceptor : IRequestInterceptor
 /// Correlation ID interceptor for request tracing across logs and systems.
 /// Adds X-Correlation-Id header to track related operations.
 /// </summary>
-public class CorrelationIdInterceptor : IRequestInterceptor
-{
+public sealed class CorrelationIdInterceptor : IRequestInterceptor {
     private const string CorrelationIdHeader = "X-Correlation-Id";
     private const string CorrelationIdKey = "CorrelationId";
     private readonly ILogger<CorrelationIdInterceptor> _logger;
@@ -176,8 +173,7 @@ public class CorrelationIdInterceptor : IRequestInterceptor
 /// <summary>
 /// Interceptor pipeline for executing multiple interceptors in order.
 /// </summary>
-public class InterceptorPipeline
-{
+public sealed class InterceptorPipeline {
     private readonly List<IRequestInterceptor> _interceptors;
     private readonly ILogger<InterceptorPipeline> _logger;
 
@@ -193,7 +189,7 @@ public class InterceptorPipeline
     /// </summary>
     public void Register(IRequestInterceptor interceptor)
     {
-        if (interceptor != null)
+        if (interceptor is not null)
             _interceptors.Add(interceptor);
     }
 

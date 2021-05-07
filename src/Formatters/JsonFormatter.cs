@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ namespace SqliteMultiTenant.Formatters;
 /// Formats objects as JSON with customizable serialization options.
 /// Supports pretty-printing, null handling, and circular reference detection.
 /// </summary>
-public class JsonFormatter
-{
+public sealed class JsonFormatter {
     private readonly JsonSerializerOptions _options;
     private readonly ILogger<JsonFormatter> _logger;
 
@@ -40,7 +40,7 @@ public class JsonFormatter
     {
         try
         {
-            if (data == null)
+            if (data is null)
                 return "null";
 
             return JsonSerializer.Serialize(data, _options);
@@ -80,7 +80,7 @@ public class JsonFormatter
     {
         try
         {
-            if (data == null)
+            if (data is null)
                 return "null";
 
             return JsonSerializer.Serialize(data, options);

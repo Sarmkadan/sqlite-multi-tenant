@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.Middleware;
 /// Enables tracking user actions and identifying performance bottlenecks.
 /// Implements structured logging for ELK/Datadog integration.
 /// </summary>
-public class LoggingMiddleware
-{
+public sealed class LoggingMiddleware {
     private readonly RequestDelegate _next;
     private readonly ILogger<LoggingMiddleware> _logger;
 

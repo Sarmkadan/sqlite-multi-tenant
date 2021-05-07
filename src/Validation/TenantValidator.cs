@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Validation;
 /// Enforces business rules and data constraints at API boundary.
 /// Returns validation errors for user-friendly error responses.
 /// </summary>
-public class TenantValidator
-{
+public sealed class TenantValidator {
     /// <summary>
     /// Validates create tenant request.
     /// Checks required fields, email format, name length.
@@ -80,8 +80,7 @@ public class TenantValidator
 /// Validator for migration creation and execution.
 /// Ensures migrations contain valid SQL and follow conventions.
 /// </summary>
-public class MigrationValidator
-{
+public sealed class MigrationValidator {
     /// <summary>
     /// Validates migration creation request.
     /// Checks version format, script content, naming conventions.
@@ -142,8 +141,7 @@ public class MigrationValidator
 /// Validator for database connection strings.
 /// Ensures safe and properly formatted connection strings.
 /// </summary>
-public class ConnectionStringValidator
-{
+public sealed class ConnectionStringValidator {
     /// <summary>
     /// Validates SQLite connection string format.
     /// </summary>
@@ -180,8 +178,7 @@ public class ConnectionStringValidator
 /// <summary>
 /// Validator for backup operations.
 /// </summary>
-public class BackupValidator
-{
+public sealed class BackupValidator {
     /// <summary>
     /// Validates backup tag format and length.
     /// </summary>

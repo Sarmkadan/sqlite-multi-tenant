@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ public interface IExceptionProcessor
     string GetErrorCategory(Exception exception);
 }
 
-public class ExceptionProcessor : IExceptionProcessor
-{
+public sealed class ExceptionProcessor : IExceptionProcessor {
     private readonly ILogger<ExceptionProcessor> _logger;
 
     public ExceptionProcessor(ILogger<ExceptionProcessor> logger)
@@ -50,7 +50,7 @@ public class ExceptionProcessor : IExceptionProcessor
                 StatusCode = statusCode,
                 Timestamp = DateTime.UtcNow,
                 Details = GetErrorDetails(exception),
-                InnerException = exception.InnerException != null
+                InnerException = exception.InnerException is not null
                     ? new ErrorResponse
                     {
                         ErrorId = Guid.NewGuid().ToString(),
@@ -143,8 +143,7 @@ public class ExceptionProcessor : IExceptionProcessor
     }
 }
 
-public class ErrorResponse
-{
+public sealed class ErrorResponse {
     public string ErrorId { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
@@ -167,7 +166,7 @@ public static class ExceptionExtensions
         var messages = new List<string>();
         var current = exception;
 
-        while (current != null)
+        while (current is not null)
         {
             messages.Add(current.Message);
             current = current.InnerException;

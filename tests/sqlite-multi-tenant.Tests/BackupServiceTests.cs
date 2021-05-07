@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -19,8 +20,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class BackupServiceTests
-    {
+    public sealed class BackupServiceTests {
         private readonly IBackupRepository _mockBackupRepository;
         private readonly ILogger<BackupService> _mockLogger;
         private readonly BackupService _backupService;

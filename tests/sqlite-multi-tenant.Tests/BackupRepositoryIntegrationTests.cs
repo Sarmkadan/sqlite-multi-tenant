@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ using SqliteMultiTenant.Constants;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class BackupRepositoryIntegrationTests : IDisposable
-    {
+    public sealed class BackupRepositoryIntegrationTests : IDisposable {
         private readonly SqliteConnection _connection;
         private readonly DbContextOptions<TenantContext> _dbContextOptions;
         private readonly BackupRepository _backupRepository;

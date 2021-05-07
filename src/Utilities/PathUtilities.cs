@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -162,7 +163,7 @@ public static class PathUtilities
         try
         {
             // Add files in current directory
-            var currentFiles = searchPattern != null
+            var currentFiles = searchPattern is not null
                 ? directory.GetFiles(searchPattern)
                 : directory.GetFiles();
 

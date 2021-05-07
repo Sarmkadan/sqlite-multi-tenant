@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -22,8 +23,7 @@ namespace SqliteMultiTenant.Caching
     }
 
     // LRU (Least Recently Used) cache implementation with TTL support
-    public class LruCacheStrategy : ICacheStrategy
-    {
+    public sealed class LruCacheStrategy : ICacheStrategy {
         private readonly ConcurrentDictionary<string, CacheEntry> _cache;
         private readonly ILogger<LruCacheStrategy> _logger;
         private readonly int _maxSize;
@@ -69,7 +69,7 @@ namespace SqliteMultiTenant.Caching
 
         public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null)
         {
-            if (string.IsNullOrEmpty(key) || value == null)
+            if (string.IsNullOrEmpty(key) || value is null)
                 return;
 
             try
@@ -174,8 +174,7 @@ namespace SqliteMultiTenant.Caching
     }
 
     // Time-based cache that uses exponential backoff for failed retrievals
-    public class TimeBasedCacheStrategy : ICacheStrategy
-    {
+    public sealed class TimeBasedCacheStrategy : ICacheStrategy {
         private readonly ConcurrentDictionary<string, CacheEntry> _cache;
         private readonly ILogger<TimeBasedCacheStrategy> _logger;
         private readonly TimeSpan _defaultExpiration;
@@ -216,7 +215,7 @@ namespace SqliteMultiTenant.Caching
 
         public async Task SetAsync<T>(string key, T value, TimeSpan? expiration = null)
         {
-            if (string.IsNullOrEmpty(key) || value == null)
+            if (string.IsNullOrEmpty(key) || value is null)
                 return;
 
             try
@@ -256,8 +255,7 @@ namespace SqliteMultiTenant.Caching
         }
     }
 
-    public class CacheStatistics
-    {
+    public sealed class CacheStatistics {
         public string Key { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastAccessedAt { get; set; }

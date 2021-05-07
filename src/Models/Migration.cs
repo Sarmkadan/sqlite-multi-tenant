@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a database migration for a tenant
 /// </summary>
-public class Migration
-{
+public sealed class Migration {
     public string MigrationId { get; set; } = string.Empty;
     public string DatabaseId { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
@@ -113,7 +113,7 @@ public class Migration
         return IsRollbackable &&
                !string.IsNullOrEmpty(DownScript) &&
                Status == MigrationStatus.Completed &&
-               RolledBackAt == null;
+               RolledBackAt is null;
     }
 
     /// <summary>

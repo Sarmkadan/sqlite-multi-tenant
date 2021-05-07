@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -260,7 +261,7 @@ public static class StringUtilities
     /// </summary>
     public static IEnumerable<string> SplitPreservingQuotes(string input, char delimiter = ',')
     {
-        if (input == null)
+        if (input is null)
             throw new ArgumentNullException(nameof(input), "Input string cannot be null.");
 
         // Fix: Added null check to prevent NullReferenceException during string enumeration
