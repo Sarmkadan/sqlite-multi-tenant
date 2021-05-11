@@ -35,7 +35,7 @@ public sealed class DatabaseController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Database stats requested for {databaseId}");
+            _logger.LogInformation("Database stats requested for {DatabaseId}", databaseId);
 
             var stats = new DatabaseStats
             {
@@ -52,7 +52,7 @@ public sealed class DatabaseController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting database stats: {ex.Message}");
+            _logger.LogError("Error getting database stats: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve database stats"));
         }
     }
@@ -67,7 +67,7 @@ public sealed class DatabaseController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Database optimization started for {databaseId}");
+            _logger.LogInformation("Database optimization started for {DatabaseId}", databaseId);
 
             var startTime = DateTime.UtcNow;
 
@@ -88,7 +88,7 @@ public sealed class DatabaseController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Database optimization error: {ex.Message}");
+            _logger.LogError("Database optimization error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Database optimization failed"));
         }
     }
@@ -103,7 +103,7 @@ public sealed class DatabaseController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Integrity check requested for {databaseId}");
+            _logger.LogInformation("Integrity check requested for {DatabaseId}", databaseId);
 
             var startTime = DateTime.UtcNow;
 
@@ -126,7 +126,7 @@ public sealed class DatabaseController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Integrity check error: {ex.Message}");
+            _logger.LogError("Integrity check error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Integrity check failed"));
         }
     }
@@ -141,7 +141,7 @@ public sealed class DatabaseController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Schema requested for {databaseId}");
+            _logger.LogInformation("Schema requested for {DatabaseId}", databaseId);
 
             var schema = new DatabaseSchema
             {
@@ -155,7 +155,7 @@ public sealed class DatabaseController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving schema: {ex.Message}");
+            _logger.LogError("Error retrieving schema: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve schema"));
         }
     }
@@ -170,7 +170,7 @@ public sealed class DatabaseController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Database export requested: {databaseId} as {format}");
+            _logger.LogInformation("Database export requested: {DatabaseId} as {Format}", databaseId, format);
 
             if (!IsValidExportFormat(format))
                 return BadRequest(ApiResponse<object>.Error($"Invalid export format: {format}"));
@@ -188,7 +188,7 @@ public sealed class DatabaseController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Export error: {ex.Message}");
+            _logger.LogError("Export error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Export failed"));
         }
     }

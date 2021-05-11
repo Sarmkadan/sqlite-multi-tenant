@@ -35,7 +35,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving backup {backupId}: {ex.Message}");
+            _logger.LogError("Error retrieving backup {BackupId}: {Message}", backupId, ex.Message);
             throw;
         }
     }
@@ -51,7 +51,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving backups for database {databaseId}: {ex.Message}");
+            _logger.LogError("Error retrieving backups for database {DatabaseId}: {Message}", databaseId, ex.Message);
             throw;
         }
     }
@@ -67,7 +67,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving completed backups: {ex.Message}");
+            _logger.LogError("Error retrieving completed backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -83,7 +83,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving latest backup: {ex.Message}");
+            _logger.LogError("Error retrieving latest backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -116,12 +116,12 @@ public sealed class BackupService : IBackupService {
                 throw new ArgumentException($"Backup validation failed: {string.Join(", ", errors)}");
 
             var createdBackup = await _repository.AddAsync(backup, cancellationToken);
-            _logger.LogInformation($"Backup created: {backup.BackupId}");
+            _logger.LogInformation("Backup created: {BackupId}", backup.BackupId);
             return createdBackup;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating backup: {ex.Message}");
+            _logger.LogError("Error creating backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -139,11 +139,11 @@ public sealed class BackupService : IBackupService {
 
             backup.MarkAsCompleted(sizeBytes, durationMs);
             await _repository.UpdateAsync(backup, cancellationToken);
-            _logger.LogInformation($"Backup completed: {backupId} ({sizeBytes} bytes in {durationMs}ms)");
+            _logger.LogInformation("Backup completed: {BackupId} ({SizeBytes} bytes in {DurationMs}ms)", backupId, sizeBytes, durationMs);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error marking backup as completed: {ex.Message}");
+            _logger.LogError("Error marking backup as completed: {Message}", ex.Message);
             throw;
         }
     }
@@ -161,11 +161,11 @@ public sealed class BackupService : IBackupService {
 
             backup.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(backup, cancellationToken);
-            _logger.LogError($"Backup failed: {backupId} - {errorMessage}");
+            _logger.LogError("Backup failed: {BackupId} - {ErrorMessage}", backupId, errorMessage);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error marking backup as failed: {ex.Message}");
+            _logger.LogError("Error marking backup as failed: {Message}", ex.Message);
             throw;
         }
     }
@@ -186,11 +186,11 @@ public sealed class BackupService : IBackupService {
 
             backup.MarkAsVerified(verifiedBy);
             await _repository.UpdateAsync(backup, cancellationToken);
-            _logger.LogInformation($"Backup verified: {backupId}");
+            _logger.LogInformation("Backup verified: {BackupId}", backupId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error verifying backup: {ex.Message}");
+            _logger.LogError("Error verifying backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -208,11 +208,11 @@ public sealed class BackupService : IBackupService {
 
             backup.SetExpiration(expirationDate);
             await _repository.UpdateAsync(backup, cancellationToken);
-            _logger.LogInformation($"Backup expiration set: {backupId} -> {expirationDate:O}");
+            _logger.LogInformation("Backup expiration set: {BackupId} -> {ExpirationDate}", backupId, expirationDate);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error setting backup expiration: {ex.Message}");
+            _logger.LogError("Error setting backup expiration: {Message}", ex.Message);
             throw;
         }
     }
@@ -225,7 +225,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving expired backups: {ex.Message}");
+            _logger.LogError("Error retrieving expired backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -241,7 +241,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting backup count: {ex.Message}");
+            _logger.LogError("Error getting backup count: {Message}", ex.Message);
             throw;
         }
     }
@@ -258,11 +258,11 @@ public sealed class BackupService : IBackupService {
                 throw new BackupException.NotFound(backupId);
 
             await _repository.DeleteAsync(backupId, cancellationToken);
-            _logger.LogInformation($"Backup deleted: {backupId}");
+            _logger.LogInformation("Backup deleted: {BackupId}", backupId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting backup: {ex.Message}");
+            _logger.LogError("Error deleting backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -283,11 +283,11 @@ public sealed class BackupService : IBackupService {
 
             backup.AddTag(tag);
             await _repository.UpdateAsync(backup, cancellationToken);
-            _logger.LogInformation($"Tag added to backup: {backupId} -> {tag}");
+            _logger.LogInformation("Tag added to backup: {BackupId} -> {Tag}", backupId, tag);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error adding backup tag: {ex.Message}");
+            _logger.LogError("Error adding backup tag: {Message}", ex.Message);
             throw;
         }
     }

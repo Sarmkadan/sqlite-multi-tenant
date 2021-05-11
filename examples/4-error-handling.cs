@@ -51,8 +51,8 @@ class ErrorHandlingExample
         catch (TenantNotFoundException ex)
         {
             logger.LogWarning($"  ✓ Caught TenantNotFoundException");
-            logger.LogWarning($"    Tenant ID: {ex.TenantId}");
-            logger.LogWarning($"    Message: {ex.Message}");
+            logger.LogWarning("    Tenant ID: {TenantId}", ex.TenantId);
+            logger.LogWarning("    Message: {Message}", ex.Message);
         }
         catch (Exception ex)
         {
@@ -73,12 +73,12 @@ class ErrorHandlingExample
                 description: "Test",
                 contactEmail: "test@example.com");
 
-            logger.LogInformation($"  ✓ Tenant created successfully: {tenant.TenantId}");
+            logger.LogInformation("  ✓ Tenant created successfully: {TenantId}", tenant.TenantId);
         }
         catch (DatabaseAccessException ex)
         {
             logger.LogError($"  ✓ Caught DatabaseAccessException");
-            logger.LogError($"    Message: {ex.Message}");
+            logger.LogError("    Message: {Message}", ex.Message);
             logger.LogError($"    Recommendation: Check database connectivity and permissions");
         }
         catch (Exception ex)
@@ -100,12 +100,12 @@ class ErrorHandlingExample
                 description: "Test",
                 contactEmail: "not-an-email");
 
-            logger.LogInformation($"  Tenant created: {tenant.TenantId}");
+            logger.LogInformation("  Tenant created: {TenantId}", tenant.TenantId);
         }
         catch (ArgumentException ex)
         {
             logger.LogWarning($"  ✓ Caught validation error");
-            logger.LogWarning($"    Message: {ex.Message}");
+            logger.LogWarning("    Message: {Message}", ex.Message);
         }
         catch (Exception ex)
         {
@@ -137,7 +137,7 @@ class ErrorHandlingExample
 
         if (result is not null)
         {
-            logger.LogInformation($"  ✓ Operation succeeded: {result.TenantId}");
+            logger.LogInformation("  ✓ Operation succeeded: {TenantId}", result.TenantId);
         }
         else
         {
@@ -162,12 +162,12 @@ class ErrorHandlingExample
                     contactEmail: $"{name}@example.com");
 
                 results.Add((name, tenant.TenantId, null));
-                logger.LogInformation($"  ✓ {name}: {tenant.TenantId}");
+                logger.LogInformation("  ✓ {Name}: {TenantId}", name, tenant.TenantId);
             }
             catch (Exception ex)
             {
                 results.Add((name, null, ex.Message));
-                logger.LogError($"  ✗ {name}: {ex.Message}");
+                logger.LogError("  ✗ {Name}: {Message}", name, ex.Message);
             }
         }
 
@@ -186,23 +186,23 @@ class ErrorHandlingExample
         {
             logger.LogInformation("  Executing operation with comprehensive error handling...");
             var result = await operation();
-            logger.LogInformation($"  ✓ Operation succeeded: {result}");
+            logger.LogInformation("  ✓ Operation succeeded: {Result}", result);
         }
         catch (TenantNotFoundException ex)
         {
-            logger.LogWarning($"  ✓ Tenant not found: {ex.TenantId}");
+            logger.LogWarning("  ✓ Tenant not found: {TenantId}", ex.TenantId);
         }
         catch (DatabaseAccessException ex)
         {
-            logger.LogError($"  ✓ Database error: {ex.Message}");
+            logger.LogError("  ✓ Database error: {Message}", ex.Message);
         }
         catch (MigrationException ex)
         {
-            logger.LogError($"  ✓ Migration error: {ex.MigrationVersion}");
+            logger.LogError("  ✓ Migration error: {MigrationVersion}", ex.MigrationVersion);
         }
         catch (BackupException ex)
         {
-            logger.LogError($"  ✓ Backup error: {ex.BackupId}");
+            logger.LogError("  ✓ Backup error: {BackupId}", ex.BackupId);
         }
         catch (Exception ex)
         {
@@ -223,20 +223,20 @@ class ErrorHandlingExample
             try
             {
                 attempt++;
-                logger.LogInformation($"  Attempt {attempt} of {maxRetries}...");
+                logger.LogInformation("  Attempt {Attempt} of {MaxRetries}...", attempt, maxRetries);
                 var result = await operation();
                 return result;
             }
             catch (Exception ex) when (attempt < maxRetries)
             {
                 var delay = Math.Pow(2, attempt - 1) * 100; // Exponential backoff
-                logger.LogWarning($"  Attempt {attempt} failed: {ex.Message}");
-                logger.LogInformation($"  Retrying in {delay}ms...");
+                logger.LogWarning("  Attempt {Attempt} failed: {Message}", attempt, ex.Message);
+                logger.LogInformation("  Retrying in {Delay}ms...", delay);
                 await Task.Delay((int)delay);
             }
             catch (Exception ex)
             {
-                logger.LogError($"  All {maxRetries} attempts failed: {ex.Message}");
+                logger.LogError("  All {MaxRetries} attempts failed: {Message}", maxRetries, ex.Message);
                 return null;
             }
         }

@@ -54,11 +54,11 @@ public sealed class CacheService : ICacheService {
 
         if (_cache.TryGetValue(key, out T value))
         {
-            _logger.LogDebug($"Cache hit: {key}");
+            _logger.LogDebug("Cache hit: {Key}", key);
             return value;
         }
 
-        _logger.LogDebug($"Cache miss: {key}");
+        _logger.LogDebug("Cache miss: {Key}", key);
         return default;
     }
 
@@ -101,7 +101,7 @@ public sealed class CacheService : ICacheService {
         _cache.Remove(key);
         _keyTimestamps.TryRemove(key, out _);
 
-        _logger.LogDebug($"Cache removed: {key}");
+        _logger.LogDebug("Cache removed: {Key}", key);
     }
 
     /// <summary>
@@ -121,7 +121,7 @@ public sealed class CacheService : ICacheService {
             Remove(key);
         }
 
-        _logger.LogInformation($"Cache cleared for pattern: {pattern} ({keysToRemove.Count} keys)");
+        _logger.LogInformation("Cache cleared for pattern: {Pattern} ({Count} keys)", pattern, keysToRemove.Count);
     }
 
     /// <summary>
@@ -189,7 +189,7 @@ public sealed class CacheInvalidationService {
         _cache.Remove(CacheKeys.TenantKey(tenantId));
         _cache.Remove(CacheKeys.AllTenantsKey());
 
-        _logger.LogInformation($"Cache invalidated for tenant: {tenantId}");
+        _logger.LogInformation("Cache invalidated for tenant: {TenantId}", tenantId);
     }
 
     /// <summary>
@@ -200,7 +200,7 @@ public sealed class CacheInvalidationService {
     {
         _cache.Remove(CacheKeys.BackupsForDatabase(databaseId));
 
-        _logger.LogInformation($"Cache invalidated for backups in database: {databaseId}");
+        _logger.LogInformation("Cache invalidated for backups in database: {DatabaseId}", databaseId);
     }
 
     /// <summary>
@@ -212,7 +212,7 @@ public sealed class CacheInvalidationService {
         _cache.Remove(CacheKeys.PendingMigrationsKey(databaseId));
         _cache.Remove(CacheKeys.AppliedMigrationsKey(databaseId));
 
-        _logger.LogInformation($"Cache invalidated for migrations in database: {databaseId}");
+        _logger.LogInformation("Cache invalidated for migrations in database: {DatabaseId}", databaseId);
     }
 
     /// <summary>
