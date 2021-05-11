@@ -66,7 +66,7 @@ public sealed class DistributedCacheService : IDistributedCache {
                 entry.AccessCount++;
                 _hits++;
 
-                _logger.LogDebug($"Cache hit: {key}");
+                _logger.LogDebug("Cache hit: {Key}", key);
                 return entry.Value as T;
             }
 
@@ -124,7 +124,7 @@ public sealed class DistributedCacheService : IDistributedCache {
 
             if (_cache.Remove(key))
             {
-                _logger.LogDebug($"Cache removed: {key}");
+                _logger.LogDebug("Cache removed: {Key}", key);
                 return true;
             }
 
@@ -152,7 +152,7 @@ public sealed class DistributedCacheService : IDistributedCache {
             foreach (var key in keysToRemove)
                 _cache.Remove(key);
 
-            _logger.LogDebug($"Cache pattern removal: {pattern}, Removed: {keysToRemove.Count}");
+            _logger.LogDebug("Cache pattern removal: {Pattern}, Removed: {Count}", pattern, keysToRemove.Count);
         }
         finally
         {
@@ -227,7 +227,7 @@ public sealed class DistributedCacheService : IDistributedCache {
                 _cache.Remove(key);
 
             if (keysToRemove.Count > 0)
-                _logger.LogInformation($"Cleaned up {keysToRemove.Count} expired cache entries");
+                _logger.LogInformation("Cleaned up {Count} expired cache entries", keysToRemove.Count);
         }
         finally
         {
@@ -243,7 +243,7 @@ public sealed class DistributedCacheService : IDistributedCache {
             .First();
 
         _cache.Remove(lruEntry.Key);
-        _logger.LogDebug($"Cache evicted (LRU): {lruEntry.Key}");
+        _logger.LogDebug("Cache evicted (LRU): {Key}", lruEntry.Key);
     }
 
     private static long EstimateSize(object value)

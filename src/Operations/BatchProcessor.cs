@@ -43,7 +43,7 @@ public sealed class BatchProcessor : IBatchProcessor {
         var result = new BatchProcessResult<TResult>();
         var itemList = items.ToList();
 
-        _logger.LogInformation($"Starting batch processing: {itemList.Count} items, Concurrency: {maxConcurrency}");
+        _logger.LogInformation("Starting batch processing: {Count} items, Concurrency: {MaxConcurrency}", itemList.Count, maxConcurrency);
 
         using (var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency))
         {
@@ -58,7 +58,7 @@ public sealed class BatchProcessor : IBatchProcessor {
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Error processing item {index}: {ex.Message}");
+                    _logger.LogError("Error processing item {Index}: {Message}", index, ex.Message);
                     result.AddError(index.ToString(), ex);
                 }
                 finally
@@ -88,7 +88,7 @@ public sealed class BatchProcessor : IBatchProcessor {
         var result = new BatchProcessResult<object>();
         var itemList = items.ToList();
 
-        _logger.LogInformation($"Starting batch processing: {itemList.Count} items, Concurrency: {maxConcurrency}");
+        _logger.LogInformation("Starting batch processing: {Count} items, Concurrency: {MaxConcurrency}", itemList.Count, maxConcurrency);
 
         using (var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency))
         {
@@ -103,7 +103,7 @@ public sealed class BatchProcessor : IBatchProcessor {
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Error processing item {index}: {ex.Message}");
+                    _logger.LogError("Error processing item {Index}: {Message}", index, ex.Message);
                     result.AddError(index.ToString(), ex);
                 }
                 finally

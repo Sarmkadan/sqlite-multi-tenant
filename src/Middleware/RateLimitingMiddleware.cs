@@ -57,7 +57,7 @@ public sealed class RateLimitingMiddleware {
 
         if (!bucket.TryConsumeToken())
         {
-            _logger.LogWarning($"Rate limit exceeded for {key}");
+            _logger.LogWarning("Rate limit exceeded for {Key}", key);
             context.Response.StatusCode = 429;
             context.Response.Headers.Add("Retry-After", "60");
             await context.Response.WriteAsJsonAsync(new { error = "Rate limit exceeded. Try again later." });

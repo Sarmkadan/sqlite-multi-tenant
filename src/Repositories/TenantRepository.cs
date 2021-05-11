@@ -46,7 +46,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error retrieving tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -72,7 +72,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving tenant by name {name}: {ex.Message}");
+            _logger.LogError("Error retrieving tenant by name {Name}: {Message}", name, ex.Message);
             throw;
         }
     }
@@ -102,7 +102,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving all tenants: {ex.Message}");
+            _logger.LogError("Error retrieving all tenants: {Message}", ex.Message);
             throw;
         }
     }
@@ -140,7 +140,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving tenants by status {status}: {ex.Message}");
+            _logger.LogError("Error retrieving tenants by status {Status}: {Message}", status, ex.Message);
             throw;
         }
     }
@@ -180,7 +180,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error adding tenant: {ex.Message}");
+            _logger.LogError("Error adding tenant: {Message}", ex.Message);
             throw;
         }
     }
@@ -220,7 +220,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating tenant {tenant.TenantId}: {ex.Message}");
+            _logger.LogError("Error updating tenant {TenantId}: {Message}", tenant.TenantId, ex.Message);
             throw;
         }
     }
@@ -241,7 +241,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error deleting tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -263,7 +263,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error checking tenant existence {tenantId}: {ex.Message}");
+            _logger.LogError("Error checking tenant existence {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -283,7 +283,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting tenant count: {ex.Message}");
+            _logger.LogError("Error getting tenant count: {Message}", ex.Message);
             throw;
         }
     }
@@ -316,7 +316,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error searching tenants: {ex.Message}");
+            _logger.LogError("Error searching tenants: {Message}", ex.Message);
             throw;
         }
     }
@@ -351,7 +351,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving paged tenants: {ex.Message}");
+            _logger.LogError("Error retrieving paged tenants: {Message}", ex.Message);
             throw;
         }
     }
@@ -412,7 +412,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error initializing tenant repository database: {ex.Message}");
+            _logger.LogError("Error initializing tenant repository database: {Message}", ex.Message);
             throw;
         }
     }
