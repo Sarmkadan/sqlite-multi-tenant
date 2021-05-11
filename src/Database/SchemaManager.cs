@@ -13,18 +13,32 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Database
 {
-    // Manages SQLite schema modifications, constraints, and migrations at the database level
+    /// <summary>
+    /// Manages SQLite schema modifications, constraints, and migrations at the database level.
+    /// Provides methods for creating tables, adding columns, renaming tables, and creating indexes
+    /// with built-in validation and error recovery.
+    /// </summary>
     public sealed class SchemaManager {
         private readonly ILogger<SchemaManager> _logger;
         private readonly string _connectionString;
 
+        /// <summary>
+        /// Initializes a new instance of <see cref="SchemaManager"/>.
+        /// </summary>
+        /// <param name="logger">Logger instance for diagnostic output.</param>
+        /// <param name="connectionString">SQLite connection string for the target database.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="connectionString"/> is null.</exception>
         public SchemaManager(ILogger<SchemaManager> logger, string connectionString)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         }
 
-        // Creates standard multi-tenant schema with foreign key constraints enabled
+        /// <summary>
+        /// Creates the standard multi-tenant schema including Tenants and AuditLog tables
+        /// with foreign key constraints enabled. Safe to call multiple times (uses CREATE IF NOT EXISTS).
+        /// </summary>
+        /// <param name="tenantId">The unique identifier of the tenant being initialized.</param>
         public async Task InitializeSchemaAsync(string tenantId)
         {
             try
@@ -77,7 +91,15 @@ namespace SqliteMultiTenant.Database
             }
         }
 
-        // Adds a new column to existing table with validation and rollback capability
+        /// <summary>
+        /// Adds a new column to an existing table with pre-validation to prevent duplicates.
+        /// </summary>
+        /// <param name="tenantId">Tenant identifier for logging context.</param>
+        /// <param name="tableName">Name of the table to modify.</param>
+        /// <param name="columnName">Name of the new column.</param>
+        /// <param name="columnDefinition">SQLite column type and constraints (e.g., "TEXT NOT NULL DEFAULT ''").</param>
+        /// <returns><c>true</c> if the column was added; <c>false</c> if it already exists.</returns>
+        /// <exception cref="SQLiteException">Thrown when the ALTER TABLE statement fails.</exception>
         public async Task<bool> AddColumnAsync(string tenantId, string tableName,
             string columnName, string columnDefinition)
         {
@@ -114,7 +136,12 @@ namespace SqliteMultiTenant.Database
             }
         }
 
-        // Renames a table with foreign key constraint handling
+        /// <summary>
+        /// Renames a table using ALTER TABLE RENAME. Foreign key references are not automatically updated
+        /// by SQLite, so callers must handle constraint adjustments separately.
+        /// </summary>
+        /// <param name="oldTableName">Current name of the table.</param>
+        /// <param name="newTableName">New name for the table.</param>
         public async Task RenameTableAsync(string oldTableName, string newTableName)
         {
             try
@@ -140,7 +167,13 @@ namespace SqliteMultiTenant.Database
             }
         }
 
-        // Creates an index for performance optimization
+        /// <summary>
+        /// Creates a non-unique index on the specified columns. Skips creation if the index already exists.
+        /// </summary>
+        /// <param name="tableName">Table to create the index on.</param>
+        /// <param name="indexName">Unique name for the index.</param>
+        /// <param name="columns">One or more column names to include in the index.</param>
+        /// <returns><c>true</c> if the index was created; <c>false</c> if it already exists.</returns>
         public async Task<bool> CreateIndexAsync(string tableName, string indexName, params string[] columns)
         {
             try
@@ -173,7 +206,11 @@ namespace SqliteMultiTenant.Database
             }
         }
 
-        // Retrieves all tables in the database
+        /// <summary>
+        /// Retrieves the names of all user-created tables in the database,
+        /// excluding SQLite internal tables (sqlite_*).
+        /// </summary>
+        /// <returns>A list of table names. Returns an empty list if an error occurs.</returns>
         public async Task<List<string>> GetTablesAsync()
         {
             var tables = new List<string>();
