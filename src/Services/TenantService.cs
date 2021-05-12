@@ -291,9 +291,3 @@ public sealed class TenantService : ITenantService {
         {
             _logger.LogError("Error setting tenant metadata: {Message}", ex.Message);
             throw;
-        }
-    }
-}
-
-    }
-}
