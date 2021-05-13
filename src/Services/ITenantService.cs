@@ -26,4 +26,5 @@ public interface ITenantService
     Task<int> GetTenantCountAsync(CancellationToken cancellationToken = default);
     Task<List<Tenant>> SearchTenantsAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task SetTenantMetadataAsync(string tenantId, string key, string value, CancellationToken cancellationToken = default);
+    Task<TenantStorageInfo> GetTenantDatabaseSizeAsync(string tenantId, CancellationToken cancellationToken = default);
 }
