@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Data.SQLite;
 using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
@@ -299,5 +300,69 @@ public sealed class BackupService : IBackupService {
 
         string timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
         return Path.Combine(backupDir, $"{databaseId}_{timestamp}{TenantConstants.BackupFileExtension}");
+    }
+
+    public async Task BackupWithProgressAsync(
+        string sourceDatabasePath,
+        string destinationPath,
+        IProgress<BackupProgress>? progress = null,
+        int pagesPerStep = -1,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(sourceDatabasePath))
+            throw new ArgumentException("Source database path cannot be empty", nameof(sourceDatabasePath));
+
+        if (string.IsNullOrWhiteSpace(destinationPath))
+            throw new ArgumentException("Destination path cannot be empty", nameof(destinationPath));
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+
+            using var source = new SQLiteConnection($"Data Source={sourceDatabasePath};");
+            using var destination = new SQLiteConnection($"Data Source={destinationPath};");
+
+            await source.OpenAsync(cancellationToken);
+            await destination.OpenAsync(cancellationToken);
+
+            SQLiteBackupCallback? callback = null;
+
+            if (progress is not null)
+            {
+                callback = (src, srcName, dst, dstName, pages, remainingPages, totalPages, retry) =>
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        return false;
+
+                    int copied = totalPages - remainingPages;
+                    progress.Report(new BackupProgress
+                    {
+                        PagesCopied = copied,
+                        PagesRemaining = remainingPages,
+                        TotalPages = totalPages
+                    });
+                    return true;
+                };
+            }
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                source.BackupDatabase(destination, "main", "main", pagesPerStep, callback, 0);
+            }, cancellationToken);
+
+            _logger.LogInformation(
+                "Backup completed: {Source} -> {Destination}", sourceDatabasePath, destinationPath);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Backup cancelled: {Source}", sourceDatabasePath);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Backup failed for {Source}: {Message}", sourceDatabasePath, ex.Message);
+            throw;
+        }
     }
 }
