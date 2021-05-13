@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Database;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Security;
 
 namespace SqliteMultiTenant.Tenants
 {
@@ -235,6 +236,79 @@ namespace SqliteMultiTenant.Tenants
             {
                 _logger.LogError(ex, "Tenant database validation failed: {TenantId}", tenantId);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Provisions a new tenant database with AES-256 encryption via SQLCipher.
+        /// The database file is encrypted at rest using the supplied <paramref name="encryptionKey"/>.
+        /// </summary>
+        /// <remarks>
+        /// Requires the <c>SQLitePCLRaw.bundle_sqlcipher</c> NuGet package.
+        /// The caller is responsible for storing and retrieving the encryption key securely
+        /// (e.g., via <see cref="EncryptionKeyManager"/>).
+        /// </remarks>
+        /// <param name="tenantId">Unique identifier for the new tenant.</param>
+        /// <param name="tenantName">Display name for the tenant.</param>
+        /// <param name="encryptionKey">
+        /// SQLCipher passphrase used to encrypt the database file.  Must not be null or empty.
+        /// </param>
+        /// <param name="settings">Optional tenant-specific configuration settings.</param>
+        /// <returns>The newly created <see cref="Tenant"/> entity with <c>IsEncrypted = true</c>.</returns>
+        public async Task<Tenant> ProvisionEncryptedTenantAsync(
+            string tenantId,
+            string tenantName,
+            string encryptionKey,
+            TenantSettings? settings = null)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+
+            if (string.IsNullOrWhiteSpace(tenantName))
+                throw new ArgumentException("Tenant name cannot be empty", nameof(tenantName));
+
+            if (string.IsNullOrWhiteSpace(encryptionKey))
+                throw new ArgumentException("Encryption key cannot be empty", nameof(encryptionKey));
+
+            try
+            {
+                var tenantDir = Path.Combine(_basePath, tenantId);
+                Directory.CreateDirectory(tenantDir);
+
+                var dbPath = Path.Combine(tenantDir, $"{tenantId}.db");
+
+                var encryptedConnStr = SqlCipherConnectionBuilder.BuildConnectionString(dbPath, encryptionKey);
+
+                using (var connection = new SQLiteConnection(encryptedConnStr))
+                {
+                    await connection.OpenAsync();
+                    await connection.CloseAsync();
+                }
+
+                var tenant = new Tenant
+                {
+                    Id = tenantId,
+                    Name = tenantName,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    DatabasePath = dbPath
+                };
+
+                var schemaMgr = new SchemaManager(_logger, encryptedConnStr);
+                await schemaMgr.InitializeSchemaAsync(tenantId);
+
+                await _tenantRepository.AddAsync(tenant);
+
+                _logger.LogInformation(
+                    "Encrypted tenant provisioned: {TenantId} at {DbPath}", tenantId, dbPath);
+
+                return tenant;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to provision encrypted tenant: {TenantId}", tenantId);
+                throw;
             }
         }
     }
