@@ -459,4 +459,64 @@ services.AddSqliteMultiTenant(...);
 
 ---
 
+## Horizontal Scaling
+
+### Q: How do I run migrations safely when multiple application instances are behind a load balancer?
+
+**A:** Each application instance shares the same tenant `.db` files (mounted on network storage or via an NFS share). The key challenge is preventing two instances from running the same migration concurrently. The recommended approach is:
+
+#### 1. Elect a single migration runner
+
+Designate exactly one instance to run migrations at startup. Common patterns:
+
+- **Leader election** — use a distributed lock (Redis `SET NX`, a database row, or a file lock on shared storage) to elect a single leader before migrating.
+- **Separate migration job** — run migrations as a one-off container/task before scaling up the stateless application instances (e.g., a Kubernetes `Job` or an ECS task definition run step).
+- **Startup gate** — have all instances wait on a shared semaphore (file lock on the shared volume) until the elected leader completes all migrations:
+
+```csharp
+// All instances contend for this lock; only one proceeds
+using var lockFile = new FileStream(
+    "/mnt/shared/migrations.lock",
+    FileMode.OpenOrCreate,
+    FileAccess.ReadWrite,
+    FileShare.None);  // exclusive lock
+
+// Winner runs migrations; losers block here until the lock is released
+var migrationService = serviceProvider.GetRequiredService<IMigrationService>();
+foreach (var tenantId in await tenantService.GetAllTenantsAsync())
+{
+    var pending = await migrationService.GetPendingMigrationsAsync(tenantId.TenantId);
+    foreach (var m in pending.OrderBy(x => x.Version))
+        await migrationService.ExecuteMigrationAsync(m.MigrationId);
+}
+// Lock is released when lockFile is disposed; other instances now continue
+```
+
+#### 2. Keep serving requests during a migration
+
+Instance B may be handling requests for `tenant-42` while Instance A is migrating it. To avoid errors:
+
+- Write migrations to be **backward-compatible** with the previous schema version (additive changes: add columns with defaults, never drop or rename columns in the same release).
+- Roll out schema changes in two phases:
+  1. **Deploy migration** (adds new columns/tables) while old code still runs.
+  2. **Deploy application code** that uses the new schema once all instances are updated.
+
+#### 3. Why SQLite is a natural fit here
+
+Because each tenant has its own `.db` file, a migration for `tenant-42` never locks any other tenant's database. The worst case is that `tenant-42` is briefly unavailable while its migration runs; all other tenants are unaffected.
+
+#### 4. Verify state after migration
+
+After the migration leader completes, other instances should call `GetPendingMigrationsAsync` and assert the count is zero before accepting traffic:
+
+```csharp
+var pending = await migrationService.GetPendingMigrationsAsync(tenantId);
+if (pending.Count > 0)
+    throw new InvalidOperationException(
+        $"Tenant {tenantId} has {pending.Count} unapplied migration(s). " +
+        "Ensure migrations complete before routing traffic.");
+```
+
+---
+
 For more information, see the [full documentation](../README.md).
