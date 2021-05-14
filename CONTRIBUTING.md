@@ -33,15 +33,26 @@ Thank you for considering contributing to sqlite-multi-tenant! This guide will h
 # Restore dependencies
 dotnet restore
 
-# Build the solution
-dotnet build
+# Build the solution (Release configuration)
+dotnet build --configuration Release
 
-# Run tests
-dotnet test
+# Run all tests
+dotnet test --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+# Run benchmarks
+dotnet run --project benchmarks/sqlite-multi-tenant.Benchmarks -c Release
 
 # Run with Docker
 docker-compose up --build
 ```
+
+## CI / CD
+
+All pull requests run the CI workflow automatically (`ci.yml`). Ensure your branch passes before requesting review:
+
+- `ci.yml` — build and test on every push/PR to `main`
+- `release.yml` — triggered on `v*` tags; packs and publishes the NuGet package and creates a GitHub release
+- `docker.yml` — builds and pushes the container image to `ghcr.io/sarmkadan/sqlite-multi-tenant`
 
 ## Project Structure
 
