@@ -920,6 +920,74 @@ var host = Host.CreateDefaultBuilder(args)
 await host.RunAsync();
 ```
 
+## Docker Support
+
+Run SQLite Multi-Tenant in Docker for easy deployment and development.
+
+### Prerequisites
+
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+
+
+### Quick Start
+
+```bash
+# Build and start the container
+docker-compose up -d
+
+# Stop the container
+docker-compose down
+```
+
+### Development Workflow
+
+```bash
+# Build and run in development mode
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+# View logs
+docker-compose logs -f sqlite-multi-tenant
+
+# Access container shell
+docker exec -it sqlite-multi-tenant-app sh
+```
+
+### Configuration
+
+Environment variables can be configured in `docker-compose.yml`:
+
+```yaml
+services:
+  sqlite-multi-tenant:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      SQLITE_MULTI_TENANT__MaxConnections: "20"
+      SQLITE_MULTI_TENANT__BackupRetentionDays: "30"
+```
+
+### Volumes
+
+- `/app/databases` - Tenant database files (persistent)
+- `/app/backups` - Database backup files (persistent)
+- `/app/logs` - Application logs (persistent)
+- `/app/appsettings.json` - Configuration file (read-only)
+
+### Health Check
+
+The container includes a health check that verifies the application is running:
+
+```bash
+docker inspect --format='{{json .State.Health}}' sqlite-multi-tenant-app
+```
+
+### Ports
+
+- Container: `8080`
+- Host: `8080`
+
+Access the application at `http://localhost:8080`
+
 ## Contributing
 
 Contributions are welcome! Please follow these guidelines:
