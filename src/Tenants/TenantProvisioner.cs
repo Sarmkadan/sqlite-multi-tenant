@@ -9,6 +9,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Database;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;
@@ -25,13 +26,15 @@ namespace SqliteMultiTenant.Tenants
         private readonly ITenantRepository _tenantRepository;
         private readonly SchemaManager _schemaManager;
         private readonly ILogger<TenantProvisioner> _logger;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly string _basePath;
 
         public TenantProvisioner(ITenantRepository tenantRepository, SchemaManager schemaManager,
-            ILogger<TenantProvisioner> logger, string basePath)
+            ILogger<TenantProvisioner> logger, string basePath, ILoggerFactory? loggerFactory = null)
         {
             _tenantRepository = tenantRepository ?? throw new ArgumentNullException(nameof(tenantRepository));
             _schemaManager = schemaManager ?? throw new ArgumentNullException(nameof(schemaManager));
+            _loggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
         }
@@ -73,9 +76,9 @@ namespace SqliteMultiTenant.Tenants
                 // Create tenant record
                 var tenant = new Tenant
                 {
-                    Id = tenantId,
+                    TenantId = tenantId,
                     Name = tenantName,
-                    IsActive = true,
+                    Status = TenantStatus.Active,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     DatabasePath = dbPath
@@ -83,7 +86,7 @@ namespace SqliteMultiTenant.Tenants
 
                 // Initialize schema for the new tenant database
                 var connectionString = $"Data Source={dbPath};";
-                var schemaMgr = new SchemaManager(_logger, connectionString);
+                var schemaMgr = new SchemaManager(_loggerFactory.CreateLogger<SchemaManager>(), connectionString);
                 await schemaMgr.InitializeSchemaAsync(tenantId);
 
                 // Store tenant metadata
@@ -287,15 +290,15 @@ namespace SqliteMultiTenant.Tenants
 
                 var tenant = new Tenant
                 {
-                    Id = tenantId,
+                    TenantId = tenantId,
                     Name = tenantName,
-                    IsActive = true,
+                    Status = TenantStatus.Active,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     DatabasePath = dbPath
                 };
 
-                var schemaMgr = new SchemaManager(_logger, encryptedConnStr);
+                var schemaMgr = new SchemaManager(_loggerFactory.CreateLogger<SchemaManager>(), encryptedConnStr);
                 await schemaMgr.InitializeSchemaAsync(tenantId);
 
                 await _tenantRepository.AddAsync(tenant);

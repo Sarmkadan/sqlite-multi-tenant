@@ -156,9 +156,9 @@ namespace SqliteMultiTenant.Validation
         }
 
         // Builds and returns the validation result
-        public ValidationResult Validate(T obj)
+        public RuleValidationResult Validate(T obj)
         {
-            var errors = new List<ValidationError>();
+            var errors = new List<RuleValidationError>();
 
             foreach (var rule in _rules)
             {
@@ -166,7 +166,7 @@ namespace SqliteMultiTenant.Validation
                 {
                     if (!rule.Predicate(obj))
                     {
-                        errors.Add(new ValidationError
+                        errors.Add(new RuleValidationError
                         {
                             FieldName = rule.FieldName,
                             Message = rule.ErrorMessage
@@ -175,7 +175,7 @@ namespace SqliteMultiTenant.Validation
                 }
                 catch (Exception ex)
                 {
-                    errors.Add(new ValidationError
+                    errors.Add(new RuleValidationError
                     {
                         FieldName = rule.FieldName,
                         Message = $"Validation error: {ex.Message}"
@@ -183,7 +183,7 @@ namespace SqliteMultiTenant.Validation
                 }
             }
 
-            return new ValidationResult
+            return new RuleValidationResult
             {
                 IsValid = !errors.Any(),
                 Errors = errors
@@ -246,12 +246,12 @@ namespace SqliteMultiTenant.Validation
         }
     }
 
-    public sealed class ValidationResult {
+    public sealed class RuleValidationResult {
         public bool IsValid { get; set; }
-        public List<ValidationError> Errors { get; set; } = new List<ValidationError>();
+        public List<RuleValidationError> Errors { get; set; } = new List<RuleValidationError>();
     }
 
-    public sealed class ValidationError {
+    public sealed class RuleValidationError {
         public string FieldName { get; set; }
         public string Message { get; set; }
     }

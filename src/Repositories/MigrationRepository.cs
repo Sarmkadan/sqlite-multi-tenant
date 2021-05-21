@@ -351,7 +351,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         return await GetByDatabaseAsync(databaseId, cancellationToken);
     }
 
-    private Migration MapMigration(SQLiteDataReader reader)
+    private Migration MapMigration(System.Data.Common.DbDataReader reader)
     {
         return new Migration
         {

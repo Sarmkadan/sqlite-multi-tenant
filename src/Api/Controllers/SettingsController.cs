@@ -18,11 +18,11 @@ namespace SqliteMultiTenant.Api.Controllers;
 [ApiController]
 [Route("api/settings")]
 public sealed class SettingsController : ControllerBase {
-    private readonly IConfigurationManager _configManager;
+    private readonly AppConfigManager _configManager;
     private readonly ILogger<SettingsController> _logger;
 
     public SettingsController(
-        IConfigurationManager configManager,
+        AppConfigManager configManager,
         ILogger<SettingsController> logger)
     {
         _configManager = configManager;
@@ -33,7 +33,7 @@ public sealed class SettingsController : ControllerBase {
     /// Gets all application settings.
     /// </summary>
     [HttpGet]
-    [ProduceResponseType(typeof(ApiResponse<Dictionary<string, object>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<Dictionary<string, object>>), StatusCodes.Status200OK)]
     public IActionResult GetAllSettings()
     {
         try
@@ -55,7 +55,7 @@ public sealed class SettingsController : ControllerBase {
     /// Gets a specific setting by key.
     /// </summary>
     [HttpGet("{key}")]
-    [ProduceResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
     public IActionResult GetSetting(string key)
     {
         try
@@ -87,7 +87,7 @@ public sealed class SettingsController : ControllerBase {
     /// Sets a configuration value.
     /// </summary>
     [HttpPost("{key}")]
-    [ProduceResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
     public IActionResult SetSetting(string key, [FromBody] SetSettingRequest request)
     {
         try
@@ -119,7 +119,7 @@ public sealed class SettingsController : ControllerBase {
     /// Updates multiple settings atomically.
     /// </summary>
     [HttpPost("batch")]
-    [ProduceResponseType(typeof(ApiResponse<BatchSettingUpdateResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<BatchSettingUpdateResult>), StatusCodes.Status200OK)]
     public IActionResult UpdateBatchSettings([FromBody] Dictionary<string, object> settings)
     {
         try
@@ -167,7 +167,7 @@ public sealed class SettingsController : ControllerBase {
     /// Removes a setting by key.
     /// </summary>
     [HttpDelete("{key}")]
-    [ProduceResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public IActionResult RemoveSetting(string key)
     {
         try
@@ -203,7 +203,7 @@ public sealed class SettingsController : ControllerBase {
     /// Gets application information.
     /// </summary>
     [HttpGet("app/info")]
-    [ProduceResponseType(typeof(ApiResponse<AppInfo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<AppInfo>), StatusCodes.Status200OK)]
     public IActionResult GetAppInfo()
     {
         try

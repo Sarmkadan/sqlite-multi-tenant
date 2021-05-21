@@ -217,7 +217,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
     public sealed class BackupRotationPolicy {
         public TimeSpan MaxBackupAge { get; set; } = TimeSpan.FromDays(30);
         public int MaxBackupCount { get; set; } = 20;
-        public long MaxDiskUsage { get; set; } = 10 * 1024 * 1024 * 1024; // 10GB
+        public long MaxDiskUsage { get; set; } = 10L * 1024 * 1024 * 1024; // 10GB
     }
 
     public sealed class BackupRotationResult {

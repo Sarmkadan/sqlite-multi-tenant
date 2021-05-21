@@ -143,7 +143,7 @@ namespace SqliteMultiTenant.Utilities
         private int _maxRetries = 3;
         private int _initialDelayMs = 100;
         private double _backoffMultiplier = 2.0;
-        private ILogger _logger;
+        private ILogger<OperationRetryPolicy> _logger;
 
         public RetryPolicyBuilder WithMaxRetries(int maxRetries)
         {
@@ -163,7 +163,7 @@ namespace SqliteMultiTenant.Utilities
             return this;
         }
 
-        public RetryPolicyBuilder WithLogger(ILogger logger)
+        public RetryPolicyBuilder WithLogger(ILogger<OperationRetryPolicy> logger)
         {
             _logger = logger;
             return this;

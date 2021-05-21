@@ -37,21 +37,4 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="Api\Controllers\**\*.cs" />
-    <Compile Remove="Middleware\**\*.cs" />
-    <Compile Remove="Formatters\CsvFormatter.cs" />
-    <Compile Remove="Formatters\JsonFormatter.cs" />
-    <Compile Remove="Formatters\XmlFormatter.cs" />
-    <Compile Remove="Formatters\OutputFormatter.cs" />
-    <Compile Remove="Validation\ValidationRuleBuilder.cs" />
-    <Compile Remove="Events\DomainEventHandlers.cs" />
-    <Compile Remove="Integration\WebhookService.cs" />
-    <Compile Remove="Configuration\ServiceConfiguration.cs" />
-    <Compile Remove="Cli\**\*.cs" />
-    <Compile Remove="Caching\DistributedCacheService.cs" />
-    <Compile Remove="Configuration\ServiceCollectionExtensions.cs" />
-    <Compile Remove="Configuration\DependencyInjectionSetup.cs" />
-  </ItemGroup>
-
 </Project>

@@ -54,7 +54,7 @@ public sealed class BackupController {
                 BackupType = backup.BackupType.ToString(),
                 Status = backup.Status.ToString(),
                 CreatedAt = backup.CreatedAt,
-                ExpiresAt = backup.ExpiresAt
+                ExpiresAt = backup.ExpiresAt.GetValueOrDefault()
             };
 
             _logger.LogInformation("Backup created: {BackupId}", backup.BackupId);
@@ -86,7 +86,7 @@ public sealed class BackupController {
                 BackupType = backup.BackupType.ToString(),
                 Status = backup.Status.ToString(),
                 CreatedAt = backup.CreatedAt,
-                ExpiresAt = backup.ExpiresAt,
+                ExpiresAt = backup.ExpiresAt.GetValueOrDefault(),
                 SizeBytes = backup.SizeBytes,
                 IsVerified = backup.IsVerified
             };

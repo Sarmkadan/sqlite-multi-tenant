@@ -18,14 +18,14 @@ namespace SqliteMultiTenant.Integration;
 public interface IWebhookHandler
 {
     Task DeliverAsync(WebhookDelivery delivery, CancellationToken cancellationToken);
-    Task RegisterAsync(WebhookSubscription subscription);
+    Task RegisterAsync(WebhookHandlerSubscription subscription);
     Task UnregisterAsync(string webhookId);
 }
 
 /// <summary>
 /// Webhook subscription configuration.
 /// </summary>
-public sealed class WebhookSubscription {
+public sealed class WebhookHandlerSubscription {
     public string WebhookId { get; set; } = Guid.NewGuid().ToString();
     public string Url { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
@@ -53,7 +53,7 @@ public sealed class WebhookDelivery {
 public sealed class WebhookHandler : IWebhookHandler {
     private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookHandler> _logger;
-    private readonly Dictionary<string, WebhookSubscription> _subscriptions = new();
+    private readonly Dictionary<string, WebhookHandlerSubscription> _subscriptions = new();
 
     public WebhookHandler(HttpClient httpClient, ILogger<WebhookHandler> logger)
     {
@@ -144,7 +144,7 @@ public sealed class WebhookHandler : IWebhookHandler {
     /// <summary>
     /// Registers a webhook subscription.
     /// </summary>
-    public Task RegisterAsync(WebhookSubscription subscription)
+    public Task RegisterAsync(WebhookHandlerSubscription subscription)
     {
         if (subscription is null)
             throw new ArgumentNullException(nameof(subscription));
@@ -178,7 +178,7 @@ public sealed class WebhookHandler : IWebhookHandler {
     /// <summary>
     /// Gets subscriptions for an event type.
     /// </summary>
-    public List<WebhookSubscription> GetSubscriptions(string eventType)
+    public List<WebhookHandlerSubscription> GetSubscriptions(string eventType)
     {
         return _subscriptions.Values
             .Where(s => s.Enabled && (s.EventType == "*" || s.EventType == eventType))

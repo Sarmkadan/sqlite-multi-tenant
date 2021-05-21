@@ -65,15 +65,15 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().NotBeNullOrEmpty();
-            result.Should().Contain(""Table": "" + _testTableName + """);
-            result.Should().Contain(""RowCount": 3");
-            result.Should().Contain(""Id": 1");
-            result.Should().Contain(""Name": "Alice"");
-            result.Should().Contain(""Email": "alice@example.com"");
-            result.Should().Contain(""Name": "Bob"");
-            result.Should().Contain(""Email": "bob@example.com"");
-            result.Should().Contain(""Name": "Charlie"");
-            result.Should().Contain(""Email": null");
+            result.Should().Contain("\"Table\": \"" + _testTableName + "\"");
+            result.Should().Contain("\"RowCount\": 3");
+            result.Should().Contain("\"Id\": 1");
+            result.Should().Contain("\"Name\": \"Alice\"");
+            result.Should().Contain("\"Email\": \"alice@example.com\"");
+            result.Should().Contain("\"Name\": \"Bob\"");
+            result.Should().Contain("\"Email\": \"bob@example.com\"");
+            result.Should().Contain("\"Name\": \"Charlie\"");
+            result.Should().Contain("\"Email\": null");
         }
 
         [Fact]
@@ -86,8 +86,8 @@ namespace SqliteMultiTenant.Tests
             result.Should().NotBeNullOrEmpty();
             result.Should().NotContain("meta");
             result.Should().NotContain("Table");
-            result.Should().Contain(""Id": 1");
-            result.Should().Contain(""Name": "Alice"");
+            result.Should().Contain("\"Id\": 1");
+            result.Should().Contain("\"Name\": \"Alice\"");
         }
 
         [Fact]

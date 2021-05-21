@@ -420,7 +420,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
-    private Backup MapBackup(SQLiteDataReader reader)
+    private Backup MapBackup(System.Data.Common.DbDataReader reader)
     {
         return new Backup
         {

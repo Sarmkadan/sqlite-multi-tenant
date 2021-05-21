@@ -71,7 +71,7 @@ public static class EnumExtensions
     /// <summary>
     /// Checks if string is valid enum value.
     /// </summary>
-    public static bool IsValidEnumValue<T>(this string value) where T : Enum
+    public static bool IsValidEnumValue<T>(this string value) where T : struct, Enum
     {
         return Enum.TryParse<T>(value, ignoreCase: true, out _);
     }

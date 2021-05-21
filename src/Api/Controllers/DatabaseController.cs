@@ -30,7 +30,7 @@ public sealed class DatabaseController : ControllerBase {
     /// Includes file size, row counts, and schema information.
     /// </summary>
     [HttpGet("{databaseId}/stats")]
-    [ProduceResponseType(typeof(ApiResponse<DatabaseStats>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<DatabaseStats>), StatusCodes.Status200OK)]
     public IActionResult GetDatabaseStats(string databaseId)
     {
         try
@@ -62,7 +62,7 @@ public sealed class DatabaseController : ControllerBase {
     /// Can be resource-intensive on large databases.
     /// </summary>
     [HttpPost("{databaseId}/optimize")]
-    [ProduceResponseType(typeof(ApiResponse<OptimizationResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<OptimizationResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> OptimizeDatabase(string databaseId)
     {
         try
@@ -98,7 +98,7 @@ public sealed class DatabaseController : ControllerBase {
     /// Detects corruption and structural issues.
     /// </summary>
     [HttpPost("{databaseId}/integrity-check")]
-    [ProduceResponseType(typeof(ApiResponse<IntegrityCheckResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<IntegrityCheckResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckIntegrity(string databaseId)
     {
         try
@@ -136,7 +136,7 @@ public sealed class DatabaseController : ControllerBase {
     /// Returns information about all tables and their columns.
     /// </summary>
     [HttpGet("{databaseId}/schema")]
-    [ProduceResponseType(typeof(ApiResponse<DatabaseSchema>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<DatabaseSchema>), StatusCodes.Status200OK)]
     public IActionResult GetSchema(string databaseId)
     {
         try
@@ -165,7 +165,7 @@ public sealed class DatabaseController : ControllerBase {
     /// Supports JSON, CSV, and SQL dump formats.
     /// </summary>
     [HttpPost("{databaseId}/export")]
-    [ProduceResponseType(typeof(ApiResponse<ExportResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ExportResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportDatabase(string databaseId, [FromQuery] string format = "json")
     {
         try
