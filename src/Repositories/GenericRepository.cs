@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -170,8 +171,7 @@ public abstract class GenericRepository<T> where T : class
     }
 }
 
-public class PaginatedResult<T> where T : class
-{
+public sealed class PaginatedResult<T> where T : class {
     public List<T> Items { get; set; } = new();
     public int TotalCount { get; set; }
     public int PageNumber { get; set; }
@@ -192,8 +192,7 @@ public interface IUnitOfWork : IDisposable
     Task RollbackAsync();
 }
 
-public class UnitOfWork : IUnitOfWork
-{
+public sealed class UnitOfWork : IUnitOfWork {
     private readonly ILogger<UnitOfWork> _logger;
     private bool _transactionStarted;
 

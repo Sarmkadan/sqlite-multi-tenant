@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Integration;
 /// Supports event filtering, retry logic, and delivery status tracking.
 /// Webhooks are delivered to registered endpoints when events occur.
 /// </summary>
-public class WebhookService
-{
+public sealed class WebhookService {
     private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookService> _logger;
     private readonly Dictionary<string, List<WebhookSubscription>> _subscriptions;
@@ -80,7 +80,7 @@ public class WebhookService
             foreach (var subscriptionList in _subscriptions.Values)
             {
                 var subscription = subscriptionList.FirstOrDefault(s => s.Id == subscriptionId);
-                if (subscription != null)
+                if (subscription is not null)
                 {
                     subscriptionList.Remove(subscription);
                     _logger.LogInformation($"Webhook unsubscribed: {subscriptionId}");
@@ -224,8 +224,7 @@ public class WebhookService
     }
 }
 
-public class WebhookSubscription
-{
+public sealed class WebhookSubscription {
     public string Id { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
     public string WebhookUrl { get; set; } = string.Empty;

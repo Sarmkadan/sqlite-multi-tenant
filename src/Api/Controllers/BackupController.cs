@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// Provides endpoints for creating, verifying, restoring, and listing backups.
 /// Critical for disaster recovery and data protection compliance.
 /// </summary>
-public class BackupController
-{
+public sealed class BackupController {
     private readonly IBackupService _backupService;
     private readonly ITenantService _tenantService;
     private readonly ILogger<BackupController> _logger;
@@ -76,7 +76,7 @@ public class BackupController
         try
         {
             var backup = await _backupService.GetBackupAsync(backupId);
-            if (backup == null)
+            if (backup is null)
                 return ApiResponse<BackupResponse>.NotFound($"Backup {backupId} not found");
 
             var response = new BackupResponse
@@ -160,7 +160,7 @@ public class BackupController
         {
             // Verify backup exists
             var backup = await _backupService.GetBackupAsync(backupId);
-            if (backup == null)
+            if (backup is null)
                 return ApiResponse<object>.NotFound($"Backup {backupId} not found");
 
             if (backup.Status != Constants.BackupStatus.Completed)

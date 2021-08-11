@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [HideColumns("Error", "StdDev")]
-public class QueryBuilderBenchmarks
-{
+public sealed class QueryBuilderBenchmarks {
     private QueryBuilder _builder = null!;
 
     [GlobalSetup]

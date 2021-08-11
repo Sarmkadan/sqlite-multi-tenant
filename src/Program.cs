@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -76,7 +77,7 @@ class Program
         // Retrieve the tenant
         logger.LogInformation("Retrieving tenant...");
         var retrievedTenant = await tenantService.GetTenantAsync(tenant.TenantId);
-        if (retrievedTenant != null)
+        if (retrievedTenant is not null)
         {
             logger.LogInformation($"✓ Tenant retrieved: {retrievedTenant.Name}");
             logger.LogInformation($"  Last accessed: {retrievedTenant.LastAccessedAt:O}\n");
@@ -163,7 +164,7 @@ class Program
         // Get backup details
         logger.LogInformation("Retrieving backup details...");
         var backupDetails = await backupService.GetBackupAsync(backup.BackupId);
-        if (backupDetails != null)
+        if (backupDetails is not null)
         {
             logger.LogInformation($"✓ Backup details retrieved:");
             logger.LogInformation($"  Status: {backupDetails.Status}");

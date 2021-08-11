@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -26,8 +27,7 @@ public abstract class DomainEvent
 /// Event raised when a new tenant is created.
 /// Triggers downstream actions (database setup, webhook notifications).
 /// </summary>
-public class TenantCreatedEvent : DomainEvent
-{
+public sealed class TenantCreatedEvent : DomainEvent {
     public string TenantId { get; set; }
     public string TenantName { get; set; }
     public string ContactEmail { get; set; }
@@ -41,8 +41,7 @@ public class TenantCreatedEvent : DomainEvent
 /// Event raised when tenant is updated.
 /// Useful for notification systems and audit trails.
 /// </summary>
-public class TenantUpdatedEvent : DomainEvent
-{
+public sealed class TenantUpdatedEvent : DomainEvent {
     public string TenantId { get; set; }
     public string OldName { get; set; }
     public string NewName { get; set; }
@@ -56,8 +55,7 @@ public class TenantUpdatedEvent : DomainEvent
 /// Event raised when tenant is suspended.
 /// Triggers access cleanup and webhook notifications.
 /// </summary>
-public class TenantSuspendedEvent : DomainEvent
-{
+public sealed class TenantSuspendedEvent : DomainEvent {
     public string TenantId { get; set; }
     public string SuspendedBy { get; set; }
     public string Reason { get; set; }
@@ -71,8 +69,7 @@ public class TenantSuspendedEvent : DomainEvent
 /// Event raised when backup starts.
 /// Used for monitoring and webhook notifications.
 /// </summary>
-public class BackupStartedEvent : DomainEvent
-{
+public sealed class BackupStartedEvent : DomainEvent {
     public string BackupId { get; set; }
     public string DatabaseId { get; set; }
     public string BackupType { get; set; }
@@ -86,8 +83,7 @@ public class BackupStartedEvent : DomainEvent
 /// Event raised when backup completes successfully.
 /// Triggers verification and retention policy checks.
 /// </summary>
-public class BackupCompletedEvent : DomainEvent
-{
+public sealed class BackupCompletedEvent : DomainEvent {
     public string BackupId { get; set; }
     public string DatabaseId { get; set; }
     public long SizeBytes { get; set; }
@@ -102,8 +98,7 @@ public class BackupCompletedEvent : DomainEvent
 /// Event raised when backup fails.
 /// Triggers alerts and retry mechanisms.
 /// </summary>
-public class BackupFailedEvent : DomainEvent
-{
+public sealed class BackupFailedEvent : DomainEvent {
     public string BackupId { get; set; }
     public string DatabaseId { get; set; }
     public string ErrorMessage { get; set; }
@@ -117,8 +112,7 @@ public class BackupFailedEvent : DomainEvent
 /// Event raised when migration is applied.
 /// Tracks schema evolution and enables rollback tracking.
 /// </summary>
-public class MigrationAppliedEvent : DomainEvent
-{
+public sealed class MigrationAppliedEvent : DomainEvent {
     public string MigrationId { get; set; }
     public string DatabaseId { get; set; }
     public string Version { get; set; }
@@ -133,8 +127,7 @@ public class MigrationAppliedEvent : DomainEvent
 /// Event raised when migration application fails.
 /// Enables recovery procedures and notifications.
 /// </summary>
-public class MigrationFailedEvent : DomainEvent
-{
+public sealed class MigrationFailedEvent : DomainEvent {
     public string MigrationId { get; set; }
     public string DatabaseId { get; set; }
     public string Version { get; set; }
@@ -149,8 +142,7 @@ public class MigrationFailedEvent : DomainEvent
 /// Event raised when migration is rolled back.
 /// Important for audit and compliance tracking.
 /// </summary>
-public class MigrationRolledBackEvent : DomainEvent
-{
+public sealed class MigrationRolledBackEvent : DomainEvent {
     public string MigrationId { get; set; }
     public string DatabaseId { get; set; }
     public string Version { get; set; }
@@ -165,8 +157,7 @@ public class MigrationRolledBackEvent : DomainEvent
 /// Event raised when health check fails.
 /// Enables alerting and incident response.
 /// </summary>
-public class HealthCheckFailedEvent : DomainEvent
-{
+public sealed class HealthCheckFailedEvent : DomainEvent {
     public string ComponentName { get; set; }
     public string ErrorMessage { get; set; }
     public long ResponseTimeMs { get; set; }
@@ -180,8 +171,7 @@ public class HealthCheckFailedEvent : DomainEvent
 /// Generic event for custom domain events.
 /// Allows extensibility without modifying this class.
 /// </summary>
-public class CustomDomainEvent : DomainEvent
-{
+public sealed class CustomDomainEvent : DomainEvent {
     public Dictionary<string, object> Data { get; set; } = new();
 
     public CustomDomainEvent(string eventType) : base(eventType)

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Integration;
 /// Provides typed methods for common HTTP operations (GET, POST, PUT, DELETE).
 /// Implements resilience patterns for external API communication.
 /// </summary>
-public class HttpClientWrapper
-{
+public sealed class HttpClientWrapper {
     private readonly HttpClient _httpClient;
     private readonly ILogger<HttpClientWrapper> _logger;
     private readonly int _maxRetries;

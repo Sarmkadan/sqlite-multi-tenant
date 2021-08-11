@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ namespace SqliteMultiTenant.DataOperations
 {
     // Imports data into tenant databases from various formats
     // Includes validation, transaction support, and rollback capability
-    public class DataImporter
-    {
+    public sealed class DataImporter {
         private readonly ILogger<DataImporter> _logger;
 
         public DataImporter(ILogger<DataImporter> logger)
@@ -29,7 +29,7 @@ namespace SqliteMultiTenant.DataOperations
         public async Task<int> ImportFromJsonAsync(SQLiteConnection connection, string tableName,
             string jsonData, bool truncateTable = false)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(tableName))
@@ -70,7 +70,7 @@ namespace SqliteMultiTenant.DataOperations
         public async Task<int> ImportFromCsvAsync(SQLiteConnection connection, string tableName,
             string csvData, bool hasHeaders = true, string delimiter = ",", bool truncateTable = false)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(tableName))
@@ -170,7 +170,7 @@ namespace SqliteMultiTenant.DataOperations
         // Imports SQL INSERT statements
         public async Task<int> ImportFromSqlAsync(SQLiteConnection connection, string sqlStatements)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrEmpty(sqlStatements))

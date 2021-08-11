@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// Handles versioning, applying migrations, and rollback operations.
 /// Ensures schema consistency across all tenant databases.
 /// </summary>
-public class MigrationController
-{
+public sealed class MigrationController {
     private readonly IMigrationService _migrationService;
     private readonly ILogger<MigrationController> _logger;
 

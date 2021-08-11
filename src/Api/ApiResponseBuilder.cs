@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ namespace SqliteMultiTenant.Api
 {
     // Fluent builder for constructing consistent API responses
     // Ensures standardized response structure across all endpoints
-    public class ApiResponseBuilder<T>
-    {
+    public sealed class ApiResponseBuilder<T> {
         private T _data;
         private HttpStatusCode _statusCode;
         private string _message;
@@ -169,7 +169,7 @@ namespace SqliteMultiTenant.Api
             _statusCode = HttpStatusCode.BadRequest;
             _message = _message ?? "Validation failed";
 
-            if (fieldErrors != null)
+            if (fieldErrors is not null)
             {
                 foreach (var field in fieldErrors)
                 {
@@ -212,7 +212,7 @@ namespace SqliteMultiTenant.Api
             _statusCode = HttpStatusCode.TooManyRequests;
             _message = message ?? "Rate limit exceeded";
 
-            if (retryAfter != null)
+            if (retryAfter is not null)
             {
                 _metadata["retryAfter"] = retryAfter;
             }
@@ -221,7 +221,7 @@ namespace SqliteMultiTenant.Api
         }
 
         // Builds the final response
-        public ResultWrapper<T> Build()
+        public ApiResponse<T> Build()
         {
             // Auto-determine success if not explicitly set
             if (_statusCode < HttpStatusCode.BadRequest && _errors.Count == 0)
@@ -233,21 +233,20 @@ namespace SqliteMultiTenant.Api
                 _success = false;
             }
 
-            return new ResultWrapper<T>
+            return new ApiResponse<T>
             {
-                Success = _success,
+                IsSuccess = _success,
                 Data = _data,
                 Message = _message,
                 Errors = _errors.Count > 0 ? _errors : null,
-                Metadata = _metadata.Count > 0 ? _metadata : null,
+                StatusCode = (int)_statusCode,
                 Timestamp = DateTime.UtcNow
             };
         }
     }
 
     // Builder for exception responses
-    public class ExceptionResponseBuilder
-    {
+    public sealed class ExceptionResponseBuilder {
         public static ApiResponseBuilder<object> FromException(Exception ex, string userMessage = null)
         {
             var builder = new ApiResponseBuilder<object>();
@@ -289,8 +288,7 @@ namespace SqliteMultiTenant.Api
         }
     }
 
-    public class ApiError
-    {
+    public sealed class ApiError {
         public string Message { get; set; }
         public string Code { get; set; }
         public string Field { get; set; }

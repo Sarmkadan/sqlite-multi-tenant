@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Repositories;
 /// <summary>
 /// SQLite implementation of the tenant repository
 /// </summary>
-public class TenantRepository : ITenantRepository
-{
+public sealed class TenantRepository : ITenantRepository {
     private readonly string _connectionString;
     private readonly ILogger<TenantRepository> _logger;
 
@@ -173,7 +173,7 @@ public class TenantRepository : ITenantRepository
             command.Parameters.AddWithValue("@DatabasePath", tenant.DatabasePath ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@IsDataIsolated", tenant.IsDataIsolated);
             command.Parameters.AddWithValue("@MaxConnections", tenant.MaxConnections);
-            command.Parameters.AddWithValue("@Metadata", tenant.Metadata != null ? System.Text.Json.JsonSerializer.Serialize(tenant.Metadata) : (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Metadata", tenant.Metadata is not null ? System.Text.Json.JsonSerializer.Serialize(tenant.Metadata) : (object)DBNull.Value);
 
             await command.ExecuteNonQueryAsync(cancellationToken);
             return tenant;
@@ -214,7 +214,7 @@ public class TenantRepository : ITenantRepository
             command.Parameters.AddWithValue("@DatabasePath", tenant.DatabasePath ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@IsDataIsolated", tenant.IsDataIsolated);
             command.Parameters.AddWithValue("@MaxConnections", tenant.MaxConnections);
-            command.Parameters.AddWithValue("@Metadata", tenant.Metadata != null ? System.Text.Json.JsonSerializer.Serialize(tenant.Metadata) : (object)DBNull.Value);
+            command.Parameters.AddWithValue("@Metadata", tenant.Metadata is not null ? System.Text.Json.JsonSerializer.Serialize(tenant.Metadata) : (object)DBNull.Value);
 
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -259,7 +259,7 @@ public class TenantRepository : ITenantRepository
             command.Parameters.AddWithValue("@TenantId", tenantId);
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != null && (long)result > 0;
+            return result is not null && (long)result > 0;
         }
         catch (Exception ex)
         {
@@ -279,7 +279,7 @@ public class TenantRepository : ITenantRepository
 
             using var command = new SQLiteCommand(query, connection);
             var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != null ? (int)(long)result : 0;
+            return result is not null ? (int)(long)result : 0;
         }
         catch (Exception ex)
         {

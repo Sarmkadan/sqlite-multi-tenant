@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ namespace SqliteMultiTenant.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [HideColumns("Error", "StdDev")]
-public class TenantValidationBenchmarks
-{
+public sealed class TenantValidationBenchmarks {
     private const string ValidId        = "acme-corp-production";
     private const string ValidName      = "Acme Corporation Ltd";
     private const string NameToGenerate = "My Awesome SaaS Company";

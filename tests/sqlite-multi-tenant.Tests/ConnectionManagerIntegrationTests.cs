@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class ConnectionManagerIntegrationTests : IDisposable
-    {
+    public sealed class ConnectionManagerIntegrationTests : IDisposable {
         private readonly ILogger<ConnectionManager> _mockLogger;
         private readonly ConnectionManager _connectionManager;
         private const string TenantId1 = "tenant1";

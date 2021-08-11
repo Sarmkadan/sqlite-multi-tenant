@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a tenant in the multi-tenant system
 /// </summary>
-public class Tenant
-{
+public sealed class Tenant {
     public string TenantId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

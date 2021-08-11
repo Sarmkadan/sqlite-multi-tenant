@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Database
 {
     // Manages SQLite schema modifications, constraints, and migrations at the database level
-    public class SchemaManager
-    {
+    public sealed class SchemaManager {
         private readonly ILogger<SchemaManager> _logger;
         private readonly string _connectionString;
 
@@ -240,7 +240,7 @@ namespace SqliteMultiTenant.Database
                     command.Parameters.AddWithValue("@name", indexName);
 
                     var result = await command.ExecuteScalarAsync();
-                    return result != null;
+                    return result is not null;
                 }
             }
             catch { /* Ignore */ }

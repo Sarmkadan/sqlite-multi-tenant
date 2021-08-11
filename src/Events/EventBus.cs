@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ public interface IEventBus
     Task UnsubscribeAsync<T>(Func<T, Task> handler) where T : DomainEvent;
 }
 
-public class EventBus : IEventBus
-{
+public sealed class EventBus : IEventBus {
     private readonly Dictionary<Type, List<Delegate>> _subscribers;
     private readonly ILogger<EventBus> _logger;
     private readonly SemaphoreSlim _semaphore;
@@ -143,8 +143,7 @@ public class EventBus : IEventBus
 /// Dead letter queue for events that failed to be processed.
 /// Stores failed events and exceptions for later analysis and retry.
 /// </summary>
-public class DeadLetterQueue
-{
+public sealed class DeadLetterQueue {
     private readonly List<FailedEvent> _failedEvents;
     private readonly SemaphoreSlim _semaphore;
     private const int MaxQueueSize = 1000;
@@ -212,7 +211,7 @@ public class DeadLetterQueue
             await _semaphore.WaitAsync();
 
             var failedEvent = _failedEvents.FirstOrDefault(e => e.Id == failedEventId);
-            if (failedEvent != null)
+            if (failedEvent is not null)
             {
                 _failedEvents.Remove(failedEvent);
                 return true;
@@ -243,8 +242,7 @@ public class DeadLetterQueue
     }
 }
 
-public class FailedEvent
-{
+public sealed class FailedEvent {
     public string Id { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
     public string EventData { get; set; } = string.Empty;

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -131,8 +132,7 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    public class ValidationResult
-    {
+    public sealed class ValidationResult {
         public bool IsValid { get; set; }
         public string Error { get; set; }
     }

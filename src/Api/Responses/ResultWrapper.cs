@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ namespace SqliteMultiTenant.Api.Responses;
 /// Provides standardized structure for success, errors, and metadata.
 /// Supports both data and paginated results.
 /// </summary>
-public class Result<T>
-{
+public sealed class Result<T> {
     public bool Success { get; set; }
     public T? Data { get; set; }
     public List<string> Errors { get; set; } = new();
@@ -50,8 +50,7 @@ public class Result<T>
 /// <summary>
 /// Result wrapper for paginated data.
 /// </summary>
-public class PaginatedResult<T>
-{
+public sealed class PaginatedResult<T> {
     public bool Success { get; set; }
     public List<T> Items { get; set; } = new();
     public PaginationMetadata Pagination { get; set; } = new();
@@ -84,16 +83,14 @@ public class PaginatedResult<T>
     }
 }
 
-public class ResultMetadata
-{
+public sealed class ResultMetadata {
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
     public string? TraceId { get; set; }
     public int? StatusCode { get; set; }
     public Dictionary<string, object> AdditionalData { get; set; } = new();
 }
 
-public class PaginationMetadata
-{
+public sealed class PaginationMetadata {
     public int PageNumber { get; set; }
     public int PageSize { get; set; }
     public int TotalCount { get; set; }
@@ -105,8 +102,7 @@ public class PaginationMetadata
 /// <summary>
 /// Operation result for actions without return data.
 /// </summary>
-public class OperationResult
-{
+public sealed class OperationResult {
     public bool Success { get; set; }
     public string? Message { get; set; }
     public List<string> Errors { get; set; } = new();
@@ -143,8 +139,7 @@ public class OperationResult
 /// <summary>
 /// Batch operation result for multiple items.
 /// </summary>
-public class BatchOperationResult
-{
+public sealed class BatchOperationResult {
     public int SuccessCount { get; set; }
     public int FailureCount { get; set; }
     public List<BatchItemResult> Items { get; set; } = new();
@@ -153,8 +148,7 @@ public class BatchOperationResult
     public int GetTotalCount() => SuccessCount + FailureCount;
 }
 
-public class BatchItemResult
-{
+public sealed class BatchItemResult {
     public string ItemId { get; set; } = string.Empty;
     public bool Success { get; set; }
     public string? Error { get; set; }

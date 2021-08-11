@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Operations
 {
     // Builder for efficient bulk insert operations with batching
-    public class BulkInsertBuilder
-    {
+    public sealed class BulkInsertBuilder {
         private readonly SQLiteConnection _connection;
         private readonly ILogger<BulkInsertBuilder> _logger;
         private readonly string _tableName;
@@ -25,7 +25,7 @@ namespace SqliteMultiTenant.Operations
         public BulkInsertBuilder(SQLiteConnection connection, ILogger<BulkInsertBuilder> logger,
             string tableName, int batchSize = 1000)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
             if (string.IsNullOrWhiteSpace(tableName))
@@ -41,7 +41,7 @@ namespace SqliteMultiTenant.Operations
         // Adds a record to the bulk insert
         public BulkInsertBuilder AddRecord(Dictionary<string, object> record)
         {
-            if (record == null)
+            if (record is null)
                 throw new ArgumentNullException(nameof(record));
 
             _records.Add(record);
@@ -51,7 +51,7 @@ namespace SqliteMultiTenant.Operations
         // Adds multiple records
         public BulkInsertBuilder AddRecords(IEnumerable<Dictionary<string, object>> records)
         {
-            if (records == null)
+            if (records is null)
                 throw new ArgumentNullException(nameof(records));
 
             _records.AddRange(records);
@@ -147,7 +147,7 @@ namespace SqliteMultiTenant.Operations
             var sql = new StringBuilder();
 
             var columnNames = _records.FirstOrDefault()?.Keys.ToList();
-            if (columnNames == null || columnNames.Count == 0)
+            if (columnNames is null || columnNames.Count == 0)
                 return "";
 
             foreach (var record in _records)
@@ -160,7 +160,7 @@ namespace SqliteMultiTenant.Operations
                     if (record.ContainsKey(columnName))
                     {
                         var value = record[columnName];
-                        values.Add(value == null ? "NULL" : $"'{value.ToString().Replace("'", "''")}'");
+                        values.Add(value is null ? "NULL" : $"'{value.ToString().Replace("'", "''")}'");
                     }
                     else
                     {
@@ -176,8 +176,7 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
-    public class BulkInsertResult
-    {
+    public sealed class BulkInsertResult {
         public int TotalRecords { get; set; }
         public int InsertedRecords { get; set; }
         public bool IsSuccessful { get; set; }
@@ -185,8 +184,7 @@ namespace SqliteMultiTenant.Operations
     }
 
     // Builder for bulk update operations
-    public class BulkUpdateBuilder
-    {
+    public sealed class BulkUpdateBuilder {
         private readonly SQLiteConnection _connection;
         private readonly ILogger<BulkUpdateBuilder> _logger;
         private readonly string _tableName;
@@ -253,8 +251,7 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
-    public class BulkUpdateResult
-    {
+    public sealed class BulkUpdateResult {
         public int AffectedRows { get; set; }
         public bool IsSuccessful { get; set; }
         public string Error { get; set; }

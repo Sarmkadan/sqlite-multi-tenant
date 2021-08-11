@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -24,8 +25,7 @@ public interface IHealthCheckService
 /// <summary>
 /// Health check implementation with component-level diagnostics.
 /// </summary>
-public class HealthCheckService : IHealthCheckService
-{
+public class HealthCheckService : IHealthCheckService {
     private readonly ILogger<HealthCheckService> _logger;
     private readonly string _databasePath;
 
@@ -168,8 +168,7 @@ public class HealthCheckService : IHealthCheckService
 /// Extended health check with detailed diagnostics.
 /// Provides deeper insight for debugging and monitoring dashboards.
 /// </summary>
-public class DetailedHealthCheckService : HealthCheckService
-{
+public sealed class DetailedHealthCheckService : HealthCheckService {
     private readonly ILogger<DetailedHealthCheckService> _logger;
 
     public DetailedHealthCheckService(ILogger<DetailedHealthCheckService> logger, string databasePath = ".")

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,8 +12,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class GenericRepositoryTests
-{
+public sealed class GenericRepositoryTests {
     private class TestEntity { public string Id { get; set; } = string.Empty; }
     
     private class TestGenericRepository : GenericRepository<TestEntity> 

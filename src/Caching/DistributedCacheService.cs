@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -20,8 +21,7 @@ public interface IDistributedCache
     Task<CacheStatistics> GetStatisticsAsync();
 }
 
-public class DistributedCacheService : IDistributedCache
-{
+public sealed class DistributedCacheService : IDistributedCache {
     private readonly Dictionary<string, CacheEntry> _cache;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<DistributedCacheService> _logger;
@@ -253,8 +253,7 @@ public class DistributedCacheService : IDistributedCache
     }
 }
 
-public class CacheEntry
-{
+public sealed class CacheEntry {
     public object? Value { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime LastAccessedAt { get; set; }
@@ -263,8 +262,7 @@ public class CacheEntry
     public long Size { get; set; }
 }
 
-public class CacheStatistics
-{
+public sealed class CacheStatistics {
     public int ItemCount { get; set; }
     public long TotalSizeBytes { get; set; }
     public long Hits { get; set; }

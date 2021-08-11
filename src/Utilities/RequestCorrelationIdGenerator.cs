@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ using System.Threading;
 namespace SqliteMultiTenant.Utilities
 {
     // Generates and tracks correlation IDs for distributed request tracing
-    public class RequestCorrelationIdGenerator
-    {
+    public sealed class RequestCorrelationIdGenerator {
         private static readonly AsyncLocal<string> _currentCorrelationId =
             new AsyncLocal<string>();
 
@@ -35,7 +35,7 @@ namespace SqliteMultiTenant.Utilities
 
             _currentCorrelationId.Value = correlationId;
 
-            if (_correlationChain.Value == null)
+            if (_correlationChain.Value is null)
             {
                 _correlationChain.Value = new List<string>();
             }

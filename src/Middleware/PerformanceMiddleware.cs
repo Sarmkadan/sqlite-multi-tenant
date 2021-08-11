@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Middleware;
 /// Tracks elapsed time, memory usage, and logs warnings for operations exceeding threshold.
 /// Useful for identifying performance bottlenecks in the system.
 /// </summary>
-public class PerformanceMiddleware
-{
+public sealed class PerformanceMiddleware {
     private readonly RequestDelegate _next;
     private readonly ILogger<PerformanceMiddleware> _logger;
     private readonly long _slowRequestThresholdMs;
@@ -99,8 +99,7 @@ public class PerformanceMiddleware
     }
 }
 
-public class RequestMetrics
-{
+public sealed class RequestMetrics {
     public string Method { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
     public int StatusCode { get; set; }
@@ -112,8 +111,7 @@ public class RequestMetrics
 /// <summary>
 /// Tracks overall system performance statistics
 /// </summary>
-public class PerformanceMonitor
-{
+public sealed class PerformanceMonitor {
     private readonly List<RequestMetrics> _metrics = new();
     private readonly SemaphoreSlim _semaphore = new(1);
     private const int MaxMetricsStored = 1000;
@@ -173,8 +171,7 @@ public class PerformanceMonitor
     }
 }
 
-public class PerformanceStats
-{
+public sealed class PerformanceStats {
     public int TotalRequests { get; set; }
     public double AverageElapsedMs { get; set; }
     public long MaxElapsedMs { get; set; }

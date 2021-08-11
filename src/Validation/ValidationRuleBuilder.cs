@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ namespace SqliteMultiTenant.Validation
 {
     // Fluent API for building complex validation rules with composable conditions
     // Enables reusable validation logic across the application
-    public class ValidationRuleBuilder<T>
-    {
+    public sealed class ValidationRuleBuilder<T> {
         private readonly List<ValidationRule> _rules;
 
         public ValidationRuleBuilder()
@@ -87,13 +87,13 @@ namespace SqliteMultiTenant.Validation
                 Predicate = obj =>
                 {
                     var value = GetPropertyValue(obj, fieldName);
-                    if (value == null) return true;
+                    if (value is null) return true;
 
                     try
                     {
                         var numValue = Convert.ToDecimal(value);
-                        if (minValue != null && numValue < Convert.ToDecimal(minValue)) return false;
-                        if (maxValue != null && numValue > Convert.ToDecimal(maxValue)) return false;
+                        if (minValue is not null && numValue < Convert.ToDecimal(minValue)) return false;
+                        if (maxValue is not null && numValue > Convert.ToDecimal(maxValue)) return false;
                         return true;
                     }
                     catch { return false; }
@@ -194,7 +194,7 @@ namespace SqliteMultiTenant.Validation
         {
             var value = GetPropertyValue(obj, fieldName);
 
-            if (value == null) return false;
+            if (value is null) return false;
             if (value is string str) return !string.IsNullOrWhiteSpace(str);
 
             return true;
@@ -226,13 +226,13 @@ namespace SqliteMultiTenant.Validation
 
         private string BuildRangeMessage(string fieldName, object minValue, object maxValue)
         {
-            if (minValue != null && maxValue != null)
+            if (minValue is not null && maxValue is not null)
                 return $"{fieldName} must be between {minValue} and {maxValue}";
 
-            if (minValue != null)
+            if (minValue is not null)
                 return $"{fieldName} must be at least {minValue}";
 
-            if (maxValue != null)
+            if (maxValue is not null)
                 return $"{fieldName} must not exceed {maxValue}";
 
             return $"{fieldName} is out of range";
@@ -246,14 +246,12 @@ namespace SqliteMultiTenant.Validation
         }
     }
 
-    public class ValidationResult
-    {
+    public sealed class ValidationResult {
         public bool IsValid { get; set; }
         public List<ValidationError> Errors { get; set; } = new List<ValidationError>();
     }
 
-    public class ValidationError
-    {
+    public sealed class ValidationError {
         public string FieldName { get; set; }
         public string Message { get; set; }
     }

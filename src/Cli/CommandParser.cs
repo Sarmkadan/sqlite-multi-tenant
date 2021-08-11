@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -9,8 +10,7 @@ namespace SqliteMultiTenant.Cli;
 /// Parses command-line arguments into structured command objects.
 /// Handles validation, error messages, and help text generation.
 /// </summary>
-public class CommandParser
-{
+public sealed class CommandParser {
     private readonly Dictionary<string, CommandHandler> _commands;
     private readonly ILogger<CommandParser> _logger;
 
@@ -31,7 +31,7 @@ public class CommandParser
             Subcommands = new[]
             {
                 new Subcommand { Name = "create", Description = "Create a new tenant", RequiredArgs = new[] { "name" } },
-                new Subcommand { Name = "list", Description = "List all tenants", RequiredArgs = Array.Empty<string>() },
+                new Subcommand { Name = "list", Description = "List all tenants", RequiredArgs = [] },
                 new Subcommand { Name = "get", Description = "Get tenant details", RequiredArgs = new[] { "tenantId" } },
                 new Subcommand { Name = "delete", Description = "Delete a tenant", RequiredArgs = new[] { "tenantId" } },
                 new Subcommand { Name = "status", Description = "Get tenant status", RequiredArgs = new[] { "tenantId" } }
@@ -71,8 +71,8 @@ public class CommandParser
             Description = "Check system health",
             Subcommands = new[]
             {
-                new Subcommand { Name = "check", Description = "Run health checks", RequiredArgs = Array.Empty<string>() },
-                new Subcommand { Name = "status", Description = "Get overall status", RequiredArgs = Array.Empty<string>() }
+                new Subcommand { Name = "check", Description = "Run health checks", RequiredArgs = [] },
+                new Subcommand { Name = "status", Description = "Get overall status", RequiredArgs = [] }
             }
         };
     }
@@ -105,7 +105,7 @@ public class CommandParser
             string subcommand = args[1].ToLower();
             var subcommandDef = handler.Subcommands?.FirstOrDefault(s => s.Name == subcommand);
 
-            if (subcommandDef == null)
+            if (subcommandDef is null)
                 return CreateErrorCommand($"Unknown subcommand '{subcommand}' for '{mainCommand}'");
 
             var commandArgs = args.Skip(2).ToList();
@@ -146,7 +146,7 @@ public class CommandParser
                 helpText.AppendLine($"\n  {cmd.Name}");
                 helpText.AppendLine($"    {cmd.Description}");
                 helpText.AppendLine("    Subcommands:");
-                foreach (var sub in cmd.Subcommands ?? Array.Empty<Subcommand>())
+                foreach (var sub in cmd.Subcommands ?? [])
                 {
                     helpText.AppendLine($"      {sub.Name}: {sub.Description}");
                 }
@@ -157,7 +157,7 @@ public class CommandParser
             helpText.AppendLine($"Command: {command}");
             helpText.AppendLine($"Description: {handler.Description}\n");
             helpText.AppendLine("Subcommands:");
-            foreach (var sub in handler.Subcommands ?? Array.Empty<Subcommand>())
+            foreach (var sub in handler.Subcommands ?? [])
             {
                 helpText.AppendLine($"  {command} {sub.Name}");
                 helpText.AppendLine($"    {sub.Description}");
@@ -187,22 +187,19 @@ public class CommandParser
     }
 }
 
-public class CommandHandler
-{
+public sealed class CommandHandler {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public Subcommand[]? Subcommands { get; set; }
 }
 
-public class Subcommand
-{
+public sealed class Subcommand {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string[] RequiredArgs { get; set; } = Array.Empty<string>();
+    public string[] RequiredArgs { get; set; } = [];
 }
 
-public class ParsedCommand
-{
+public sealed class ParsedCommand {
     public bool Success { get; set; }
     public string MainCommand { get; set; } = string.Empty;
     public string Subcommand { get; set; } = string.Empty;

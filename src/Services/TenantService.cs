@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Services;
 /// <summary>
 /// Service implementation for tenant management
 /// </summary>
-public class TenantService : ITenantService
-{
+public sealed class TenantService : ITenantService {
     private readonly ITenantRepository _repository;
     private readonly ILogger<TenantService> _logger;
 
@@ -32,7 +32,7 @@ public class TenantService : ITenantService
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
-            if (tenant != null)
+            if (tenant is not null)
             {
                 tenant.MarkAsAccessed();
                 await _repository.UpdateAsync(tenant, cancellationToken);
@@ -54,7 +54,7 @@ public class TenantService : ITenantService
         try
         {
             var existingTenant = await _repository.GetByNameAsync(name, cancellationToken);
-            if (existingTenant != null)
+            if (existingTenant is not null)
                 throw new InvalidOperationException($"Tenant with name '{name}' already exists");
 
             var tenant = new Tenant
@@ -74,7 +74,7 @@ public class TenantService : ITenantService
                 throw new ArgumentException($"Tenant validation failed: {string.Join(", ", errors)}");
 
             var createdTenant = await _repository.AddAsync(tenant, cancellationToken);
-            _logger.LogInformation($"Tenant created: {createdTenant.TenantId}");
+            _logger.LogInformation("Tenant created: {TenantId}", createdTenant.TenantId);
             return createdTenant;
         }
         catch (Exception ex)
@@ -86,13 +86,13 @@ public class TenantService : ITenantService
 
     public async Task UpdateTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
-        if (tenant == null)
+        if (tenant is null)
             throw new ArgumentNullException(nameof(tenant));
 
         try
         {
             var existingTenant = await _repository.GetByIdAsync(tenant.TenantId, cancellationToken);
-            if (existingTenant == null)
+            if (existingTenant is null)
                 throw new TenantNotFoundException(tenant.TenantId);
 
             tenant.UpdatedAt = DateTime.UtcNow;
@@ -101,11 +101,11 @@ public class TenantService : ITenantService
                 throw new ArgumentException($"Tenant validation failed: {string.Join(", ", errors)}");
 
             await _repository.UpdateAsync(tenant, cancellationToken);
-            _logger.LogInformation($"Tenant updated: {tenant.TenantId}");
+            _logger.LogInformation("Tenant updated: {TenantId}", tenant.TenantId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating tenant: {ex.Message}");
+            _logger.LogError("Error updating tenant: {Message}", ex.Message);
             throw;
         }
     }
@@ -118,7 +118,7 @@ public class TenantService : ITenantService
         try
         {
             var existingTenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
-            if (existingTenant == null)
+            if (existingTenant is null)
                 throw new TenantNotFoundException(tenantId);
 
             await _repository.DeleteAsync(tenantId, cancellationToken);
@@ -165,7 +165,7 @@ public class TenantService : ITenantService
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
-            if (tenant == null)
+            if (tenant is null)
                 throw new TenantNotFoundException(tenantId);
 
             tenant.Activate();
@@ -187,7 +187,7 @@ public class TenantService : ITenantService
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
-            if (tenant == null)
+            if (tenant is null)
                 throw new TenantNotFoundException(tenantId);
 
             tenant.Deactivate();
@@ -209,7 +209,7 @@ public class TenantService : ITenantService
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
-            if (tenant == null)
+            if (tenant is null)
                 throw new TenantNotFoundException(tenantId);
 
             tenant.Status = TenantStatus.Suspended;
@@ -280,7 +280,7 @@ public class TenantService : ITenantService
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
-            if (tenant == null)
+            if (tenant is null)
                 throw new TenantNotFoundException(tenantId);
 
             tenant.SetMetadata(key, value);
@@ -292,5 +292,8 @@ public class TenantService : ITenantService
             _logger.LogError($"Error setting tenant metadata: {ex.Message}");
             throw;
         }
+    }
+}
+
     }
 }

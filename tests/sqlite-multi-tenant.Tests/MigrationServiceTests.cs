@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -18,8 +19,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class MigrationServiceTests
-    {
+    public sealed class MigrationServiceTests {
         private readonly IMigrationRepository _mockMigrationRepository;
         private readonly ILogger<MigrationService> _mockLogger;
         private readonly MigrationService _migrationService;

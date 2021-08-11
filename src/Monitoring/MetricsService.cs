@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -25,8 +26,7 @@ public interface IMetricsService
 /// <summary>
 /// Snapshot of current system metrics.
 /// </summary>
-public class MetricsSnapshot
-{
+public sealed class MetricsSnapshot {
     public DateTime CapturedAt { get; set; } = DateTime.UtcNow;
     public long TotalRequests { get; set; }
     public long TotalErrors { get; set; }
@@ -43,8 +43,7 @@ public class MetricsSnapshot
 /// <summary>
 /// Metrics for individual endpoint.
 /// </summary>
-public class RequestMetrics
-{
+public sealed class RequestMetrics {
     public string Endpoint { get; set; }
     public long RequestCount { get; set; }
     public long SuccessCount { get; set; }
@@ -57,8 +56,7 @@ public class RequestMetrics
 /// <summary>
 /// In-memory metrics collection with thread-safe aggregation.
 /// </summary>
-public class MetricsService : IMetricsService
-{
+public sealed class MetricsService : IMetricsService {
     private readonly ILogger<MetricsService> _logger;
     private long _totalRequests;
     private long _totalErrors;

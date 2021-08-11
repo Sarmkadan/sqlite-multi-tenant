@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ namespace SqliteMultiTenant.Middleware;
 /// Prevents internal exception details leaking to clients while logging for diagnostics.
 /// Maps domain exceptions to appropriate HTTP status codes automatically.
 /// </summary>
-public class ErrorHandlingMiddleware
-{
+public sealed class ErrorHandlingMiddleware {
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
 
     public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger)
@@ -99,8 +99,7 @@ public class ErrorHandlingMiddleware
 /// Result pattern exception handling for controllers.
 /// Allows methods to return Result<T> instead of throwing, reducing allocations.
 /// </summary>
-public class Result<T>
-{
+public sealed class Result<T> {
     public bool IsSuccess { get; set; }
     public T? Value { get; set; }
     public string? ErrorMessage { get; set; }
