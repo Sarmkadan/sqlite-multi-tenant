@@ -87,8 +87,9 @@ public static class ValidationExtensions
         if (string.IsNullOrWhiteSpace(path) || path.Contains(".."))
             return false;
 
-        // Only allow forward/backward slashes, alphanumeric, dots, hyphens
-        return Regex.IsMatch(path, @"^[a-zA-Z0-9._\-/\\]+$");
+        // Only allow forward/backward slashes, alphanumeric, dots, hyphens, spaces, and unicode characters
+        // Hotfix: allow spaces and unicode characters in database path
+        return Regex.IsMatch(path, @"^[\p{L}\p{N}._\-/\\ ]+$");
     }
 
     /// <summary>
