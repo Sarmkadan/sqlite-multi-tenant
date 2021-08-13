@@ -40,7 +40,7 @@ public sealed class HttpClientWrapper {
     {
         try
         {
-            _logger.LogInformation($"GET request: {url}");
+            _logger.LogInformation("GET request: {Url}", url);
 
             var response = await SendWithRetryAsync(
                 () => _httpClient.GetAsync(url),
@@ -48,7 +48,7 @@ public sealed class HttpClientWrapper {
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning($"GET failed: {response.StatusCode}");
+                _logger.LogWarning("GET failed: {StatusCode}", response.StatusCode);
                 return null;
             }
 
@@ -58,7 +58,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"GET error: {ex.Message}");
+            _logger.LogError("GET error: {Message}", ex.Message);
             return null;
         }
     }
@@ -70,7 +70,7 @@ public sealed class HttpClientWrapper {
     {
         try
         {
-            _logger.LogInformation($"POST request: {url}");
+            _logger.LogInformation("POST request: {Url}", url);
 
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -81,7 +81,7 @@ public sealed class HttpClientWrapper {
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning($"POST failed: {response.StatusCode}");
+                _logger.LogWarning("POST failed: {StatusCode}", response.StatusCode);
                 return null;
             }
 
@@ -91,7 +91,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"POST error: {ex.Message}");
+            _logger.LogError("POST error: {Message}", ex.Message);
             return null;
         }
     }
@@ -103,7 +103,7 @@ public sealed class HttpClientWrapper {
     {
         try
         {
-            _logger.LogInformation($"PUT request: {url}");
+            _logger.LogInformation("PUT request: {Url}", url);
 
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -116,7 +116,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"PUT error: {ex.Message}");
+            _logger.LogError("PUT error: {Message}", ex.Message);
             return false;
         }
     }
@@ -128,7 +128,7 @@ public sealed class HttpClientWrapper {
     {
         try
         {
-            _logger.LogInformation($"DELETE request: {url}");
+            _logger.LogInformation("DELETE request: {Url}", url);
 
             var response = await SendWithRetryAsync(
                 () => _httpClient.DeleteAsync(url),
@@ -138,7 +138,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"DELETE error: {ex.Message}");
+            _logger.LogError("DELETE error: {Message}", ex.Message);
             return false;
         }
     }
@@ -166,7 +166,7 @@ public sealed class HttpClientWrapper {
                     attempts++;
                     if (attempts < _maxRetries)
                     {
-                        _logger.LogWarning($"Retry {operationName}: Attempt {attempts} failed with {response.StatusCode}");
+                        _logger.LogWarning("Retry {OperationName}: Attempt {Attempts} failed with {StatusCode}", operationName, attempts, response.StatusCode);
                         await Task.Delay(delay);
                         delay = delay.Multiply(2); // Exponential backoff
                         continue;
@@ -180,7 +180,7 @@ public sealed class HttpClientWrapper {
                 attempts++;
                 if (attempts < _maxRetries)
                 {
-                    _logger.LogWarning($"Retry {operationName}: Attempt {attempts} timeout");
+                    _logger.LogWarning("Retry {OperationName}: Attempt {Attempts} timeout", operationName, attempts);
                     await Task.Delay(delay);
                     delay = delay.Multiply(2);
                     continue;

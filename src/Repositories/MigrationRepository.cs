@@ -47,7 +47,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving migration {migrationId}: {ex.Message}");
+            _logger.LogError("Error retrieving migration {MigrationId}: {Message}", migrationId, ex.Message);
             throw;
         }
     }
@@ -81,7 +81,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving migrations for database {databaseId}: {ex.Message}");
+            _logger.LogError("Error retrieving migrations for database {DatabaseId}: {Message}", databaseId, ex.Message);
             throw;
         }
     }
@@ -116,7 +116,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving pending migrations: {ex.Message}");
+            _logger.LogError("Error retrieving pending migrations: {Message}", ex.Message);
             throw;
         }
     }
@@ -151,7 +151,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving applied migrations: {ex.Message}");
+            _logger.LogError("Error retrieving applied migrations: {Message}", ex.Message);
             throw;
         }
     }
@@ -186,7 +186,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving failed migrations: {ex.Message}");
+            _logger.LogError("Error retrieving failed migrations: {Message}", ex.Message);
             throw;
         }
     }
@@ -214,7 +214,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving migration by version: {ex.Message}");
+            _logger.LogError("Error retrieving migration by version: {Message}", ex.Message);
             throw;
         }
     }
@@ -245,7 +245,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error adding migration: {ex.Message}");
+            _logger.LogError("Error adding migration: {Message}", ex.Message);
             throw;
         }
     }
@@ -276,7 +276,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating migration: {ex.Message}");
+            _logger.LogError("Error updating migration: {Message}", ex.Message);
             throw;
         }
     }
@@ -297,7 +297,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting migration: {ex.Message}");
+            _logger.LogError("Error deleting migration: {Message}", ex.Message);
             throw;
         }
     }
@@ -319,7 +319,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error checking migration existence: {ex.Message}");
+            _logger.LogError("Error checking migration existence: {Message}", ex.Message);
             throw;
         }
     }
@@ -341,7 +341,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting migration count: {ex.Message}");
+            _logger.LogError("Error getting migration count: {Message}", ex.Message);
             throw;
         }
     }
@@ -431,7 +431,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error initializing migration repository database: {ex.Message}");
+            _logger.LogError("Error initializing migration repository database: {Message}", ex.Message);
             throw;
         }
     }

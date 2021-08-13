@@ -95,7 +95,7 @@ public sealed class CommandParser {
 
             if (!_commands.TryGetValue(mainCommand, out var handler))
             {
-                _logger.LogWarning($"Unknown command: {mainCommand}");
+                _logger.LogWarning("Unknown command: {MainCommand}", mainCommand);
                 return CreateErrorCommand($"Unknown command '{mainCommand}'. Use 'help' for available commands.");
             }
 
@@ -127,7 +127,7 @@ public sealed class CommandParser {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Command parsing error: {ex.Message}");
+            _logger.LogError("Command parsing error: {Message}", ex.Message);
             return CreateErrorCommand($"Error parsing command: {ex.Message}");
         }
     }

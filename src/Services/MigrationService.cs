@@ -35,7 +35,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving migration {migrationId}: {ex.Message}");
+            _logger.LogError("Error retrieving migration {MigrationId}: {Message}", migrationId, ex.Message);
             throw;
         }
     }
@@ -51,7 +51,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving migrations for database {databaseId}: {ex.Message}");
+            _logger.LogError("Error retrieving migrations for database {DatabaseId}: {Message}", databaseId, ex.Message);
             throw;
         }
     }
@@ -67,7 +67,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving pending migrations for database {databaseId}: {ex.Message}");
+            _logger.LogError("Error retrieving pending migrations for database {DatabaseId}: {Message}", databaseId, ex.Message);
             throw;
         }
     }
@@ -83,7 +83,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving applied migrations for database {databaseId}: {ex.Message}");
+            _logger.LogError("Error retrieving applied migrations for database {DatabaseId}: {Message}", databaseId, ex.Message);
             throw;
         }
     }
@@ -134,7 +134,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating migration: {ex.Message}");
+            _logger.LogError("Error creating migration: {Message}", ex.Message);
             throw;
         }
     }
@@ -159,7 +159,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error executing migration {migrationId}: {ex.Message}");
+            _logger.LogError("Error executing migration {MigrationId}: {Message}", migrationId, ex.Message);
             throw;
         }
     }
@@ -184,7 +184,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error rolling back migration {migrationId}: {ex.Message}");
+            _logger.LogError("Error rolling back migration {MigrationId}: {Message}", migrationId, ex.Message);
             throw;
         }
     }
@@ -206,7 +206,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error marking migration as completed: {ex.Message}");
+            _logger.LogError("Error marking migration as completed: {Message}", ex.Message);
             throw;
         }
     }
@@ -228,7 +228,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error marking migration as failed: {ex.Message}");
+            _logger.LogError("Error marking migration as failed: {Message}", ex.Message);
             throw;
         }
     }
@@ -244,7 +244,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting migration count: {ex.Message}");
+            _logger.LogError("Error getting migration count: {Message}", ex.Message);
             throw;
         }
     }
@@ -264,7 +264,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error checking if migration is applied: {ex.Message}");
+            _logger.LogError("Error checking if migration is applied: {Message}", ex.Message);
             throw;
         }
     }
@@ -280,7 +280,7 @@ public sealed class MigrationService : IMigrationService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving failed migrations: {ex.Message}");
+            _logger.LogError("Error retrieving failed migrations: {Message}", ex.Message);
             throw;
         }
     }

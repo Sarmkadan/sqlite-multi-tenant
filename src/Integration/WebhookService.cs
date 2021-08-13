@@ -59,7 +59,7 @@ public sealed class WebhookService {
 
             _subscriptions[eventType].Add(subscription);
 
-            _logger.LogInformation($"Webhook subscribed: {eventType} -> {webhookUrl}");
+            _logger.LogInformation("Webhook subscribed: {EventType} -> {WebhookUrl}", eventType, webhookUrl);
             return subscription.Id;
         }
         finally
@@ -83,7 +83,7 @@ public sealed class WebhookService {
                 if (subscription is not null)
                 {
                     subscriptionList.Remove(subscription);
-                    _logger.LogInformation($"Webhook unsubscribed: {subscriptionId}");
+                    _logger.LogInformation("Webhook unsubscribed: {SubscriptionId}", subscriptionId);
                     return true;
                 }
             }
@@ -115,7 +115,7 @@ public sealed class WebhookService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Webhook trigger error: {ex.Message}");
+            _logger.LogError("Webhook trigger error: {Message}", ex.Message);
         }
     }
 
@@ -190,7 +190,7 @@ public sealed class WebhookService {
         if (subscription.FailureCount > 10)
         {
             subscription.IsActive = false;
-            _logger.LogWarning($"Webhook disabled due to excessive failures: {subscription.Id}");
+            _logger.LogWarning("Webhook disabled due to excessive failures: {Id}", subscription.Id);
         }
     }
 

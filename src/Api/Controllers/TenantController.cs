@@ -34,7 +34,7 @@ public sealed class TenantController {
     /// </summary>
     public async Task<ApiResponse<TenantResponse>> CreateTenantAsync(CreateTenantRequest request)
     {
-        _logger.LogInformation($"Creating tenant: {request.Name}");
+        _logger.LogInformation("Creating tenant: {Name}", request.Name);
 
         try
         {
@@ -57,12 +57,12 @@ public sealed class TenantController {
                 CreatedAt = tenant.CreatedAt
             };
 
-            _logger.LogInformation($"Tenant created successfully: {tenant.TenantId}");
+            _logger.LogInformation("Tenant created successfully: {TenantId}", tenant.TenantId);
             return ApiResponse<TenantResponse>.Success(response, "Tenant created successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating tenant: {ex.Message}");
+            _logger.LogError("Error creating tenant: {Message}", ex.Message);
             return ApiResponse<TenantResponse>.InternalServerError(ex.Message);
         }
     }
@@ -91,7 +91,7 @@ public sealed class TenantController {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error retrieving tenant {TenantId}: {Message}", tenantId, ex.Message);
             return ApiResponse<TenantResponse>.InternalServerError(ex.Message);
         }
     }
@@ -114,12 +114,12 @@ public sealed class TenantController {
                 CreatedAt = t.CreatedAt
             });
 
-            _logger.LogInformation($"Retrieved {tenants.Count} tenants");
+            _logger.LogInformation("Retrieved {Count} tenants", tenants.Count);
             return ApiResponse<IEnumerable<TenantResponse>>.Success(responses);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error listing tenants: {ex.Message}");
+            _logger.LogError("Error listing tenants: {Message}", ex.Message);
             return ApiResponse<IEnumerable<TenantResponse>>.InternalServerError(ex.Message);
         }
     }
@@ -130,7 +130,7 @@ public sealed class TenantController {
     /// </summary>
     public async Task<ApiResponse<TenantResponse>> UpdateTenantAsync(string tenantId, UpdateTenantRequest request)
     {
-        _logger.LogInformation($"Updating tenant: {tenantId}");
+        _logger.LogInformation("Updating tenant: {TenantId}", tenantId);
 
         try
         {
@@ -159,7 +159,7 @@ public sealed class TenantController {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating tenant: {ex.Message}");
+            _logger.LogError("Error updating tenant: {Message}", ex.Message);
             return ApiResponse<TenantResponse>.InternalServerError(ex.Message);
         }
     }
@@ -170,7 +170,7 @@ public sealed class TenantController {
     /// </summary>
     public async Task<ApiResponse<object>> SuspendTenantAsync(string tenantId, string suspendedBy)
     {
-        _logger.LogInformation($"Suspending tenant: {tenantId} by {suspendedBy}");
+        _logger.LogInformation("Suspending tenant: {TenantId} by {SuspendedBy}", tenantId, suspendedBy);
 
         try
         {
@@ -179,13 +179,13 @@ public sealed class TenantController {
                 return ApiResponse<object>.NotFound($"Tenant {tenantId} not found");
 
             tenant.Status = Constants.TenantStatus.Suspended;
-            _logger.LogWarning($"Tenant {tenantId} suspended by {suspendedBy}");
+            _logger.LogWarning("Tenant {TenantId} suspended by {SuspendedBy}", tenantId, suspendedBy);
 
             return ApiResponse<object>.Success(new { message = "Tenant suspended" });
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error suspending tenant: {ex.Message}");
+            _logger.LogError("Error suspending tenant: {Message}", ex.Message);
             return ApiResponse<object>.InternalServerError(ex.Message);
         }
     }

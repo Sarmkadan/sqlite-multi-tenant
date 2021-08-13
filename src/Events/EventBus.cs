@@ -44,11 +44,11 @@ public sealed class EventBus : IEventBus {
 
             if (!_subscribers.TryGetValue(eventType, out var handlers))
             {
-                _logger.LogWarning($"No subscribers for event: {eventType.Name}");
+                _logger.LogWarning("No subscribers for event: {Name}", eventType.Name);
                 return;
             }
 
-            _logger.LogInformation($"Publishing event: {eventType.Name}");
+            _logger.LogInformation("Publishing event: {Name}", eventType.Name);
 
             var tasks = handlers.Select(async handler =>
             {
@@ -59,18 +59,18 @@ public sealed class EventBus : IEventBus {
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Event handler failed for {eventType.Name}: {ex.Message}");
+                    _logger.LogError("Event handler failed for {Name}: {Message}", eventType.Name, ex.Message);
                     await _deadLetterQueue.EnqueueAsync(@event, ex);
                 }
             });
 
             await Task.WhenAll(tasks);
 
-            _logger.LogInformation($"Event published successfully: {eventType.Name}");
+            _logger.LogInformation("Event published successfully: {Name}", eventType.Name);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Event publication failed: {ex.Message}");
+            _logger.LogError("Event publication failed: {Message}", ex.Message);
         }
     }
 
@@ -115,7 +115,7 @@ public sealed class EventBus : IEventBus {
             if (_subscribers.TryGetValue(eventType, out var handlers))
             {
                 handlers.Remove(handler);
-                _logger.LogInformation($"Event handler unregistered for {eventType.Name}");
+                _logger.LogInformation("Event handler unregistered for {Name}", eventType.Name);
             }
         }
         finally

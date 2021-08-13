@@ -57,10 +57,10 @@ class BasicSetupExample
                 description: "Our first customer",
                 contactEmail: "admin@acme.com");
 
-            logger.LogInformation($"✓ Created tenant: {tenant1.Name}");
-            logger.LogInformation($"  Tenant ID: {tenant1.TenantId}");
-            logger.LogInformation($"  Status: {tenant1.Status}");
-            logger.LogInformation($"  Created: {tenant1.CreatedAt:O}\n");
+            logger.LogInformation("✓ Created tenant: {Name}", tenant1.Name);
+            logger.LogInformation("  Tenant ID: {TenantId}", tenant1.TenantId);
+            logger.LogInformation("  Status: {Status}", tenant1.Status);
+            logger.LogInformation("  Created: {CreatedAt}\n", tenant1.CreatedAt);
 
             // Create second tenant
             logger.LogInformation("Creating second tenant...");
@@ -69,33 +69,33 @@ class BasicSetupExample
                 description: "Growing startup",
                 contactEmail: "contact@techventures.com");
 
-            logger.LogInformation($"✓ Created tenant: {tenant2.Name}");
-            logger.LogInformation($"  Tenant ID: {tenant2.TenantId}\n");
+            logger.LogInformation("✓ Created tenant: {Name}", tenant2.Name);
+            logger.LogInformation("  Tenant ID: {TenantId}\n", tenant2.TenantId);
 
             // Retrieve and display tenant
             logger.LogInformation("Retrieving tenant details...");
             var retrievedTenant = await tenantService.GetTenantAsync(tenant1.TenantId);
             if (retrievedTenant is not null)
             {
-                logger.LogInformation($"✓ Retrieved: {retrievedTenant.Name}");
-                logger.LogInformation($"  Email: {retrievedTenant.ContactEmail}");
-                logger.LogInformation($"  Status: {retrievedTenant.Status}\n");
+                logger.LogInformation("✓ Retrieved: {Name}", retrievedTenant.Name);
+                logger.LogInformation("  Email: {ContactEmail}", retrievedTenant.ContactEmail);
+                logger.LogInformation("  Status: {Status}\n", retrievedTenant.Status);
             }
 
             // List all tenants
             logger.LogInformation("Listing all tenants...");
             var allTenants = await tenantService.GetAllTenantsAsync();
-            logger.LogInformation($"✓ Total tenants: {allTenants.Count}");
+            logger.LogInformation("✓ Total tenants: {Count}", allTenants.Count);
             foreach (var t in allTenants)
             {
-                logger.LogInformation($"  - {t.Name} ({t.Status})");
+                logger.LogInformation("  - {Name} ({Status})", t.Name, t.Status);
             }
 
             logger.LogInformation("\n✓ Basic setup example completed successfully!");
         }
         catch (Exception ex)
         {
-            logger.LogError($"Error: {ex.Message}");
+            logger.LogError("Error: {Message}", ex.Message);
             Environment.Exit(1);
         }
     }

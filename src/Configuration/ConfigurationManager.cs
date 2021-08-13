@@ -49,7 +49,7 @@ public sealed class ConfigurationManager : IConfigurationManager {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting configuration '{key}': {ex.Message}");
+            _logger.LogError("Error getting configuration '{Key}': {Message}", key, ex.Message);
             return defaultValue;
         }
     }
@@ -66,12 +66,12 @@ public sealed class ConfigurationManager : IConfigurationManager {
             if (value is null)
             {
                 _configuration.Remove(key);
-                _logger.LogInformation($"Configuration removed: {key}");
+                _logger.LogInformation("Configuration removed: {Key}", key);
             }
             else
             {
                 _configuration[key] = value;
-                _logger.LogInformation($"Configuration set: {key}");
+                _logger.LogInformation("Configuration set: {Key}", key);
             }
         }
         finally
@@ -129,7 +129,7 @@ public sealed class ConfigurationManager : IConfigurationManager {
         {
             _semaphore.Wait();
             _configuration.Remove(key);
-            _logger.LogInformation($"Configuration removed: {key}");
+            _logger.LogInformation("Configuration removed: {Key}", key);
         }
         finally
         {
@@ -181,7 +181,7 @@ public sealed class ConfigurationManager : IConfigurationManager {
             foreach (var kvp in settings)
                 _configuration[kvp.Key] = kvp.Value;
 
-            _logger.LogInformation($"Loaded {settings.Count} configuration entries");
+            _logger.LogInformation("Loaded {Count} configuration entries", settings.Count);
         }
         finally
         {
