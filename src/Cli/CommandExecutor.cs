@@ -53,7 +53,7 @@ public sealed class CommandExecutor {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Command execution error: {ex.Message}");
+            _logger.LogError("Command execution error: {Message}", ex.Message);
             return new CommandResult { Success = false, Message = $"Error: {ex.Message}" };
         }
     }
@@ -86,7 +86,7 @@ public sealed class CommandExecutor {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Tenant command error: {ex.Message}");
+            _logger.LogError("Tenant command error: {Message}", ex.Message);
             return new CommandResult { Success = false, Message = $"Error executing tenant command: {ex.Message}" };
         }
     }
@@ -188,7 +188,7 @@ public sealed class CommandExecutor {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Backup command error: {ex.Message}");
+            _logger.LogError("Backup command error: {Message}", ex.Message);
             return new CommandResult { Success = false, Message = $"Error executing backup command: {ex.Message}" };
         }
     }
@@ -268,7 +268,7 @@ public sealed class CommandExecutor {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Migration command error: {ex.Message}");
+            _logger.LogError("Migration command error: {Message}", ex.Message);
             return new CommandResult { Success = false, Message = $"Error executing migration command: {ex.Message}" };
         }
     }
@@ -332,7 +332,7 @@ public sealed class CommandExecutor {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Health command error: {ex.Message}");
+            _logger.LogError("Health command error: {Message}", ex.Message);
             return new CommandResult { Success = false, Message = $"Error executing health command: {ex.Message}" };
         }
     }

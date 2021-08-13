@@ -58,7 +58,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
             };
 
             _tasks[taskId] = task;
-            _logger.LogInformation($"Scheduled task registered: {taskId}, Interval: {interval.TotalSeconds}s");
+            _logger.LogInformation("Scheduled task registered: {TaskId}, Interval: {TotalSeconds}s", taskId, interval.TotalSeconds);
         }
         finally
         {
@@ -84,7 +84,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
                     _cancellationTokens.Remove(taskId);
                 }
 
-                _logger.LogInformation($"Scheduled task unregistered: {taskId}");
+                _logger.LogInformation("Scheduled task unregistered: {TaskId}", taskId);
             }
         }
         finally
@@ -109,7 +109,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
             }
 
             _isRunning = true;
-            _logger.LogInformation($"Scheduled task service started with {_tasks.Count} tasks");
+            _logger.LogInformation("Scheduled task service started with {Count} tasks", _tasks.Count);
 
             // Start execution for each task
             foreach (var taskId in _tasks.Keys.ToList())
@@ -213,7 +213,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error in task loop for {taskId}: {ex.Message}");
+            _logger.LogError("Error in task loop for {TaskId}: {Message}", taskId, ex.Message);
         }
     }
 
@@ -221,7 +221,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
     {
         try
         {
-            _logger.LogDebug($"Executing scheduled task: {task.Id}");
+            _logger.LogDebug("Executing scheduled task: {Id}", task.Id);
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -243,7 +243,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
             task.LastError = ex.Message;
             task.NextExecutionAt = DateTime.UtcNow.Add(task.Interval);
 
-            _logger.LogError($"Task failed: {task.Id}, Error: {ex.Message}");
+            _logger.LogError("Task failed: {Id}, Error: {Message}", task.Id, ex.Message);
         }
     }
 }

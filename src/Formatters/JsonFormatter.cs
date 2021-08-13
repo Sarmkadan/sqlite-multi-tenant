@@ -47,7 +47,7 @@ public sealed class JsonFormatter {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"JSON formatting error: {ex.Message}");
+            _logger.LogError("JSON formatting error: {Message}", ex.Message);
             return JsonSerializer.Serialize(
                 new { error = "Serialization failed", message = ex.Message },
                 _options);
@@ -68,7 +68,7 @@ public sealed class JsonFormatter {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"JSON parsing error: {ex.Message}");
+            _logger.LogError("JSON parsing error: {Message}", ex.Message);
             return null;
         }
     }
@@ -87,7 +87,7 @@ public sealed class JsonFormatter {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"JSON formatting error: {ex.Message}");
+            _logger.LogError("JSON formatting error: {Message}", ex.Message);
             return string.Empty;
         }
     }

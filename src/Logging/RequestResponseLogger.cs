@@ -57,7 +57,7 @@ public sealed class RequestResponseLogger : IRequestResponseLogger {
             if (_requestLogs.Count > MaxLogsInMemory)
                 _requestLogs.RemoveRange(0, _requestLogs.Count - MaxLogsInMemory);
 
-            _logger.LogDebug($"Request logged: {request.Method} {request.Path}");
+            _logger.LogDebug("Request logged: {Method} {Path}", request.Method, request.Path);
         }
         finally
         {
@@ -83,7 +83,7 @@ public sealed class RequestResponseLogger : IRequestResponseLogger {
             if (_responseLogs.Count > MaxLogsInMemory)
                 _responseLogs.RemoveRange(0, _responseLogs.Count - MaxLogsInMemory);
 
-            _logger.LogDebug($"Response logged: Status {response.StatusCode}, Duration {response.DurationMs}ms");
+            _logger.LogDebug("Response logged: Status {StatusCode}, Duration {DurationMs}ms", response.StatusCode, response.DurationMs);
         }
         finally
         {

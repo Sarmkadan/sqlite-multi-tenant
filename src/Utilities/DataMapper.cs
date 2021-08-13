@@ -97,7 +97,7 @@ public sealed class DataMapper : IDataMapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"List mapping error: {ex.Message}");
+            _logger.LogError("List mapping error: {Message}", ex.Message);
             throw;
         }
     }
@@ -152,7 +152,7 @@ public sealed class DataMapper : IDataMapper {
         }
         catch (Exception ex)
         {
-            _logger.LogWarning($"Type conversion failed: {ex.Message}");
+            _logger.LogWarning("Type conversion failed: {Message}", ex.Message);
             return null;
         }
     }
