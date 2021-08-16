@@ -11,8 +11,21 @@ using System.Text;
 
 namespace SqliteMultiTenant.DataOperations
 {
-    // Fluent SQL query builder for type-safe database operations
-    // Supports WHERE, ORDER BY, LIMIT, and JOIN clauses
+    /// <summary>
+    /// Fluent SQL query builder for constructing parameterized SELECT statements.
+    /// Supports WHERE, AND/OR conditions, INNER/LEFT JOIN, ORDER BY, LIMIT, and OFFSET clauses.
+    /// Column names are automatically bracket-quoted for safety.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// var query = new QueryBuilder("Users")
+    ///     .Select("Name", "Email")
+    ///     .Where("IsActive = @active", ("active", true))
+    ///     .OrderBy("Name")
+    ///     .Limit(10)
+    ///     .Build();
+    /// </code>
+    /// </example>
     public sealed class QueryBuilder {
         private readonly StringBuilder _query;
         private readonly List<(string name, object value)> _parameters;
@@ -226,7 +239,10 @@ namespace SqliteMultiTenant.DataOperations
         public override string ToString() => Build();
     }
 
-    // Helper builder for INSERT operations
+    /// <summary>
+    /// Fluent builder for constructing parameterized INSERT statements.
+    /// Values are automatically parameterized to prevent SQL injection.
+    /// </summary>
     public sealed class InsertBuilder {
         private readonly string _tableName;
         private readonly Dictionary<string, object> _values;
@@ -281,7 +297,10 @@ namespace SqliteMultiTenant.DataOperations
         }
     }
 
-    // Helper builder for UPDATE operations
+    /// <summary>
+    /// Fluent builder for constructing parameterized UPDATE statements.
+    /// Requires a WHERE clause for safety - will throw if no condition is specified.
+    /// </summary>
     public sealed class UpdateBuilder {
         private readonly string _tableName;
         private readonly Dictionary<string, object> _values;

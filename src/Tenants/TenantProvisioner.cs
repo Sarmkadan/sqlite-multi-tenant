@@ -15,8 +15,11 @@ using SqliteMultiTenant.Repositories;
 
 namespace SqliteMultiTenant.Tenants
 {
-    // Handles the complete lifecycle of tenant database provisioning
-    // Creates isolated SQLite databases for each tenant with proper initialization
+    /// <summary>
+    /// Handles the complete lifecycle of tenant database provisioning.
+    /// Creates isolated SQLite databases for each tenant with schema initialization,
+    /// supports cloning for replication, and manages deprovisioning with cleanup.
+    /// </summary>
     public sealed class TenantProvisioner {
         private readonly ITenantRepository _tenantRepository;
         private readonly SchemaManager _schemaManager;
@@ -32,7 +35,16 @@ namespace SqliteMultiTenant.Tenants
             _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
         }
 
-        // Provisions a new tenant database with schema initialization
+        /// <summary>
+        /// Provisions a new tenant database with full schema initialization.
+        /// Creates a dedicated directory, SQLite database file, initializes the schema,
+        /// and registers the tenant in the metadata repository.
+        /// </summary>
+        /// <param name="tenantId">Unique identifier for the new tenant.</param>
+        /// <param name="tenantName">Display name for the tenant.</param>
+        /// <param name="settings">Optional tenant-specific configuration settings.</param>
+        /// <returns>The newly created <see cref="Tenant"/> entity.</returns>
+        /// <exception cref="ArgumentException">Thrown when tenantId or tenantName is empty.</exception>
         public async Task<Tenant> ProvisionTenantAsync(string tenantId, string tenantName,
             TenantSettings settings = null)
         {
@@ -88,7 +100,14 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Clones an existing tenant database for backup or replication
+        /// <summary>
+        /// Clones an existing tenant database by copying the SQLite file to a new tenant directory.
+        /// Useful for backup, testing, or replication scenarios.
+        /// </summary>
+        /// <param name="sourceTenantId">ID of the tenant to clone from.</param>
+        /// <param name="targetTenantId">ID for the new cloned tenant.</param>
+        /// <returns>The filesystem path to the cloned database file.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the source tenant is not found.</exception>
         public async Task<string> CloneTenantAsync(string sourceTenantId, string targetTenantId)
         {
             if (string.IsNullOrWhiteSpace(sourceTenantId))
@@ -125,7 +144,13 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Deprovisiones a tenant and cleans up all associated resources
+        /// <summary>
+        /// Deprovisions a tenant by removing the database file, tenant directory,
+        /// and metadata record. This operation is irreversible.
+        /// </summary>
+        /// <param name="tenantId">ID of the tenant to deprovision.</param>
+        /// <param name="deleteBackups">When <c>true</c>, also removes backup files for this tenant.</param>
+        /// <returns><c>true</c> if the tenant was found and removed; <c>false</c> if the tenant was not found.</returns>
         public async Task<bool> DeprovisionTenantAsync(string tenantId, bool deleteBackups = false)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -166,7 +191,12 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Validates tenant database integrity and accessibility
+        /// <summary>
+        /// Validates tenant database integrity by checking file existence, connectivity,
+        /// and verifying that the expected schema tables (Tenants, AuditLog) are present.
+        /// </summary>
+        /// <param name="tenantId">ID of the tenant to validate.</param>
+        /// <returns><c>true</c> if the database is valid and accessible; <c>false</c> otherwise.</returns>
         public async Task<bool> ValidateTenantDatabaseAsync(string tenantId)
         {
             try
