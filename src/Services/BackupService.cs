@@ -135,7 +135,7 @@ public sealed class BackupService : IBackupService {
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
-                throw new BackupException.NotFound(backupId);
+                throw BackupException.NotFound(backupId);
 
             backup.MarkAsCompleted(sizeBytes, durationMs);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -157,7 +157,7 @@ public sealed class BackupService : IBackupService {
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
-                throw new BackupException.NotFound(backupId);
+                throw BackupException.NotFound(backupId);
 
             backup.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -182,7 +182,7 @@ public sealed class BackupService : IBackupService {
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
-                throw new BackupException.NotFound(backupId);
+                throw BackupException.NotFound(backupId);
 
             backup.MarkAsVerified(verifiedBy);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -204,7 +204,7 @@ public sealed class BackupService : IBackupService {
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
-                throw new BackupException.NotFound(backupId);
+                throw BackupException.NotFound(backupId);
 
             backup.SetExpiration(expirationDate);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -255,7 +255,7 @@ public sealed class BackupService : IBackupService {
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
-                throw new BackupException.NotFound(backupId);
+                throw BackupException.NotFound(backupId);
 
             await _repository.DeleteAsync(backupId, cancellationToken);
             _logger.LogInformation("Backup deleted: {BackupId}", backupId);
@@ -279,7 +279,7 @@ public sealed class BackupService : IBackupService {
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
-                throw new BackupException.NotFound(backupId);
+                throw BackupException.NotFound(backupId);
 
             backup.AddTag(tag);
             await _repository.UpdateAsync(backup, cancellationToken);
