@@ -291,3 +291,62 @@ public sealed class TenantService : ITenantService {
         {
             _logger.LogError("Error setting tenant metadata: {Message}", ex.Message);
             throw;
+        }
+    }
+
+    public async Task<TenantStorageInfo> GetTenantDatabaseSizeAsync(string tenantId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(tenantId))
+            throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+
+        try
+        {
+            var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
+            if (tenant is null)
+                throw new TenantNotFoundException(tenantId);
+
+            if (string.IsNullOrWhiteSpace(tenant.DatabasePath))
+                throw new InvalidOperationException($"Tenant {tenantId} has no database path configured.");
+
+            long pageCount;
+            int pageSize;
+
+            var connectionString = $"Data Source={tenant.DatabasePath};";
+            using (var connection = new System.Data.SQLite.SQLiteConnection(connectionString))
+            {
+                await connection.OpenAsync(cancellationToken);
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA page_count;";
+                    pageCount = (long)(await cmd.ExecuteScalarAsync(cancellationToken) ?? 0L);
+                }
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "PRAGMA page_size;";
+                    pageSize = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? 4096);
+                }
+            }
+
+            long walSizeBytes = 0;
+            var walPath = tenant.DatabasePath + "-wal";
+            if (File.Exists(walPath))
+                walSizeBytes = new FileInfo(walPath).Length;
+
+            return new Models.TenantStorageInfo
+            {
+                TenantId = tenantId,
+                PageCount = pageCount,
+                PageSize = pageSize,
+                SizeBytes = pageCount * pageSize,
+                WalSizeBytes = walSizeBytes
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error retrieving database size for tenant {TenantId}: {Message}", tenantId, ex.Message);
+            throw;
+        }
+    }
+}
