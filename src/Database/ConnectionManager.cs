@@ -58,6 +58,45 @@ namespace SqliteMultiTenant.Database
         }
 
         /// <summary>
+        /// Acquires an encrypted connection for the given tenant.
+        /// After the connection is opened the SQLCipher <c>PRAGMA key</c> is applied so
+        /// the database is transparently decrypted for the duration of the connection.
+        /// </summary>
+        /// <param name="tenantId">The unique identifier of the tenant.</param>
+        /// <param name="connectionString">SQLite connection string for the tenant database.</param>
+        /// <param name="encryptionKey">
+        /// The per-tenant SQLCipher passphrase or raw hex key.
+        /// Requires the <c>SQLitePCLRaw.bundle_sqlcipher</c> package.
+        /// </param>
+        /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+        /// <returns>An open, decrypted SQLite connection bound to the tenant database.</returns>
+        public async Task<SQLiteConnection> GetEncryptedConnectionAsync(
+            string tenantId,
+            string connectionString,
+            string encryptionKey,
+            CancellationToken cancellationToken = default)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
+            if (string.IsNullOrEmpty(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+
+            if (string.IsNullOrEmpty(connectionString))
+                throw new ArgumentNullException(nameof(connectionString));
+
+            if (string.IsNullOrWhiteSpace(encryptionKey))
+                throw new ArgumentException("Encryption key cannot be empty.", nameof(encryptionKey));
+
+            var pool = _pools.GetOrAdd(tenantId,
+                _ => new ConnectionPool(connectionString, _maxConnectionsPerPool, _logger));
+
+            var connection = await pool.GetConnectionAsync(cancellationToken);
+            await SqliteMultiTenant.Security.SqlCipherConnectionBuilder.ApplyEncryptionKeyAsync(
+                connection, encryptionKey, cancellationToken);
+            return connection;
+        }
+
+        /// <summary>
         /// Releases a connection back to the pool for reuse.
         /// Broken connections are disposed rather than returned to the pool.
         /// </summary>
