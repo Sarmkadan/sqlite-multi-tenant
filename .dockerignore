@@ -1,0 +1,56 @@
+# Build artifacts
+bin/
+obj/
+
+# Git
+.git/
+.gitignore
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# User secrets
+appsettings.Development.json
+appsettings.Local.json
+
+# Test results
+TestResults/
+
+# Build output directories
+debug/
+release/
+
+# Package cache
+packages/
+
+# Environment files
+.env
+.env.local
+
+# IDE specific files
+.idea/
+.idea_modules/
+*.sln.docstates
+
+# Docker
+.dockerignore
+Dockerfile
+Dockerfile.dev
+
+# Build scripts
+*.py
+*.sh
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+
+# Database files (will be mounted separately)
+databases/

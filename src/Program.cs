@@ -3,10 +3,11 @@
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
 // =============================================================================
-
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Health;
 
 namespace SqliteMultiTenant;
 
@@ -17,12 +18,27 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        // Check if running in web mode (for Docker health checks)
+        var isWebMode = args.Contains("--web") || Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != null;
+
+        if (isWebMode)
+        {
+            await RunWebApplicationAsync(args);
+        }
+        else
+        {
+            await RunConsoleApplicationAsync(args);
+        }
+    }
+
+    static async Task RunConsoleApplicationAsync(string[] args)
+    {
         var services = new ServiceCollection();
 
         // Configure logging
         services.AddLogging(builder =>
             builder.AddConsole()
-                   .SetMinimumLevel(LogLevel.Information));
+            .SetMinimumLevel(LogLevel.Information));
 
         // Configure SQLite Multi-Tenant services
         string masterConnectionString = "Data Source=master.db;Version=3;";
@@ -51,6 +67,44 @@ class Program
         }
     }
 
+    static async Task RunWebApplicationAsync(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+
+        // Configure logging
+        builder.Logging.AddConsole();
+
+        // Configure SQLite Multi-Tenant services
+        string masterConnectionString = "Data Source=master.db;Version=3;";
+        builder.Services.AddSqliteMultiTenant(masterConnectionString, options =>
+        {
+            options.MaxConnections = 20;
+            options.ConnectionTimeoutSeconds = 30;
+            options.BackupRetentionDays = 30;
+            options.EnableEncryption = false;
+            options.BackupDirectory = Path.Combine(Directory.GetCurrentDirectory(), "backups");
+            options.DatabaseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "databases");
+            options.EnableLogging = true;
+        });
+
+        // Add health check services
+        builder.Services.AddHealthCheckServices();
+
+        var app = builder.Build();
+
+        // Health check endpoint
+        app.MapGet("/health", async (IHealthCheckService healthCheck) =>
+        {
+            var healthStatus = await healthCheck.GetHealthStatusAsync();
+            return Results.Ok(healthStatus);
+        });
+
+        // API controllers
+        app.MapControllers();
+
+        app.Run();
+    }
+
     static async Task RunDemonstration(IServiceProvider serviceProvider)
     {
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -70,9 +124,9 @@ class Program
             contactEmail: "admin@acme.example.com");
 
         logger.LogInformation("✓ Tenant created: {TenantId}", tenant.TenantId);
-        logger.LogInformation("  Name: {Name}", tenant.Name);
-        logger.LogInformation("  Status: {Status}", tenant.Status);
-        logger.LogInformation("  Created: {CreatedAt}\n", tenant.CreatedAt);
+        logger.LogInformation(" Name: {Name}", tenant.Name);
+        logger.LogInformation(" Status: {Status}", tenant.Status);
+        logger.LogInformation(" Created: {CreatedAt}\n", tenant.CreatedAt);
 
         // Retrieve the tenant
         logger.LogInformation("Retrieving tenant...");
@@ -80,7 +134,7 @@ class Program
         if (retrievedTenant is not null)
         {
             logger.LogInformation("✓ Tenant retrieved: {Name}", retrievedTenant.Name);
-            logger.LogInformation("  Last accessed: {LastAccessedAt}\n", retrievedTenant.LastAccessedAt);
+            logger.LogInformation(" Last accessed: {LastAccessedAt}\n", retrievedTenant.LastAccessedAt);
         }
 
         // Create a database entry for the tenant
@@ -97,8 +151,8 @@ class Program
         };
 
         logger.LogInformation("✓ Database entry created: {DatabaseId}", tenantDb.DatabaseId);
-        logger.LogInformation("  Tenant: {TenantId}", tenantDb.TenantId);
-        logger.LogInformation("  Path: {FilePath}\n", tenantDb.FilePath);
+        logger.LogInformation(" Tenant: {TenantId}", tenantDb.TenantId);
+        logger.LogInformation(" Path: {FilePath}\n", tenantDb.FilePath);
 
         // Create migrations
         logger.LogInformation("Creating migrations...");
@@ -110,8 +164,8 @@ class Program
             downScript: "DROP TABLE Users;");
 
         logger.LogInformation($"✓ Migration 1 created: {migration1.GetDisplayName()}");
-        logger.LogInformation("  Status: {Status}", migration1.Status);
-        logger.LogInformation("  Rollbackable: {IsRollbackable}\n", migration1.IsRollbackable);
+        logger.LogInformation(" Status: {Status}", migration1.Status);
+        logger.LogInformation(" Rollbackable: {IsRollbackable}\n", migration1.IsRollbackable);
 
         var migration2 = await migrationService.CreateMigrationAsync(
             databaseId: tenantDb.DatabaseId,
@@ -128,7 +182,7 @@ class Program
         logger.LogInformation("✓ Found {Count} pending migrations:", pendingMigrations.Count);
         foreach (var mig in pendingMigrations)
         {
-            logger.LogInformation($"  - {mig.GetDisplayName()} (Order: {mig.ExecutionOrder})");
+            logger.LogInformation($" - {mig.GetDisplayName()} (Order: {mig.ExecutionOrder})");
         }
         logger.LogInformation();
 
@@ -141,10 +195,10 @@ class Program
             backupPath: null);
 
         logger.LogInformation("✓ Backup created: {BackupId}", backup.BackupId);
-        logger.LogInformation("  Type: {BackupType}", backup.BackupType);
-        logger.LogInformation("  Status: {Status}", backup.Status);
-        logger.LogInformation("  Path: {BackupPath}", backup.BackupPath);
-        logger.LogInformation("  Expires: {ExpiresAt}\n", backup.ExpiresAt);
+        logger.LogInformation(" Type: {BackupType}", backup.BackupType);
+        logger.LogInformation(" Status: {Status}", backup.Status);
+        logger.LogInformation(" Path: {BackupPath}", backup.BackupPath);
+        logger.LogInformation(" Expires: {ExpiresAt}\n", backup.ExpiresAt);
 
         // Complete the backup
         logger.LogInformation("Completing backup...");
@@ -167,10 +221,10 @@ class Program
         if (backupDetails is not null)
         {
             logger.LogInformation($"✓ Backup details retrieved:");
-            logger.LogInformation("  Status: {Status}", backupDetails.Status);
-            logger.LogInformation("  Size: {SizeBytes} bytes", backupDetails.SizeBytes);
-            logger.LogInformation("  Verified: {IsVerified}", backupDetails.IsVerified);
-            logger.LogInformation($"  Tags: {string.Join(", ", backupDetails.GetTags())}\n");
+            logger.LogInformation(" Status: {Status}", backupDetails.Status);
+            logger.LogInformation(" Size: {SizeBytes} bytes", backupDetails.SizeBytes);
+            logger.LogInformation(" Verified: {IsVerified}", backupDetails.IsVerified);
+            logger.LogInformation($" Tags: {string.Join(", ", backupDetails.GetTags())}\n");
         }
 
         // Get all tenants
