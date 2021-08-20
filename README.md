@@ -845,6 +845,7 @@ dotnet run -c Release -- --filter "*"
 dotnet run -c Release -- --filter "*TenantValidation*"
 dotnet run -c Release -- --filter "*StringOperations*"
 dotnet run -c Release -- --filter "*QueryBuilder*"
+dotnet run -c Release -- --filter "*OptionsValidator*"
 ```
 
 ## Testing
