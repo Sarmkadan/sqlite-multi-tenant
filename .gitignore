@@ -69,3 +69,7 @@ Desktop.ini
 *.sqlite3
 *.db
 !*.csproj
+bin/
+obj/
+TestResults/
+.aider*
