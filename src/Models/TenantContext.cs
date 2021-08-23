@@ -15,6 +15,8 @@ public sealed class TenantContext {
     public string? UserId { get; set; }
     public string? UserEmail { get; set; }
     public DateTime EstablishedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? RequestId { get; set; }
     public string? ConnectionId { get; set; }
     public string? DatabasePath { get; set; }
     public Dictionary<string, object>? ContextData { get; set; }

@@ -167,7 +167,7 @@ public static class PathUtilities
                 ? directory.GetFiles(searchPattern)
                 : directory.GetFiles();
 
-            files.AddRange(currentFiles.Select(f => f.FullPath));
+            files.AddRange(currentFiles.Select(f => f.FullName));
 
             // Recursively add from subdirectories
             foreach (var subDir in directory.GetDirectories())

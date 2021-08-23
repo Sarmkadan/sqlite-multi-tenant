@@ -5,6 +5,7 @@
 // =============================================================================
 
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SqliteMultiTenant.Events;
 using Xunit;
@@ -16,7 +17,7 @@ public sealed class EventBusImplTests {
 
     public EventBusImplTests()
     {
-        _eventBus = new EventBusImpl();
+        _eventBus = new EventBusImpl(Substitute.For<ILogger<EventBusImpl>>());
     }
 
     [Fact]

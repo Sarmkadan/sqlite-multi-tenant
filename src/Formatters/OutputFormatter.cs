@@ -250,3 +250,41 @@ public sealed class FormatterFactory {
         };
     }
 }
+
+/// <summary>
+/// General-purpose formatter used by CLI output paths.
+/// Renders objects as plain text or delegates to <see cref="FormatterFactory"/> for
+/// json/csv/xml output.
+/// </summary>
+public sealed class OutputFormatter {
+    private readonly FormatterFactory _formatterFactory;
+
+    public OutputFormatter()
+        : this(new FormatterFactory())
+    {
+    }
+
+    public OutputFormatter(FormatterFactory formatterFactory)
+    {
+        _formatterFactory = formatterFactory;
+    }
+
+    /// <summary>
+    /// Formats a single object according to the requested format ("text", "json", "csv", "xml").
+    /// "text" renders a simple Property: Value listing; other formats delegate to FormatterFactory.
+    /// </summary>
+    public string FormatObject(object data, string format)
+    {
+        if (data is null)
+            return string.Empty;
+
+        if (string.Equals(format, "text", StringComparison.OrdinalIgnoreCase))
+        {
+            var properties = data.GetType().GetProperties();
+            var lines = properties.Select(p => $"{p.Name}: {p.GetValue(data) ?? string.Empty}");
+            return string.Join(Environment.NewLine, lines);
+        }
+
+        return _formatterFactory.GetFormatter(format).Format(data);
+    }
+}

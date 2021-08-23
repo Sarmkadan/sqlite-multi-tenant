@@ -65,15 +65,15 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().NotBeNullOrEmpty();
-            result.Should().Contain(""Table": "" + _testTableName + """);
-            result.Should().Contain(""RowCount": 3");
-            result.Should().Contain(""Id": 1");
-            result.Should().Contain(""Name": "Alice"");
-            result.Should().Contain(""Email": "alice@example.com"");
-            result.Should().Contain(""Name": "Bob"");
-            result.Should().Contain(""Email": "bob@example.com"");
-            result.Should().Contain(""Name": "Charlie"");
-            result.Should().Contain(""Email": null");
+            result.Should().Contain("\"Table\": \"" + _testTableName + "\"");
+            result.Should().Contain("\"RowCount\": 3");
+            result.Should().Contain("\"Id\": 1");
+            result.Should().Contain("\"Name\": \"Alice\"");
+            result.Should().Contain("\"Email\": \"alice@example.com\"");
+            result.Should().Contain("\"Name\": \"Bob\"");
+            result.Should().Contain("\"Email\": \"bob@example.com\"");
+            result.Should().Contain("\"Name\": \"Charlie\"");
+            result.Should().Contain("\"Email\": null");
         }
 
         [Fact]
@@ -86,8 +86,8 @@ namespace SqliteMultiTenant.Tests
             result.Should().NotBeNullOrEmpty();
             result.Should().NotContain("meta");
             result.Should().NotContain("Table");
-            result.Should().Contain(""Id": 1");
-            result.Should().Contain(""Name": "Alice"");
+            result.Should().Contain("\"Id\": 1");
+            result.Should().Contain("\"Name\": \"Alice\"");
         }
 
         [Fact]
@@ -124,8 +124,8 @@ namespace SqliteMultiTenant.Tests
             var result = await _sut.ExportAsJsonAsync(_connection, _emptyTableName, true);
 
             // Assert
-            result.Should().Contain(""RowCount": 0");
-            result.Should().Contain(""data": []");
+            result.Should().Contain("\"RowCount\": 0");
+            result.Should().Contain("\"data\": []");
         }
 
         [Fact]
@@ -133,14 +133,10 @@ namespace SqliteMultiTenant.Tests
         {
             // Arrange
             var expectedCsv =
-                "Id,Name,Email
-" +
-                "1,Alice,alice@example.com
-" +
-                "2,Bob,bob@example.com
-" +
-                "3,Charlie,""
-";
+                "Id,Name,Email\n" +
+                "1,Alice,alice@example.com\n" +
+                "2,Bob,bob@example.com\n" +
+                "3,Charlie,\"\"\n";
 
             // Act
             var result = await _sut.ExportAsCsvAsync(_connection, _testTableName, true);
@@ -154,12 +150,9 @@ namespace SqliteMultiTenant.Tests
         {
             // Arrange
             var expectedCsv =
-                "1,Alice,alice@example.com
-" +
-                "2,Bob,bob@example.com
-" +
-                "3,Charlie,""
-";
+                "1,Alice,alice@example.com\n" +
+                "2,Bob,bob@example.com\n" +
+                "3,Charlie,\"\"\n";
 
             // Act
             var result = await _sut.ExportAsCsvAsync(_connection, _testTableName, false);
@@ -178,21 +171,16 @@ namespace SqliteMultiTenant.Tests
                 command.CommandText = $"CREATE TABLE {specialTableName} (Id INTEGER PRIMARY KEY, Description TEXT);";
                 command.ExecuteNonQuery();
 
-                command.CommandText = $"INSERT INTO {specialTableName} (Id, Description) VALUES (1, 'Value with "quotes" and, commas');";
+                command.CommandText = $"INSERT INTO {specialTableName} (Id, Description) VALUES (1, 'Value with \"quotes\" and, commas');";
                 command.ExecuteNonQuery();
-                command.CommandText = $"INSERT INTO {specialTableName} (Id, Description) VALUES (2, 'Multi
-Line');";
+                command.CommandText = $"INSERT INTO {specialTableName} (Id, Description) VALUES (2, 'Multi\nLine');";
                 command.ExecuteNonQuery();
             }
 
             var expectedCsv =
-                "Id,Description
-" +
-                "1,"Value with ""quotes"" and, commas"
-" +
-                "2,"Multi
-Line"
-";
+                "Id,Description\n" +
+                "1,\"Value with \"\"quotes\"\" and, commas\"\n" +
+                "2,\"Multi\nLine\"\n";
 
             // Act
             var result = await _sut.ExportAsCsvAsync(_connection, specialTableName, true);
@@ -228,8 +216,7 @@ Line"
                 command.CommandText = $"CREATE TABLE IF NOT EXISTS AnotherEmptyTable (Col1 TEXT, Col2 TEXT);";
                 command.ExecuteNonQuery();
             }
-            var expectedCsv = "Col1,Col2
-";
+            var expectedCsv = "Col1,Col2\n";
 
             // Act
             var result = await _sut.ExportAsCsvAsync(_connection, "AnotherEmptyTable", true);

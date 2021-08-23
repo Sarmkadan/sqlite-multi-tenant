@@ -4,11 +4,14 @@
 // CTO & Software Architect
 // =============================================================================
 
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.BackgroundWorkers;
 using SqliteMultiTenant.Caching;
 using SqliteMultiTenant.Events;
 using SqliteMultiTenant.Integration;
 using SqliteMultiTenant.Logging;
+using SqliteMultiTenant.Middleware;
 using SqliteMultiTenant.Monitoring;
 using SqliteMultiTenant.Operations;
 using SqliteMultiTenant.Utilities;
@@ -92,9 +95,9 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddEventHandlers(this IServiceCollection services)
     {
-        services.AddScoped<Events.IDomainEventHandler<Events.TenantCreatedEvent>, Events.TenantCreatedEventHandler>();
+        services.AddScoped<Events.IDomainEventHandler<Events.TenantCreatedNotificationEvent>, Events.TenantCreatedEventHandler>();
         services.AddScoped<Events.IDomainEventHandler<Events.TenantDeletedEvent>, Events.TenantDeletedEventHandler>();
-        services.AddScoped<Events.IDomainEventHandler<Events.BackupCompletedEvent>, Events.BackupCompletedEventHandler>();
+        services.AddScoped<Events.IDomainEventHandler<Events.BackupCompletedNotificationEvent>, Events.BackupCompletedEventHandler>();
         services.AddScoped<Events.IDomainEventHandler<Events.MigrationCompletedEvent>, Events.MigrationCompletedEventHandler>();
         return services;
     }
@@ -114,9 +117,9 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFormatters(this IServiceCollection services)
     {
         services.AddSingleton<Formatters.OutputFormatter>();
-        services.AddScoped(sp => new Formatters.JsonFormatter(sp.GetRequiredService<ILogger<Formatters.JsonFormatter>>()));
-        services.AddScoped(sp => new Formatters.CsvFormatter(sp.GetRequiredService<ILogger<Formatters.CsvFormatter>>()));
-        services.AddScoped(sp => new Formatters.XmlFormatter(sp.GetRequiredService<ILogger<Formatters.XmlFormatter>>()));
+        services.AddScoped(sp => new Formatters.JsonExportFormatter(sp.GetRequiredService<ILogger<Formatters.JsonExportFormatter>>()));
+        services.AddScoped(sp => new Formatters.CsvExportFormatter(sp.GetRequiredService<ILogger<Formatters.CsvExportFormatter>>()));
+        services.AddScoped(sp => new Formatters.XmlExportFormatter(sp.GetRequiredService<ILogger<Formatters.XmlExportFormatter>>()));
         return services;
     }
 

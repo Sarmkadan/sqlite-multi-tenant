@@ -15,11 +15,11 @@ namespace SqliteMultiTenant.Formatters;
 /// Handles nested objects, arrays, and preserves type information.
 /// Useful for system integration and data interchange.
 /// </summary>
-public sealed class XmlFormatter {
+public sealed class XmlExportFormatter {
     private readonly bool _includeDeclaration;
-    private readonly ILogger<XmlFormatter> _logger;
+    private readonly ILogger<XmlExportFormatter> _logger;
 
-    public XmlFormatter(ILogger<XmlFormatter> logger, bool includeDeclaration = true)
+    public XmlExportFormatter(ILogger<XmlExportFormatter> logger, bool includeDeclaration = true)
     {
         _includeDeclaration = includeDeclaration;
         _logger = logger;

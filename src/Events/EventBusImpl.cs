@@ -150,6 +150,13 @@ namespace SqliteMultiTenant.Events
             while (_eventHistory.TryDequeue(out _)) { }
         }
 
+        // Releases subscriptions and history held by the event bus
+        public void Dispose()
+        {
+            _subscriptions.Clear();
+            ClearHistory();
+        }
+
         private async Task ExecuteHandlerSafelyAsync(EventSubscription subscription, DomainEvent @event)
         {
             try

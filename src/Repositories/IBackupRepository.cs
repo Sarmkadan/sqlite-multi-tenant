@@ -13,6 +13,7 @@ namespace SqliteMultiTenant.Repositories;
 /// </summary>
 public interface IBackupRepository
 {
+    Task<List<Backup>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Backup?> GetByIdAsync(string backupId, CancellationToken cancellationToken = default);
     Task<List<Backup>> GetByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default);
     Task<List<Backup>> GetCompletedBackupsAsync(string databaseId, CancellationToken cancellationToken = default);

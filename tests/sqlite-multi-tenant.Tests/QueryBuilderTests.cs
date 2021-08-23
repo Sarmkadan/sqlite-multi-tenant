@@ -9,6 +9,7 @@ using SqliteMultiTenant.DataOperations;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
 using Xunit;
 
 namespace SqliteMultiTenant.Tests;
@@ -145,7 +146,7 @@ public sealed class QueryBuilderTests {
         builder.Build(); // To set internal parameters list
         using var cmd = new SQLiteCommand();
         builder.ApplyParameters(cmd);
-        cmd.Parameters.Should().Contain(p => p.ParameterName == "@price" && p.Value.Equals(100));
+        cmd.Parameters.Cast<SQLiteParameter>().Should().Contain(p => p.ParameterName == "@price" && p.Value.Equals(100));
     }
 
     [Fact]
@@ -255,8 +256,8 @@ public sealed class QueryBuilderTests {
         builder.ApplyParameters(command);
         
         // Assert
-        command.Parameters.Should().Contain(p => p.ParameterName == "@id" && (int)p.Value == 123);
-        command.Parameters.Should().Contain(p => p.ParameterName == "@name" && (string)p.Value == "TestUser");
+        command.Parameters.Cast<SQLiteParameter>().Should().Contain(p => p.ParameterName == "@id" && (int)p.Value == 123);
+        command.Parameters.Cast<SQLiteParameter>().Should().Contain(p => p.ParameterName == "@name" && (string)p.Value == "TestUser");
     }
 
     // New tests for InsertBuilder

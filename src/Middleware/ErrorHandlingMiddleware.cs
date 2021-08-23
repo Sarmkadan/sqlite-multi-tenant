@@ -81,7 +81,7 @@ public sealed class ErrorHandlingMiddleware {
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = statusCode;
 
-        var response = new ErrorResponse
+        var response = new SqliteMultiTenant.Api.Responses.ErrorResponse
         {
             Code = errorCode,
             Message = message,

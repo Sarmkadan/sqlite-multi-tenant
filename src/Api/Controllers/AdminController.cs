@@ -38,7 +38,7 @@ public sealed class AdminController : ControllerBase {
     /// Verifies database connectivity, file system access, and service status.
     /// </summary>
     [HttpGet("health")]
-    [ProduceResponseType(typeof(ApiResponse<HealthCheckResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<HealthCheckResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHealthAsync()
     {
         try
@@ -70,7 +70,7 @@ public sealed class AdminController : ControllerBase {
     /// Includes CPU usage, memory consumption, database connection counts, etc.
     /// </summary>
     [HttpGet("metrics")]
-    [ProduceResponseType(typeof(ApiResponse<SystemMetrics>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SystemMetrics>), StatusCodes.Status200OK)]
     public IActionResult GetMetrics()
     {
         try
@@ -102,7 +102,7 @@ public sealed class AdminController : ControllerBase {
     /// Includes system performance, request metrics, and backup/migration statistics.
     /// </summary>
     [HttpGet("dashboard")]
-    [ProduceResponseType(typeof(ApiResponse<MetricsSnapshot>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<MetricsSnapshot>), StatusCodes.Status200OK)]
     public IActionResult GetMetricsDashboard()
     {
         try
@@ -123,7 +123,7 @@ public sealed class AdminController : ControllerBase {
     /// Returns information about what was cleared and memory freed.
     /// </summary>
     [HttpPost("cache/clear")]
-    [ProduceResponseType(typeof(ApiResponse<CacheClearResult>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<CacheClearResult>), StatusCodes.Status200OK)]
     public IActionResult ClearCache()
     {
         try
@@ -156,7 +156,7 @@ public sealed class AdminController : ControllerBase {
     /// Should be used sparingly as it impacts performance.
     /// </summary>
     [HttpPost("gc/collect")]
-    [ProduceResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public IActionResult ForceGarbageCollection()
     {
         try
@@ -180,7 +180,7 @@ public sealed class AdminController : ControllerBase {
     /// Includes .NET version, OS info, and application version.
     /// </summary>
     [HttpGet("diagnostics")]
-    [ProduceResponseType(typeof(ApiResponse<DiagnosticsInfo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<DiagnosticsInfo>), StatusCodes.Status200OK)]
     public IActionResult GetDiagnostics()
     {
         try

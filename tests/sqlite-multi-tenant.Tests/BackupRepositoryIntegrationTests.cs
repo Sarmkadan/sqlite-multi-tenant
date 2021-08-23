@@ -5,56 +5,64 @@
 // =============================================================================
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
+using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;
-using SqliteMultiTenant.Constants;
 
 namespace SqliteMultiTenant.Tests
 {
     public sealed class BackupRepositoryIntegrationTests : IDisposable {
-        private readonly SqliteConnection _connection;
-        private readonly DbContextOptions<TenantContext> _dbContextOptions;
+        private readonly string _dbPath;
+        private readonly string _connectionString;
         private readonly BackupRepository _backupRepository;
 
         public BackupRepositoryIntegrationTests()
         {
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
+            _dbPath = Path.Combine(Path.GetTempPath(), $"backup_repo_tests_{Guid.NewGuid():N}.db");
+            _connectionString = $"Data Source={_dbPath};Version=3;";
 
-            _dbContextOptions = new DbContextOptionsBuilder<TenantContext>()
-                .UseSqlite(_connection)
-                .Options;
+            _backupRepository = new BackupRepository(_connectionString, NullLogger<BackupRepository>.Instance);
 
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                context.Database.EnsureCreated();
-                SeedData(context);
-            }
-
-            _backupRepository = new BackupRepository(new TenantContext(_dbContextOptions));
+            SeedData();
         }
 
-        private void SeedData(TenantContext context)
+        private void SeedData()
         {
-            if (!context.Backups.Any())
-            {
-                context.Backups.Add(new Backup { BackupId = "backup1", DatabaseId = "db1", CreatedAt = DateTime.UtcNow.AddHours(-2), Status = BackupStatus.Completed, ExpiresAt = DateTime.UtcNow.AddDays(7) });
-                context.Backups.Add(new Backup { BackupId = "backup2", DatabaseId = "db1", CreatedAt = DateTime.UtcNow.AddHours(-1), Status = BackupStatus.Pending, ExpiresAt = DateTime.UtcNow.AddDays(7) });
-                context.Backups.Add(new Backup { BackupId = "backup3", DatabaseId = "db2", CreatedAt = DateTime.UtcNow.AddHours(-3), Status = BackupStatus.Completed, ExpiresAt = DateTime.UtcNow.AddDays(-1) }); // Expired backup
-                context.SaveChanges();
-            }
+            using var connection = new SQLiteConnection(_connectionString);
+            connection.Open();
+
+            InsertBackup(connection, "backup1", "db1", "/backups/backup1.bak", BackupStatus.Completed, DateTime.UtcNow.AddHours(-2), DateTime.UtcNow.AddDays(7));
+            InsertBackup(connection, "backup2", "db1", "/backups/backup2.bak", BackupStatus.Pending, DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddDays(7));
+            InsertBackup(connection, "backup3", "db2", "/backups/backup3.bak", BackupStatus.Completed, DateTime.UtcNow.AddHours(-3), DateTime.UtcNow.AddDays(-1)); // Expired backup
+        }
+
+        private static void InsertBackup(SQLiteConnection connection, string backupId, string databaseId, string backupPath, BackupStatus status, DateTime createdAt, DateTime expiresAt)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO Backups (BackupId, DatabaseId, BackupPath, BackupType, Status, CreatedAt, SizeBytes, OriginalSizeBytes, CompressionRatio, DurationMs, IsEncrypted, IsVerified, ExpiresAt)
+                VALUES (@BackupId, @DatabaseId, @BackupPath, @BackupType, @Status, @CreatedAt, 0, 0, 0, 0, 0, @IsVerified, @ExpiresAt)";
+            command.Parameters.AddWithValue("@BackupId", backupId);
+            command.Parameters.AddWithValue("@DatabaseId", databaseId);
+            command.Parameters.AddWithValue("@BackupPath", backupPath);
+            command.Parameters.AddWithValue("@BackupType", (int)BackupType.Full);
+            command.Parameters.AddWithValue("@Status", (int)status);
+            command.Parameters.AddWithValue("@CreatedAt", createdAt);
+            command.Parameters.AddWithValue("@IsVerified", status == BackupStatus.Completed ? 1 : 0);
+            command.Parameters.AddWithValue("@ExpiresAt", expiresAt);
+            command.ExecuteNonQuery();
         }
 
         [Fact]
         public async Task GetAllAsync_ShouldReturnAllBackups()
         {
-            // Arrange
             // Act
             var backups = await _backupRepository.GetAllAsync();
 
@@ -74,7 +82,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             backup.Should().NotBeNull();
-            backup.BackupId.Should().Be(backupId);
+            backup!.BackupId.Should().Be(backupId);
             backup.DatabaseId.Should().Be("db1");
         }
 
@@ -95,7 +103,7 @@ namespace SqliteMultiTenant.Tests
         public async Task AddAsync_ShouldAddBackupToDatabase()
         {
             // Arrange
-            var newBackup = new Backup { BackupId = "backup4", DatabaseId = "db2", CreatedAt = DateTime.UtcNow, Status = BackupStatus.Pending };
+            var newBackup = new Backup { BackupId = "backup4", DatabaseId = "db2", BackupPath = "/backups/backup4.bak", CreatedAt = DateTime.UtcNow, Status = BackupStatus.Pending };
 
             // Act
             var addedBackup = await _backupRepository.AddAsync(newBackup);
@@ -104,40 +112,28 @@ namespace SqliteMultiTenant.Tests
             addedBackup.Should().NotBeNull();
             addedBackup.BackupId.Should().Be("backup4");
 
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var backupInDb = await context.Backups.FirstOrDefaultAsync(b => b.BackupId == "backup4");
-                backupInDb.Should().NotBeNull();
-                backupInDb.DatabaseId.Should().Be("db2");
-            }
+            var backupInDb = await _backupRepository.GetByIdAsync("backup4");
+            backupInDb.Should().NotBeNull();
+            backupInDb!.DatabaseId.Should().Be("db2");
         }
 
         [Fact]
         public async Task UpdateAsync_ShouldUpdateBackupInDatabase()
         {
             // Arrange
-            Backup backupToUpdate;
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                backupToUpdate = await context.Backups.FirstAsync(b => b.BackupId == "backup1");
-                backupToUpdate.Status = BackupStatus.Failed;
-                backupToUpdate.ErrorMessage = "Disk full";
-            }
+            var backupToUpdate = await _backupRepository.GetByIdAsync("backup1");
+            backupToUpdate.Should().NotBeNull();
+            backupToUpdate!.Status = BackupStatus.Failed;
+            backupToUpdate.ErrorMessage = "Disk full";
 
             // Act
-            var updatedBackup = await _backupRepository.UpdateAsync(backupToUpdate);
+            await _backupRepository.UpdateAsync(backupToUpdate);
 
             // Assert
-            updatedBackup.Should().NotBeNull();
-            updatedBackup.Status.Should().Be(BackupStatus.Failed);
-            updatedBackup.ErrorMessage.Should().Be("Disk full");
-
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var backupInDb = await context.Backups.FirstOrDefaultAsync(b => b.BackupId == "backup1");
-                backupInDb.Should().NotBeNull();
-                backupInDb.Status.Should().Be(BackupStatus.Failed);
-            }
+            var backupInDb = await _backupRepository.GetByIdAsync("backup1");
+            backupInDb.Should().NotBeNull();
+            backupInDb!.Status.Should().Be(BackupStatus.Failed);
+            backupInDb.ErrorMessage.Should().Be("Disk full");
         }
 
         [Fact]
@@ -150,11 +146,8 @@ namespace SqliteMultiTenant.Tests
             await _backupRepository.DeleteAsync(backupIdToDelete);
 
             // Assert
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var backupInDb = await context.Backups.FirstOrDefaultAsync(b => b.BackupId == backupIdToDelete);
-                backupInDb.Should().BeNull();
-            }
+            var backupInDb = await _backupRepository.GetByIdAsync(backupIdToDelete);
+            backupInDb.Should().BeNull();
         }
 
         [Fact]
@@ -200,7 +193,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             latestBackup.Should().NotBeNull();
-            latestBackup.BackupId.Should().Be("backup2"); // 'backup2' has a later CreatedAt than 'backup1'
+            latestBackup!.BackupId.Should().Be("backup2"); // 'backup2' has a later CreatedAt than 'backup1'
         }
 
         [Fact]
@@ -233,8 +226,10 @@ namespace SqliteMultiTenant.Tests
 
         public void Dispose()
         {
-            _connection.Close();
-            _connection.Dispose();
+            if (File.Exists(_dbPath))
+            {
+                File.Delete(_dbPath);
+            }
         }
     }
 }

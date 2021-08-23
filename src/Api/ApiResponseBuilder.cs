@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using SqliteMultiTenant.Api.Responses;
 
@@ -238,7 +239,12 @@ namespace SqliteMultiTenant.Api
                 IsSuccess = _success,
                 Data = _data,
                 Message = _message,
-                Errors = _errors.Count > 0 ? _errors : null,
+                Errors = _errors.Count > 0
+                    ? _errors
+                        .Select((e, i) => new { Key = e.Code ?? e.Field ?? i.ToString(), Value = e.Message })
+                        .GroupBy(kv => kv.Key)
+                        .ToDictionary(g => g.Key, g => g.First().Value)
+                    : null,
                 StatusCode = (int)_statusCode,
                 Timestamp = DateTime.UtcNow
             };

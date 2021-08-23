@@ -24,7 +24,7 @@ namespace SqliteMultiTenant.Cli
 
         // Registers a command
         public CommandLineParser RegisterCommand(string name, string description,
-            Action<ParsedCommand> handler, params string[] aliases)
+            Action<LegacyParsedCommand> handler, params string[] aliases)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Command name cannot be empty", nameof(name));
@@ -84,17 +84,17 @@ namespace SqliteMultiTenant.Cli
         }
 
         // Parses the command line arguments
-        public ParsedCommand Parse()
+        public LegacyParsedCommand Parse()
         {
             if (_arguments.Count == 0)
-                return new ParsedCommand { IsValid = false, Error = "No command specified" };
+                return new LegacyParsedCommand { IsValid = false, Error = "No command specified" };
 
             var commandName = _arguments[0];
 
             if (!_commands.TryGetValue(commandName, out var commandDef))
-                return new ParsedCommand { IsValid = false, Error = $"Unknown command: {commandName}" };
+                return new LegacyParsedCommand { IsValid = false, Error = $"Unknown command: {commandName}" };
 
-            var parsed = new ParsedCommand { Command = commandName };
+            var parsed = new LegacyParsedCommand { Command = commandName };
             var position = 1;
 
             while (position < _arguments.Count)
@@ -247,7 +247,7 @@ namespace SqliteMultiTenant.Cli
         {
             public string Name { get; set; }
             public string Description { get; set; }
-            public Action<ParsedCommand> Handler { get; set; }
+            public Action<LegacyParsedCommand> Handler { get; set; }
             public List<string> Aliases { get; set; } = new List<string>();
             public Dictionary<string, OptionDefinition> Options { get; set; } = new Dictionary<string, OptionDefinition>();
             public Dictionary<string, FlagDefinition> Flags { get; set; } = new Dictionary<string, FlagDefinition>();
@@ -269,7 +269,7 @@ namespace SqliteMultiTenant.Cli
         }
     }
 
-    public sealed class ParsedCommand {
+    public sealed class LegacyParsedCommand {
         public string Command { get; set; }
         public Dictionary<string, string> Options { get; set; } = new Dictionary<string, string>();
         public Dictionary<string, bool> Flags { get; set; } = new Dictionary<string, bool>();

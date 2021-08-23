@@ -16,6 +16,7 @@ public abstract class DomainEvent
     public string EventId { get; } = Guid.NewGuid().ToString();
     public DateTime OccurredAt { get; } = DateTime.UtcNow;
     public string EventType { get; }
+    public string? TenantId { get; set; }
 
     protected DomainEvent(string eventType)
     {

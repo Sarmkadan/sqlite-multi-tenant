@@ -356,7 +356,7 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
-    private Tenant MapTenant(SQLiteDataReader reader)
+    private Tenant MapTenant(System.Data.Common.DbDataReader reader)
     {
         var tenant = new Tenant
         {

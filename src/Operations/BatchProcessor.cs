@@ -16,7 +16,7 @@ public interface IBatchProcessor
     Task<BatchProcessResult<TResult>> ProcessAsync<TItem, TResult>(
         IEnumerable<TItem> items,
         Func<TItem, Task<TResult>> operation,
-        int maxConcurrency = 4) where TResult : class;
+        int maxConcurrency = 4);
 
     Task<BatchProcessResult<object>> ProcessAsync<TItem>(
         IEnumerable<TItem> items,
@@ -38,7 +38,7 @@ public sealed class BatchProcessor : IBatchProcessor {
     public async Task<BatchProcessResult<TResult>> ProcessAsync<TItem, TResult>(
         IEnumerable<TItem> items,
         Func<TItem, Task<TResult>> operation,
-        int maxConcurrency = 4) where TResult : class
+        int maxConcurrency = 4)
     {
         var result = new BatchProcessResult<TResult>();
         var itemList = items.ToList();
@@ -123,7 +123,7 @@ public sealed class BatchProcessor : IBatchProcessor {
     }
 }
 
-public sealed class BatchProcessResult<T> where T : class {
+public sealed class BatchProcessResult<T> {
     public List<T> SuccessfulResults { get; set; } = new();
     public List<BatchErrorItem> Errors { get; set; } = new();
     public int SuccessCount => SuccessfulResults.Count;

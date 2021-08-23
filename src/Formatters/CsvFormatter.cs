@@ -14,12 +14,12 @@ namespace SqliteMultiTenant.Formatters;
 /// Handles nested objects, arrays, and special character escaping.
 /// Useful for exporting data to spreadsheet applications.
 /// </summary>
-public sealed class CsvFormatter {
+public sealed class CsvExportFormatter {
     private readonly string _delimiter;
     private readonly bool _includeHeader;
-    private readonly ILogger<CsvFormatter> _logger;
+    private readonly ILogger<CsvExportFormatter> _logger;
 
-    public CsvFormatter(ILogger<CsvFormatter> logger, string delimiter = ",", bool includeHeader = true)
+    public CsvExportFormatter(ILogger<CsvExportFormatter> logger, string delimiter = ",", bool includeHeader = true)
     {
         _delimiter = delimiter;
         _includeHeader = includeHeader;

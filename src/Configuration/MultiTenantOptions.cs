@@ -13,6 +13,7 @@ namespace SqliteMultiTenant.Configuration
     public sealed class MultiTenantOptions {
         public string BasePath { get; set; } = "./databases";
         public int MaxConnectionsPerTenant { get; set; } = 10;
+        public int DefaultMaxConnections { get; set; } = 10;
         public int MaxBackupCount { get; set; } = 20;
         public TimeSpan BackupRetention { get; set; } = TimeSpan.FromDays(30);
         public bool EnableBackupScheduling { get; set; } = true;

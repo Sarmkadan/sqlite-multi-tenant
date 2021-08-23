@@ -25,6 +25,38 @@ public sealed class MigrationRepository : IMigrationRepository {
         InitializeDatabase();
     }
 
+    public async Task<List<Migration>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var connection = new SQLiteConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            const string query = @"
+                SELECT MigrationId, DatabaseId, Version, Name, Description, UpScript, DownScript,
+                       Status, CreatedAt, ExecutedAt, CompletedAt, RolledBackAt, ExecutedBy,
+                       ErrorMessage, ExecutionTimeMs, ExecutionOrder, IsRollbackable
+                FROM Migrations
+                ORDER BY CreatedAt ASC";
+
+            using var command = new SQLiteCommand(query, connection);
+
+            using var reader = await command.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
+
+            var migrations = new List<Migration>();
+            while (reader.Read())
+            {
+                migrations.Add(MapMigration(reader));
+            }
+            return migrations;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error retrieving all migrations: {Message}", ex.Message);
+            throw;
+        }
+    }
+
     public async Task<Migration?> GetByIdAsync(string migrationId, CancellationToken cancellationToken = default)
     {
         try
@@ -351,7 +383,7 @@ public sealed class MigrationRepository : IMigrationRepository {
         return await GetByDatabaseAsync(databaseId, cancellationToken);
     }
 
-    private Migration MapMigration(SQLiteDataReader reader)
+    private Migration MapMigration(System.Data.Common.DbDataReader reader)
     {
         return new Migration
         {

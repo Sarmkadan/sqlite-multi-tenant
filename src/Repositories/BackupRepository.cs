@@ -25,6 +25,38 @@ public sealed class BackupRepository : IBackupRepository {
         InitializeDatabase();
     }
 
+    public async Task<List<Backup>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var connection = new SQLiteConnection(_connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            const string query = @"
+                SELECT BackupId, DatabaseId, BackupPath, BackupType, Status, CreatedAt, CompletedAt,
+                       VerifiedAt, SizeBytes, OriginalSizeBytes, CompressionRatio, CreatedBy,
+                       VerifiedBy, ErrorMessage, DurationMs, IsEncrypted, IsVerified, ExpiresAt, Tags
+                FROM Backups
+                ORDER BY CreatedAt DESC";
+
+            using var command = new SQLiteCommand(query, connection);
+
+            using var reader = await command.ExecuteReaderAsync(CommandBehavior.SequentialAccess, cancellationToken);
+
+            var backups = new List<Backup>();
+            while (reader.Read())
+            {
+                backups.Add(MapBackup(reader));
+            }
+            return backups;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error retrieving all backups: {Message}", ex.Message);
+            throw;
+        }
+    }
+
     public async Task<Backup?> GetByIdAsync(string backupId, CancellationToken cancellationToken = default)
     {
         try
@@ -420,7 +452,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
-    private Backup MapBackup(SQLiteDataReader reader)
+    private Backup MapBackup(System.Data.Common.DbDataReader reader)
     {
         return new Backup
         {
