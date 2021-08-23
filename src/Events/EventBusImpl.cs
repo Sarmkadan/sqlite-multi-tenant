@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System;
 using System.Collections.Concurrent;
@@ -13,12 +13,24 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Events
 {
-    // Production event bus implementation with support for async handlers and priorities
+    /// <summary>
+    /// Production-grade event bus implementation that supports asynchronous event handling with priority-based subscriber ordering.
+    /// </summary>
+    /// <remarks>
+    /// This implementation provides thread-safe event publishing and subscription management using concurrent collections.
+    /// It maintains an event history for monitoring and debugging purposes, and supports both synchronous and asynchronous publishing.
+    /// </remarks>
     public sealed class EventBusImpl {
         private readonly ConcurrentDictionary<string, List<EventSubscription>> _subscriptions;
         private readonly ILogger<EventBusImpl> _logger;
         private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EventBusImpl"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance for recording operational events and errors.</param>
+        /// <param name="historySize">Maximum number of published events to retain in history (default: 1000).</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public EventBusImpl(ILogger<EventBusImpl> logger, int historySize = 1000)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -26,9 +38,16 @@ namespace SqliteMultiTenant.Events
             _eventHistory = new ConcurrentQueue<PublishedEvent>();
         }
 
-        // Subscribes to an event type with optional priority
+        /// <summary>
+        /// Subscribes an asynchronous handler to events of the specified type.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of domain event to subscribe to.</typeparam>
+        /// <param name="handler">The asynchronous handler function that processes the event.</param>
+        /// <param name="priority">The priority level of the subscription (higher values execute first).</param>
+        /// <returns>A disposable object that can be used to unsubscribe from the event.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is null.</exception>
         public IDisposable Subscribe<TEvent>(Func<TEvent, Task> handler, int priority = 0)
-            where TEvent : DomainEvent
+        where TEvent : DomainEvent
         {
             if (handler is null)
                 throw new ArgumentNullException(nameof(handler));
@@ -57,7 +76,13 @@ namespace SqliteMultiTenant.Events
             return new Unsubscriber(this, eventType, subscription.Id);
         }
 
-        // Publishes an event to all subscribers
+        /// <summary>
+        /// Asynchronously publishes an event to all registered subscribers.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of domain event to publish.</typeparam>
+        /// <param name="@event">The event instance to publish.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="@event"/> is null.</exception>
         public async Task PublishAsync<TEvent>(TEvent @event) where TEvent : DomainEvent
         {
             if (@event is null)
@@ -97,13 +122,21 @@ namespace SqliteMultiTenant.Events
             }
         }
 
-        // Publishes event synchronously
+        /// <summary>
+        /// Synchronously publishes an event to all registered subscribers.
+        /// </summary>
+        /// <typeparam name="TEvent">The type of domain event to publish.</typeparam>
+        /// <param name="@event">The event instance to publish.</param>
         public void Publish<TEvent>(TEvent @event) where TEvent : DomainEvent
         {
             PublishAsync(@event).GetAwaiter().GetResult();
         }
 
-        // Gets the event history for monitoring and debugging
+        /// <summary>
+        /// Retrieves a limited set of recently published events for monitoring and debugging purposes.
+        /// </summary>
+        /// <param name="take">Maximum number of events to return (default: 100).</param>
+        /// <returns>A list of published events ordered by publication time (most recent first).</returns>
         public List<PublishedEvent> GetEventHistory(int take = 100)
         {
             var history = new List<PublishedEvent>();
@@ -126,7 +159,10 @@ namespace SqliteMultiTenant.Events
                 .ToList();
         }
 
-        // Gets event statistics
+        /// <summary>
+        /// Generates statistics about event subscriptions and publication counts.
+        /// </summary>
+        /// <returns>A dictionary mapping event type names to their statistics.</returns>
         public Dictionary<string, EventStatistics> GetEventStatistics()
         {
             var stats = new Dictionary<string, EventStatistics>();
@@ -144,13 +180,17 @@ namespace SqliteMultiTenant.Events
             return stats;
         }
 
-        // Clears event history
+        /// <summary>
+        /// Clears the event history, removing all stored published events.
+        /// </summary>
         public void ClearHistory()
         {
             while (_eventHistory.TryDequeue(out _)) { }
         }
 
-        // Releases subscriptions and history held by the event bus
+        /// <summary>
+        /// Releases all subscriptions and clears the event history.
+        /// </summary>
         public void Dispose()
         {
             _subscriptions.Clear();
@@ -210,6 +250,9 @@ namespace SqliteMultiTenant.Events
         }
     }
 
+    /// <summary>
+    /// Represents a published event with metadata about its publication.
+    /// </summary>
     public sealed class PublishedEvent {
         public Guid Id { get; set; }
         public string EventType { get; set; }
@@ -218,6 +261,9 @@ namespace SqliteMultiTenant.Events
         public int SuccessfulHandlers { get; set; }
     }
 
+    /// <summary>
+    /// Contains statistics about event subscriptions and publication counts for a specific event type.
+    /// </summary>
     public sealed class EventStatistics {
         public string EventType { get; set; }
         public int SubscriberCount { get; set; }
