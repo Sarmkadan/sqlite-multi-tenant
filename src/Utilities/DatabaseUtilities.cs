@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Utilities
 {
     // Common database utility functions for SQLite operations
-    public static class DatabaseUtilities
+    public class DatabaseUtilities
     {
         // Enables all pragmas for optimal multi-tenant performance
         public static async Task ConfigureOptimalSettingsAsync(SQLiteConnection connection)
