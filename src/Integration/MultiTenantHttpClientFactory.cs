@@ -12,12 +12,20 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Integration
 {
-    // Creates and manages HTTP clients with tenant-aware headers and configuration
-    public sealed class MultiTenantHttpClientFactory {
+    /// <summary>
+    /// Creates and manages HTTP clients with tenant-aware headers and configuration.
+    /// </summary>
+    public sealed class MultiTenantHttpClientFactory
+    {
         private readonly ILogger<MultiTenantHttpClientFactory> _logger;
         private readonly ConcurrentDictionary<string, HttpClient> _clientCache;
         private readonly string _defaultUserAgent;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiTenantHttpClientFactory"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
+        /// <param name="defaultUserAgent">The default user agent string.</param>
         public MultiTenantHttpClientFactory(ILogger<MultiTenantHttpClientFactory> logger,
             string defaultUserAgent = "SqliteMultiTenant/1.0")
         {
@@ -26,7 +34,14 @@ namespace SqliteMultiTenant.Integration
             _defaultUserAgent = defaultUserAgent;
         }
 
-        // Creates an HTTP client with tenant context
+        /// <summary>
+        /// Creates an HTTP client with tenant context.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID.</param>
+        /// <param name="apiKey">The API key (optional).</param>
+        /// <param name="timeoutSeconds">The timeout in seconds (default: 30).</param>
+        /// <param name="baseAddress">The base address (optional).</param>
+        /// <returns>The HTTP client instance.</returns>
         public HttpClient CreateClientForTenant(string tenantId, string apiKey = null,
             int timeoutSeconds = 30, string baseAddress = null)
         {
@@ -57,7 +72,11 @@ namespace SqliteMultiTenant.Integration
             });
         }
 
-        // Gets or creates a cached client
+        /// <summary>
+        /// Gets or creates a cached client.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID.</param>
+        /// <returns>The cached HTTP client instance or null if not found.</returns>
         public HttpClient GetCachedClient(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -69,7 +88,10 @@ namespace SqliteMultiTenant.Integration
             return cachedClient;
         }
 
-        // Invalidates a cached client
+        /// <summary>
+        /// Invalidates a cached client.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID.</param>
         public void InvalidateClient(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -88,7 +110,9 @@ namespace SqliteMultiTenant.Integration
             _logger.LogInformation("Invalidated HTTP client cache for tenant: {TenantId}", tenantId);
         }
 
-        // Clears all cached clients
+        /// <summary>
+        /// Clears all cached clients.
+        /// </summary>
         public void ClearCache()
         {
             foreach (var client in _clientCache.Values)
@@ -100,6 +124,12 @@ namespace SqliteMultiTenant.Integration
             _logger.LogInformation("Cleared HTTP client cache");
         }
 
+        /// <summary>
+        /// Sets default headers for the HTTP client.
+        /// </summary>
+        /// <param name="client">The HTTP client instance.</param>
+        /// <param name="tenantId">The tenant ID.</param>
+        /// <param name="apiKey">The API key (optional).</param>
         private void SetDefaultHeaders(HttpClient client, string tenantId, string apiKey = null)
         {
             client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId);
@@ -115,55 +145,94 @@ namespace SqliteMultiTenant.Integration
             client.DefaultRequestHeaders.Add("X-Timestamp", DateTime.UtcNow.ToString("O"));
         }
 
+        /// <summary>
+        /// Disposes the HTTP client factory instance.
+        /// </summary>
         public void Dispose()
         {
             ClearCache();
         }
     }
 
-    // Builder for creating HTTP clients with fluent API
-    public sealed class TenantHttpClientBuilder {
+    /// <summary>
+    /// Builder for creating HTTP clients with fluent API.
+    /// </summary>
+    public sealed class TenantHttpClientBuilder
+    {
         private string _tenantId;
         private string _apiKey;
         private int _timeoutSeconds = 30;
         private string _baseAddress;
         private readonly Dictionary<string, string> _defaultHeaders;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TenantHttpClientBuilder"/> class.
+        /// </summary>
         public TenantHttpClientBuilder()
         {
             _defaultHeaders = new Dictionary<string, string>();
         }
 
+        /// <summary>
+        /// Specifies the tenant ID.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID.</param>
+        /// <returns>The builder instance.</returns>
         public TenantHttpClientBuilder ForTenant(string tenantId)
         {
             _tenantId = tenantId;
             return this;
         }
 
+        /// <summary>
+        /// Specifies the API key.
+        /// </summary>
+        /// <param name="apiKey">The API key.</param>
+        /// <returns>The builder instance.</returns>
         public TenantHttpClientBuilder WithApiKey(string apiKey)
         {
             _apiKey = apiKey;
             return this;
         }
 
+        /// <summary>
+        /// Specifies the timeout in seconds.
+        /// </summary>
+        /// <param name="seconds">The timeout in seconds.</param>
+        /// <returns>The builder instance.</returns>
         public TenantHttpClientBuilder WithTimeout(int seconds)
         {
             _timeoutSeconds = seconds;
             return this;
         }
 
+        /// <summary>
+        /// Specifies the base address.
+        /// </summary>
+        /// <param name="baseAddress">The base address.</param>
+        /// <returns>The builder instance.</returns>
         public TenantHttpClientBuilder WithBaseAddress(string baseAddress)
         {
             _baseAddress = baseAddress;
             return this;
         }
 
+        /// <summary>
+        /// Adds a custom header.
+        /// </summary>
+        /// <param name="name">The header name.</param>
+        /// <param name="value">The header value.</param>
+        /// <returns>The builder instance.</returns>
         public TenantHttpClientBuilder AddHeader(string name, string value)
         {
             _defaultHeaders[name] = value;
             return this;
         }
 
+        /// <summary>
+        /// Builds the HTTP client instance.
+        /// </summary>
+        /// <returns>The HTTP client instance.</returns>
         public HttpClient Build()
         {
             if (string.IsNullOrWhiteSpace(_tenantId))
