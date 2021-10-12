@@ -1,0 +1,209 @@
+#nullable enable
+// =============================================================================
+// Author: Vladyslav Zaiets | https://sarmkadan.com
+// CTO & Software Architect
+// =============================================================================
+
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+
+namespace SqliteMultiTenant.Integration;
+
+/// <summary>
+/// Provides validation helpers for <see cref="HttpClientWrapper"/> instances.
+/// Validates constructor parameters, method arguments, and internal state.
+/// </summary>
+public static class HttpClientWrapperValidation
+{
+    /// <summary>
+    /// Validates an <see cref="HttpClientWrapper"/> instance for common problems.
+    /// </summary>
+    /// <param name="value">The instance to validate.</param>
+    /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    public static IReadOnlyList<string> Validate(this HttpClientWrapper? value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        var problems = new List<string>();
+
+        // HttpClientWrapper itself is validated by constructor
+        // No additional internal state validation needed beyond null check
+
+        return problems.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Determines whether an <see cref="HttpClientWrapper"/> instance is valid.
+    /// </summary>
+    /// <param name="value">The instance to check.</param>
+    /// <returns>True if valid; otherwise, false.</returns>
+    public static bool IsValid(this HttpClientWrapper? value)
+    {
+        return Validate(value).Count == 0;
+    }
+
+    /// <summary>
+    /// Ensures that an <see cref="HttpClientWrapper"/> instance is valid.
+    /// </summary>
+    /// <param name="value">The instance to validate.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="value"/> is not valid. The exception message lists all validation problems.</exception>
+    public static void EnsureValid(this HttpClientWrapper? value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        var problems = Validate(value);
+        if (problems.Count > 0)
+        {
+            throw new ArgumentException(
+                $"HttpClientWrapper is not valid. Problems:{Environment.NewLine}- " + string.Join($"{Environment.NewLine}- ", problems));
+        }
+    }
+
+    /// <summary>
+    /// Validates a URL string for common HTTP request problems.
+    /// </summary>
+    /// <param name="url">The URL to validate.</param>
+    /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    public static IReadOnlyList<string> ValidateUrl(string? url)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(url, nameof(url));
+
+        var problems = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            problems.Add("URL cannot be whitespace.");
+        }
+
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+            !(uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+        {
+            problems.Add("URL must be a valid HTTP or HTTPS URI.");
+        }
+
+        if (uri?.AbsolutePath == "/" || uri?.AbsolutePath == "")
+        {
+            problems.Add("URL path cannot be root only.");
+        }
+
+        return problems.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Validates a bearer token string.
+    /// </summary>
+    /// <param name="token">The bearer token to validate.</param>
+    /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    public static IReadOnlyList<string> ValidateBearerToken(string? token)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(token, nameof(token));
+
+        var problems = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            problems.Add("Bearer token cannot be whitespace.");
+        }
+
+        if (token.Length < 10)
+        {
+            problems.Add("Bearer token must be at least 10 characters long.");
+        }
+
+        // Basic check for JWT-like tokens (3 segments separated by dots)
+        var segments = token.Split('.', StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length != 3)
+        {
+            problems.Add("Bearer token does not appear to be a valid JWT format (expected 3 segments separated by dots).");
+        }
+
+        return problems.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Validates a header name and value pair.
+    /// </summary>
+    /// <param name="name">The header name.</param>
+    /// <param name="value">The header value.</param>
+    /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    public static IReadOnlyList<string> ValidateHeader(string? name, string? value)
+    {
+        var problems = new List<string>();
+
+        if (string.IsNullOrEmpty(name))
+        {
+            problems.Add("Header name cannot be null or empty.");
+        }
+        else if (string.IsNullOrWhiteSpace(name))
+        {
+            problems.Add("Header name cannot be whitespace.");
+        }
+        else if (name.Any(c => char.IsWhiteSpace(c)))
+        {
+            problems.Add("Header name cannot contain whitespace characters.");
+        }
+
+        if (string.IsNullOrEmpty(value))
+        {
+            problems.Add("Header value cannot be null or empty.");
+        }
+        else if (string.IsNullOrWhiteSpace(value))
+        {
+            problems.Add("Header value cannot be whitespace.");
+        }
+
+        return problems.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Validates a payload object for serialization.
+    /// </summary>
+    /// <param name="payload">The payload to validate.</param>
+    /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    public static IReadOnlyList<string> ValidatePayload(object? payload)
+    {
+        var problems = new List<string>();
+
+        if (payload is null)
+        {
+            problems.Add("Payload cannot be null.");
+        }
+
+        return problems.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Validates generic type parameter for HTTP operations.
+    /// </summary>
+    /// <typeparam name="T">The response type.</typeparam>
+    /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    public static IReadOnlyList<string> ValidateResponseType<T>()
+    {
+        var problems = new List<string>();
+
+        var type = typeof(T);
+        if (type == typeof(string))
+        {
+            // String is acceptable for raw responses
+            return problems.AsReadOnly();
+        }
+
+        if (!type.IsClass || type == typeof(object))
+        {
+            problems.Add("Response type must be a reference type (class), not a value type or object.");
+        }
+
+        if (type.IsAbstract)
+        {
+            problems.Add("Response type cannot be abstract.");
+        }
+
+        if (type.GetConstructor(Type.EmptyTypes) is null)
+        {
+            problems.Add("Response type must have a parameterless constructor.");
+        }
+
+        return problems.AsReadOnly();
+    }
+}
