@@ -17,7 +17,7 @@ namespace SqliteMultiTenant.Middleware;
 public sealed class RateLimitingMiddleware {
     private readonly RequestDelegate _next;
     private readonly ILogger<RateLimitingMiddleware> _logger;
-    private readonly RateLimitingOptions _options;
+    internal readonly RateLimitingOptions _options;
     private readonly ConcurrentDictionary<string, TokenBucket> _buckets;
 
     public RateLimitingMiddleware(
