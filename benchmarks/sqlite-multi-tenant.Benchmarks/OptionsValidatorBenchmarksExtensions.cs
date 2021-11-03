@@ -11,11 +11,13 @@ namespace SqliteMultiTenant.Benchmarks
     {
         /// <summary>
         /// Executes the full benchmark suite: runs <c>Setup</c> once and then validates both
-        /// multi‑tenant and backup options. Returns a simple confirmation string.
+        /// multi-tenant and backup options. Returns a simple confirmation string.
         /// </summary>
+        /// <param name="benchmarks">The benchmark instance.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
         public static string RunAllValidations(this OptionsValidatorBenchmarks benchmarks)
         {
-            if (benchmarks == null) throw new ArgumentNullException(nameof(benchmarks));
+            ArgumentNullException.ThrowIfNull(benchmarks);
 
             benchmarks.Setup();
             benchmarks.ValidateMultiTenantOptions_Valid();
@@ -27,10 +29,14 @@ namespace SqliteMultiTenant.Benchmarks
         /// <summary>
         /// Measures the time taken by a single validation action.
         /// </summary>
+        /// <param name="benchmarks">The benchmark instance.</param>
+        /// <param name="validation">The validation action to measure.</param>
+        /// <returns>The elapsed time for the validation.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> or <paramref name="validation"/> is <see langword="null"/>.</exception>
         public static TimeSpan MeasureValidation(this OptionsValidatorBenchmarks benchmarks, Action validation)
         {
-            if (benchmarks == null) throw new ArgumentNullException(nameof(benchmarks));
-            if (validation == null) throw new ArgumentNullException(nameof(validation));
+            ArgumentNullException.ThrowIfNull(benchmarks);
+            ArgumentNullException.ThrowIfNull(validation);
 
             var stopwatch = Stopwatch.StartNew();
             validation();
@@ -41,16 +47,19 @@ namespace SqliteMultiTenant.Benchmarks
         /// <summary>
         /// Runs both validation methods and returns a detailed timing report.
         /// </summary>
+        /// <param name="benchmarks">The benchmark instance.</param>
+        /// <returns>A formatted string with timing information.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> is <see langword="null"/>.</exception>
         public static string ValidateAndReport(this OptionsValidatorBenchmarks benchmarks)
         {
-            if (benchmarks == null) throw new ArgumentNullException(nameof(benchmarks));
+            ArgumentNullException.ThrowIfNull(benchmarks);
 
             benchmarks.Setup();
 
             var multiTenantTime = benchmarks.MeasureValidation(benchmarks.ValidateMultiTenantOptions_Valid);
             var backupTime = benchmarks.MeasureValidation(benchmarks.ValidateBackupOptions_Valid);
 
-            return $"Multi‑tenant validation: {multiTenantTime.TotalMilliseconds:F2} ms, " +
+            return $"Multi-tenant validation: {multiTenantTime.TotalMilliseconds:F2} ms, " +
                    $"Backup validation: {backupTime.TotalMilliseconds:F2} ms, " +
                    $"Total: {(multiTenantTime + backupTime).TotalMilliseconds:F2} ms.";
         }
@@ -58,13 +67,19 @@ namespace SqliteMultiTenant.Benchmarks
         /// <summary>
         /// Executes the specified validation action repeatedly until it succeeds or the maximum
         /// number of attempts is reached. Returns <c>true</c> if the validation succeeded within
-        /// the allowed attempts; otherwise re‑throws the last exception.
+        /// the allowed attempts; otherwise re-throws the last exception.
         /// </summary>
+        /// <param name="benchmarks">The benchmark instance.</param>
+        /// <param name="validation">The validation action to execute.</param>
+        /// <param name="maxAttempts">Maximum number of retry attempts. Must be greater than zero.</param>
+        /// <returns><see langword="true"/> if validation succeeded; otherwise throws the last exception.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="benchmarks"/> or <paramref name="validation"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="maxAttempts"/> is less than 1.</exception>
         public static bool ValidateWithRetry(this OptionsValidatorBenchmarks benchmarks, Action validation, int maxAttempts = 3)
         {
-            if (benchmarks == null) throw new ArgumentNullException(nameof(benchmarks));
-            if (validation == null) throw new ArgumentNullException(nameof(validation));
-            if (maxAttempts < 1) throw new ArgumentOutOfRangeException(nameof(maxAttempts));
+            ArgumentNullException.ThrowIfNull(benchmarks);
+            ArgumentNullException.ThrowIfNull(validation);
+            ArgumentOutOfRangeException.ThrowIfLessThan(maxAttempts, 1);
 
             benchmarks.Setup();
 
@@ -81,7 +96,6 @@ namespace SqliteMultiTenant.Benchmarks
                 }
             }
 
-            // This line is never reached because the loop either returns true or re‑throws.
             return false;
         }
     }
