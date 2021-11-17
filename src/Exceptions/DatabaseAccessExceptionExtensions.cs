@@ -17,6 +17,8 @@ public static class DatabaseAccessExceptionExtensions
     /// <param name="exception">The original exception</param>
     /// <param name="newMessage">The new error message</param>
     /// <returns>A new exception with the updated message</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="newMessage"/> is <see langword="null"/></exception>
     public static DatabaseAccessException WithMessage(this DatabaseAccessException exception, string newMessage)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -35,12 +37,14 @@ public static class DatabaseAccessExceptionExtensions
     /// <param name="exception">The original exception</param>
     /// <param name="contextInfo">Additional context to append to the message</param>
     /// <returns>A new exception with enhanced message</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentNullException"><paramref name="contextInfo"/> is <see langword="null"/></exception>
     public static DatabaseAccessException WithContext(this DatabaseAccessException exception, string contextInfo)
     {
         ArgumentNullException.ThrowIfNull(exception);
         ArgumentNullException.ThrowIfNull(contextInfo);
 
-        var enhancedMessage = exception.Message + " | Context: " + contextInfo;
+        var enhancedMessage = $"{exception.Message} | Context: {contextInfo}";
         return new DatabaseAccessException(
             enhancedMessage,
             exception.DatabaseId,
@@ -52,7 +56,8 @@ public static class DatabaseAccessExceptionExtensions
     /// Determines if the exception represents a connection failure
     /// </summary>
     /// <param name="exception">The exception to check</param>
-    /// <returns>True if the operation type is 'Connection'</returns>
+    /// <returns>True if the operation type is 'Connection'; otherwise false</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/></exception>
     public static bool IsConnectionFailure(this DatabaseAccessException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -63,7 +68,8 @@ public static class DatabaseAccessExceptionExtensions
     /// Determines if the exception represents a query failure
     /// </summary>
     /// <param name="exception">The exception to check</param>
-    /// <returns>True if the operation type is 'Query'</returns>
+    /// <returns>True if the operation type is 'Query'; otherwise false</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/></exception>
     public static bool IsQueryFailure(this DatabaseAccessException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -74,7 +80,8 @@ public static class DatabaseAccessExceptionExtensions
     /// Determines if the exception represents a transaction failure
     /// </summary>
     /// <param name="exception">The exception to check</param>
-    /// <returns>True if the operation type is 'Transaction'</returns>
+    /// <returns>True if the operation type is 'Transaction'; otherwise false</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/></exception>
     public static bool IsTransactionFailure(this DatabaseAccessException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -86,13 +93,14 @@ public static class DatabaseAccessExceptionExtensions
     /// </summary>
     /// <param name="exception">The exception</param>
     /// <returns>Formatted string with all relevant information</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/></exception>
     public static string ToDetailedString(this DatabaseAccessException exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
 
         var builder = new System.Text.StringBuilder();
         builder.Append("DatabaseAccessException: ");
-        builder.Append(exception.Message);
+        builder.Append(exception.Message ?? string.Empty);
 
         if (!string.IsNullOrEmpty(exception.DatabaseId))
         {
@@ -111,7 +119,7 @@ public static class DatabaseAccessExceptionExtensions
             builder.Append("\nInnerException: ");
             builder.Append(exception.InnerException.GetType().Name);
             builder.Append(": ");
-            builder.Append(exception.InnerException.Message);
+            builder.Append(exception.InnerException.Message ?? string.Empty);
         }
 
         return builder.ToString();
