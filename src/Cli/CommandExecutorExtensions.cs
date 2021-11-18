@@ -20,11 +20,15 @@ public static class CommandExecutorExtensions
     /// <param name="command">The command to execute</param>
     /// <param name="successMessage">Optional success message to override default</param>
     /// <returns>A command result with success status and message</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> or <paramref name="command"/> is null</exception>
     public static async Task<CommandResult> ExecuteWithSuccessMessageAsync(
         this CommandExecutor executor,
         ParsedCommand command,
         string? successMessage = null)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(command);
+
         var result = await executor.ExecuteAsync(command);
 
         if (result.Success && successMessage != null)
@@ -43,12 +47,17 @@ public static class CommandExecutorExtensions
     /// <param name="description">Optional tenant description</param>
     /// <param name="email">Optional contact email</param>
     /// <returns>A command result with tenant creation status</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> is null or <paramref name="name"/> is null or whitespace</exception>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is null or whitespace</exception>
     public static async Task<CommandResult> CreateTenantAsync(
         this CommandExecutor executor,
         string name,
         string? description = null,
         string? email = null)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+
         var command = new ParsedCommand
         {
             Success = true,
@@ -75,8 +84,11 @@ public static class CommandExecutorExtensions
     /// </summary>
     /// <param name="executor">The command executor instance</param>
     /// <returns>A command result with formatted tenant list</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> is null</exception>
     public static async Task<CommandResult> ListTenantsAsync(this CommandExecutor executor)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+
         var command = new ParsedCommand
         {
             Success = true,
@@ -94,10 +106,15 @@ public static class CommandExecutorExtensions
     /// <param name="executor">The command executor instance</param>
     /// <param name="databaseId">The database identifier</param>
     /// <returns>A command result with backup creation status</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> or <paramref name="databaseId"/> is null or whitespace</exception>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is null or whitespace</exception>
     public static async Task<CommandResult> CreateBackupAsync(
         this CommandExecutor executor,
         string databaseId)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentException.ThrowIfNullOrEmpty(databaseId, nameof(databaseId));
+
         var command = new ParsedCommand
         {
             Success = true,
@@ -115,10 +132,15 @@ public static class CommandExecutorExtensions
     /// <param name="executor">The command executor instance</param>
     /// <param name="databaseId">The database identifier</param>
     /// <returns>A command result with pending migrations information</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> or <paramref name="databaseId"/> is null or whitespace</exception>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is null or whitespace</exception>
     public static async Task<CommandResult> CheckPendingMigrationsAsync(
         this CommandExecutor executor,
         string databaseId)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentException.ThrowIfNullOrEmpty(databaseId, nameof(databaseId));
+
         var command = new ParsedCommand
         {
             Success = true,
@@ -135,8 +157,11 @@ public static class CommandExecutorExtensions
     /// </summary>
     /// <param name="executor">The command executor instance</param>
     /// <returns>A command result with health check status</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> is null</exception>
     public static async Task<CommandResult> CheckHealthAsync(this CommandExecutor executor)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+
         var command = new ParsedCommand
         {
             Success = true,
@@ -154,9 +179,13 @@ public static class CommandExecutorExtensions
     /// <param name="executor">The command executor instance</param>
     /// <param name="command">The command to execute</param>
     /// <returns>The command result</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> or <paramref name="command"/> is null</exception>
     /// <exception cref="InvalidOperationException">Thrown when command execution fails</exception>
     public static async Task<CommandResult> ExecuteOrThrowAsync(this CommandExecutor executor, ParsedCommand command)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(command);
+
         var result = await executor.ExecuteAsync(command);
 
         if (!result.Success)
@@ -175,18 +204,27 @@ public static class CommandExecutorExtensions
     /// <param name="timeoutSeconds">Timeout in seconds</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A command result</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="executor"/> or <paramref name="command"/> is null</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="timeoutSeconds"/> is less than or equal to zero</exception>
     public static async Task<CommandResult> ExecuteWithTimeoutAsync(
         this CommandExecutor executor,
         ParsedCommand command,
         int timeoutSeconds,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(command);
+        if (timeoutSeconds <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(timeoutSeconds), "Timeout must be greater than zero");
+        }
+
         using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
             cancellationToken,
             timeoutCts.Token
         );
 
-        return await executor.ExecuteAsync(command);
+        return await executor.ExecuteAsync(command, linkedCts.Token);
     }
 }
