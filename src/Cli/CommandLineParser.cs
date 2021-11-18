@@ -281,7 +281,7 @@ help.AppendLine();
 return help.ToString();
 }
 
-private class CommandDefinition
+internal class CommandDefinition
 {
 public string Name { get; set; }
 public string Description { get; set; }
@@ -291,7 +291,7 @@ public Dictionary<string, OptionDefinition> Options { get; set; } = new Dictiona
 public Dictionary<string, FlagDefinition> Flags { get; set; } = new Dictionary<string, FlagDefinition>();
 }
 
-private class OptionDefinition
+internal class OptionDefinition
 {
 public string Name { get; set; }
 public string Description { get; set; }
@@ -299,12 +299,21 @@ public char? ShortName { get; set; }
 public bool Required { get; set; }
 }
 
-private class FlagDefinition
+internal class FlagDefinition
 {
 public string Name { get; set; }
 public string Description { get; set; }
 public char? ShortName { get; set; }
 }
+
+        /// <summary>
+        /// Gets all registered commands as a list of command information.
+        /// </summary>
+        /// <returns>A list of command definitions.</returns>
+        internal IReadOnlyList<CommandDefinition> GetCommands()
+        {
+            return _commands.Values.Distinct().ToList();
+        }
 }
 
 /// <summary>
