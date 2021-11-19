@@ -19,9 +19,12 @@ public static class BackupExtensions
     /// Calculates the actual saved space in bytes by this backup
     /// </summary>
     /// <param name="backup">The backup instance</param>
-    /// <returns>Number of bytes saved, or 0 if original size is unknown</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="backup"/> is <see langword="null"/></exception>
+    /// <returns>Number of bytes saved, or 0 if original size is unknown or negative</returns>
     public static long GetSavedSpaceBytes(this Backup backup)
     {
+        ArgumentNullException.ThrowIfNull(backup);
+
         if (backup.OriginalSizeBytes <= 0)
         {
             return 0;
@@ -34,9 +37,12 @@ public static class BackupExtensions
     /// Determines if this backup is a full backup
     /// </summary>
     /// <param name="backup">The backup instance</param>
+    /// <exception cref="ArgumentNullException"><paramref name="backup"/> is <see langword="null"/></exception>
     /// <returns>True if backup type is Full, otherwise false</returns>
     public static bool IsFullBackup(this Backup backup)
     {
+        ArgumentNullException.ThrowIfNull(backup);
+
         return backup.BackupType == BackupType.Full;
     }
 
@@ -44,9 +50,12 @@ public static class BackupExtensions
     /// Determines if this backup is a system backup (full backup with verification)
     /// </summary>
     /// <param name="backup">The backup instance</param>
+    /// <exception cref="ArgumentNullException"><paramref name="backup"/> is <see langword="null"/></exception>
     /// <returns>True if backup is a verified full backup, otherwise false</returns>
     public static bool IsSystemBackup(this Backup backup)
     {
+        ArgumentNullException.ThrowIfNull(backup);
+
         return backup.IsFullBackup() && backup.IsVerified && backup.Status == BackupStatus.Verified;
     }
 
@@ -54,9 +63,12 @@ public static class BackupExtensions
     /// Gets the human-readable size of the backup
     /// </summary>
     /// <param name="backup">The backup instance</param>
+    /// <exception cref="ArgumentNullException"><paramref name="backup"/> is <see langword="null"/></exception>
     /// <returns>Formatted size string (e.g., "2.5 MB", "1.2 GB")</returns>
     public static string GetHumanReadableSize(this Backup backup)
     {
+        ArgumentNullException.ThrowIfNull(backup);
+
         long bytes = backup.SizeBytes;
         string[] sizes = ["B", "KB", "MB", "GB", "TB"];
         int order = 0;
@@ -75,9 +87,12 @@ public static class BackupExtensions
     /// Gets the human-readable duration of the backup operation
     /// </summary>
     /// <param name="backup">The backup instance</param>
+    /// <exception cref="ArgumentNullException"><paramref name="backup"/> is <see langword="null"/></exception>
     /// <returns>Formatted duration string (e.g., "2m 30s", "1h 5m")</returns>
     public static string GetHumanReadableDuration(this Backup backup)
     {
+        ArgumentNullException.ThrowIfNull(backup);
+
         long totalSeconds = backup.DurationMs / 1000;
 
         if (totalSeconds < 60)
