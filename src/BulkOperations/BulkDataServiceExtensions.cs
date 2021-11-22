@@ -3,12 +3,10 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System.Data.SQLite;
-using System.Text;
 using System.Text.Json;
-using System.Runtime.CompilerServices;
 using SqliteMultiTenant.Events;
 
 namespace SqliteMultiTenant.BulkOperations;
@@ -20,7 +18,7 @@ namespace SqliteMultiTenant.BulkOperations;
 public static class BulkDataServiceExtensions
 {
     /// <summary>
-    /// Exports a single table to a SQLite database file, creating the database
+    /// Exports a single table to a new SQLite database file, creating the database
     /// and table structure if they don't exist.
     /// </summary>
     /// <param name="service">The bulk data service instance</param>
@@ -31,6 +29,9 @@ public static class BulkDataServiceExtensions
     /// <param name="progress">Optional progress reporter</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Bulk export result containing the exported data</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> or <paramref name="tableName"/> is null or whitespace</exception>
+    /// <exception cref="InvalidOperationException">Export operation failed</exception>
     public static async Task<BulkExportResult> ExportTableToNewDatabaseAsync(
         this BulkDataService service,
         string databaseId,
@@ -40,10 +41,11 @@ public static class BulkDataServiceExtensions
         IProgress<ExportProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(service);
         ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
-        var result = await service.ExportTableAsync(databaseId, tableName, format, options, progress, cancellationToken);
+        var result = await service.ExportTableAsync(databaseId, tableName, format, options, progress, cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
             return result;
@@ -66,7 +68,7 @@ public static class BulkDataServiceExtensions
             format,
             new ImportOptions { TruncateBeforeImport = true },
             null,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
         return new BulkExportResult
         {
@@ -91,6 +93,10 @@ public static class BulkDataServiceExtensions
     /// <param name="progress">Optional progress reporter</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Bulk import result</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/>, <paramref name="sourceDatabasePath"/>, or <paramref name="tableName"/> is null or whitespace</exception>
+    /// <exception cref="FileNotFoundException">Source database file does not exist</exception>
+    /// <exception cref="InvalidOperationException">Import operation failed</exception>
     public static async Task<BulkImportResult> ImportFromDatabaseFileAsync(
         this BulkDataService service,
         string databaseId,
@@ -101,12 +107,13 @@ public static class BulkDataServiceExtensions
         IProgress<ImportProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(service);
         ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceDatabasePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
         await using var fileStream = File.OpenRead(sourceDatabasePath);
-        return await service.ImportTableAsync(databaseId, tableName, fileStream, format, options, progress, cancellationToken);
+        return await service.ImportTableAsync(databaseId, tableName, fileStream, format, options, progress, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -121,6 +128,9 @@ public static class BulkDataServiceExtensions
     /// <param name="progress">Optional progress reporter</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Bulk export result with backup information</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> or <paramref name="backupDatabaseId"/> is null or whitespace</exception>
+    /// <exception cref="InvalidOperationException">Backup operation failed</exception>
     public static async Task<BulkExportResult> CreateDatabaseBackupAsync(
         this BulkDataService service,
         string databaseId,
@@ -130,11 +140,12 @@ public static class BulkDataServiceExtensions
         IProgress<ExportProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(service);
         ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
         ArgumentException.ThrowIfNullOrWhiteSpace(backupDatabaseId);
 
         // Export the entire database
-        var exportResult = await service.ExportDatabaseAsync(databaseId, format, options, progress, cancellationToken);
+        var exportResult = await service.ExportDatabaseAsync(databaseId, format, options, progress, cancellationToken).ConfigureAwait(false);
 
         if (!exportResult.IsSuccess)
             return exportResult;
@@ -151,7 +162,7 @@ public static class BulkDataServiceExtensions
             format,
             new ImportOptions { TruncateBeforeImport = true },
             null,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
 
         return new BulkExportResult
         {
@@ -177,6 +188,9 @@ public static class BulkDataServiceExtensions
     /// <param name="options">Optional import options for target</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Bulk import result</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="service"/> is <see langword="null"/></exception>
+    /// <exception cref="ArgumentException"><paramref name="sourceDatabaseId"/>, <paramref name="targetDatabaseId"/>, or <paramref name="tableName"/> is null or whitespace</exception>
+    /// <exception cref="InvalidOperationException">Streaming operation failed</exception>
     public static async Task<BulkImportResult> StreamBetweenDatabasesAsync(
         this BulkDataService service,
         string sourceDatabaseId,
@@ -188,6 +202,7 @@ public static class BulkDataServiceExtensions
         ImportOptions? options = null,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(service);
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceDatabaseId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetDatabaseId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
@@ -206,14 +221,14 @@ public static class BulkDataServiceExtensions
             importBatches,
             options,
             null,
-            cancellationToken);
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static async IAsyncEnumerable<ImportBatch> TransformBatchesAsync(
         IAsyncEnumerable<ExportBatch> batches,
         BulkDataFormat format,
         Func<Dictionary<string, object?>, Dictionary<string, object?>>? transform,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await foreach (var batch in batches.WithCancellation(cancellationToken))
         {
@@ -237,6 +252,7 @@ public static class BulkDataServiceExtensions
     /// </summary>
     /// <param name="service">The bulk data service instance</param>
     /// <returns>The BulkDataOptions configuration</returns>
+    /// <exception cref="InvalidOperationException">Could not access BulkDataOptions</exception>
     private static BulkDataOptions GetOptions(this BulkDataService service)
     {
         var optionsField = typeof(BulkDataService).GetField("_options", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
