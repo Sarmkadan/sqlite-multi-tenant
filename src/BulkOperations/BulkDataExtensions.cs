@@ -99,7 +99,7 @@ file static class ServiceCollectionGuardExtensions
         where TService : class
         where TImplementation : class, TService
     {
-        if (!services.Any(d => d.ServiceType == typeof(TService)))
+        if (services.All(d => d.ServiceType != typeof(TService)))
             services.AddScoped<TService, TImplementation>();
     }
 
@@ -108,7 +108,7 @@ file static class ServiceCollectionGuardExtensions
         Func<IServiceProvider, TService> factory)
         where TService : class
     {
-        if (!services.Any(d => d.ServiceType == typeof(TService)))
+        if (services.All(d => d.ServiceType != typeof(TService)))
             services.AddSingleton(factory);
     }
 }
