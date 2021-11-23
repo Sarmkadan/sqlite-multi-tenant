@@ -13,20 +13,18 @@ namespace SqliteMultiTenant.Services
         /// </summary>
         /// <param name="value">The service instance to validate.</param>
         /// <returns>A list of human-readable validation problems.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
         public static IReadOnlyList<string> Validate(this TenantService value)
         {
-            var problems = new List<string>();
+            ArgumentNullException.ThrowIfNull(value);
 
-            if (value == null)
-            {
-                problems.Add("TenantService instance cannot be null.");
-            }
+            var problems = new List<string>();
 
             // Note: Based on the provided member list, TenantService exposes only methods.
             // There are no public properties (strings, numbers, dates) defined in the specification
             // to validate for null/empty or range constraints.
 
-            return problems;
+            return problems.AsReadOnly();
         }
 
         /// <summary>
@@ -34,6 +32,7 @@ namespace SqliteMultiTenant.Services
         /// </summary>
         /// <param name="value">The service instance to validate.</param>
         /// <returns><c>true</c> if the instance is valid; otherwise, <c>false</c>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
         public static bool IsValid(this TenantService value)
         {
             return Validate(value).Count == 0;
@@ -43,7 +42,8 @@ namespace SqliteMultiTenant.Services
         /// Ensures the <see cref="TenantService"/> instance is valid, throwing an exception if it is not.
         /// </summary>
         /// <param name="value">The service instance to validate.</param>
-        /// <exception cref="ArgumentException">Thrown when the instance is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException">Thrown when the instance is not valid.</exception>
         public static void EnsureValid(this TenantService value)
         {
             var errors = Validate(value);
