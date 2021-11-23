@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -20,7 +20,7 @@ public static class ConnectionPoolingExtensions
     /// Registers <see cref="IConnectionPoolManager"/> as a singleton in the DI container.
     /// </summary>
     /// <remarks>
-    /// Uses <see cref="ServiceCollectionDescriptorExtensions.TryAddSingleton{TService}(IServiceCollection)"/>
+    /// Uses <see cref="ServiceCollectionDescriptorExtensions.TryAddSingleton{TService}(IServiceCollection)"/> 
     /// so that calling this method more than once (e.g. from a test host and the real host) does
     /// not register duplicate services or reset options that were already configured.
     /// </remarks>
@@ -37,12 +37,12 @@ public static class ConnectionPoolingExtensions
     /// <code>
     /// services.AddConnectionPooling(opts =>
     /// {
-    ///     opts.MaxPoolSize          = 20;
-    ///     opts.MinPoolSize          = 2;
-    ///     opts.IdleTimeout          = TimeSpan.FromMinutes(10);
-    ///     opts.AcquireTimeout       = TimeSpan.FromSeconds(15);
-    ///     opts.MaxConnectionLifetime = TimeSpan.FromHours(2);
-    ///     opts.PruneInterval        = TimeSpan.FromMinutes(2);
+    /// opts.MaxPoolSize = 20;
+    /// opts.MinPoolSize = 2;
+    /// opts.IdleTimeout = TimeSpan.FromMinutes(10);
+    /// opts.AcquireTimeout = TimeSpan.FromSeconds(15);
+    /// opts.MaxConnectionLifetime = TimeSpan.FromHours(2);
+    /// opts.PruneInterval = TimeSpan.FromMinutes(2);
     /// });
     /// </code>
     /// </example>
@@ -73,6 +73,12 @@ public static class ConnectionPoolingExtensions
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to configure.</param>
     /// <returns><paramref name="services"/> to support fluent chaining.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="services"/> is <c>null</c>.
+    /// </exception>
     public static IServiceCollection AddConnectionPooling(this IServiceCollection services)
-        => services.AddConnectionPooling(configure: null);
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        return services.AddConnectionPooling(configure: null);
+    }
 }
