@@ -26,6 +26,11 @@ namespace SqliteMultiTenant.Tenants
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+    /// <summary>
+    /// Gets the logger instance for this service.
+    /// </summary>
+    public ILogger<TenantRecoveryService> Log => _logger;
+
         // Attempts to repair a corrupted database file
         public async Task<bool> RepairDatabaseAsync(string tenantId)
         {
