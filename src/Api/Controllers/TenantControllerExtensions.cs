@@ -13,29 +13,31 @@ namespace SqliteMultiTenant.Api.Controllers
     public static class TenantControllerExtensions
     {
         /// <summary>
-        /// Returns the simple name of the controller type.
-        /// </summary>
-        public static string GetControllerName(this TenantController controller) =>
-            controller.GetType().Name;
-
-        /// <summary>
         /// Executes an asynchronous operation with a simple retry policy.
         /// The operation is invoked up to <paramref name="maxAttempts"/> times
         /// until a successful <see cref="ApiResponse{T}"/> is returned.
         /// </summary>
+        /// <param name="controller">The tenant controller instance.</param>
+        /// <param name="operation">The operation to execute.</param>
+        /// <param name="maxAttempts">Maximum number of retry attempts. Must be positive.</param>
+        /// <returns>The successful response or the last attempt if all failed.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="operation"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="maxAttempts"/> is not positive.</exception>
         public static async Task<ApiResponse<T>> ExecuteWithRetryAsync<T>(
             this TenantController controller,
             Func<Task<ApiResponse<T>>> operation,
             int maxAttempts = 3)
         {
-            if (operation == null) throw new ArgumentNullException(nameof(operation));
+            ArgumentNullException.ThrowIfNull(controller);
+            ArgumentNullException.ThrowIfNull(operation);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxAttempts);
 
             ApiResponse<T>? lastResult = null;
             for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 lastResult = await operation();
 
-                if (lastResult != null && lastResult.IsSuccess)
+                if (lastResult is { IsSuccess: true })
                 {
                     return lastResult;
                 }
@@ -51,9 +53,14 @@ namespace SqliteMultiTenant.Api.Controllers
         /// from each <see cref="TenantResponse"/> instance, avoiding a hard compile‑time
         /// dependency on the exact shape of the type.
         /// </summary>
+        /// <param name="controller">The tenant controller instance.</param>
+        /// <returns>A dictionary mapping tenant identifiers to tenant responses.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="controller"/> is null.</exception>
         public static async Task<Dictionary<string, TenantResponse>> GetAllTenantsAsDictionaryAsync(
             this TenantController controller)
         {
+            ArgumentNullException.ThrowIfNull(controller);
+
             var response = await controller.ListAllTenantsAsync();
 
             var dict = new Dictionary<string, TenantResponse>(StringComparer.OrdinalIgnoreCase);
