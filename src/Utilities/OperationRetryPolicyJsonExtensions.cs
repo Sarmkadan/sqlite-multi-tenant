@@ -23,9 +23,10 @@ namespace SqliteMultiTenant.Utilities
         /// <param name="value">The instance to serialize.</param>
         /// <param name="indented">If true, the output JSON will be indented.</param>
         /// <returns>A JSON string representing the instance.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
         public static string ToJson(this OperationRetryPolicy value, bool indented = false)
         {
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            ArgumentNullException.ThrowIfNull(value);
 
             // Clone the cached options to avoid mutating the static instance.
             var options = new JsonSerializerOptions(_options)
@@ -41,8 +42,11 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         /// <param name="json">The JSON representation of the policy.</param>
         /// <returns>The deserialized <see cref="OperationRetryPolicy"/> instance, or null if the JSON is empty.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
         public static OperationRetryPolicy? FromJson(string json)
         {
+            ArgumentNullException.ThrowIfNull(json);
+
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 
@@ -55,6 +59,7 @@ namespace SqliteMultiTenant.Utilities
         /// <param name="json">The JSON representation of the policy.</param>
         /// <param name="value">When this method returns, contains the deserialized value if the operation succeeded; otherwise, null.</param>
         /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="json"/> is null.</exception>
         public static bool TryFromJson(string json, out OperationRetryPolicy? value)
         {
             try
