@@ -13,8 +13,13 @@ namespace SqliteMultiTenant.Tests
         /// <see cref="TenantEdgeCaseTests"/> instance.
         /// </summary>
         /// <param name="tests">The test instance.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="tests"/> is <see langword="null"/>.
+        /// </exception>
         public static void RunAllValidationTests(this TenantEdgeCaseTests tests)
         {
+            ArgumentNullException.ThrowIfNull(tests);
+
             tests.Validate_NullTenantId_ReturnsError();
             tests.Validate_EmptyTenantId_ReturnsError();
             tests.Validate_WhitespaceTenantId_ReturnsError();
@@ -32,8 +37,13 @@ namespace SqliteMultiTenant.Tests
         /// corresponding status‑change test methods.
         /// </summary>
         /// <param name="tests">The test instance.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="tests"/> is <see langword="null"/>.
+        /// </exception>
         public static void ToggleActivation(this TenantEdgeCaseTests tests)
         {
+            ArgumentNullException.ThrowIfNull(tests);
+
             tests.Deactivate_SetsStatusToInactive();
             tests.Activate_AfterDeactivate_SetsStatusToActive();
         }
@@ -43,8 +53,13 @@ namespace SqliteMultiTenant.Tests
         /// metadata handling behaves as expected.
         /// </summary>
         /// <param name="tests">The test instance.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown if <paramref name="tests"/> is <see langword="null"/>.
+        /// </exception>
         public static void EnsureMetadataOperations(this TenantEdgeCaseTests tests)
         {
+            ArgumentNullException.ThrowIfNull(tests);
+
             tests.SetMetadata_WhenMetadataIsNull_InitializesAndSetsValue();
             tests.SetMetadata_OverwritesExistingKey();
             tests.GetMetadata_NonexistentKey_ReturnsNull();
