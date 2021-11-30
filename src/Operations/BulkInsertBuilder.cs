@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// ===========================================================================
 
 using System;
 using System.Collections.Generic;
@@ -14,14 +14,28 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Operations
 {
-    // Builder for efficient bulk insert operations with batching
-    public sealed class BulkInsertBuilder {
+    /// <summary>
+    /// Builder for efficient bulk insert operations with batching support.
+    /// Provides fluent interface for adding records and executing bulk insert operations
+    /// with transaction management and batch processing capabilities.
+    /// </summary>
+    public sealed class BulkInsertBuilder
+    {
         private readonly SQLiteConnection _connection;
         private readonly ILogger<BulkInsertBuilder> _logger;
         private readonly string _tableName;
         private readonly List<Dictionary<string, object>> _records;
         private readonly int _batchSize;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BulkInsertBuilder"/> class.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for bulk insert operations.</param>
+        /// <param name="logger">The logger instance for recording operation details and errors.</param>
+        /// <param name="tableName">Name of the table where records will be inserted.</param>
+        /// <param name="batchSize">Maximum number of records to process in each batch. Defaults to 1000 if not specified.</param>
+        /// <exception cref="ArgumentNullException">Thrown when connection or logger is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when tableName is null or whitespace.</exception>
         public BulkInsertBuilder(SQLiteConnection connection, ILogger<BulkInsertBuilder> logger,
             string tableName, int batchSize = 1000)
         {
@@ -123,7 +137,7 @@ namespace SqliteMultiTenant.Operations
 
                 using (var command = _connection.CreateCommand())
                 {
-                    command.CommandText = $"INSERT INTO [{_tableName}] ({columnList}) VALUES ({paramList})";
+                    command.CommandText = $"INSERT INTO [{_tableName}] ({columnList}) VALUES ({paramList})\n";
 
                     for (int i = 0; i < columnNames.Count; i++)
                     {
@@ -176,7 +190,8 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
-    public sealed class BulkInsertResult {
+    public sealed class BulkInsertResult
+    {
         public int TotalRecords { get; set; }
         public int InsertedRecords { get; set; }
         public bool IsSuccessful { get; set; }
@@ -184,7 +199,8 @@ namespace SqliteMultiTenant.Operations
     }
 
     // Builder for bulk update operations
-    public sealed class BulkUpdateBuilder {
+    public sealed class BulkUpdateBuilder
+    {
         private readonly SQLiteConnection _connection;
         private readonly ILogger<BulkUpdateBuilder> _logger;
         private readonly string _tableName;
@@ -251,7 +267,8 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
-    public sealed class BulkUpdateResult {
+    public sealed class BulkUpdateResult
+    {
         public int AffectedRows { get; set; }
         public bool IsSuccessful { get; set; }
         public string Error { get; set; }
