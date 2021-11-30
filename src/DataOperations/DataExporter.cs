@@ -14,17 +14,51 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.DataOperations
 {
-    // Exports tenant data in multiple formats (JSON, CSV, SQL)
-    // Enables data portability and integration with external systems
+    /// <summary>
+    /// Provides functionality to export data from a SQLite database table into
+    /// various portable formats such as JSON, CSV, and raw SQL INSERT statements.
+    /// </summary>
     public sealed class DataExporter {
         private readonly ILogger<DataExporter> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataExporter"/> class.
+        /// </summary>
+        /// <param name="logger">
+        /// The <see cref="ILogger{DataExporter}"/> used to record diagnostic information
+        /// and errors that occur during export operations.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="logger"/> is <c>null</c>.
+        /// </exception>
         public DataExporter(ILogger<DataExporter> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Exports table data as JSON with configurable formatting
+        /// <summary>
+        /// Exports all rows from the specified <paramref name="tableName"/> as a JSON string.
+        /// </summary>
+        /// <param name="connection">
+        /// An open <see cref="SQLiteConnection"/> used to query the table.
+        /// </param>
+        /// <param name="tableName">
+        /// The name of the table whose data should be exported.
+        /// </param>
+        /// <param name="includeMeta">
+        /// When <c>true</c>, the returned JSON includes a <c>meta</c> object containing the
+        /// table name, row count, and export timestamp; otherwise only the data array is returned.
+        /// </param>
+        /// <returns>
+        /// A JSON-formatted <see cref="string"/> representing the table rows (and optional metadata).
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="connection"/> or <paramref name="tableName"/> is <c>null</c>
+        /// or empty.
+        /// </exception>
+        /// <exception cref="Exception">
+        /// Propagates any exception that occurs while reading from the database or serializing the result.
+        /// </exception>
         public async Task<string> ExportAsJsonAsync(SQLiteConnection connection, string tableName,
             bool includeMeta = true)
         {
@@ -78,7 +112,28 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
-        // Exports table data as CSV with proper escaping and quoting
+        /// <summary>
+        /// Exports all rows from the specified <paramref name="tableName"/> as a CSV string.
+        /// </summary>
+        /// <param name="connection">
+        /// An open <see cref="SQLiteConnection"/> used to query the table.
+        /// </param>
+        /// <param name="tableName">
+        /// The name of the table whose data should be exported.
+        /// </param>
+        /// <param name="includeHeaders">
+        /// When <c>true</c>, the first line of the CSV contains column names; otherwise only data rows are emitted.
+        /// </param>
+        /// <returns>
+        /// A CSV-formatted <see cref="string"/> representing the table rows.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="connection"/> or <paramref name="tableName"/> is <c>null</c>
+        /// or empty.
+        /// </exception>
+        /// <exception cref="Exception">
+        /// Propagates any exception that occurs while reading from the database.
+        /// </exception>
         public async Task<string> ExportAsCsvAsync(SQLiteConnection connection, string tableName,
             bool includeHeaders = true)
         {
@@ -135,7 +190,26 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
-        // Exports entire database as SQL INSERT statements
+        /// <summary>
+        /// Exports all rows from the specified <paramref name="tableName"/> as a series of
+        /// SQL <c>INSERT</c> statements suitable for recreating the data in another SQLite database.
+        /// </summary>
+        /// <param name="connection">
+        /// An open <see cref="SQLiteConnection"/> used to query the table.
+        /// </param>
+        /// <param name="tableName">
+        /// The name of the table whose data should be exported.
+        /// </param>
+        /// <returns>
+        /// A string containing SQL statements that insert each row from the source table.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="connection"/> or <paramref name="tableName"/> is <c>null</c>
+        /// or empty.
+        /// </exception>
+        /// <exception cref="Exception">
+        /// Propagates any exception that occurs while reading from the database.
+        /// </exception>
         public async Task<string> ExportAsSqlAsync(SQLiteConnection connection, string tableName)
         {
             if (connection is null)
