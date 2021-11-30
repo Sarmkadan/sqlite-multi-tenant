@@ -15,17 +15,33 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.DataOperations
 {
-    // Imports data into tenant databases from various formats
-    // Includes validation, transaction support, and rollback capability
-    public sealed class DataImporter {
+    /// <summary>
+/// Provides functionality for importing data into tenant databases from various formats.
+/// Supports JSON, CSV, and raw SQL INSERT statements with transaction support, validation, and rollback capability.
+/// </summary>
+        public sealed class DataImporter {
         private readonly ILogger<DataImporter> _logger;
 
-        public DataImporter(ILogger<DataImporter> logger)
+        /// <summary>
+/// Initializes a new instance of the <see cref="DataImporter"/> class.
+/// </summary>
+/// <param name="logger">The logger instance used for logging import operations and errors.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+public DataImporter(ILogger<DataImporter> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Imports JSON data into a table with transaction support and validation
+        /// <summary>
+/// Imports JSON data into a specified table with transaction support and validation.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use for the import operation.</param>
+/// <param name="tableName">Name of the table where data will be imported.</param>
+/// <param name="jsonData">JSON string containing the data to import. Can be either an array of objects or an object with a "data" property containing an array.</param>
+/// <param name="truncateTable">If true, truncates the target table before importing data.</param>
+/// <returns>Number of rows successfully imported.</returns>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="jsonData"/> is null.</exception>
+/// <exception cref="Exception">Thrown when JSON parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromJsonAsync(SQLiteConnection connection, string tableName,
             string jsonData, bool truncateTable = false)
         {
@@ -66,7 +82,18 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
-        // Imports CSV data with configurable delimiter and header row
+        /// <summary>
+/// Imports CSV data into a specified table with configurable delimiter and header row support.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use for the import operation.</param>
+/// <param name="tableName">Name of the table where data will be imported.</param>
+/// <param name="csvData">CSV string containing the data to import.</param>
+/// <param name="hasHeaders">If true, treats the first row as column headers.</param>
+/// <param name="delimiter">The delimiter character used to separate values in the CSV data.</param>
+/// <param name="truncateTable">If true, truncates the target table before importing data.</param>
+/// <returns>Number of rows successfully imported.</returns>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="csvData"/> is null.</exception>
+/// <exception cref="Exception">Thrown when CSV parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromCsvAsync(SQLiteConnection connection, string tableName,
             string csvData, bool hasHeaders = true, string delimiter = ",", bool truncateTable = false)
         {
@@ -167,7 +194,14 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
-        // Imports SQL INSERT statements
+        /// <summary>
+/// Imports raw SQL INSERT statements into the database.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use for the import operation.</param>
+/// <param name="sqlStatements">SQL statements string containing INSERT statements separated by semicolons.</param>
+/// <returns>Total number of rows affected by all INSERT statements.</returns>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="sqlStatements"/> is null.</exception>
+/// <exception cref="Exception">Thrown when SQL parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromSqlAsync(SQLiteConnection connection, string sqlStatements)
         {
             if (connection is null)
@@ -216,7 +250,17 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
-        private async Task<int> ImportRecordsAsync(SQLiteConnection connection, string tableName,
+        /// <summary>
+/// Imports a collection of JSON records into a specified table with transaction support.
+/// This is an internal method used by <see cref="ImportFromJsonAsync"/>.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use for the import operation.</param>
+/// <param name="tableName">Name of the table where data will be imported.</param>
+/// <param name="records">List of JSON elements representing the records to import.</param>
+/// <param name="truncateTable">If true, truncates the target table before importing data.</param>
+/// <returns>Number of rows successfully imported.</returns>
+/// <exception cref="Exception">Thrown when database operation encounters an error.</exception>
+private async Task<int> ImportRecordsAsync(SQLiteConnection connection, string tableName,
             List<JsonElement> records, bool truncateTable)
         {
             var rowsImported = 0;
@@ -280,7 +324,14 @@ namespace SqliteMultiTenant.DataOperations
             return rowsImported;
         }
 
-        private string[] ParseCsvLine(string line, string delimiter)
+        /// <summary>
+/// Parses a single line of CSV data into an array of field values.
+/// Handles quoted fields and escaped quotes according to CSV format specifications.
+/// </summary>
+/// <param name="line">The CSV line to parse.</param>
+/// <param name="delimiter">The delimiter character used to separate values in the CSV data.</param>
+/// <returns>Array of parsed field values.</returns>
+private string[] ParseCsvLine(string line, string delimiter)
         {
             var fields = new List<string>();
             var current = new StringBuilder();
