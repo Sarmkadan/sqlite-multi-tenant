@@ -13,17 +13,31 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.DataOperations
 {
-    // Verifies data integrity and consistency across tenant databases
-    // Detects orphaned records, constraint violations, and missing indexes
+    /// <summary>
+/// Provides functionality to verify data integrity and consistency across tenant databases.
+/// Detects orphaned records, constraint violations, missing indexes, and duplicate records.
+/// </summary>
+// Verifies data integrity and consistency across tenant databases
+    // Detects orphaned records, constraint violations, missing indexes, and duplicate records
     public sealed class DataConsistencyChecker {
         private readonly ILogger<DataConsistencyChecker> _logger;
 
-        public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
+        /// <summary>
+/// Initializes a new instance of the <see cref="DataConsistencyChecker"/> class.
+/// </summary>
+/// <param name="logger">The logger instance to use for logging operations.</param>
+/// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Runs complete consistency check on database
+        /// <summary>
+/// Runs a complete consistency check on the database.
+/// </summary>
+/// <param name="connection">The SQLite database connection to check.</param>
+/// <returns>A <see cref="ConsistencyCheckResult"/> containing the results of all consistency checks.</returns>
+/// <exception cref="ArgumentNullException">Thrown when connection is null.</exception>
         public async Task<ConsistencyCheckResult> CheckDatabaseIntegrityAsync(SQLiteConnection connection)
         {
             if (connection is null)
@@ -65,7 +79,15 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
-        // Checks for duplicate records using fuzzy matching
+        /// <summary>
+/// Finds duplicate records in a table using fuzzy matching on specified key columns.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use.</param>
+/// <param name="tableName">Name of the table to search for duplicates.</param>
+/// <param name="keyColumns">Array of column names to use for comparison.</param>
+/// <param name="similarityThreshold">Minimum similarity score (0-1) to consider records as duplicates. Default is 0.95.</param>
+/// <returns>A list of <see cref="DuplicateRecord"/> objects representing found duplicates.</returns>
+/// <exception cref="ArgumentNullException">Thrown when connection, tableName, or keyColumns is null.</exception>
         public async Task<List<DuplicateRecord>> FindDuplicatesAsync(SQLiteConnection connection,
             string tableName, string[] keyColumns, double similarityThreshold = 0.95)
         {
@@ -123,7 +145,13 @@ namespace SqliteMultiTenant.DataOperations
             return duplicates;
         }
 
-        // Validates record counts against expected sizes
+        /// <summary>
+/// Validates that table record counts match expected values.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use.</param>
+/// <param name="expectedCounts">Dictionary mapping table names to expected record counts.</param>
+/// <returns>True if all record counts match expected values; otherwise false.</returns>
+/// <exception cref="ArgumentNullException">Thrown when connection or expectedCounts is null.</exception>
         public async Task<bool> ValidateRecordCountsAsync(SQLiteConnection connection,
             Dictionary<string, int> expectedCounts)
         {
@@ -338,24 +366,66 @@ namespace SqliteMultiTenant.DataOperations
         }
     }
 
-    public sealed class ConsistencyCheckResult {
-        public bool IsHealthy { get; set; }
-        public bool IntegrityCheckPassed { get; set; }
-        public List<string> OrphanedRecords { get; set; } = new List<string>();
-        public List<ConstraintViolation> ForeignKeyViolations { get; set; } = new List<ConstraintViolation>();
-        public List<string> MissingIndexes { get; set; } = new List<string>();
-        public Dictionary<string, TableStatistics> TableStatistics { get; set; } = new Dictionary<string, TableStatistics>();
-        public DateTime CheckedAt { get; set; }
+    /// <summary>
+/// Represents the results of a database consistency check.
+/// </summary>
+public sealed class ConsistencyCheckResult {
+        /// <summary>
+/// Gets or sets a value indicating whether the database is healthy (all checks passed).
+/// </summary>
+public bool IsHealthy { get; set; }
+        /// <summary>
+/// Gets or sets a value indicating whether the database integrity check passed.
+/// </summary>
+public bool IntegrityCheckPassed { get; set; }
+        /// <summary>
+/// Gets or sets a list of descriptions of orphaned records found during the check.
+/// </summary>
+public List<string> OrphanedRecords { get; set; } = new List<string>();
+        /// <summary>
+/// Gets or sets a list of foreign key constraint violations found during the check.
+/// </summary>
+public List<ConstraintViolation> ForeignKeyViolations { get; set; } = new List<ConstraintViolation>();
+        /// <summary>
+/// Gets or sets a list of missing indexes that were expected but not found.
+/// </summary>
+public List<string> MissingIndexes { get; set; } = new List<string>();
+        /// <summary>
+/// Gets or sets a dictionary containing statistics for each table in the database.
+/// </summary>
+public Dictionary<string, TableStatistics> TableStatistics { get; set; } = new Dictionary<string, TableStatistics>();
+        /// <summary>
+/// Gets or sets the timestamp when the consistency check was performed.
+/// </summary>
+public DateTime CheckedAt { get; set; }
     }
 
-    public sealed class ConstraintViolation {
-        public string Table { get; set; }
-        public long Rowid { get; set; }
-        public string ParentTable { get; set; }
-        public long ParentRowid { get; set; }
+    /// <summary>
+/// Represents a foreign key constraint violation in the database.
+/// </summary>
+public sealed class ConstraintViolation {
+        /// <summary>
+/// Gets or sets the name of the table that contains the violating record.
+/// </summary>
+public string Table { get; set; }
+        /// <summary>
+/// Gets or sets the row ID of the violating record.
+/// </summary>
+public long Rowid { get; set; }
+        /// <summary>
+/// Gets or sets the name of the parent table that should have a valid reference.
+/// </summary>
+public string ParentTable { get; set; }
+        /// <summary>
+/// Gets or sets the row ID of the parent record that should have a valid reference.
+/// </summary>
+public long ParentRowid { get; set; }
     }
 
-    public sealed class TableStatistics {
+    /// <summary>
+/// Contains statistics for a specific table in the database.
+/// </summary>
+public sealed class TableStatistics {
         public string TableName { get; set; }
         public long RowCount { get; set; }
     }
