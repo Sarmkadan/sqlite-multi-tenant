@@ -12,17 +12,36 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Tenants
 {
-    // Verifies that multi-tenant data isolation is maintained
-    // Prevents unauthorized cross-tenant data access
-    public sealed class TenantIsolationVerifier {
+    /// <summary>
+    /// Provides verification services to ensure multi-tenant data isolation is maintained
+    /// and prevents unauthorized cross-tenant data access in SQLite databases.
+    /// </summary>
+    /// <remarks>
+    /// This class validates that tenant-specific data remains isolated and cannot be accessed
+    /// by other tenants, checking database schema, connection restrictions, and query patterns.
+    /// </remarks>
+    public sealed class TenantIsolationVerifier
+    {
         private readonly ILogger<TenantIsolationVerifier> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TenantIsolationVerifier"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance used for logging verification results and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
         public TenantIsolationVerifier(ILogger<TenantIsolationVerifier> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Verifies that a tenant can only access its own data
+        /// <summary>
+        /// Verifies that a tenant can only access its own data by checking database isolation.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to verify.</param>
+        /// <param name="tenantId">The tenant identifier to verify isolation for.</param>
+        /// <returns>An <see cref="IsolationVerificationResult"/> containing isolation verification results.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="tenantId"/> is null or whitespace.</exception>
         public async Task<IsolationVerificationResult> VerifyTenantIsolationAsync(
             SQLiteConnection connection, string tenantId)
         {
@@ -70,7 +89,11 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Detects potential data leakage patterns
+        /// <summary>
+        /// Detects potential data leakage patterns by analyzing database schema and structure.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to analyze for data leakage risks.</param>
+        /// <returns>A list of <see cref="DataLeakageSuspicion"/> objects identifying potential data leaks.</returns>
         public async Task<List<DataLeakageSuspicion>> DetectPotentialDataLeaksAsync(
             SQLiteConnection connection)
         {
@@ -83,9 +106,9 @@ namespace SqliteMultiTenant.Tenants
                 {
                     command.CommandText =
                         @"SELECT name FROM sqlite_master
-                          WHERE type='table'
-                          AND name NOT LIKE 'sqlite_%'
-                          AND name NOT IN ('Tenants', 'AuditLog')";
+                        WHERE type='table'
+                        AND name NOT LIKE 'sqlite_%'
+                        AND name NOT IN ('Tenants', 'AuditLog')";
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -121,7 +144,15 @@ namespace SqliteMultiTenant.Tenants
             return suspicions;
         }
 
-        // Validates that queries respect tenant boundaries
+        /// <summary>
+        /// Validates that SQL queries respect tenant boundaries and isolation requirements.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for validation.</param>
+        /// <param name="query">The SQL query to validate for tenant isolation compliance.</param>
+        /// <param name="tenantId">The tenant identifier the query should be scoped to.</param>
+        /// <returns>A <see cref="QueryValidationResult"/> containing validation results for the query.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="query"/> is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="query"/> is empty or whitespace.</exception>
         public async Task<QueryValidationResult> ValidateQueryTenantIsolationAsync(
             SQLiteConnection connection, string query, string tenantId)
         {
@@ -177,7 +208,7 @@ namespace SqliteMultiTenant.Tenants
                 {
                     command.CommandText =
                         @"SELECT COUNT(*) FROM AuditLog
-                          WHERE TenantId != @tenantId";
+                        WHERE TenantId != @tenantId";
 
                     command.Parameters.AddWithValue("@tenantId", tenantId);
 
@@ -271,8 +302,8 @@ namespace SqliteMultiTenant.Tenants
                 {
                     command.CommandText =
                         @"SELECT m.tbl_name, m.name
-                          FROM pragma_table_info(m.name) t, sqlite_master m
-                          WHERE m.type='table'";
+                        FROM pragma_table_info(m.name) t, sqlite_master m
+                        WHERE m.type='table'";
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -316,29 +347,110 @@ namespace SqliteMultiTenant.Tenants
         }
     }
 
-    public sealed class IsolationVerificationResult {
+    /// <summary>
+    /// Contains the results of a tenant isolation verification check.
+    /// </summary>
+    /// <remarks>
+    /// This class holds the outcome of verifying that a tenant's data remains isolated
+    /// and cannot be accessed by other tenants across different verification dimensions.
+    /// </remarks>
+    public sealed class IsolationVerificationResult
+    {
+        /// <summary>
+        /// Gets or sets the tenant identifier being verified.
+        /// </summary>
         public string TenantId { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether all isolation checks passed successfully.
+        /// </summary>
         public bool IsIsolated { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether audit log isolation was validated successfully.
+        /// </summary>
         public bool AuditLogIsolationValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether connection restrictions were validated successfully.
+        /// </summary>
         public bool ConnectionRestrictionValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether query isolation was validated successfully.
+        /// </summary>
         public bool QueryIsolationValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timestamp when the verification was performed.
+        /// </summary>
         public DateTime VerifiedAt { get; set; }
     }
 
-    public sealed class DataLeakageSuspicion {
+    /// <summary>
+    /// Represents a potential data leakage issue detected during database analysis.
+    /// </summary>
+    public sealed class DataLeakageSuspicion
+    {
+        /// <summary>
+        /// Gets or sets the type/category of the data leakage suspicion.
+        /// </summary>
         public string Type { get; set; }
+
+        /// <summary>
+        /// Gets or sets a description of the potential data leakage issue.
+        /// </summary>
         public string Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the severity level of the data leakage concern (e.g., "Critical", "High", "Medium").
+        /// </summary>
         public string Severity { get; set; }
     }
 
-    public sealed class QueryValidationResult {
+    /// <summary>
+    /// Contains the results of validating a SQL query for tenant isolation compliance.
+    /// </summary>
+    public sealed class QueryValidationResult
+    {
+        /// <summary>
+        /// Gets or sets the SQL query that was validated.
+        /// </summary>
         public string Query { get; set; }
+
+        /// <summary>
+        /// Gets or sets the tenant identifier the query should be scoped to.
+        /// </summary>
         public string TenantId { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the query contains a tenant filter.
+        /// </summary>
         public bool ContainsTenantFilter { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the query uses wildcard SELECT (*).
+        /// </summary>
         public bool ContainsWildcardSelect { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the query uses parameterized statements.
+        /// </summary>
         public bool IsParameterized { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the query avoids UNION-based isolation bypasses.
+        /// </summary>
         public bool HasNoUnionBypass { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the query avoids subquery-based isolation bypasses.
+        /// </summary>
         public bool HasNoSubqueryBypass { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the query is considered safe for tenant isolation.
+        /// </summary>
         public bool IsIsolationSafe { get; set; }
     }
 }
