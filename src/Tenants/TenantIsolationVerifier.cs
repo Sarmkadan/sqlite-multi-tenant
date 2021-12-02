@@ -16,10 +16,6 @@ namespace SqliteMultiTenant.Tenants
     /// Provides verification services to ensure multi-tenant data isolation is maintained
     /// and prevents unauthorized cross-tenant data access in SQLite databases.
     /// </summary>
-    /// <remarks>
-    /// This class validates that tenant-specific data remains isolated and cannot be accessed
-    /// by other tenants, checking database schema, connection restrictions, and query patterns.
-    /// </remarks>
     public sealed class TenantIsolationVerifier
     {
         private readonly ILogger<TenantIsolationVerifier> _logger;
@@ -350,10 +346,6 @@ namespace SqliteMultiTenant.Tenants
     /// <summary>
     /// Contains the results of a tenant isolation verification check.
     /// </summary>
-    /// <remarks>
-    /// This class holds the outcome of verifying that a tenant's data remains isolated
-    /// and cannot be accessed by other tenants across different verification dimensions.
-    /// </remarks>
     public sealed class IsolationVerificationResult
     {
         /// <summary>
