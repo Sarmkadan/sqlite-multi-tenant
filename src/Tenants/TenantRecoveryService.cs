@@ -14,24 +14,34 @@ using SqliteMultiTenant.Repositories;
 
 namespace SqliteMultiTenant.Tenants
 {
-    // Provides disaster recovery capabilities for tenant databases
-    // Includes point-in-time recovery, backup restoration, and corruption repair
+    /// <summary>
+    /// Provides disaster recovery capabilities for tenant databases, including point-in-time recovery, backup restoration, and corruption repair.
+    /// </summary>
     public sealed class TenantRecoveryService {
         private readonly ITenantRepository _tenantRepository;
         private readonly ILogger<TenantRecoveryService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TenantRecoveryService"/> class.
+        /// </summary>
+        /// <param name="tenantRepository">The tenant repository instance.</param>
+        /// <param name="logger">The logger instance for this service.</param>
         public TenantRecoveryService(ITenantRepository tenantRepository, ILogger<TenantRecoveryService> logger)
         {
             _tenantRepository = tenantRepository ?? throw new ArgumentNullException(nameof(tenantRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-    /// <summary>
-    /// Gets the logger instance for this service.
-    /// </summary>
-    public ILogger<TenantRecoveryService> Log => _logger;
+        /// <summary>
+        /// Gets the logger instance for this service.
+        /// </summary>
+        public ILogger<TenantRecoveryService> Log => _logger;
 
-        // Attempts to repair a corrupted database file
+        /// <summary>
+        /// Attempts to repair a corrupted database file for the specified tenant.
+        /// </summary>
+        /// <param name="tenantId">The ID of the tenant to repair.</param>
+        /// <returns>A boolean indicating whether the repair was successful.</returns>
         public async Task<bool> RepairDatabaseAsync(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -113,7 +123,12 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Restores database from a backup
+        /// <summary>
+        /// Restores a database from a backup for the specified tenant.
+        /// </summary>
+        /// <param name="tenantId">The ID of the tenant to restore.</param>
+        /// <param name="backupPath">The path to the backup file.</param>
+        /// <returns>A boolean indicating whether the restore was successful.</returns>
         public async Task<bool> RestoreFromBackupAsync(string tenantId, string backupPath)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -190,7 +205,12 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Removes orphaned backup files
+        /// <summary>
+        /// Removes orphaned backup files for the specified tenant.
+        /// </summary>
+        /// <param name="tenantId">The ID of the tenant to cleanup.</param>
+        /// <param name="retentionPeriod">The time period to retain backups.</param>
+        /// <returns>The number of deleted backup files.</returns>
         public async Task<int> CleanupStaleBackupsAsync(string tenantId, TimeSpan retentionPeriod)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -239,7 +259,13 @@ namespace SqliteMultiTenant.Tenants
             }
         }
 
-        // Performs a point-in-time recovery (simulated via backup restore)
+        /// <summary>
+        /// Performs a point-in-time recovery (simulated via backup restore) for the specified tenant.
+        /// </summary>
+        /// <param name="tenantId">The ID of the tenant to recover.</param>
+        /// <param name="targetTime">The target time for the recovery.</param>
+        /// <param name="backupDirectory">The directory containing the backup files.</param>
+        /// <returns>A boolean indicating whether the recovery was successful.</returns>
         public async Task<bool> PointInTimeRecoveryAsync(string tenantId, DateTime targetTime,
             string backupDirectory)
         {
