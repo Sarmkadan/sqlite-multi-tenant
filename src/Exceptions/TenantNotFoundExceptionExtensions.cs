@@ -3,17 +3,25 @@ using System;
 namespace SqliteMultiTenant.Exceptions
 {
     /// <summary>
-    /// Provides extension methods for <see cref="TenantNotFoundException"/> to facilitate error handling and tenant identification.
+    /// Provides extension methods for <see cref="TenantNotFoundException"/> to facilitate error handling
+    /// and tenant identification.
     /// </summary>
     public static class TenantNotFoundExceptionExtensions
     {
         /// <summary>
-        /// Determines whether the exception's tenant ID matches the specified tenant ID.
+        /// Determines whether the exception's <see cref="TenantNotFoundException.TenantId"/> matches the
+        /// specified <paramref name="tenantId"/>.
         /// </summary>
-        /// <param name="exception">The exception instance. Cannot be <see langword="null"/>.</param>
-        /// <param name="tenantId">The tenant ID to compare against. Can be <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if the tenant IDs match; otherwise, <see langword="false"/>.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
+        /// <param name="exception">
+        /// The <see cref="TenantNotFoundException"/> instance. This argument cannot be <c>null</c>.
+        /// </param>
+        /// <param name="tenantId">
+        /// The tenant identifier to compare against. This value may be <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if <paramref name="exception"/>'s <c>TenantId</c> equals <paramref name="tenantId"/>; otherwise, <c>false</c>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <c>null</c>.</exception>
         public static bool IsMatchingTenantId(this TenantNotFoundException exception, string? tenantId)
         {
             ArgumentNullException.ThrowIfNull(exception);
@@ -22,11 +30,15 @@ namespace SqliteMultiTenant.Exceptions
         }
 
         /// <summary>
-        /// Generates a formatted error message for the tenant not found exception.
+        /// Generates a formatted error message that includes the tenant identifier from the exception.
         /// </summary>
-        /// <param name="exception">The exception instance. Cannot be <see langword="null"/>.</param>
-        /// <returns>A formatted error message containing the tenant ID.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
+        /// <param name="exception">
+        /// The <see cref="TenantNotFoundException"/> instance. This argument cannot be <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// A string in the form <c>"Tenant with ID {TenantId} not found."</c>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <c>null</c>.</exception>
         public static string GetErrorMessage(this TenantNotFoundException exception)
         {
             ArgumentNullException.ThrowIfNull(exception);
@@ -35,11 +47,17 @@ namespace SqliteMultiTenant.Exceptions
         }
 
         /// <summary>
-        /// Wraps this exception as an inner exception in an <see cref="InvalidOperationException"/>.
+        /// Wraps the supplied <see cref="TenantNotFoundException"/> in an <see cref="InvalidOperationException"/>
+        /// as its inner exception.
         /// </summary>
-        /// <param name="exception">The exception instance. Cannot be <see langword="null"/>.</param>
-        /// <returns>A new <see cref="InvalidOperationException"/> with this exception as the inner exception.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <see langword="null"/>.</exception>
+        /// <param name="exception">
+        /// The <see cref="TenantNotFoundException"/> instance to wrap. This argument cannot be <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// A new <see cref="InvalidOperationException"/> with the message <c>"Tenant not found"</c> and the
+        /// original exception set as its <c>InnerException</c>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException"><paramref name="exception"/> is <c>null</c>.</exception>
         public static Exception AsInnerException(this TenantNotFoundException exception)
         {
             ArgumentNullException.ThrowIfNull(exception);
