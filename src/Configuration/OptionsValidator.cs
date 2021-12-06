@@ -9,9 +9,19 @@ using SqliteMultiTenant.Configuration;
 
 namespace SqliteMultiTenant.Configuration
 {
+    /// <summary>
+    /// Provides validation helpers for configuration options.
+    /// </summary>
     // Validation helpers for configuration options
     public static class OptionsValidator
     {
+        /// <summary>
+        /// Validates the specified <see cref="MultiTenantOptions"/> instance.
+        /// </summary>
+        /// <param name="options">The options to validate.</param>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any required property is invalid.
+        /// </exception>
         public static void Validate(MultiTenantOptions options)
         {
             if (string.IsNullOrWhiteSpace(options?.BasePath))
@@ -27,6 +37,13 @@ namespace SqliteMultiTenant.Configuration
                 throw new ArgumentException("BackupRetention must be positive");
         }
 
+        /// <summary>
+        /// Validates the specified <see cref="BackupOptions"/> instance.
+        /// </summary>
+        /// <param name="options">The options to validate.</param>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any required property is invalid.
+        /// </exception>
         public static void Validate(BackupOptions options)
         {
             if (options?.MaxConcurrentBackups <= 0)
@@ -36,6 +53,13 @@ namespace SqliteMultiTenant.Configuration
                 throw new ArgumentException("BackupTimeoutSeconds must be greater than 0");
         }
 
+        /// <summary>
+        /// Validates the specified <see cref="SecurityOptions"/> instance.
+        /// </summary>
+        /// <param name="options">The options to validate.</param>
+        /// <exception cref="ArgumentException">
+        /// Thrown when any required property is invalid.
+        /// </exception>
         public static void Validate(SecurityOptions options)
         {
             if (options?.SessionTimeout <= TimeSpan.Zero)
