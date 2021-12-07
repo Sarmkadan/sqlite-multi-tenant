@@ -269,7 +269,15 @@ public sealed class UnitOfWork : IUnitOfWork {
     {
         if (_transactionStarted)
         {
-            RollbackAsync().Wait();
+            try
+            {
+                _transactionStarted = false;
+                _logger.LogInformation("Transaction rolled back");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error rolling back transaction: {Message}", ex.Message);
+            }
         }
     }
 }

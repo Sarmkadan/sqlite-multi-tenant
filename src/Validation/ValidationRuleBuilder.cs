@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -91,9 +92,9 @@ namespace SqliteMultiTenant.Validation
 
                     try
                     {
-                        var numValue = Convert.ToDecimal(value);
-                        if (minValue is not null && numValue < Convert.ToDecimal(minValue)) return false;
-                        if (maxValue is not null && numValue > Convert.ToDecimal(maxValue)) return false;
+                        var numValue = Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                        if (minValue is not null && numValue < Convert.ToDecimal(minValue, CultureInfo.InvariantCulture)) return false;
+                        if (maxValue is not null && numValue > Convert.ToDecimal(maxValue, CultureInfo.InvariantCulture)) return false;
                         return true;
                     }
                     catch { return false; }

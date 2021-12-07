@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Data.SQLite;
 using Microsoft.AspNetCore.Mvc;
 using SqliteMultiTenant.Api.Responses;
 using SqliteMultiTenant.Models;
@@ -18,6 +19,8 @@ namespace SqliteMultiTenant.Api.Controllers;
 [ApiController]
 [Route("api/databases")]
 public sealed class DatabaseController : ControllerBase {
+    private const string BaseDatabasePath = "./databases";
+
     private readonly ILogger<DatabaseController> _logger;
 
     public DatabaseController(ILogger<DatabaseController> logger)
@@ -25,26 +28,67 @@ public sealed class DatabaseController : ControllerBase {
         _logger = logger;
     }
 
+    private static string ResolveDatabasePath(string databaseId) =>
+        Path.Combine(BaseDatabasePath, $"{databaseId}.db");
+
     /// <summary>
     /// Gets detailed statistics about a specific database.
     /// Includes file size, row counts, and schema information.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="databaseId"/> is null or whitespace.</exception>
     [HttpGet("{databaseId}/stats")]
     [ProducesResponseType(typeof(ApiResponse<DatabaseStats>), StatusCodes.Status200OK)]
     public IActionResult GetDatabaseStats(string databaseId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
+
         try
         {
             _logger.LogInformation("Database stats requested for {DatabaseId}", databaseId);
 
+            var path = ResolveDatabasePath(databaseId);
+            if (!System.IO.File.Exists(path))
+                return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+
+            var isCorrupted = false;
+            var tableCount = 0;
+            var indexCount = 0;
+
+            using (var connection = new SQLiteConnection($"Data Source={path};"))
+            {
+                connection.Open();
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
+                    tableCount = Convert.ToInt32(command.ExecuteScalar());
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index'";
+                    indexCount = Convert.ToInt32(command.ExecuteScalar());
+                }
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "PRAGMA quick_check";
+                    var quickCheckResult = Convert.ToString(command.ExecuteScalar());
+                    isCorrupted = !string.Equals(quickCheckResult, "ok", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            var fileInfo = new FileInfo(path);
+
             var stats = new DatabaseStats
             {
                 DatabaseId = databaseId,
-                FileSizeBytes = GetFileSizeBytes(databaseId),
-                TableCount = GetTableCount(databaseId),
-                IndexCount = GetIndexCount(databaseId),
-                LastVacuumTime = GetLastVacuumTime(databaseId),
-                IsCorrupted = false,
+                FileSizeBytes = fileInfo.Length,
+                TableCount = tableCount,
+                IndexCount = indexCount,
+                LastVacuumTime = fileInfo.LastWriteTimeUtc,
+                IsCorrupted = isCorrupted,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -61,18 +105,39 @@ public sealed class DatabaseController : ControllerBase {
     /// Optimizes database performance by running VACUUM and ANALYZE.
     /// Can be resource-intensive on large databases.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="databaseId"/> is null or whitespace.</exception>
     [HttpPost("{databaseId}/optimize")]
     [ProducesResponseType(typeof(ApiResponse<OptimizationResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> OptimizeDatabase(string databaseId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
+
         try
         {
             _logger.LogInformation("Database optimization started for {DatabaseId}", databaseId);
 
+            var path = ResolveDatabasePath(databaseId);
+            if (!System.IO.File.Exists(path))
+                return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+
             var startTime = DateTime.UtcNow;
 
-            // Perform vacuum and analysis
-            await Task.Delay(100); // Simulate work
+            await using (var connection = new SQLiteConnection($"Data Source={path};"))
+            {
+                await connection.OpenAsync();
+
+                await using (var vacuum = connection.CreateCommand())
+                {
+                    vacuum.CommandText = "VACUUM";
+                    await vacuum.ExecuteNonQueryAsync();
+                }
+
+                await using (var analyze = connection.CreateCommand())
+                {
+                    analyze.CommandText = "ANALYZE";
+                    await analyze.ExecuteNonQueryAsync();
+                }
+            }
 
             var duration = DateTime.UtcNow - startTime;
 
@@ -97,28 +162,49 @@ public sealed class DatabaseController : ControllerBase {
     /// Performs integrity check on the database.
     /// Detects corruption and structural issues.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="databaseId"/> is null or whitespace.</exception>
     [HttpPost("{databaseId}/integrity-check")]
     [ProducesResponseType(typeof(ApiResponse<IntegrityCheckResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckIntegrity(string databaseId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
+
         try
         {
             _logger.LogInformation("Integrity check requested for {DatabaseId}", databaseId);
 
-            var startTime = DateTime.UtcNow;
+            var path = ResolveDatabasePath(databaseId);
+            if (!System.IO.File.Exists(path))
+                return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
 
-            // Perform integrity check
-            await Task.Delay(50); // Simulate work
+            var startTime = DateTime.UtcNow;
+            var errors = new List<string>();
+
+            await using (var connection = new SQLiteConnection($"Data Source={path};"))
+            {
+                await connection.OpenAsync();
+
+                await using var command = connection.CreateCommand();
+                command.CommandText = "PRAGMA integrity_check";
+
+                await using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var message = reader.GetString(0);
+                    if (!string.Equals(message, "ok", StringComparison.OrdinalIgnoreCase))
+                        errors.Add(message);
+                }
+            }
 
             var duration = DateTime.UtcNow - startTime;
 
             var result = new IntegrityCheckResult
             {
                 DatabaseId = databaseId,
-                IsValid = true,
-                ErrorCount = 0,
+                IsValid = errors.Count == 0,
+                ErrorCount = errors.Count,
                 DurationMs = (long)duration.TotalMilliseconds,
-                Errors = new List<string>(),
+                Errors = errors,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -135,22 +221,79 @@ public sealed class DatabaseController : ControllerBase {
     /// Gets the current schema of the database.
     /// Returns information about all tables and their columns.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="databaseId"/> is null or whitespace.</exception>
     [HttpGet("{databaseId}/schema")]
     [ProducesResponseType(typeof(ApiResponse<DatabaseSchema>), StatusCodes.Status200OK)]
     public IActionResult GetSchema(string databaseId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
+
         try
         {
             _logger.LogInformation("Schema requested for {DatabaseId}", databaseId);
 
+            var path = ResolveDatabasePath(databaseId);
+            if (!System.IO.File.Exists(path))
+                return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+
+            var tables = new List<TableSchema>();
+
+            using (var connection = new SQLiteConnection($"Data Source={path};"))
+            {
+                connection.Open();
+
+                var tableNames = new List<string>();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText =
+                        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                        tableNames.Add(reader.GetString(0));
+                }
+
+                foreach (var tableName in tableNames)
+                {
+                    var columns = new List<ColumnSchema>();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = $"PRAGMA table_info(\"{tableName}\")";
+                        using var reader = command.ExecuteReader();
+                        while (reader.Read())
+                        {
+                            columns.Add(new ColumnSchema
+                            {
+                                ColumnName = reader.GetString(reader.GetOrdinal("name")),
+                                DataType = reader.GetString(reader.GetOrdinal("type")),
+                                IsNullable = reader.GetInt32(reader.GetOrdinal("notnull")) == 0,
+                                IsPrimaryKey = reader.GetInt32(reader.GetOrdinal("pk")) > 0
+                            });
+                        }
+                    }
+
+                    int rowCount;
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = $"SELECT COUNT(*) FROM \"{tableName}\"";
+                        rowCount = Convert.ToInt32(command.ExecuteScalar());
+                    }
+
+                    tables.Add(new TableSchema
+                    {
+                        TableName = tableName,
+                        Columns = columns,
+                        RowCount = rowCount
+                    });
+                }
+            }
+
             var schema = new DatabaseSchema
             {
                 DatabaseId = databaseId,
-                Tables = new List<TableSchema>(),
+                Tables = tables,
                 Timestamp = DateTime.UtcNow
             };
 
-            // Schema would be populated from actual database
             return Ok(ApiResponse<DatabaseSchema>.Success(schema));
         }
         catch (Exception ex)
@@ -164,16 +307,25 @@ public sealed class DatabaseController : ControllerBase {
     /// Exports database contents in specified format.
     /// Supports JSON, CSV, and SQL dump formats.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="databaseId"/> is null or whitespace.</exception>
     [HttpPost("{databaseId}/export")]
     [ProducesResponseType(typeof(ApiResponse<ExportResult>), StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportDatabase(string databaseId, [FromQuery] string format = "json")
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
+
         try
         {
             _logger.LogInformation("Database export requested: {DatabaseId} as {Format}", databaseId, format);
 
             if (!IsValidExportFormat(format))
                 return BadRequest(ApiResponse<object>.Error($"Invalid export format: {format}"));
+
+            var path = ResolveDatabasePath(databaseId);
+            if (!System.IO.File.Exists(path))
+                return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+
+            await Task.CompletedTask;
 
             var result = new ExportResult
             {
@@ -193,37 +345,12 @@ public sealed class DatabaseController : ControllerBase {
         }
     }
 
-    private long GetFileSizeBytes(string databaseId)
-    {
-        // This would be implemented to get actual file size
-        return 1024 * 1024; // 1MB placeholder
-    }
-
-    private int GetTableCount(string databaseId)
-    {
-        // This would query the actual database
-        return 5; // Placeholder
-    }
-
-    private int GetIndexCount(string databaseId)
-    {
-        // This would query the actual database
-        return 10; // Placeholder
-    }
-
-    private DateTime GetLastVacuumTime(string databaseId)
-    {
-        return DateTime.UtcNow.AddDays(-1);
-    }
-
-    private bool IsValidExportFormat(string format)
-    {
-        return format switch
+    private static bool IsValidExportFormat(string format) =>
+        format switch
         {
             "json" or "csv" or "sql" => true,
             _ => false
         };
-    }
 }
 
 public sealed class DatabaseStats {

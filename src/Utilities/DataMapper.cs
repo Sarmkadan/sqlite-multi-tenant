@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Globalization;
 using System.Reflection;
 
 namespace SqliteMultiTenant.Utilities;
@@ -129,26 +130,26 @@ public sealed class DataMapper : IDataMapper {
                 return value.ToString();
 
             if (targetType == typeof(int))
-                return Convert.ToInt32(value);
+                return Convert.ToInt32(value, CultureInfo.InvariantCulture);
 
             if (targetType == typeof(long))
-                return Convert.ToInt64(value);
+                return Convert.ToInt64(value, CultureInfo.InvariantCulture);
 
             if (targetType == typeof(double))
-                return Convert.ToDouble(value);
+                return Convert.ToDouble(value, CultureInfo.InvariantCulture);
 
             if (targetType == typeof(bool))
-                return Convert.ToBoolean(value);
+                return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
 
             if (targetType == typeof(DateTime))
-                return Convert.ToDateTime(value);
+                return Convert.ToDateTime(value, CultureInfo.InvariantCulture);
 
             if (targetType == typeof(Guid))
             {
                 return value is Guid guid ? guid : Guid.Parse(value.ToString()!);
             }
 
-            return Convert.ChangeType(value, targetType);
+            return Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
         }
         catch (Exception ex)
         {
