@@ -19,11 +19,15 @@ namespace SqliteMultiTenant.Tests
     public sealed class SchemaManagerTests : IDisposable {
         private readonly ILogger<SchemaManager> _mockLogger;
         private SQLiteConnection _connection;
-        private string _connectionString = "Data Source=:memory:";
+        private string _connectionString;
         private SchemaManager _sut;
 
         public SchemaManagerTests()
         {
+            // Each test instance gets its own uniquely named shared-cache memory database,
+            // since System.Data.SQLite pools connections and a fixed name would leak state
+            // (e.g. tables/indexes) across test methods.
+            _connectionString = $"Data Source=:memory:schemamanagertests_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
             _mockLogger = Substitute.For<ILogger<SchemaManager>>();
             _sut = new SchemaManager(_mockLogger, _connectionString);
 
@@ -104,7 +108,7 @@ namespace SqliteMultiTenant.Tests
             (await IndexExists("idx_AuditLog_TenantId")).Should().BeTrue();
             (await IndexExists("idx_AuditLog_CreatedAt")).Should().BeTrue();
 
-            _mockLogger.Received(1).LogInformation("Schema initialized for tenant: {TenantId}", tenantId);
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Schema initialized for tenant: {TenantId}", tenantId);
         }
 
         [Fact]
@@ -119,7 +123,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert (should not throw, tables and indexes should still exist)
             (await TableExists("Tenants")).Should().BeTrue();
-            _mockLogger.Received(2).LogInformation("Schema initialized for tenant: {TenantId}", tenantId);
+            _mockLogger.AssertLogged(LogLevel.Information, 2, "Schema initialized for tenant: {TenantId}", tenantId);
         }
 
         [Fact]
@@ -138,7 +142,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             result.Should().BeTrue();
             (await ColumnExists(tableName, columnName)).Should().BeTrue();
-            _mockLogger.Received(1).LogInformation("Column {ColumnName} added to table {TableName} for tenant {TenantId}",
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Column {ColumnName} added to table {TableName} for tenant {TenantId}",
                 columnName, tableName, tenantId);
         }
 
@@ -157,7 +161,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().BeFalse();
-            _mockLogger.Received(1).LogWarning("Column {ColumnName} already exists in table {TableName}",
+            _mockLogger.AssertLogged(LogLevel.Warning, 1, "Column {ColumnName} already exists in table {TableName}",
                 columnName, tableName);
         }
 
@@ -175,7 +179,7 @@ namespace SqliteMultiTenant.Tests
                 .Should().ThrowAsync<SQLiteException>();
 
             // Assert
-            _mockLogger.Received(1).LogError(Arg.Any<SQLiteException>(),
+            _mockLogger.AssertLoggedWithException(LogLevel.Error, 1, typeof(SQLiteException),
                 "Failed to add column {ColumnName} to table {TableName}", columnName, nonExistentTable);
         }
 
@@ -194,7 +198,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             (await TableExists(oldName)).Should().BeFalse();
             (await TableExists(newName)).Should().BeTrue();
-            _mockLogger.Received(1).LogInformation("Table renamed from {OldName} to {NewName}", oldName, newName);
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Table renamed from {OldName} to {NewName}", oldName, newName);
         }
 
         [Fact]
@@ -209,7 +213,7 @@ namespace SqliteMultiTenant.Tests
                 .Should().ThrowAsync<SQLiteException>();
 
             // Assert
-            _mockLogger.Received(1).LogError(Arg.Any<SQLiteException>(),
+            _mockLogger.AssertLoggedWithException(LogLevel.Error, 1, typeof(SQLiteException),
                 "Failed to rename table from {OldName} to {NewName}", nonExistentTable, newName);
         }
 
@@ -229,7 +233,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             result.Should().BeTrue();
             (await IndexExists(indexName)).Should().BeTrue();
-            _mockLogger.Received(1).LogInformation("Index {IndexName} created on table {TableName}", indexName, tableName);
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Index {IndexName} created on table {TableName}", indexName, tableName);
         }
 
         [Fact]
@@ -247,7 +251,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().BeFalse();
-            _mockLogger.Received(1).LogWarning("Index {IndexName} already exists", indexName);
+            _mockLogger.AssertLogged(LogLevel.Warning, 1, "Index {IndexName} already exists", indexName);
         }
 
         [Fact]

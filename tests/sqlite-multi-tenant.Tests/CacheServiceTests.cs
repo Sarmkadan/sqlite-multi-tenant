@@ -51,15 +51,15 @@ namespace SqliteMultiTenant.Tests
             // Arrange
             var key = "testKey";
             var expectedValue = "testValue";
-            object outValue = expectedValue;
-            _mockMemoryCache.TryGetValue(key, out outValue).Returns(true);
+            _mockMemoryCache.TryGetValue(key, out Arg.Any<object>())
+                .Returns(x => { x[1] = expectedValue; return true; });
 
             // Act
             var result = _sut.Get<string>(key);
 
             // Assert
             result.Should().Be(expectedValue);
-            _mockLogger.Received(1).LogDebug("Cache hit: {Key}", key);
+            _mockLogger.AssertLogged(LogLevel.Debug, 1, "Cache hit: {Key}", key);
         }
 
         [Fact]
@@ -67,15 +67,15 @@ namespace SqliteMultiTenant.Tests
         {
             // Arrange
             var key = "nonExistentKey";
-            object outValue = null;
-            _mockMemoryCache.TryGetValue(key, out outValue).Returns(false);
+            _mockMemoryCache.TryGetValue(key, out Arg.Any<object>())
+                .Returns(x => { x[1] = null; return false; });
 
             // Act
             var result = _sut.Get<string>(key);
 
             // Assert
             result.Should().BeNull();
-            _mockLogger.Received(1).LogDebug("Cache miss: {Key}", key);
+            _mockLogger.AssertLogged(LogLevel.Debug, 1, "Cache miss: {Key}", key);
         }
 
         [Fact]
@@ -104,19 +104,22 @@ namespace SqliteMultiTenant.Tests
         public void Set_ValueWithDefaultExpiration_AddsToCache()
         {
             // Arrange
+            // Note: IMemoryCache.Set(...) is a non-mockable extension method that internally
+            // calls CreateEntry(key) and sets properties on the returned ICacheEntry, so we
+            // verify against CreateEntry/ICacheEntry directly instead.
             var key = "newKey";
             var value = "newValue";
+            var entry = Substitute.For<ICacheEntry>();
+            _mockMemoryCache.CreateEntry(key).Returns(entry);
 
             // Act
             _sut.Set(key, value);
 
             // Assert
-            _mockMemoryCache.Received(1).Set(
-                key,
-                value,
-                Arg.Is<MemoryCacheEntryOptions>(options => options.SlidingExpiration == TimeSpan.FromHours(1))
-            );
-            _mockLogger.Received(1).LogDebug("Cache set: {Key} (expires in {Expiration}s)", key, TimeSpan.FromHours(1).TotalSeconds);
+            _mockMemoryCache.Received(1).CreateEntry(key);
+            entry.Received(1).Value = value;
+            entry.SlidingExpiration.Should().Be(TimeSpan.FromHours(1));
+            _mockLogger.AssertLogged(LogLevel.Debug, 1, "Cache set: {Key} (expires in {Expiration}s)", key, TimeSpan.FromHours(1).TotalSeconds);
         }
 
         [Fact]
@@ -126,17 +129,17 @@ namespace SqliteMultiTenant.Tests
             var key = "customKey";
             var value = 123;
             var customExpiration = TimeSpan.FromMinutes(5);
+            var entry = Substitute.For<ICacheEntry>();
+            _mockMemoryCache.CreateEntry(key).Returns(entry);
 
             // Act
             _sut.Set(key, value, customExpiration);
 
             // Assert
-            _mockMemoryCache.Received(1).Set(
-                key,
-                value,
-                Arg.Is<MemoryCacheEntryOptions>(options => options.SlidingExpiration == customExpiration)
-            );
-            _mockLogger.Received(1).LogDebug("Cache set: {Key} (expires in {Expiration}s)", key, customExpiration.TotalSeconds);
+            _mockMemoryCache.Received(1).CreateEntry(key);
+            entry.Received(1).Value = value;
+            entry.SlidingExpiration.Should().Be(customExpiration);
+            _mockLogger.AssertLogged(LogLevel.Debug, 1, "Cache set: {Key} (expires in {Expiration}s)", key, customExpiration.TotalSeconds);
         }
 
         [Fact]
@@ -146,7 +149,7 @@ namespace SqliteMultiTenant.Tests
             _sut.Set<string>(null, "value");
 
             // Assert
-            _mockMemoryCache.DidNotReceiveWithAnyArgs().Set(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<MemoryCacheEntryOptions>());
+            _mockMemoryCache.DidNotReceiveWithAnyArgs().CreateEntry(Arg.Any<string>());
         }
 
         [Fact]
@@ -156,7 +159,7 @@ namespace SqliteMultiTenant.Tests
             _sut.Set<string>("", "value");
 
             // Assert
-            _mockMemoryCache.DidNotReceiveWithAnyArgs().Set(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<MemoryCacheEntryOptions>());
+            _mockMemoryCache.DidNotReceiveWithAnyArgs().CreateEntry(Arg.Any<string>());
         }
 
         [Fact]
@@ -166,7 +169,7 @@ namespace SqliteMultiTenant.Tests
             _sut.Set<string>("key", null);
 
             // Assert
-            _mockMemoryCache.DidNotReceiveWithAnyArgs().Set(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<MemoryCacheEntryOptions>());
+            _mockMemoryCache.DidNotReceiveWithAnyArgs().CreateEntry(Arg.Any<string>());
         }
 
         [Fact]
@@ -180,7 +183,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             _mockMemoryCache.Received(1).Remove(key);
-            _mockLogger.Received(1).LogDebug("Cache removed: {Key}", key);
+            _mockLogger.AssertLogged(LogLevel.Debug, 1, "Cache removed: {Key}", key);
         }
 
         [Fact]
@@ -235,7 +238,7 @@ namespace SqliteMultiTenant.Tests
             _mockMemoryCache.Received(1).Remove("prefix:key1");
             _mockMemoryCache.Received(1).Remove("prefix:key2");
             _mockMemoryCache.DidNotReceive().Remove("other:key3");
-            _mockLogger.Received(1).LogInformation("Cache cleared for pattern: {Pattern} ({Count} keys)", "prefix:*", 2);
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Cache cleared for pattern: {Pattern} ({Count} keys)", "prefix:*", 2);
         }
         
         [Fact]
@@ -250,7 +253,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             _mockMemoryCache.DidNotReceive().Remove(Arg.Any<string>()); // No calls to remove
-            _mockLogger.Received(1).LogInformation("Cache cleared for pattern: {Pattern} ({Count} keys)", "nonexistent:*", 0);
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Cache cleared for pattern: {Pattern} ({Count} keys)", "nonexistent:*", 0);
         }
 
         [Fact]

@@ -112,7 +112,11 @@ public class HealthCheckService : IHealthCheckService {
     {
         try
         {
-            var drive = new DriveInfo(Path.GetPathRoot(_databasePath) ?? "/");
+            // Path.GetPathRoot returns an empty string (not null) for relative paths like ".",
+            // so resolve to an absolute path first or DriveInfo construction fails and the
+            // catch below would incorrectly report the disk as healthy.
+            var pathRoot = Path.GetPathRoot(Path.GetFullPath(_databasePath));
+            var drive = new DriveInfo(string.IsNullOrEmpty(pathRoot) ? "/" : pathRoot);
 
             if (drive.AvailableFreeSpace < minimumFreeBytesRequired)
             {

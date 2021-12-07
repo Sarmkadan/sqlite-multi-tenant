@@ -122,8 +122,12 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             _connectionPoolManager.GetStatistics().Should().NotContainKey(TenantId1);
-            connection.State.Should().Be(System.Data.ConnectionState.Closed);
-            _mockLogger.Received(1).LogInformation("Connection pool evicted for tenant {TenantId}", TenantId1);
+            // System.Data.SQLite fully disposes the native handle on Dispose(), so the
+            // connection object itself becomes unusable afterwards (State access throws)
+            // rather than reporting ConnectionState.Closed like some other ADO.NET providers.
+            this.Invoking(_ => connection.State)
+                .Should().Throw<ObjectDisposedException>();
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Connection pool evicted for tenant {TenantId}", TenantId1);
         }
 
         [Fact]
@@ -182,7 +186,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("Value cannot be null or empty. (Parameter 'tenantId')");
+                .WithMessage("The value cannot be an empty string. (Parameter 'tenantId')");
         }
 
         [Fact]
@@ -196,7 +200,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("Value cannot be null or empty. (Parameter 'connectionString')");
+                .WithMessage("The value cannot be an empty string. (Parameter 'connectionString')");
         }
         
         [Fact]
@@ -221,7 +225,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             stats[TenantId1].Total.Should().Be(0);
             stats[TenantId1].Available.Should().Be(0);
-            _mockLogger.Received(1).LogDebug(Arg.Is<string>(s => s.Contains("Pruned 2 idle connection(s) from tenant pool")));
+            _mockLogger.AssertLoggedContains(LogLevel.Debug, 1, "Pruned 2 idle connection(s) from tenant pool");
         }
 
         public async ValueTask DisposeAsync()

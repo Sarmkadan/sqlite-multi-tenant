@@ -133,7 +133,7 @@ namespace SqliteMultiTenant.DataOperations
 
             direction = direction?.ToUpper() ?? "ASC";
             if (direction != "ASC" && direction != "DESC")
-                throw new ArgumentException("Direction must be ASC or DESC");
+                throw new ArgumentException("Direction must be ASC or DESC", nameof(direction));
 
             _orderBy.Add((column, direction));
             return this;

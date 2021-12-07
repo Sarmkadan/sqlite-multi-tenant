@@ -52,7 +52,7 @@ public sealed class CacheService : ICacheService {
         if (string.IsNullOrWhiteSpace(key))
             return default;
 
-        if (_cache.TryGetValue(key, out T value))
+        if (_cache.TryGetValue(key, out object? cached) && cached is T value)
         {
             _logger.LogDebug("Cache hit: {Key}", key);
             return value;
@@ -86,7 +86,7 @@ public sealed class CacheService : ICacheService {
         _cache.Set(key, value, cacheOptions);
         _keyTimestamps[key] = DateTime.UtcNow;
 
-        _logger.LogDebug($"Cache set: {key} (expires in {cacheOptions.SlidingExpiration?.TotalSeconds}s)");
+        _logger.LogDebug("Cache set: {Key} (expires in {Expiration}s)", key, cacheOptions.SlidingExpiration?.TotalSeconds);
     }
 
     /// <summary>

@@ -105,7 +105,7 @@ namespace SqliteMultiTenant.Tests
             result.UpScript.Should().Be(upScript);
             result.Status.Should().Be(MigrationStatus.Pending);
             result.ExecutionOrder.Should().Be(1);
-            _mockLogger.Received(1).LogInformation(Arg.Any<string>());
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -126,8 +126,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             await action.Should().ThrowAsync<MigrationException>()
-                .WithMessage($"Migration with version '{version}' already applied to database '{databaseId}'.");
-            _mockLogger.Received(1).LogError(Arg.Any<string>());
+                .WithMessage($"Migration '{version}' has already been applied");
+            _mockLogger.AssertLoggedAny(LogLevel.Error);
         }
 
         [Fact]
@@ -146,7 +146,7 @@ namespace SqliteMultiTenant.Tests
             migration.Status.Should().Be(MigrationStatus.Completed);
             migration.ExecutionTimeMs.Should().Be(100);
             _mockMigrationRepository.Received(1).UpdateAsync(migration, Arg.Any<CancellationToken>());
-            _mockLogger.Received(1).LogInformation(Arg.Any<string>());
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -162,8 +162,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             await action.Should().ThrowAsync<MigrationException>()
-                .WithMessage($"Migration with ID '{migrationId}' not found.");
-            _mockLogger.Received(1).LogError(Arg.Any<string>());
+                .WithMessage($"Migration with ID '{migrationId}' was not found");
+            _mockLogger.AssertLoggedAny(LogLevel.Error);
         }
 
         [Fact]
@@ -183,7 +183,7 @@ namespace SqliteMultiTenant.Tests
             migration.Status.Should().Be(MigrationStatus.Failed);
             migration.ErrorMessage.Should().Be(errorMessage);
             _mockMigrationRepository.Received(1).UpdateAsync(migration, Arg.Any<CancellationToken>());
-            _mockLogger.Received(1).LogError(Arg.Any<string>());
+            _mockLogger.AssertLoggedAny(LogLevel.Error);
         }
     }
 }

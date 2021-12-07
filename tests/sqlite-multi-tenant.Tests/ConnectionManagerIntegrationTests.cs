@@ -120,8 +120,12 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             _connectionManager.GetPoolStatistics().Should().NotContainKey(TenantId1);
-            connection.State.Should().Be(System.Data.ConnectionState.Closed); // Connection should be disposed and closed
-            _mockLogger.Received(1).LogInformation("Connection pool cleared for tenant: {TenantId}", TenantId1);
+            // System.Data.SQLite fully disposes the native handle on Dispose(), so the
+            // connection object itself becomes unusable afterwards (State access throws)
+            // rather than reporting ConnectionState.Closed like some other ADO.NET providers.
+            this.Invoking(_ => connection.State)
+                .Should().Throw<ObjectDisposedException>();
+            _mockLogger.AssertLogged(LogLevel.Information, 1, "Connection pool cleared for tenant: {TenantId}", TenantId1);
         }
 
         [Fact]

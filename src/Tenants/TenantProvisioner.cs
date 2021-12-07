@@ -203,6 +203,11 @@ namespace SqliteMultiTenant.Tenants
         /// <returns><c>true</c> if the database is valid and accessible; <c>false</c> otherwise.</returns>
         public async Task<bool> ValidateTenantDatabaseAsync(string tenantId)
         {
+            if (tenantId is null)
+                throw new ArgumentNullException(nameof(tenantId));
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+
             try
             {
                 var tenant = await _tenantRepository.GetByIdAsync(tenantId);

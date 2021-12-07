@@ -43,6 +43,9 @@ public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
             if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
+            if (connection.State != System.Data.ConnectionState.Open)
+                throw new InvalidOperationException("Connection must be open to run a consistency check.");
+
             try
             {
                 var result = new ConsistencyCheckResult();

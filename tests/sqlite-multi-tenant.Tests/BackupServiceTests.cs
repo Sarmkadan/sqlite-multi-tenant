@@ -97,7 +97,7 @@ namespace SqliteMultiTenant.Tests
             result.BackupType.Should().Be(BackupType.Full);
             result.Status.Should().Be(BackupStatus.Pending);
             result.BackupId.Should().NotBeEmpty();
-            _mockLogger.Received(1).LogInformation(Arg.Any<string>());
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -132,7 +132,7 @@ namespace SqliteMultiTenant.Tests
             backup.SizeBytes.Should().Be(1024);
             backup.DurationMs.Should().Be(500);
             _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
-            _mockLogger.Received(1).LogInformation(Arg.Any<string>());
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -148,8 +148,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             await action.Should().ThrowAsync<BackupException>()
-                .WithMessage($"Backup with ID '{backupId}' not found.");
-            _mockLogger.Received(1).LogError(Arg.Any<string>());
+                .WithMessage($"Backup with ID '{backupId}' was not found");
+            _mockLogger.AssertLoggedAny(LogLevel.Error);
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace SqliteMultiTenant.Tests
             backup.Status.Should().Be(BackupStatus.Failed);
             backup.ErrorMessage.Should().Be(errorMessage);
             _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
-            _mockLogger.Received(1).LogError(Arg.Any<string>());
+            _mockLogger.AssertLoggedAny(LogLevel.Error);
         }
     }
 }

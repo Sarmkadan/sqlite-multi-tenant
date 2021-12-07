@@ -121,7 +121,7 @@ public sealed class QueryBuilderEdgeCaseTests
         var sql = builder.Build();
 
         sql.Should().Contain("SELECT");
-        sql.Should().Contain("FROM Users");
+        sql.Should().Contain("FROM [Users]"); // QueryBuilder brackets identifiers for safety
         sql.Should().Contain("WHERE");
         sql.Should().Contain("ORDER BY");
         sql.Should().Contain("LIMIT");

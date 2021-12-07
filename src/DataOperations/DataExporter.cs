@@ -255,9 +255,26 @@ namespace SqliteMultiTenant.DataOperations
                                 fields.Append($"[{fieldNames[i]}]");
 
                                 if (reader.IsDBNull(i))
+                                {
                                     values.Append("NULL");
+                                }
                                 else
-                                    values.Append($"'{reader.GetValue(i).ToString().Replace("'", "''")}'");
+                                {
+                                    var value = reader.GetValue(i);
+                                    if (value is bool boolValue)
+                                    {
+                                        values.Append(boolValue ? "1" : "0");
+                                    }
+                                    else if (value is sbyte or byte or short or ushort or int or uint
+                                        or long or ulong or float or double or decimal)
+                                    {
+                                        values.Append(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture));
+                                    }
+                                    else
+                                    {
+                                        values.Append($"'{value.ToString().Replace("'", "''")}'");
+                                    }
+                                }
                             }
 
                             sql.AppendLine(
