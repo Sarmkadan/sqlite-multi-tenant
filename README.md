@@ -15,6 +15,7 @@ A production-grade .NET library for managing isolated multi-tenant SQLite databa
 - [Core Concepts](#core-concepts)
 - [API Reference](#api-reference)
 - [CLI Reference](#cli-reference)
+- [CommandExecutorExtensions](#commandexecutorextensions)
 - [Configuration](#configuration)
 - [Usage Examples](#usage-examples)
 - [Advanced Topics](#advanced-topics)
@@ -389,6 +390,44 @@ dotnet run -- health check
 dotnet run -- metrics show
 dotnet run -- cache clear
 dotnet run -- version
+```
+
+## CommandExecutorExtensions
+
+Provides extension methods for `CommandExecutor` to simplify CLI operations, handling repetitive tasks like command execution, tenant management, and health checks with automatic result handling and exception management. These extensions streamline interactions by abstracting command construction and execution details.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Cli;
+
+// Assuming 'executor' is an instance of CommandExecutor
+var executor = serviceProvider.GetRequiredService<CommandExecutor>();
+
+// 1. Execute a command and log a success message if it succeeds
+var cmd = new ParsedCommand { 
+    Success = true, 
+    MainCommand = "tenant", 
+    Subcommand = "list", 
+    Arguments = new List<string>() 
+};
+await executor.ExecuteWithSuccessMessageAsync(cmd, "Tenant list retrieved successfully.");
+
+// 2. Create a new tenant directly
+await executor.CreateTenantAsync("NewTenant", "Description", "admin@tenant.com");
+
+// 3. Check system health
+var health = await executor.CheckHealthAsync();
+Console.WriteLine($"System Health: {health.Success}");
+
+// 4. Create a backup with a timeout
+var backupCmd = new ParsedCommand { 
+    Success = true, 
+    MainCommand = "backup", 
+    Subcommand = "create", 
+    Arguments = new List<string> { "db1" } 
+};
+await executor.ExecuteWithTimeoutAsync(backupCmd, timeoutSeconds: 60);
 ```
 
 ## Configuration
