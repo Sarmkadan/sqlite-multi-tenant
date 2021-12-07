@@ -641,6 +641,53 @@ catch (Exception ex)
 }
 ```
 
+## DatabaseAccessExceptionExtensions
+
+Extension methods for enhancing and analyzing `DatabaseAccessException` instances. These methods provide convenient ways to modify exception messages, add contextual information, and categorize different types of database access failures.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Exceptions;
+
+try
+{
+    // Some database operation that may throw DatabaseAccessException
+    await databaseService.ExecuteQueryAsync("SELECT * FROM NonExistentTable");
+}
+catch (DatabaseAccessException ex)
+{
+    // Modify the exception message
+    var updatedException = ex.WithMessage("Failed to execute query: table does not exist");
+    
+    // Add additional context information
+    var contextualException = updatedException.WithContext("Query: SELECT * FROM NonExistentTable | Database: tenant-123");
+    
+    // Categorize the failure type
+    if (contextualException.IsQueryFailure())
+    {
+        Console.WriteLine("This is a query failure - retry or handle accordingly");
+    }
+    
+    if (contextualException.IsConnectionFailure())
+    {
+        Console.WriteLine("This is a connection failure - check database connectivity");
+    }
+    
+    if (contextualException.IsTransactionFailure())
+    {
+        Console.WriteLine("This is a transaction failure - rollback may be needed");
+    }
+    
+    // Get detailed string representation
+    string detailedInfo = contextualException.ToDetailedString();
+    Console.WriteLine(detailedInfo);
+    
+    // Re-throw the enhanced exception
+    throw contextualException;
+}
+```
+
 ### Example 6: Health Checks and Monitoring
 
 ```csharp
