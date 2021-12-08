@@ -1,47 +1,24 @@
 // existing content ...
 
-## BackupExtensions
+## DataImporterExtensions
 
-The `BackupExtensions` class provides a set of extension methods for working with backups. 
-It allows you to easily determine the type of backup, calculate saved space, and format human-readable information.
-
-### Usage Example
-
-```csharp
-var backup = new Backup
-{
-    BackupType = BackupType.Full,
-    SizeBytes = 1024000,
-    DurationMs = 2500,
-    IsSystem = true
-};
-
-Console.WriteLine(backup.GetHumanReadableSize()); // Output: 1.00 MB
-Console.WriteLine(backup.GetHumanReadableDuration()); // Output: 2.5 seconds
-Console.WriteLine(BackupExtensions.IsFullBackup(backup)); // Output: True
-Console.WriteLine(BackupExtensions.IsSystemBackup(backup)); // Output: True
-Console.WriteLine(BackupExtensions.GetSavedSpaceBytes(backup)); // Output: 1024000
-``` 
-
-## ConflictResolutionServiceExtensions
-
-The `ConflictResolutionServiceExtensions` class provides extension methods for detecting, resolving, and applying conflict resolutions in multi-tenant data operations. It supports identifying conflicting fields, determining conflict types, and applying resolution strategies with retry logic.
+The `DataImporterExtensions` class provides a set of extension methods for importing data into the database. It supports importing data from JSON, CSV, and SQL files, as well as validating and creating tables if they do not exist.
 
 ### Usage Example
 
 ```csharp
-var original = new BackupData { Id = "1", Name = "Original", Timestamp = DateTime.UtcNow };
-var modified = new BackupData { Id = "1", Name = "Modified", Timestamp = DateTime.UtcNow.AddMinutes(-5) };
+var jsonFilePath = "path/to/data.json";
+var csvFilePath = "path/to/data.csv";
+var sqlFilePath = "path/to/data.sql";
 
-var detectionResult = ConflictResolutionServiceExtensions.CreateConflictDetectionResult(original, modified);
-if (detectionResult.HasConflictType(ConflictType.DataModification))
+var jsonImportResult = await DataImporterExtensions.ImportFromJsonFileAsync(jsonFilePath);
+var csvImportResult = await DataImporterExtensions.ImportFromCsvFileAsync(csvFilePath);
+var sqlImportResult = await DataImporterExtensions.ImportFromSqlFileAsync(sqlFilePath);
+
+var tableExists = await DataImporterExtensions.ValidateTableExistsAsync("TableName");
+if (!tableExists)
 {
-    var conflictingFields = ConflictResolutionServiceExtensions.GetConflictingFields(detectionResult);
-    var firstConflict = ConflictResolutionServiceExtensions.GetFirstConflictOfType(detectionResult, ConflictType.DataModification);
-
-    var resolution = new ConflictResolutionStrategy { Strategy = ConflictResolutionStrategyType.KeepNewest };
-    var resolutionResult = await ConflictResolutionServiceExtensions.ResolveConflictsAsync(detectionResult, resolution);
-    var applied = await ConflictResolutionServiceExtensions.ApplyResolutionWithRetryAsync(resolutionResult, maxRetries: 3);
+    await DataImporterExtensions.CreateTableIfNotExistsAsync("TableName");
 }
 ```
 
