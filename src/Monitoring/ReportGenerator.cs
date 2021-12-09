@@ -12,16 +12,27 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Monitoring
 {
-    // Generates comprehensive reports for system monitoring and analysis
+    /// <summary>
+    /// Generates comprehensive reports for system monitoring and analysis.
+    /// </summary>
     public sealed class ReportGenerator {
         private readonly ILogger<ReportGenerator> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReportGenerator"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
         public ReportGenerator(ILogger<ReportGenerator> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Generates a system health report
+        /// <summary>
+        /// Generates a system health report.
+        /// </summary>
+        /// <param name="health">The system health summary.</param>
+        /// <param name="operationStats">The operation statistics.</param>
+        /// <returns>A system health report.</returns>
         public string GenerateHealthReport(SystemHealthSummary health,
             Dictionary<string, OperationStatistics> operationStats)
         {
@@ -74,7 +85,11 @@ namespace SqliteMultiTenant.Monitoring
             return report.ToString();
         }
 
-        // Generates a performance report
+        /// <summary>
+        /// Generates a performance report.
+        /// </summary>
+        /// <param name="metrics">The performance metrics.</param>
+        /// <returns>A performance report.</returns>
         public string GeneratePerformanceReport(List<PerformanceMetric> metrics)
         {
             var report = new StringBuilder();
@@ -105,7 +120,11 @@ namespace SqliteMultiTenant.Monitoring
             return report.ToString();
         }
 
-        // Generates a tenant usage report
+        /// <summary>
+        /// Generates a tenant usage report.
+        /// </summary>
+        /// <param name="tenantMetrics">The tenant metrics.</param>
+        /// <returns>A tenant usage report.</returns>
         public string GenerateTenantUsageReport(Dictionary<string, List<PerformanceMetric>> tenantMetrics)
         {
             var report = new StringBuilder();
@@ -129,7 +148,11 @@ namespace SqliteMultiTenant.Monitoring
             return report.ToString();
         }
 
-        // Generates an error report
+        /// <summary>
+        /// Generates an error report.
+        /// </summary>
+        /// <param name="failedMetrics">The failed metrics.</param>
+        /// <returns>An error report.</returns>
         public string GenerateErrorReport(List<PerformanceMetric> failedMetrics)
         {
             var report = new StringBuilder();
@@ -156,7 +179,13 @@ namespace SqliteMultiTenant.Monitoring
             return report.ToString();
         }
 
-        // Generates a capacity planning report
+        /// <summary>
+        /// Generates a capacity planning report.
+        /// </summary>
+        /// <param name="health">The system health summary.</param>
+        /// <param name="totalDiskUsage">The total disk usage.</param>
+        /// <param name="tenantCount">The tenant count.</param>
+        /// <returns>A capacity planning report.</returns>
         public string GenerateCapacityReport(SystemHealthSummary health, long totalDiskUsage,
             int tenantCount)
         {
@@ -183,6 +212,11 @@ namespace SqliteMultiTenant.Monitoring
             return report.ToString();
         }
 
+        /// <summary>
+        /// Formats bytes into a human-readable format.
+        /// </summary>
+        /// <param name="bytes">The bytes to format.</param>
+        /// <returns>A formatted string.</returns>
         private string FormatBytes(long bytes)
         {
             var sizes = new[] { "B", "KB", "MB", "GB", "TB" };
