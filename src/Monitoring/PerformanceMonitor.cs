@@ -14,20 +14,53 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Monitoring
 {
-    // Tracks application performance metrics including query times, memory usage, and operation latencies
+    /// <summary>
+/// Tracks application performance metrics including query execution times, memory usage,
+/// and operation latencies across all tenants in a multi-tenant SQLite environment.
+/// </summary>
+/// <remarks>
+/// This class maintains performance data for operations including timing metrics, success/failure rates,
+/// and tenant-specific performance breakdowns. It supports tracking up to 1000 metrics per operation
+/// and provides various statistical analyses including percentiles and health summaries.
+/// </remarks>
     public sealed class PerformanceMonitor {
-        private readonly ILogger<PerformanceMonitor> _logger;
-        private readonly ConcurrentDictionary<string, List<PerformanceMetric>> _metrics;
-        private readonly Stopwatch _uptime;
+        /// <summary>
+/// Initializes a new instance of the <see cref="PerformanceMonitor"/> class.
+/// </summary>
+/// <param name="logger">The logger instance used for recording diagnostic information.</param>
+private readonly ILogger<PerformanceMonitor> _logger;
+        /// <summary>
+/// Gets the collection of performance metrics organized by operation name.
+/// </summary>
+/// <remarks>
+/// This dictionary maintains lists of <see cref="PerformanceMetric"/> objects for each operation,
+/// with automatic cleanup to maintain a maximum of 1000 metrics per operation.
+/// </remarks>
+private readonly ConcurrentDictionary<string, List<PerformanceMetric>> _metrics;
+        /// <summary>
+/// Gets the stopwatch tracking application uptime since the PerformanceMonitor instance was created.
+/// </summary>
+private readonly Stopwatch _uptime;
 
-        public PerformanceMonitor(ILogger<PerformanceMonitor> logger)
+        /// <summary>
+/// Initializes a new instance of the <see cref="PerformanceMonitor"/> class.
+/// </summary>
+/// <param name="logger">The logger instance used for recording diagnostic information.</param>
+/// <exception cref="ArgumentNullException">Thrown when the logger parameter is null.</exception>
+public PerformanceMonitor(ILogger<PerformanceMonitor> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _metrics = new ConcurrentDictionary<string, List<PerformanceMetric>>();
             _uptime = Stopwatch.StartNew();
         }
 
-        // Starts timing an operation
+        /// <summary>
+/// Starts timing an operation and returns a tracker that automatically records the metric when disposed.
+/// </summary>
+/// <param name="operationName">The name of the operation being tracked.</param>
+/// <param name="tenantId">The optional tenant identifier for multi-tenant scenarios.</param>
+/// <returns>A <see cref="PerformanceTracker"/> instance that records the operation duration when disposed.</returns>
+/// <exception cref="ArgumentException">Thrown when operationName is null or whitespace.</exception>
         public PerformanceTracker StartOperation(string operationName, string tenantId = null)
         {
             if (string.IsNullOrWhiteSpace(operationName))
@@ -36,7 +69,14 @@ namespace SqliteMultiTenant.Monitoring
             return new PerformanceTracker(this, operationName, tenantId);
         }
 
-        // Records a performance metric
+        /// <summary>
+/// Records a performance metric for a completed operation.
+/// </summary>
+/// <param name="operationName">The name of the operation being recorded.</param>
+/// <param name="elapsedMilliseconds">The elapsed time in milliseconds.</param>
+/// <param name="tenantId">The optional tenant identifier for multi-tenant scenarios.</param>
+/// <param name="isSuccess">Whether the operation completed successfully (default: true).</param>
+/// <param name="exception">Optional exception that occurred during the operation.</param>
         public void RecordMetric(string operationName, long elapsedMilliseconds, string tenantId = null,
             bool isSuccess = true, Exception exception = null)
         {
@@ -67,7 +107,11 @@ namespace SqliteMultiTenant.Monitoring
                 });
         }
 
-        // Gets aggregated statistics for an operation
+        /// <summary>
+/// Gets aggregated statistics for a specific operation across all recorded executions.
+/// </summary>
+/// <param name="operationName">The name of the operation to get statistics for.</param>
+/// <returns>An <see cref="OperationStatistics"/> object containing performance metrics, or null if no metrics exist for the operation.</returns>
         public OperationStatistics GetOperationStats(string operationName)
         {
             if (!_metrics.TryGetValue(operationName, out var metrics) || !metrics.Any())
@@ -100,7 +144,10 @@ namespace SqliteMultiTenant.Monitoring
             };
         }
 
-        // Gets statistics for all operations
+        /// <summary>
+/// Gets aggregated statistics for all operations that have been recorded.
+/// </summary>
+/// <returns>A dictionary mapping operation names to their <see cref="OperationStatistics"/> objects.</returns>
         public Dictionary<string, OperationStatistics> GetAllStatistics()
         {
             var stats = new Dictionary<string, OperationStatistics>();
@@ -117,7 +164,11 @@ namespace SqliteMultiTenant.Monitoring
             return stats;
         }
 
-        // Gets per-tenant performance breakdown
+        /// <summary>
+/// Gets performance metrics filtered by a specific tenant identifier.
+/// </summary>
+/// <param name="tenantId">The tenant identifier to filter metrics by.</param>
+/// <returns>A dictionary mapping operation names to lists of <see cref="PerformanceMetric"/> objects for the specified tenant.</returns>
         public Dictionary<string, List<PerformanceMetric>> GetTenantMetrics(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -137,7 +188,13 @@ namespace SqliteMultiTenant.Monitoring
             return tenantMetrics;
         }
 
-        // Gets recent slow operations (above threshold)
+        /// <summary>
+/// Gets recently recorded slow operations that exceeded the specified performance threshold.
+/// </summary>
+/// <param name="thresholdMs">The minimum elapsed time in milliseconds to consider an operation "slow" (default: 1000ms).</param>
+/// <param name="limit">The maximum number of slow operations to return (default: 20).</param>
+/// <returns>A list of <see cref="PerformanceMetric"/> objects for operations exceeding the threshold, ordered by duration (descending).</returns>
+public List<PerformanceMetric> GetSlowOperations(long thresholdMs = 1000, int limit = 20)
         public List<PerformanceMetric> GetSlowOperations(long thresholdMs = 1000, int limit = 20)
         {
             var slowOps = _metrics
@@ -150,7 +207,11 @@ namespace SqliteMultiTenant.Monitoring
             return slowOps;
         }
 
-        // Gets system health summary
+        /// <summary>
+/// Gets a comprehensive summary of system health including uptime, success rates, and latency percentiles.
+/// </summary>
+/// <returns>A <see cref="SystemHealthSummary"/> object containing overall system performance metrics.</returns>
+public SystemHealthSummary GetHealthSummary()
         public SystemHealthSummary GetHealthSummary()
         {
             var allMetrics = _metrics.SelectMany(kvp => kvp.Value).ToList();
@@ -173,7 +234,14 @@ namespace SqliteMultiTenant.Monitoring
             };
         }
 
-        // Clears all metrics (useful for resetting baseline)
+        /// <summary>
+/// Clears all recorded performance metrics from the monitor.
+/// </summary>
+/// <remarks>
+/// This method is useful for resetting baseline metrics, typically used when starting a new measurement
+/// period or when troubleshooting performance issues to eliminate historical data.
+/// </remarks>
+public void ClearMetrics()
         public void ClearMetrics()
         {
             _metrics.Clear();
@@ -194,14 +262,27 @@ namespace SqliteMultiTenant.Monitoring
         }
     }
 
-    // Disposable tracker for measuring operation duration
+    /// <summary>
+/// A disposable tracker that measures and records the duration of an operation when disposed.
+/// </summary>
+/// <remarks>
+/// This class implements <see cref="IDisposable"/> to provide a convenient way to track operation duration
+/// using a using statement pattern. The elapsed time is automatically recorded when the tracker is disposed.
+/// </remarks>
+public sealed class PerformanceTracker : IDisposable {
     public sealed class PerformanceTracker : IDisposable {
         private readonly PerformanceMonitor _monitor;
         private readonly string _operationName;
         private readonly string _tenantId;
         private readonly Stopwatch _stopwatch;
 
-        public PerformanceTracker(PerformanceMonitor monitor, string operationName, string tenantId)
+        /// <summary>
+/// Initializes a new instance of the <see cref="PerformanceTracker"/> class.
+/// </summary>
+/// <param name="monitor">The <see cref="PerformanceMonitor"/> instance to record metrics with.</param>
+/// <param name="operationName">The name of the operation being tracked.</param>
+/// <param name="tenantId">The optional tenant identifier for multi-tenant scenarios.</param>
+public PerformanceTracker(PerformanceMonitor monitor, string operationName, string tenantId)
         {
             _monitor = monitor;
             _operationName = operationName;
@@ -209,21 +290,45 @@ namespace SqliteMultiTenant.Monitoring
             _stopwatch = Stopwatch.StartNew();
         }
 
-        public void Dispose()
+        /// <summary>
+/// Records the operation metric with the elapsed time and disposes of the tracker.
+/// </summary>
+/// <remarks>
+/// This method stops the internal stopwatch and records the metric with the <see cref="PerformanceMonitor"/>.
+/// </remarks>
+public void Dispose()
         {
             _stopwatch.Stop();
             _monitor.RecordMetric(_operationName, _stopwatch.ElapsedMilliseconds, _tenantId);
         }
 
-        public void RecordException(Exception ex)
+        /// <summary>
+/// Records an operation metric with failure status when an exception occurs.
+/// </summary>
+/// <param name="ex">The exception that occurred during the operation.</param>
+/// <remarks>
+/// This method stops the internal stopwatch, records the metric as a failure, and includes the exception type
+/// in the recorded metric for diagnostic purposes.
+/// </remarks>
+public void RecordException(Exception ex)
         {
             _stopwatch.Stop();
             _monitor.RecordMetric(_operationName, _stopwatch.ElapsedMilliseconds, _tenantId, false, ex);
         }
     }
 
-    public sealed class PerformanceMetric {
-        public string OperationName { get; set; }
+    /// <summary>
+/// Represents a single performance measurement for an operation.
+/// </summary>
+/// <remarks>
+/// This class stores timing data, success/failure status, and contextual information about a specific
+/// operation execution, including tenant association for multi-tenant scenarios.
+/// </remarks>
+public sealed class PerformanceMetric {
+        /// <summary>
+/// Gets or sets the name of the operation being tracked.
+/// </summary>
+public string OperationName { get; set; }
         public long ElapsedMilliseconds { get; set; }
         public string TenantId { get; set; }
         public DateTime Timestamp { get; set; }
@@ -232,7 +337,10 @@ namespace SqliteMultiTenant.Monitoring
     }
 
     public sealed class OperationStatistics {
-        public string OperationName { get; set; }
+        /// <summary>
+/// Gets or sets the name of the operation being tracked.
+/// </summary>
+public string OperationName { get; set; }
         public long TotalExecutions { get; set; }
         public long SuccessfulExecutions { get; set; }
         public long FailedExecutions { get; set; }
