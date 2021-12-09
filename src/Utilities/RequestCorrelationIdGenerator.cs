@@ -10,15 +10,21 @@ using System.Threading;
 
 namespace SqliteMultiTenant.Utilities
 {
-    // Generates and tracks correlation IDs for distributed request tracing
-    public sealed class RequestCorrelationIdGenerator {
+    /// <summary>
+    /// Generates and tracks correlation IDs for distributed request tracing.
+    /// </summary>
+    public sealed class RequestCorrelationIdGenerator
+    {
         private static readonly AsyncLocal<string> _currentCorrelationId =
             new AsyncLocal<string>();
 
         private static readonly AsyncLocal<List<string>> _correlationChain =
             new AsyncLocal<List<string>>();
 
-        // Generates a new correlation ID
+        /// <summary>
+        /// Generates a new correlation ID in the format "tenant_timestamp_guid".
+        /// </summary>
+        /// <returns>A new correlation ID.</returns>
         public static string GenerateCorrelationId()
         {
             // Format: tenant_timestamp_guid
@@ -27,7 +33,11 @@ namespace SqliteMultiTenant.Utilities
             return $"req_{timestamp}_{guid}";
         }
 
-        // Sets the current correlation ID
+        /// <summary>
+        /// Sets the current correlation ID.
+        /// </summary>
+        /// <param name="correlationId">The correlation ID to set.</param>
+        /// <exception cref="ArgumentException">Thrown when the correlation ID is empty.</exception>
         public static void SetCorrelationId(string correlationId)
         {
             if (string.IsNullOrWhiteSpace(correlationId))
@@ -43,7 +53,11 @@ namespace SqliteMultiTenant.Utilities
             _correlationChain.Value.Add(correlationId);
         }
 
-        // Gets the current correlation ID
+        /// <summary>
+        /// Gets the current correlation ID.
+        /// If no correlation ID is set, a new one is generated.
+        /// </summary>
+        /// <returns>The current correlation ID.</returns>
         public static string GetCorrelationId()
         {
             if (string.IsNullOrEmpty(_currentCorrelationId.Value))
@@ -55,26 +69,38 @@ namespace SqliteMultiTenant.Utilities
             return _currentCorrelationId.Value;
         }
 
-        // Checks if a correlation ID is set
+        /// <summary>
+        /// Checks if a correlation ID is set.
+        /// </summary>
+        /// <returns>True if a correlation ID is set, false otherwise.</returns>
         public static bool HasCorrelationId()
         {
             return !string.IsNullOrEmpty(_currentCorrelationId.Value);
         }
 
-        // Gets the correlation chain for tracing
+        /// <summary>
+        /// Gets the correlation chain for tracing.
+        /// </summary>
+        /// <returns>The correlation chain.</returns>
         public static List<string> GetCorrelationChain()
         {
             return _correlationChain.Value ?? new List<string>();
         }
 
-        // Clears the correlation ID
+        /// <summary>
+        /// Clears the correlation ID.
+        /// </summary>
         public static void ClearCorrelationId()
         {
             _currentCorrelationId.Value = null;
             _correlationChain.Value = null;
         }
 
-        // Creates a scoped correlation context
+        /// <summary>
+        /// Creates a scoped correlation context.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID.</param>
+        /// <returns>A disposable scope that restores the previous correlation ID when disposed.</returns>
         public static IDisposable CreateScope(string tenantId)
         {
             var correlationId = GenerateCorrelationId();
