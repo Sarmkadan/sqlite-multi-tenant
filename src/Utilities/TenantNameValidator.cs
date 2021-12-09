@@ -10,6 +10,9 @@ using System.Text.RegularExpressions;
 
 namespace SqliteMultiTenant.Utilities
 {
+    /// <summary>
+    /// Provides methods for validating and generating tenant names and IDs.
+    /// </summary>
     public static class TenantNameValidator
     {
         private const int MinTenantIdLength   = 3;
@@ -41,6 +44,11 @@ namespace SqliteMultiTenant.Utilities
             "CREATE", "ALTER", "EXEC", "EXECUTE", ";", "UNION", "SELECT", "WHERE"
         };
 
+        /// <summary>
+        /// Validates a tenant ID.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID to validate.</param>
+        /// <returns>A <see cref="ValidationResult"/> indicating whether the tenant ID is valid.</returns>
         public static ValidationResult ValidateTenantId(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -66,6 +74,11 @@ namespace SqliteMultiTenant.Utilities
             return new ValidationResult { IsValid = true };
         }
 
+        /// <summary>
+        /// Validates a tenant name.
+        /// </summary>
+        /// <param name="tenantName">The tenant name to validate.</param>
+        /// <returns>A <see cref="ValidationResult"/> indicating whether the tenant name is valid.</returns>
         public static ValidationResult ValidateTenantName(string tenantName)
         {
             if (string.IsNullOrWhiteSpace(tenantName))
@@ -88,6 +101,12 @@ namespace SqliteMultiTenant.Utilities
             return new ValidationResult { IsValid = true };
         }
 
+        /// <summary>
+        /// Generates a tenant ID from a tenant name.
+        /// </summary>
+        /// <param name="tenantName">The tenant name to generate a tenant ID from.</param>
+        /// <returns>A generated tenant ID.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if <paramref name="tenantName"/> is null or empty.</exception>
         public static string GenerateTenantId(string tenantName)
         {
             if (string.IsNullOrWhiteSpace(tenantName))
@@ -108,6 +127,11 @@ namespace SqliteMultiTenant.Utilities
             return id;
         }
 
+        /// <summary>
+        /// Checks if a string is a valid database identifier.
+        /// </summary>
+        /// <param name="identifier">The string to check.</param>
+        /// <returns>True if the string is a valid database identifier; otherwise, false.</returns>
         public static bool IsValidDatabaseIdentifier(string identifier)
         {
             if (string.IsNullOrWhiteSpace(identifier))
@@ -116,6 +140,11 @@ namespace SqliteMultiTenant.Utilities
             return DatabaseIdentifierPattern.IsMatch(identifier);
         }
 
+        /// <summary>
+        /// Checks if a string contains any SQL injection patterns.
+        /// </summary>
+        /// <param name="input">The string to check.</param>
+        /// <returns>True if the string contains any SQL injection patterns; otherwise, false.</returns>
         private static bool ContainsSqlInjectionPattern(string input)
         {
             if (string.IsNullOrEmpty(input))
@@ -132,8 +161,19 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    public sealed class ValidationResult {
+    /// <summary>
+    /// Represents the result of a validation operation.
+    /// </summary>
+    public sealed class ValidationResult 
+    {
+        /// <summary>
+        /// Gets or sets a value indicating whether the validation was successful.
+        /// </summary>
         public bool IsValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets an error message if the validation was not successful.
+        /// </summary>
         public string Error { get; set; }
     }
 }
