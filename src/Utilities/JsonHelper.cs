@@ -11,7 +11,9 @@ using System.Text.Json.Serialization;
 
 namespace SqliteMultiTenant.Utilities
 {
-    // Helper methods for JSON serialization and deserialization
+    /// <summary>
+    /// Helper methods for JSON serialization and deserialization.
+    /// </summary>
     public static class JsonHelper
     {
         private static readonly JsonSerializerOptions DefaultOptions = new()
@@ -31,7 +33,13 @@ namespace SqliteMultiTenant.Utilities
             Converters = { new JsonStringEnumConverter() }
         };
 
-        // Serializes an object to formatted JSON
+        /// <summary>
+        /// Serializes an object to formatted JSON.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to serialize.</typeparam>
+        /// <param name="obj">The object to serialize.</param>
+        /// <param name="indented">Whether to use indented JSON.</param>
+        /// <returns>The serialized JSON string.</returns>
         public static string Serialize<T>(T obj, bool indented = true)
         {
             try
@@ -45,7 +53,12 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Deserializes JSON to an object
+        /// <summary>
+        /// Deserializes JSON to an object.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to deserialize to.</typeparam>
+        /// <param name="json">The JSON string to deserialize.</param>
+        /// <returns>The deserialized object.</returns>
         public static T Deserialize<T>(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -61,7 +74,11 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Deserializes JSON to a dynamic object
+        /// <summary>
+        /// Deserializes JSON to a dynamic object.
+        /// </summary>
+        /// <param name="json">The JSON string to deserialize.</param>
+        /// <returns>The deserialized dynamic object.</returns>
         public static dynamic DeserializeDynamic(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -78,7 +95,12 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Merges two JSON objects (shallow merge)
+        /// <summary>
+        /// Merges two JSON objects (shallow merge).
+        /// </summary>
+        /// <param name="json1">The first JSON string to merge.</param>
+        /// <param name="json2">The second JSON string to merge.</param>
+        /// <returns>The merged JSON string.</returns>
         public static string MergeJson(string json1, string json2)
         {
             try
@@ -101,7 +123,13 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Extracts a property from JSON
+        /// <summary>
+        /// Extracts a property from JSON.
+        /// </summary>
+        /// <typeparam name="T">The type of the property to extract.</typeparam>
+        /// <param name="json">The JSON string to extract from.</param>
+        /// <param name="propertyPath">The path to the property to extract.</param>
+        /// <returns>The extracted property value.</returns>
         public static T GetProperty<T>(string json, string propertyPath)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -126,7 +154,11 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Validates JSON format
+        /// <summary>
+        /// Validates JSON format.
+        /// </summary>
+        /// <param name="json">The JSON string to validate.</param>
+        /// <returns>True if the JSON is valid, false otherwise.</returns>
         public static bool IsValidJson(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -143,14 +175,23 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Clones an object by serializing and deserializing
+        /// <summary>
+        /// Clones an object by serializing and deserializing.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to clone.</typeparam>
+        /// <param name="obj">The object to clone.</param>
+        /// <returns>The cloned object.</returns>
         public static T DeepClone<T>(T obj)
         {
             var json = Serialize(obj);
             return Deserialize<T>(json);
         }
 
-        // Pretty prints JSON
+        /// <summary>
+        /// Pretty prints JSON.
+        /// </summary>
+        /// <param name="json">The JSON string to pretty print.</param>
+        /// <returns>The pretty printed JSON string.</returns>
         public static string PrettyPrint(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -173,7 +214,11 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Minifies JSON
+        /// <summary>
+        /// Minifies JSON.
+        /// </summary>
+        /// <param name="json">The JSON string to minify.</param>
+        /// <returns>The minified JSON string.</returns>
         public static string Minify(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
