@@ -12,9 +12,13 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Utilities
 {
-    // Generic resource pool for managing expensive resource creation and reuse
-    // Useful for database connections, HTTP clients, and other pooled resources
-    public sealed class AsyncResourcePool<T> : IDisposable where T : class {
+    /// <summary>
+    /// Generic resource pool for managing expensive resource creation and reuse.
+    /// Useful for database connections, HTTP clients, and other pooled resources.
+    /// </summary>
+    /// <typeparam name="T">Type of resource to be pooled.</typeparam>
+    public sealed class AsyncResourcePool<T> : IDisposable where T : class
+    {
         private readonly Func<Task<T>> _resourceFactory;
         private readonly Func<T, Task> _resourceDisposer;
         private readonly ILogger<AsyncResourcePool<T>> _logger;
@@ -23,6 +27,13 @@ namespace SqliteMultiTenant.Utilities
         private readonly int _maxPoolSize;
         private int _totalCreated;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AsyncResourcePool{T}"/> class.
+        /// </summary>
+        /// <param name="resourceFactory">Factory method to create a new resource.</param>
+        /// <param name="resourceDisposer">Method to dispose of a resource.</param>
+        /// <param name="logger">Logger instance.</param>
+        /// <param name="maxPoolSize">Maximum number of resources to be pooled.</param>
         public AsyncResourcePool(Func<Task<T>> resourceFactory, Func<T, Task> resourceDisposer,
             ILogger<AsyncResourcePool<T>> logger, int maxPoolSize = 10)
         {
@@ -34,7 +45,11 @@ namespace SqliteMultiTenant.Utilities
             _semaphore = new SemaphoreSlim(maxPoolSize, maxPoolSize);
         }
 
-        // Acquires a resource from the pool
+        /// <summary>
+        /// Acquires a resource from the pool.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A pooled resource.</returns>
         public async Task<PooledResource<T>> AcquireAsync(CancellationToken cancellationToken = default)
         {
             await _semaphore.WaitAsync(cancellationToken);
@@ -62,7 +77,10 @@ namespace SqliteMultiTenant.Utilities
             }
         }
 
-        // Releases a resource back to the pool
+        /// <summary>
+        /// Releases a resource back to the pool.
+        /// </summary>
+        /// <param name="resource">Resource to be released.</param>
         private async Task ReleaseResourceAsync(T resource)
         {
             if (resource is not null && _pool.Count < _maxPoolSize)
@@ -79,7 +97,10 @@ namespace SqliteMultiTenant.Utilities
             _semaphore.Release();
         }
 
-        // Gets pool statistics
+        /// <summary>
+        /// Gets pool statistics.
+        /// </summary>
+        /// <returns>Pool statistics.</returns>
         public PoolStatistics GetStatistics()
         {
             return new PoolStatistics
@@ -91,7 +112,9 @@ namespace SqliteMultiTenant.Utilities
             };
         }
 
-        // Clears the pool and disposes all resources
+        /// <summary>
+        /// Clears the pool and disposes all resources.
+        /// </summary>
         public async Task ClearAsync()
         {
             while (_pool.TryTake(out var resource))
@@ -102,6 +125,9 @@ namespace SqliteMultiTenant.Utilities
             _logger.LogInformation("Resource pool cleared");
         }
 
+        /// <summary>
+        /// Releases unmanaged resources and performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             ClearAsync().GetAwaiter().GetResult();
@@ -109,20 +135,35 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    // Disposable wrapper for pooled resources
-    public sealed class PooledResource<T> : IAsyncDisposable, IDisposable where T : class {
+    /// <summary>
+    /// Disposable wrapper for pooled resources.
+    /// </summary>
+    /// <typeparam name="T">Type of resource.</typeparam>
+    public sealed class PooledResource<T> : IAsyncDisposable, IDisposable where T : class
+    {
         private readonly T _resource;
         private readonly Func<T, Task> _onDispose;
         private bool _disposed;
 
+        /// <summary>
+        /// Gets the pooled resource.
+        /// </summary>
         public T Resource => _resource;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PooledResource{T}"/> class.
+        /// </summary>
+        /// <param name="resource">Pooled resource.</param>
+        /// <param name="onDispose">Method to dispose of the resource.</param>
         public PooledResource(T resource, Func<T, Task> onDispose)
         {
             _resource = resource ?? throw new ArgumentNullException(nameof(resource));
             _onDispose = onDispose ?? throw new ArgumentNullException(nameof(onDispose));
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public async ValueTask DisposeAsync()
         {
             if (_disposed) return;
@@ -131,6 +172,9 @@ namespace SqliteMultiTenant.Utilities
             _disposed = true;
         }
 
+        /// <summary>
+        /// Releases unmanaged resources and performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             if (_disposed) return;
@@ -140,10 +184,29 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    public sealed class PoolStatistics {
+    /// <summary>
+    /// Represents pool statistics.
+    /// </summary>
+    public sealed class PoolStatistics
+    {
+        /// <summary>
+        /// Gets the number of available resources in the pool.
+        /// </summary>
         public int AvailableResources { get; set; }
+
+        /// <summary>
+        /// Gets the total number of resources created.
+        /// </summary>
         public int TotalCreated { get; set; }
+
+        /// <summary>
+        /// Gets the number of waiting requests.
+        /// </summary>
         public int WaitingRequests { get; set; }
+
+        /// <summary>
+        /// Gets the maximum pool size.
+        /// </summary>
         public int MaxPoolSize { get; set; }
     }
 }
