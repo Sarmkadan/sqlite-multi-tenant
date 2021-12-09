@@ -13,17 +13,27 @@ using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Utilities
 {
-    // Helper class for managing tenant context in multi-tenant operations
-    public sealed class TenantContextHelper {
+    /// <summary>
+    /// Helper class for managing tenant context in multi-tenant operations.
+    /// </summary>
+    public sealed class TenantContextHelper
+    {
         private readonly ILogger<TenantContextHelper> _logger;
         private static readonly AsyncLocal<TenantContext> _currentContext = new AsyncLocal<TenantContext>();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TenantContextHelper"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
         public TenantContextHelper(ILogger<TenantContextHelper> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Sets the current tenant context
+        /// <summary>
+        /// Sets the current tenant context.
+        /// </summary>
+        /// <param name="context">The tenant context to set.</param>
         public void SetTenantContext(TenantContext context)
         {
             if (context is null)
@@ -33,7 +43,10 @@ namespace SqliteMultiTenant.Utilities
             _logger.LogDebug("Tenant context set: {TenantId}", context.TenantId);
         }
 
-        // Gets the current tenant context
+        /// <summary>
+        /// Gets the current tenant context.
+        /// </summary>
+        /// <returns>The current tenant context, or null if no context is set.</returns>
         public TenantContext GetTenantContext()
         {
             var context = _currentContext.Value;
@@ -45,26 +58,38 @@ namespace SqliteMultiTenant.Utilities
             return context;
         }
 
-        // Checks if a tenant context is set
+        /// <summary>
+        /// Checks if a tenant context is set.
+        /// </summary>
+        /// <returns>true if a tenant context is set, false otherwise.</returns>
         public bool HasTenantContext()
         {
             return _currentContext.Value is not null;
         }
 
-        // Gets the current tenant ID
+        /// <summary>
+        /// Gets the current tenant ID.
+        /// </summary>
+        /// <returns>The current tenant ID, or null if no context is set.</returns>
         public string GetCurrentTenantId()
         {
             return _currentContext.Value?.TenantId;
         }
 
-        // Clears the current tenant context
+        /// <summary>
+        /// Clears the current tenant context.
+        /// </summary>
         public void ClearTenantContext()
         {
             _currentContext.Value = null;
             _logger.LogDebug("Tenant context cleared");
         }
 
-        // Validates tenant context
+        /// <summary>
+        /// Validates the tenant context.
+        /// </summary>
+        /// <param name="expectedTenantId">The expected tenant ID, or null to ignore.</param>
+        /// <returns>true if the tenant context is valid, false otherwise.</returns>
         public bool ValidateTenantContext(string expectedTenantId = null)
         {
             var context = GetTenantContext();
@@ -91,7 +116,12 @@ namespace SqliteMultiTenant.Utilities
             return true;
         }
 
-        // Creates a scoped context for a specific operation
+        /// <summary>
+        /// Creates a scoped context for a specific operation.
+        /// </summary>
+        /// <param name="tenantId">The tenant ID to use for the scoped context.</param>
+        /// <param name="userId">The user ID to use for the scoped context, or null to ignore.</param>
+        /// <returns>An IDisposable instance that will restore the previous context when disposed.</returns>
         public IDisposable CreateScope(string tenantId, string userId = null)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -110,7 +140,10 @@ namespace SqliteMultiTenant.Utilities
             return new TenantContextScope(this, previousContext);
         }
 
-        // Gets metadata for the current tenant
+        /// <summary>
+        /// Gets metadata for the current tenant.
+        /// </summary>
+        /// <returns>A dictionary containing metadata for the current tenant.</returns>
         public Dictionary<string, object> GetContextMetadata()
         {
             var context = GetTenantContext();
@@ -126,7 +159,11 @@ namespace SqliteMultiTenant.Utilities
             };
         }
 
-        // Enriches an error with tenant context information
+        /// <summary>
+        /// Enriches an error with tenant context information.
+        /// </summary>
+        /// <param name="errorMessage">The error message to enrich.</param>
+        /// <returns>The enriched error message.</returns>
         public string EnrichErrorWithContext(string errorMessage)
         {
             var context = GetTenantContext();
@@ -142,12 +179,20 @@ namespace SqliteMultiTenant.Utilities
             private readonly TenantContext _previousContext;
             private bool _disposed;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TenantContextScope"/> class.
+            /// </summary>
+            /// <param name="helper">The TenantContextHelper instance.</param>
+            /// <param name="previousContext">The previous tenant context, or null to clear the current context.</param>
             public TenantContextScope(TenantContextHelper helper, TenantContext previousContext)
             {
                 _helper = helper;
                 _previousContext = previousContext;
             }
 
+            /// <summary>
+            /// Disposes the scope and restores the previous context.
+            /// </summary>
             public void Dispose()
             {
                 if (_disposed) return;
