@@ -10,13 +10,23 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Utilities
 {
-    // Implements exponential backoff retry logic for transient failures
-    public sealed class OperationRetryPolicy {
+    /// <summary>
+    /// Implements exponential backoff retry logic for transient failures.
+    /// </summary>
+    public sealed class OperationRetryPolicy
+    {
         private readonly ILogger<OperationRetryPolicy> _logger;
         private readonly int _maxRetries;
         private readonly TimeSpan _initialDelay;
         private readonly double _backoffMultiplier;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OperationRetryPolicy"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
+        /// <param name="maxRetries">The maximum number of retries.</param>
+        /// <param name="initialDelayMs">The initial delay in milliseconds.</param>
+        /// <param name="backoffMultiplier">The backoff multiplier.</param>
         public OperationRetryPolicy(ILogger<OperationRetryPolicy> logger,
             int maxRetries = 3, int initialDelayMs = 100, double backoffMultiplier = 2.0)
         {
@@ -26,7 +36,13 @@ namespace SqliteMultiTenant.Utilities
             _backoffMultiplier = backoffMultiplier;
         }
 
-        // Executes an operation with retry logic
+        /// <summary>
+        /// Executes an operation with retry logic.
+        /// </summary>
+        /// <typeparam name="T">The type of the operation result.</typeparam>
+        /// <param name="operation">The operation to execute.</param>
+        /// <param name="operationName">The name of the operation.</param>
+        /// <returns>The result of the operation.</returns>
         public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, string operationName = null)
         {
             if (operation is null)
@@ -67,7 +83,11 @@ namespace SqliteMultiTenant.Utilities
                 $"Operation '{opName}' failed after {_maxRetries} retries");
         }
 
-        // Executes an operation without return value
+        /// <summary>
+        /// Executes an operation without return value.
+        /// </summary>
+        /// <param name="operation">The operation to execute.</param>
+        /// <param name="operationName">The name of the operation.</param>
         public async Task ExecuteAsync(Func<Task> operation, string operationName = null)
         {
             if (operation is null)
@@ -109,7 +129,11 @@ namespace SqliteMultiTenant.Utilities
                 $"Operation '{opName}' failed after {_maxRetries} retries");
         }
 
-        // Determines if an exception is a transient failure (retryable)
+        /// <summary>
+        /// Determines if an exception is a transient failure (retryable).
+        /// </summary>
+        /// <param name="ex">The exception to check.</param>
+        /// <returns><c>true</c> if the exception is a transient failure; otherwise, <c>false</c>.</returns>
         private bool IsTransientFailure(Exception ex)
         {
             // Common transient failures
@@ -138,37 +162,64 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    // Builder for configurable retry policies
-    public sealed class RetryPolicyBuilder {
+    /// <summary>
+    /// Builder for configurable retry policies.
+    /// </summary>
+    public sealed class RetryPolicyBuilder
+    {
         private int _maxRetries = 3;
         private int _initialDelayMs = 100;
         private double _backoffMultiplier = 2.0;
         private ILogger<OperationRetryPolicy> _logger;
 
+        /// <summary>
+        /// Sets the maximum number of retries.
+        /// </summary>
+        /// <param name="maxRetries">The maximum number of retries.</param>
+        /// <returns>The builder instance.</returns>
         public RetryPolicyBuilder WithMaxRetries(int maxRetries)
         {
             _maxRetries = maxRetries;
             return this;
         }
 
+        /// <summary>
+        /// Sets the initial delay in milliseconds.
+        /// </summary>
+        /// <param name="delayMs">The initial delay in milliseconds.</param>
+        /// <returns>The builder instance.</returns>
         public RetryPolicyBuilder WithInitialDelay(int delayMs)
         {
             _initialDelayMs = delayMs;
             return this;
         }
 
+        /// <summary>
+        /// Sets the backoff multiplier.
+        /// </summary>
+        /// <param name="multiplier">The backoff multiplier.</param>
+        /// <returns>The builder instance.</returns>
         public RetryPolicyBuilder WithBackoffMultiplier(double multiplier)
         {
             _backoffMultiplier = multiplier;
             return this;
         }
 
+        /// <summary>
+        /// Sets the logger instance.
+        /// </summary>
+        /// <param name="logger">The logger instance.</param>
+        /// <returns>The builder instance.</returns>
         public RetryPolicyBuilder WithLogger(ILogger<OperationRetryPolicy> logger)
         {
             _logger = logger;
             return this;
         }
 
+        /// <summary>
+        /// Builds the retry policy instance.
+        /// </summary>
+        /// <returns>The retry policy instance.</returns>
         public OperationRetryPolicy Build()
         {
             if (_logger is null)
