@@ -15,39 +15,26 @@ namespace SqliteMultiTenant.Validation
     // Fluent API for building complex validation rules with composable conditions
     // Enables reusable validation logic across the application
     /// <summary>
-/// Provides a fluent API for building complex validation rules with composable conditions.
-/// </summary>
-/// <typeparam name="T">The type of object being validated.</typeparam>
-/// <remarks>
-/// Enables reusable validation logic across the application through a fluent interface.
-/// Each validation rule is added sequentially and can be combined to create comprehensive
-/// validation schemas for domain objects.
-/// </remarks>
-public sealed class ValidationRuleBuilder<T> {
+    /// Provides a fluent API for building complex validation rules with composable conditions.
+    /// </summary>
+    /// <typeparam name="T">The type of object being validated.</typeparam>
+    public sealed class ValidationRuleBuilder<T> {
         private readonly List<ValidationRule> _rules;
 
         /// <summary>
-/// Initializes a new instance of the <see cref="ValidationRuleBuilder{T}"/> class.
-/// </summary>
-/// <remarks>
-/// Creates a new validation rule builder with an empty collection of validation rules.
-/// Use the fluent methods to add validation rules before calling <see cref="Validate"/>.
-/// </remarks>
-public ValidationRuleBuilder()
+        /// Initializes a new instance of the <see cref="ValidationRuleBuilder{T}"/> class.
+        /// </summary>
+        public ValidationRuleBuilder()
         {
             _rules = new List<ValidationRule>();
         }
 
         /// <summary>
-/// Adds a required field validation rule.
-/// </summary>
-/// <param name="fieldName">The name of the field to validate.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be used.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Validates that the specified field has a non-null and non-empty value.
-/// For string fields, checks that the string is not null or whitespace.
-/// </remarks>
+        /// Adds a required field validation rule.
+        /// </summary>
+        /// <param name="fieldName">The name of the field to validate.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Required(string fieldName, string message = null)
         {
             _rules.Add(new ValidationRule
@@ -61,17 +48,13 @@ public ValidationRuleBuilder()
         }
 
         /// <summary>
-/// Adds a string length validation rule with optional minimum and maximum length constraints.
-/// </summary>
-/// <param name="fieldName">The name of the field to validate.</param>
-/// <param name="minLength">Optional minimum length requirement. If null, no minimum length is enforced.</param>
-/// <param name="maxLength">Optional maximum length requirement. If null, no maximum length is enforced.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be generated based on the constraints.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Validates that string fields meet length requirements. If the field value is null or empty,
-/// the validation passes. Otherwise, checks that the string length is within the specified bounds.
-/// </remarks>
+        /// Adds a string length validation rule with optional minimum and maximum length constraints.
+        /// </summary>
+        /// <param name="fieldName">The name of the field to validate.</param>
+        /// <param name="minLength">Optional minimum length requirement. If null, no minimum length is enforced.</param>
+        /// <param name="maxLength">Optional maximum length requirement. If null, no maximum length is enforced.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be generated based on the constraints.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> StringLength(string fieldName, int? minLength = null,
             int? maxLength = null, string message = null)
         {
@@ -95,15 +78,11 @@ public ValidationRuleBuilder()
         }
 
         /// <summary>
-/// Adds an email format validation rule.
-/// </summary>
-/// <param name="fieldName">The name of the field containing the email address to validate.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be used.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Validates that the specified field contains a properly formatted email address.
-/// Uses a basic regex pattern to check for the format: local-part@domain.tld
-/// </remarks>
+        /// Adds an email format validation rule.
+        /// </summary>
+        /// <param name="fieldName">The name of the field containing the email address to validate.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Email(string fieldName, string message = null)
         {
             _rules.Add(new ValidationRule
@@ -124,17 +103,13 @@ public ValidationRuleBuilder()
         }
 
         /// <summary>
-/// Adds a numeric range validation rule with optional minimum and maximum value constraints.
-/// </summary>
-/// <param name="fieldName">The name of the field containing the numeric value to validate.</param>
-/// <param name="minValue">Optional minimum value requirement. If null, no minimum value is enforced.</param>
-/// <param name="maxValue">Optional maximum value requirement. If null, no maximum value is enforced.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be generated based on the constraints.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Validates that numeric fields (int, decimal, float, etc.) fall within the specified range.
-/// Uses invariant culture for consistent number parsing across different locales.
-/// </remarks>
+        /// Adds a numeric range validation rule with optional minimum and maximum value constraints.
+        /// </summary>
+        /// <param name="fieldName">The name of the field containing the numeric value to validate.</param>
+        /// <param name="minValue">Optional minimum value requirement. If null, no minimum value is enforced.</param>
+        /// <param name="maxValue">Optional maximum value requirement. If null, no maximum value is enforced.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be generated based on the constraints.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Range(string fieldName, object minValue = null,
             object maxValue = null, string message = null)
         {
@@ -162,16 +137,12 @@ public ValidationRuleBuilder()
         }
 
         /// <summary>
-/// Adds a regex pattern validation rule.
-/// </summary>
-/// <param name="fieldName">The name of the field to validate against the pattern.</param>
-/// <param name="pattern">The regular expression pattern to match against the field value.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be used.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Validates that the specified field matches the provided regular expression pattern.
-/// If the field value is null or empty, the validation passes.
-/// </remarks>
+        /// Adds a regex pattern validation rule.
+        /// </summary>
+        /// <param name="fieldName">The name of the field to validate against the pattern.</param>
+        /// <param name="pattern">The regular expression pattern to match against the field value.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Pattern(string fieldName, string pattern, string message = null)
         {
             _rules.Add(new ValidationRule
@@ -191,16 +162,12 @@ public ValidationRuleBuilder()
         }
 
         /// <summary>
-/// Adds a custom validation predicate.
-/// </summary>
-/// <param name="fieldName">The name of the field to validate.</param>
-/// <param name="predicate">A custom predicate function that returns true if validation passes, false otherwise.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be used.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Allows for arbitrary validation logic that cannot be expressed with the built-in validation methods.
-/// The predicate receives the entire object being validated and should return true for valid values.
-/// </remarks>
+        /// Adds a custom validation predicate.
+        /// </summary>
+        /// <param name="fieldName">The name of the field to validate.</param>
+        /// <param name="predicate">A custom predicate function that returns true if validation passes, false otherwise.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Custom(string fieldName, Func<object, bool> predicate,
             string message = null)
         {
@@ -215,17 +182,12 @@ public ValidationRuleBuilder()
         }
 
         /// <summary>
-/// Adds a cross-field validation rule that ensures two fields have matching values.
-/// </summary>
-/// <param name="field1">The name of the first field to compare.</param>
-/// <param name="field2">The name of the second field to compare.</param>
-/// <param name="message">Optional custom error message. If not provided, a default message will be used.</param>
-/// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-/// <remarks>
-/// Validates that the values of two different fields are equal to each other.
-/// Useful for password/password confirmation fields or other scenarios where two fields must match.
-/// </remarks>
-public ValidationRuleBuilder<T> MustMatch(string field1, string field2, string message = null)
+        /// Adds a cross-field validation rule that ensures two fields have matching values.
+        /// </summary>
+        /// <param name="field1">The name of the first field to compare.</param>
+        /// <param name="field2">The name of the second field to compare.</param>
+        /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
+        /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> MustMatch(string field1, string field2, string message = null)
         {
             _rules.Add(new ValidationRule
@@ -244,15 +206,10 @@ public ValidationRuleBuilder<T> MustMatch(string field1, string field2, string m
         }
 
         /// <summary>
-/// Validates the specified object against all registered validation rules.
-/// </summary>
-/// <param name="obj">The object to validate.</param>
-/// <returns>A <see cref="RuleValidationResult"/> containing validation errors if any, or indicating success.</returns>
-/// <remarks>
-/// Executes all registered validation rules against the provided object and collects any validation errors.
-/// Returns a result object indicating whether validation passed and containing a list of any validation errors.
-/// </remarks>
-public RuleValidationResult Validate(T obj)
+        /// Validates the specified object against all registered validation rules.
+        /// </summary>
+        /// <param name="obj">The object to validate.</param>
+        /// <returns>A <see cref="RuleValidationResult"/> indicating whether validation succeeded and containing any errors.</returns>
         public RuleValidationResult Validate(T obj)
         {
             var errors = new List<RuleValidationError>();
@@ -343,13 +300,31 @@ public RuleValidationResult Validate(T obj)
         }
     }
 
+    /// <summary>
+    /// Represents the result of a validation operation, including success flag and any errors.
+    /// </summary>
     public sealed class RuleValidationResult {
+        /// <summary>
+        /// Gets or sets a value indicating whether the validation succeeded.
+        /// </summary>
         public bool IsValid { get; set; }
+        /// <summary>
+        /// Gets the collection of validation errors.
+        /// </summary>
         public List<RuleValidationError> Errors { get; set; } = new List<RuleValidationError>();
     }
 
+    /// <summary>
+    /// Represents a single validation error for a specific field.
+    /// </summary>
     public sealed class RuleValidationError {
+        /// <summary>
+        /// Gets or sets the name of the field that failed validation.
+        /// </summary>
         public string FieldName { get; set; }
+        /// <summary>
+        /// Gets or sets the error message describing the validation failure.
+        /// </summary>
         public string Message { get; set; }
     }
 }
