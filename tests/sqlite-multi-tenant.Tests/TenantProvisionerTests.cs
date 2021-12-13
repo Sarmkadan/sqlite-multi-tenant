@@ -14,13 +14,14 @@ using SqliteMultiTenant.Repositories;
 using SqliteMultiTenant.Tenants;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests;
-
-public sealed class TenantProvisionerTests : IDisposable {
-    private readonly TenantProvisioner _provisioner;
-    private readonly ILogger<TenantProvisioner> _mockLogger;
-    private readonly string _basePath;
-
+/// <summary>
+/// Tests for the TenantProvisioner class.
+/// </summary>
+public sealed class TenantProvisionerTests : IDisposable
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TenantProvisionerTests"/> class.
+    /// </summary>
     public TenantProvisionerTests()
     {
         _mockLogger = Substitute.For<ILogger<TenantProvisioner>>();
@@ -34,6 +35,24 @@ public sealed class TenantProvisionerTests : IDisposable {
         _provisioner = new TenantProvisioner(tenantRepository, schemaManager, _mockLogger, _basePath);
     }
 
+    /// <summary>
+    /// Gets the mock logger instance used in the tests.
+    /// </summary>
+    private readonly ILogger<TenantProvisioner> _mockLogger;
+
+    /// <summary>
+    /// Gets the base path used for temporary files.
+    /// </summary>
+    private readonly string _basePath;
+
+    /// <summary>
+    /// Gets the tenant provisioner instance used in the tests.
+    /// </summary>
+    private readonly TenantProvisioner _provisioner;
+
+    /// <summary>
+    /// Disposes of the temporary files created during the tests.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_basePath))
@@ -42,6 +61,9 @@ public sealed class TenantProvisionerTests : IDisposable {
         }
     }
 
+    /// <summary>
+    /// Tests that validating a tenant database with a null tenant ID throws an <see cref="ArgumentNullException"/>.
+    /// </summary>
     [Fact]
     public async Task ValidateTenantDatabaseAsync_WithNullTenantId_ThrowsArgumentNullException()
     {
@@ -52,6 +74,9 @@ public sealed class TenantProvisionerTests : IDisposable {
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that validating a tenant database with an empty tenant ID throws an <see cref="ArgumentException"/>.
+    /// </summary>
     [Fact]
     public async Task ValidateTenantDatabaseAsync_WithEmptyTenantId_ThrowsArgumentException()
     {
@@ -62,6 +87,9 @@ public sealed class TenantProvisionerTests : IDisposable {
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that cloning a tenant with an invalid source tenant ID throws an <see cref="ArgumentException"/>.
+    /// </summary>
     [Fact]
     public async Task CloneTenantAsync_WithInvalidSource_ThrowsArgumentException()
     {
@@ -72,6 +100,9 @@ public sealed class TenantProvisionerTests : IDisposable {
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that cloning a tenant with an invalid target tenant ID throws an <see cref="ArgumentException"/>.
+    /// </summary>
     [Fact]
     public async Task CloneTenantAsync_WithInvalidTarget_ThrowsArgumentException()
     {
@@ -82,6 +113,9 @@ public sealed class TenantProvisionerTests : IDisposable {
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that deprovisioning a tenant with an invalid tenant ID throws an <see cref="ArgumentException"/>.
+    /// </summary>
     [Fact]
     public async Task DeprovisionTenantAsync_WithInvalidId_ThrowsArgumentException()
     {
