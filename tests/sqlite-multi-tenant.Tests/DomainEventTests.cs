@@ -9,9 +9,13 @@ using NSubstitute;
 using SqliteMultiTenant.Events;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests;
-
+/// <summary>
+/// Tests for domain events.
+/// </summary>
 public sealed class DomainEventTests {
+    /// <summary>
+    /// Verifies that the TenantCreatedEvent has the correct name.
+    /// </summary>
     [Fact]
     public void TenantCreatedEvent_Initialization_HasCorrectName()
     {
@@ -22,6 +26,9 @@ public sealed class DomainEventTests {
         ev.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that the BackupStartedEvent has the correct name.
+    /// </summary>
     [Fact]
     public void BackupStartedEvent_Initialization_HasCorrectName()
     {
@@ -32,6 +39,9 @@ public sealed class DomainEventTests {
         ev.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Verifies that the MigrationAppliedEvent has the correct name.
+    /// </summary>
     [Fact]
     public void MigrationAppliedEvent_Initialization_HasCorrectName()
     {
@@ -42,6 +52,9 @@ public sealed class DomainEventTests {
         ev.Should().NotBeNull();
     }
     
+    /// <summary>
+    /// Verifies that the TenantSuspendedEvent has the correct name.
+    /// </summary>
     [Fact]
     public void TenantSuspendedEvent_Initialization_HasCorrectName()
     {
@@ -52,6 +65,9 @@ public sealed class DomainEventTests {
         ev.Should().NotBeNull();
     }
     
+    /// <summary>
+    /// Verifies that the TenantUpdatedEvent has the correct name.
+    /// </summary>
     [Fact]
     public void TenantUpdatedEvent_Initialization_HasCorrectName()
     {
