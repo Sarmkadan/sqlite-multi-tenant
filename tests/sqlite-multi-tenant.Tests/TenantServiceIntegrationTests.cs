@@ -20,14 +20,38 @@ using SqliteMultiTenant.Repositories;
 
 namespace SqliteMultiTenant.Tests
 {
-    public sealed class TenantServiceIntegrationTests : IDisposable {
-        private readonly string _dbPath;
-        private readonly string _connectionString;
-        private readonly ILogger<TenantService> _logger;
-        private readonly ITenantRepository _tenantRepository;
-        private readonly TenantService _tenantService;
+    /// <summary>
+/// Integration tests for <see cref="TenantService"/> that verify tenant management operations
+/// against a real SQLite database. Tests cover CRUD operations and ensure proper integration
+/// between the service layer and repository layer.
+/// </summary>
+public sealed class TenantServiceIntegrationTests : IDisposable {
+        /// <summary>
+/// Gets the path to the temporary SQLite database file used for testing.
+/// </summary>
+private readonly string _dbPath;
+        /// <summary>
+/// Gets the connection string for the test SQLite database.
+/// </summary>
+private readonly string _connectionString;
+        /// <summary>
+/// Gets the logger instance used for testing <see cref="TenantService"/> operations.
+/// </summary>
+private readonly ILogger<TenantService> _logger;
+        /// <summary>
+/// Gets the tenant repository instance used to interact with the database.
+/// </summary>
+private readonly ITenantRepository _tenantRepository;
+        /// <summary>
+/// Gets the tenant service instance being tested.
+/// </summary>
+private readonly TenantService _tenantService;
 
-        public TenantServiceIntegrationTests()
+        /// <summary>
+/// Initializes a new instance of the <see cref="TenantServiceIntegrationTests"/> class.
+/// Sets up a temporary SQLite database with seed data for integration testing.
+/// </summary>
+public TenantServiceIntegrationTests()
         {
             _dbPath = Path.Combine(Path.GetTempPath(), $"tenant_service_tests_{Guid.NewGuid():N}.db");
             _connectionString = $"Data Source={_dbPath};Version=3;";
@@ -40,7 +64,11 @@ namespace SqliteMultiTenant.Tests
             _tenantService = new TenantService(_tenantRepository, _logger);
         }
 
-        private void SeedData()
+        /// <summary>
+/// Seeds the test database with initial tenant data for integration tests.
+/// Creates two test tenants: "tenant-a" and "tenant-b" with sample data.
+/// </summary>
+private void SeedData()
         {
             using var connection = new SQLiteConnection(_connectionString);
             connection.Open();
@@ -49,7 +77,14 @@ namespace SqliteMultiTenant.Tests
             InsertTenant(connection, "tenant-b", "TenantB", "tenantB.db");
         }
 
-        private static void InsertTenant(SQLiteConnection connection, string tenantId, string name, string databasePath)
+        /// <summary>
+/// Inserts a tenant record into the database for testing purposes.
+/// </summary>
+/// <param name="connection">The SQLite database connection to use for insertion.</param>
+/// <param name="tenantId">The unique identifier for the tenant.</param>
+/// <param name="name">The display name of the tenant.</param>
+/// <param name="databasePath">The path to the tenant's database file.</param>
+private static void InsertTenant(SQLiteConnection connection, string tenantId, string name, string databasePath)
         {
             using var command = connection.CreateCommand();
             command.CommandText = @"
@@ -62,6 +97,10 @@ namespace SqliteMultiTenant.Tests
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Verifies that <see cref="TenantService.GetAllTenantsAsync"/> returns all seeded tenants from the database.
+        /// Ensures the service correctly retrieves all tenant records.
+        /// </summary>
         [Fact]
         public async Task GetAllTenantsAsync_ShouldReturnAllSeededTenants()
         {
@@ -75,6 +114,10 @@ namespace SqliteMultiTenant.Tests
             tenants.Should().Contain(t => t.Name == "TenantB");
         }
 
+        /// <summary>
+        /// Tests that <see cref="TenantService.GetTenantAsync(string)"/> returns the correct tenant for a valid tenant ID.
+        /// Verifies the service can retrieve a specific tenant by its identifier.
+        /// </summary>
         [Fact]
         public async Task GetTenantAsync_ShouldReturnCorrectTenant()
         {
@@ -86,6 +129,10 @@ namespace SqliteMultiTenant.Tests
             tenant!.Name.Should().Be("TenantA");
         }
 
+        /// <summary>
+        /// Tests that <see cref="TenantService.GetTenantAsync(string)"/> returns null when querying for a non-existent tenant ID.
+        /// Ensures the service handles missing tenant records gracefully.
+        /// </summary>
         [Fact]
         public async Task GetTenantAsync_ShouldReturnNullForNonExistingTenant()
         {
@@ -99,6 +146,10 @@ namespace SqliteMultiTenant.Tests
             tenant.Should().BeNull();
         }
 
+        /// <summary>
+        /// Tests that <see cref="TenantService.CreateTenantAsync(string)"/> successfully adds a new tenant to the database.
+        /// Verifies the service creates a new tenant record and returns the created tenant.
+        /// </summary>
         [Fact]
         public async Task CreateTenantAsync_ShouldAddTenantToDatabase()
         {
@@ -114,6 +165,10 @@ namespace SqliteMultiTenant.Tests
             tenantInDb!.Name.Should().Be("TenantC");
         }
 
+        /// <summary>
+        /// Tests that <see cref="TenantService.UpdateTenantAsync(Tenant)"/> successfully updates an existing tenant in the database.
+        /// Verifies the service persists changes to tenant records correctly.
+        /// </summary>
         [Fact]
         public async Task UpdateTenantAsync_ShouldUpdateTenantInDatabase()
         {
@@ -131,6 +186,10 @@ namespace SqliteMultiTenant.Tests
             tenantInDb!.DatabasePath.Should().Be("updatedTenantA.db");
         }
 
+        /// <summary>
+        /// Tests that <see cref="TenantService.DeleteTenantAsync(string)"/> successfully removes a tenant from the database.
+        /// Verifies the service can delete tenant records and they are no longer retrievable.
+        /// </summary>
         [Fact]
         public async Task DeleteTenantAsync_ShouldRemoveTenantFromDatabase()
         {
@@ -142,6 +201,10 @@ namespace SqliteMultiTenant.Tests
             tenantInDb.Should().BeNull();
         }
 
+        /// <summary>
+        /// Tests that <see cref="TenantService.CreateTenantAsync(string)"/> throws an exception when attempting to create a tenant with a name that already exists.
+        /// Verifies the service enforces unique tenant name constraints.
+        /// </summary>
         [Fact]
         public async Task CreateTenantAsync_ShouldThrowExceptionIfTenantNameAlreadyExists()
         {
@@ -152,6 +215,10 @@ namespace SqliteMultiTenant.Tests
             await Assert.ThrowsAsync<InvalidOperationException>(() => _tenantService.CreateTenantAsync(existingTenantName));
         }
 
+        /// <summary>
+        /// Cleans up the test environment by deleting the temporary database file.
+        /// Implements <see cref="IDisposable.Dispose"/> to ensure proper resource cleanup.
+        /// </summary>
         public void Dispose()
         {
             if (File.Exists(_dbPath))
