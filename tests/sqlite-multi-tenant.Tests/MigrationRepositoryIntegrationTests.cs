@@ -19,11 +19,18 @@ using System.Collections.Generic;
 
 namespace SqliteMultiTenant.Tests
 {
-    public sealed class MigrationRepositoryIntegrationTests : IDisposable {
+    /// <summary>
+    /// Integration tests for the MigrationRepository class.
+    /// </summary>
+    public sealed class MigrationRepositoryIntegrationTests : IDisposable
+    {
         private readonly string _dbPath;
         private readonly string _connectionString;
         private readonly MigrationRepository _migrationRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the MigrationRepositoryIntegrationTests class.
+        /// </summary>
         public MigrationRepositoryIntegrationTests()
         {
             _dbPath = Path.Combine(Path.GetTempPath(), $"migration_repo_tests_{Guid.NewGuid():N}.db");
@@ -34,6 +41,9 @@ namespace SqliteMultiTenant.Tests
             SeedData();
         }
 
+        /// <summary>
+        /// Seeds the database with test data.
+        /// </summary>
         private void SeedData()
         {
             using var connection = new SQLiteConnection(_connectionString);
@@ -45,6 +55,18 @@ namespace SqliteMultiTenant.Tests
             InsertMigration(connection, "mig4", "db1", "1.2", "AddIndex", MigrationStatus.Failed, DateTime.UtcNow.AddHours(-1), 3, "Failed to create index");
         }
 
+        /// <summary>
+        /// Inserts a migration into the database.
+        /// </summary>
+        /// <param name="connection">The SQLite connection to use.</param>
+        /// <param name="migrationId">The ID of the migration.</param>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <param name="version">The version of the migration.</param>
+        /// <param name="name">The name of the migration.</param>
+        /// <param name="status">The status of the migration.</param>
+        /// <param name="createdAt">The date and time the migration was created.</param>
+        /// <param name="executionOrder">The order in which the migration should be executed.</param>
+        /// <param name="errorMessage">The error message for the migration, if any.</param>
         private static void InsertMigration(SQLiteConnection connection, string migrationId, string databaseId, string version, string name, MigrationStatus status, DateTime createdAt, int executionOrder, string? errorMessage)
         {
             using var command = connection.CreateCommand();
@@ -63,6 +85,10 @@ namespace SqliteMultiTenant.Tests
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Tests that GetAllAsync returns all migrations.
+        /// </summary>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetAllAsync_ShouldReturnAllMigrations()
         {
@@ -74,6 +100,11 @@ namespace SqliteMultiTenant.Tests
             migrations.Should().HaveCount(4);
         }
 
+        /// <summary>
+        /// Tests that GetByIdAsync returns the correct migration when the migration exists.
+        /// </summary>
+        /// <param name="migrationId">The ID of the migration to retrieve.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetByIdAsync_ShouldReturnCorrectMigration_WhenMigrationExists()
         {
@@ -89,6 +120,11 @@ namespace SqliteMultiTenant.Tests
             migration.DatabaseId.Should().Be("db1");
         }
 
+        /// <summary>
+        /// Tests that GetByIdAsync returns null when the migration does not exist.
+        /// </summary>
+        /// <param name="nonExistingId">The ID of the non-existent migration.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetByIdAsync_ShouldReturnNull_WhenMigrationDoesNotExist()
         {
@@ -102,6 +138,11 @@ namespace SqliteMultiTenant.Tests
             migration.Should().BeNull();
         }
 
+        /// <summary>
+        /// Tests that AddAsync adds a migration to the database.
+        /// </summary>
+        /// <param name="newMigration">The new migration to add.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task AddAsync_ShouldAddMigrationToDatabase()
         {
@@ -120,6 +161,11 @@ namespace SqliteMultiTenant.Tests
             migrationInDb!.DatabaseId.Should().Be("db3");
         }
 
+        /// <summary>
+        /// Tests that UpdateAsync updates a migration in the database.
+        /// </summary>
+        /// <param name="migrationToUpdate">The migration to update.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task UpdateAsync_ShouldUpdateMigrationInDatabase()
         {
@@ -139,6 +185,11 @@ namespace SqliteMultiTenant.Tests
             migrationInDb.ExecutionTimeMs.Should().Be(150);
         }
 
+        /// <summary>
+        /// Tests that DeleteAsync removes a migration from the database.
+        /// </summary>
+        /// <param name="migrationIdToDelete">The ID of the migration to delete.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task DeleteAsync_ShouldRemoveMigrationFromDatabase()
         {
@@ -153,6 +204,11 @@ namespace SqliteMultiTenant.Tests
             migrationInDb.Should().BeNull();
         }
 
+        /// <summary>
+        /// Tests that GetOrderedMigrationsAsync returns migrations in order.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetOrderedMigrationsAsync_ShouldReturnMigrationsInOrder()
         {
@@ -170,6 +226,11 @@ namespace SqliteMultiTenant.Tests
             migrations[2].MigrationId.Should().Be("mig4");
         }
 
+        /// <summary>
+        /// Tests that GetPendingMigrationsAsync returns only pending migrations.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetPendingMigrationsAsync_ShouldReturnOnlyPendingMigrations()
         {
@@ -185,6 +246,11 @@ namespace SqliteMultiTenant.Tests
             pendingMigrations.Should().ContainSingle(m => m.MigrationId == "mig2" && m.Status == MigrationStatus.Pending);
         }
 
+        /// <summary>
+        /// Tests that GetAppliedMigrationsAsync returns only applied migrations.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetAppliedMigrationsAsync_ShouldReturnOnlyAppliedMigrations()
         {
@@ -200,6 +266,12 @@ namespace SqliteMultiTenant.Tests
             appliedMigrations.Should().ContainSingle(m => m.MigrationId == "mig1" && m.Status == MigrationStatus.Completed);
         }
 
+        /// <summary>
+        /// Tests that GetByVersionAsync returns a migration when the version exists.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <param name="version">The version of the migration.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetByVersionAsync_ShouldReturnMigration_WhenVersionExists()
         {
@@ -215,6 +287,12 @@ namespace SqliteMultiTenant.Tests
             migration!.MigrationId.Should().Be("mig2");
         }
 
+        /// <summary>
+        /// Tests that GetByVersionAsync returns null when the version does not exist.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <param name="version">The version of the migration.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetByVersionAsync_ShouldReturnNull_WhenVersionDoesNotExist()
         {
@@ -229,6 +307,11 @@ namespace SqliteMultiTenant.Tests
             migration.Should().BeNull();
         }
 
+        /// <summary>
+        /// Tests that GetCountByDatabaseAsync returns the correct count.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetCountByDatabaseAsync_ShouldReturnCorrectCount()
         {
@@ -242,6 +325,11 @@ namespace SqliteMultiTenant.Tests
             count.Should().Be(3);
         }
 
+        /// <summary>
+        /// Tests that GetFailedMigrationsAsync returns only failed migrations.
+        /// </summary>
+        /// <param name="databaseId">The ID of the database.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         [Fact]
         public async Task GetFailedMigrationsAsync_ShouldReturnOnlyFailedMigrations()
         {
@@ -257,6 +345,9 @@ namespace SqliteMultiTenant.Tests
             failedMigrations.Should().ContainSingle(m => m.MigrationId == "mig4" && m.Status == MigrationStatus.Failed);
         }
 
+        /// <summary>
+        /// Disposes of the test resources.
+        /// </summary>
         public void Dispose()
         {
             if (File.Exists(_dbPath))
