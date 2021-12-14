@@ -14,31 +14,38 @@ using SqliteMultiTenant.Repositories;
 using SqliteMultiTenant.Services;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests;
-
+/// <summary>
+/// Tests for the TenantService class.
+/// </summary>
 public sealed class TenantServiceTests {
     private readonly ITenantRepository _mockRepository;
     private readonly ILogger<TenantService> _mockLogger;
     private readonly TenantService _service;
 
-    public TenantServiceTests()
-    {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TenantServiceTests"/> class.
+    /// </summary>
+    public TenantServiceTests() {
         _mockRepository = Substitute.For<ITenantRepository>();
         _mockLogger = Substitute.For<ILogger<TenantService>>();
         _service = new TenantService(_mockRepository, _mockLogger);
     }
 
+    /// <summary>
+    /// Verifies that an <see cref="ArgumentException"/> is thrown when an empty tenant ID is passed to <see cref="TenantService.GetTenantAsync(string)"/>.
+    /// </summary>
     [Fact]
-    public async Task GetTenantAsync_WithBlankId_ThrowsArgumentException()
-    {
+    public async Task GetTenantAsync_WithBlankId_ThrowsArgumentException() {
         Func<Task> act = async () => await _service.GetTenantAsync("   ");
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
+    /// <summary>
+    /// Verifies that <see cref="TenantService.GetTenantAsync(string)"/> invokes <see cref="ITenantRepository.UpdateAsync(Tenant, CancellationToken)"/> and returns the result when a tenant is found.
+    /// </summary>
     [Fact]
-    public async Task GetTenantAsync_WhenTenantFound_InvokesRepositoryUpdateAndReturnsResult()
-    {
+    public async Task GetTenantAsync_WhenTenantFound_InvokesRepositoryUpdateAndReturnsResult() {
         // Arrange
         var tenant = new Tenant { TenantId = "tenant-1", Name = "Test Corp", MaxConnections = 10 };
         _mockRepository
@@ -58,9 +65,11 @@ public sealed class TenantServiceTests {
         await _mockRepository.Received(1).UpdateAsync(Arg.Any<Tenant>(), Arg.Any<CancellationToken>());
     }
 
+    /// <summary>
+    /// Verifies that an <see cref="InvalidOperationException"/> is thrown when attempting to create a tenant with a name that already exists.
+    /// </summary>
     [Fact]
-    public async Task CreateTenantAsync_WhenNameAlreadyExists_ThrowsInvalidOperationException()
-    {
+    public async Task CreateTenantAsync_WhenNameAlreadyExists_ThrowsInvalidOperationException() {
         // Arrange
         var existing = new Tenant { TenantId = "existing-1", Name = "Acme Corp", MaxConnections = 10 };
         _mockRepository
@@ -75,9 +84,11 @@ public sealed class TenantServiceTests {
             .WithMessage("*already exists*");
     }
 
+    /// <summary>
+    /// Verifies that a <see cref="TenantNotFoundException"/> is thrown when attempting to delete a tenant that does not exist.
+    /// </summary>
     [Fact]
-    public async Task DeleteTenantAsync_WhenTenantNotFound_ThrowsTenantNotFoundException()
-    {
+    public async Task DeleteTenantAsync_WhenTenantNotFound_ThrowsTenantNotFoundException() {
         // Arrange
         _mockRepository
             .GetByIdAsync("ghost-tenant", Arg.Any<CancellationToken>())
