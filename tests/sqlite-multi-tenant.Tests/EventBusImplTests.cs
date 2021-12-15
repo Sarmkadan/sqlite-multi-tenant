@@ -12,63 +12,87 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
+/// <summary>
+/// Contains unit tests for the <see cref="EventBusImpl"/> class.
+/// </summary>
 public sealed class EventBusImplTests {
-    private readonly EventBusImpl _eventBus;
+	/// <summary>
+	/// The event bus instance used for testing.
+	/// </summary>
+	private readonly EventBusImpl _eventBus;
 
-    public EventBusImplTests()
-    {
-        _eventBus = new EventBusImpl(Substitute.For<ILogger<EventBusImpl>>());
-    }
+	/// <summary>
+	/// Initializes a new instance of the <see cref="EventBusImplTests"/> class.
+	/// </summary>
+	public EventBusImplTests()
+	{
+		_eventBus = new EventBusImpl(Substitute.For<ILogger<EventBusImpl>>());
+	}
 
-    [Fact]
-    public void GetEventHistory_Initially_ShouldBeEmpty()
-    {
-        // Act
-        var history = _eventBus.GetEventHistory();
+	[Fact]
+	/// <summary>
+	/// Tests that GetEventHistory returns an empty list when called initially.
+	/// </summary>
+	public void GetEventHistory_Initially_ShouldBeEmpty()
+	{
+		// Act
+		var history = _eventBus.GetEventHistory();
 
-        // Assert
-        history.Should().NotBeNull();
-        history.Should().BeEmpty();
-    }
+		// Assert
+		history.Should().NotBeNull();
+		history.Should().BeEmpty();
+	}
 
-    [Fact]
-    public void ClearHistory_WhenHasEvents_ShouldClearList()
-    {
-        // Act
-        _eventBus.ClearHistory();
+	[Fact]
+	/// <summary>
+	/// Tests that ClearHistory removes all events from the event bus.
+	/// </summary>
+	public void ClearHistory_WhenHasEvents_ShouldClearList()
+	{
+		// Act
+		_eventBus.ClearHistory();
 
-        // Assert
-        var history = _eventBus.GetEventHistory();
-        history.Should().BeEmpty();
-    }
+		// Assert
+		var history = _eventBus.GetEventHistory();
+		history.Should().BeEmpty();
+	}
 
-    [Fact]
-    public void Dispose_WhenCalled_DoesNotThrow()
-    {
-        // Act
-        var action = () => _eventBus.Dispose();
+	[Fact]
+	/// <summary>
+	/// Tests that calling Dispose on the event bus does not throw exceptions.
+	/// </summary>
+	public void Dispose_WhenCalled_DoesNotThrow()
+	{
+		// Act
+		var action = () => _eventBus.Dispose();
 
-        // Assert
-        action.Should().NotThrow();
-    }
-    
-    [Fact]
-    public void GetEventHistory_WithNegativeTake_ShouldHandleGracefully()
-    {
-        // Act
-        var action = () => _eventBus.GetEventHistory(-1);
+		// Assert
+		action.Should().NotThrow();
+	}
 
-        // Assert
-        action.Should().NotThrow();
-    }
+	[Fact]
+	/// <summary>
+	/// Tests that GetEventHistory handles negative take values gracefully without throwing.
+	/// </summary>
+	public void GetEventHistory_WithNegativeTake_ShouldHandleGracefully()
+	{
+		// Act
+		var action = () => _eventBus.GetEventHistory(-1);
 
-    [Fact]
-    public void EventBus_Initialization_PropertiesAreSet()
-    {
-        // Act
-        var history = _eventBus.GetEventHistory(10);
+		// Assert
+		action.Should().NotThrow();
+	}
 
-        // Assert
-        history.Should().BeOfType<List<PublishedEvent>>();
-    }
+	[Fact]
+	/// <summary>
+	/// Tests that the event bus initializes correctly and returns the expected event history type.
+	/// </summary>
+	public void EventBus_Initialization_PropertiesAreSet()
+	{
+		// Act
+		var history = _eventBus.GetEventHistory(10);
+
+		// Assert
+		history.Should().BeOfType<List<PublishedEvent>>();
+	}
 }
