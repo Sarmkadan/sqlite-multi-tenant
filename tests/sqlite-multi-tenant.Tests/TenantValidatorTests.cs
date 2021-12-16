@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System.Collections.Generic;
 using FluentAssertions;
@@ -12,193 +12,204 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public sealed class TenantValidatorTests {
-        private readonly TenantValidator _validator;
+	/// <summary>
+	/// Contains unit tests for the <see cref="TenantValidator"/> class.
+	/// Tests validation logic for tenant creation and update requests.
+	/// </summary>
+	public sealed class TenantValidatorTests
+	{
+		/// <summary>
+		/// The validator instance used for testing tenant validation logic.
+		/// </summary>
+		private readonly TenantValidator _validator;
 
-        public TenantValidatorTests()
-        {
-            _validator = new TenantValidator();
-        }
+		/// <summary>
+		/// Initializes a new instance of the <see cref="TenantValidatorTests"/> class.
+		/// </summary>
+		public TenantValidatorTests()
+		{
+			_validator = new TenantValidator();
+		}
 
-        [Fact]
-        public void ValidateCreateRequest_ShouldReturnNoErrors_WithValidRequest()
-        {
-            // Arrange
-            var request = new CreateTenantRequest
-            {
-                Name = "ValidTenantName",
-                ContactEmail = "test@example.com"
-            };
+		[Fact]
+		public void ValidateCreateRequest_ShouldReturnNoErrors_WithValidRequest()
+		{
+			// Arrange
+			var request = new CreateTenantRequest
+			{
+				Name = "ValidTenantName",
+				ContactEmail = "test@example.com"
+			};
 
-            // Act
-            var errors = _validator.ValidateCreateRequest(request);
+			// Act
+			var errors = _validator.ValidateCreateRequest(request);
 
-            // Assert
-            errors.Should().BeEmpty();
-        }
+			// Assert
+			errors.Should().BeEmpty();
+		}
 
-        [Fact]
-        public void ValidateCreateRequest_ShouldReturnError_WhenNameIsEmpty()
-        {
-            // Arrange
-            var request = new CreateTenantRequest
-            {
-                Name = "",
-                ContactEmail = "test@example.com"
-            };
+		[Fact]
+		public void ValidateCreateRequest_ShouldReturnError_WhenNameIsEmpty()
+		{
+			// Arrange
+			var request = new CreateTenantRequest
+			{
+				Name = "",
+				ContactEmail = "test@example.com"
+			};
 
-            // Act
-            var errors = _validator.ValidateCreateRequest(request);
+			// Act
+			var errors = _validator.ValidateCreateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.Name))
-                  .And.ContainValue("Tenant name is required");
-        }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.Name))
+				.And.ContainValue("Tenant name is required");
+		}
 
-        [Fact]
-        public void ValidateCreateRequest_ShouldReturnError_WhenNameIsTooShort()
-        {
-            // Arrange
-            var request = new CreateTenantRequest
-            {
-                Name = "ab", // Less than 3 characters
-                ContactEmail = "test@example.com"
-            };
+		[Fact]
+		public void ValidateCreateRequest_ShouldReturnError_WhenNameIsTooShort()
+		{
+			// Arrange
+			var request = new CreateTenantRequest
+			{
+				Name = "ab", // Less than 3 characters
+				ContactEmail = "test@example.com"
+			};
 
-            // Act
-            var errors = _validator.ValidateCreateRequest(request);
+			// Act
+			var errors = _validator.ValidateCreateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.Name))
-                  .And.ContainValue("Tenant name must be between 3 and 255 characters");
-        }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.Name))
+				.And.ContainValue("Tenant name must be between 3 and 255 characters");
+		}
 
-        [Fact]
-        public void ValidateCreateRequest_ShouldReturnError_WhenNameIsTooLong()
-        {
-            // Arrange
-            var request = new CreateTenantRequest
-            {
-                Name = new string('a', 256), // More than 255 characters
-                ContactEmail = "test@example.com"
-            };
+		[Fact]
+		public void ValidateCreateRequest_ShouldReturnError_WhenNameIsTooLong()
+		{
+			// Arrange
+			var request = new CreateTenantRequest
+			{
+				Name = new string('a', 256), // More than 255 characters
+				ContactEmail = "test@example.com"
+			};
 
-            // Act
-            var errors = _validator.ValidateCreateRequest(request);
+			// Act
+			var errors = _validator.ValidateCreateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.Name))
-                  .And.ContainValue("Tenant name must be between 3 and 255 characters");
-        }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.Name))
+				.And.ContainValue("Tenant name must be between 3 and 255 characters");
+		}
 
-        [Fact]
-        public void ValidateCreateRequest_ShouldReturnError_WhenContactEmailIsEmpty()
-        {
-            // Arrange
-            var request = new CreateTenantRequest
-            {
-                Name = "ValidTenant",
-                ContactEmail = ""
-            };
+		[Fact]
+		public void ValidateCreateRequest_ShouldReturnError_WhenContactEmailIsEmpty()
+		{
+			// Arrange
+			var request = new CreateTenantRequest
+			{
+				Name = "ValidTenant",
+				ContactEmail = ""
+			};
 
-            // Act
-            var errors = _validator.ValidateCreateRequest(request);
+			// Act
+			var errors = _validator.ValidateCreateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.ContactEmail))
-                  .And.ContainValue("Contact email is required");
-        }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.ContactEmail))
+				.And.ContainValue("Contact email is required");
+		}
 
-        [Fact]
-        public void ValidateCreateRequest_ShouldReturnError_WhenContactEmailIsInvalid()
-        {
-            // Arrange
-            var request = new CreateTenantRequest
-            {
-                Name = "ValidTenant",
-                ContactEmail = "invalid-email"
-            };
+		[Fact]
+		public void ValidateCreateRequest_ShouldReturnError_WhenContactEmailIsInvalid()
+		{
+			// Arrange
+			var request = new CreateTenantRequest
+			{
+				Name = "ValidTenant",
+				ContactEmail = "invalid-email"
+			};
 
-            // Act
-            var errors = _validator.ValidateCreateRequest(request);
+			// Act
+			var errors = _validator.ValidateCreateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.ContactEmail))
-                  .And.ContainValue("Contact email must be valid");
-        }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.ContactEmail))
+				.And.ContainValue("Contact email must be valid");
+		}
 
-        [Fact]
-        public void ValidateUpdateRequest_ShouldReturnNoErrors_WithValidRequest()
-        {
-            // Arrange
-            var request = new UpdateTenantRequest
-            {
-                Name = "UpdatedTenantName",
-                ContactEmail = "updated@example.com"
-            };
+		[Fact]
+		public void ValidateUpdateRequest_ShouldReturnNoErrors_WithValidRequest()
+		{
+			// Arrange
+			var request = new UpdateTenantRequest
+			{
+				Name = "UpdatedTenantName",
+				ContactEmail = "updated@example.com"
+			};
 
-            // Act
-            var errors = _validator.ValidateUpdateRequest(request);
+			// Act
+			var errors = _validator.ValidateUpdateRequest(request);
 
-            // Assert
-            errors.Should().BeEmpty();
-        }
+			// Assert
+			errors.Should().BeEmpty();
+		}
 
-        [Fact]
-        public void ValidateUpdateRequest_ShouldReturnNoErrors_WhenOnlyOneFieldIsProvidedAndValid()
-        {
-            // Arrange
-            var request1 = new UpdateTenantRequest { Name = "NewName" };
-            var request2 = new UpdateTenantRequest { ContactEmail = "new@example.com" };
+		[Fact]
+		public void ValidateUpdateRequest_ShouldReturnNoErrors_WhenOnlyOneFieldIsProvidedAndValid()
+		{
+			// Arrange
+			var request1 = new UpdateTenantRequest { Name = "NewName" };
+			var request2 = new UpdateTenantRequest { ContactEmail = "new@example.com" };
 
-            // Act
-            var errors1 = _validator.ValidateUpdateRequest(request1);
-            var errors2 = _validator.ValidateUpdateRequest(request2);
+			// Act
+			var errors1 = _validator.ValidateUpdateRequest(request1);
+			var errors2 = _validator.ValidateUpdateRequest(request2);
 
-            // Assert
-            errors1.Should().BeEmpty();
-            errors2.Should().BeEmpty();
-        }
+			// Assert
+			errors1.Should().BeEmpty();
+			errors2.Should().BeEmpty();
+		}
 
-        [Fact]
-        public void ValidateUpdateRequest_ShouldReturnError_WhenNameIsTooShort()
-        {
-            // Arrange
-            var request = new UpdateTenantRequest
-            {
-                Name = "ab"
-            };
+		[Fact]
+		public void ValidateUpdateRequest_ShouldReturnError_WhenNameIsTooShort()
+		{
+			// Arrange
+			var request = new UpdateTenantRequest
+			{
+				Name = "ab"
+			};
 
-            // Act
-            var errors = _validator.ValidateUpdateRequest(request);
+			// Act
+			var errors = _validator.ValidateUpdateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.Name))
-                  .And.ContainValue("Tenant name must be between 3 and 255 characters");
-        }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.Name))
+				.And.ContainValue("Tenant name must be between 3 and 255 characters");
+		}
 
-        [Fact]
-        public void ValidateUpdateRequest_ShouldReturnError_WhenContactEmailIsInvalid()
-        {
-            // Arrange
-            var request = new UpdateTenantRequest
-            {
-                ContactEmail = "invalid-update-email"
-            };
+		[Fact]
+		public void ValidateUpdateRequest_ShouldReturnError_WhenContactEmailIsInvalid()
+		{
+			// Arrange
+			var request = new UpdateTenantRequest
+			{
+				ContactEmail = "invalid-update-email"
+			};
 
-            // Act
-            var errors = _validator.ValidateUpdateRequest(request);
+			// Act
+			var errors = _validator.ValidateUpdateRequest(request);
 
-            // Assert
-            errors.Should().ContainSingle()
-                  .And.ContainKey(nameof(request.ContactEmail))
-                  .And.ContainValue("Contact email must be valid");
-        }
-    }
+			// Assert
+			errors.Should().ContainSingle()
+				.And.ContainKey(nameof(request.ContactEmail))
+				.And.ContainValue("Contact email must be valid");
+		}
+	}
 }
