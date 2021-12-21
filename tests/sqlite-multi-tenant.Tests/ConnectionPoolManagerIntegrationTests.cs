@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System;
 using System.Collections.Generic;
@@ -18,15 +18,50 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
+    /// <summary>
+    /// Integration tests for <see cref="ConnectionPoolManager"/> that verify connection pooling behavior
+    /// with actual SQLite connections in a multi-tenant environment.
+    /// </summary>
     public sealed class ConnectionPoolManagerIntegrationTests : IAsyncDisposable {
+        /// <summary>
+        /// Mock logger for testing connection pool manager operations.
+        /// </summary>
         private readonly ILogger<ConnectionPoolManager> _mockLogger;
+
+        /// <summary>
+        /// Connection pool configuration options used for testing.
+        /// </summary>
         private ConnectionPoolOptions _options;
+
+        /// <summary>
+        /// The connection pool manager instance being tested.
+        /// </summary>
         private IConnectionPoolManager _connectionPoolManager;
+
+        /// <summary>
+        /// First test tenant identifier used throughout the integration tests.
+        /// </summary>
         private const string TenantId1 = "tenant1";
+
+        /// <summary>
+        /// Connection string for the first test tenant using in-memory SQLite database.
+        /// </summary>
         private const string ConnectionString1 = "Data Source=:memory:connectionpoolmanager1;Mode=Memory;Cache=Shared";
+
+        /// <summary>
+        /// Second test tenant identifier used throughout the integration tests.
+        /// </summary>
         private const string TenantId2 = "tenant2";
+
+        /// <summary>
+        /// Connection string for the second test tenant using in-memory SQLite database.
+        /// </summary>
         private const string ConnectionString2 = "Data Source=:memory:connectionpoolmanager2;Mode=Memory;Cache=Shared";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectionPoolManagerIntegrationTests"/> class.
+        /// Sets up mock logger and connection pool configuration for testing.
+        /// </summary>
         public ConnectionPoolManagerIntegrationTests()
         {
             _mockLogger = Substitute.For<ILogger<ConnectionPoolManager>>();
@@ -43,6 +78,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that acquiring a connection returns an open and usable SQLite connection.
+        /// Verifies that the connection pool manager correctly opens new connections.
+        /// </summary>
         public async Task AcquireAsync_ShouldReturnOpenConnection()
         {
             // Act
@@ -57,6 +96,11 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that connections are reused from the pool when available.
+        /// Verifies that the connection pool manager correctly returns connections to the pool
+        /// and reuses them on subsequent acquisitions.
+        /// </summary>
         public async Task AcquireAsync_ShouldReuseConnection_WhenAvailable()
         {
             // Arrange
@@ -75,11 +119,15 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that new connections are created when the pool is not yet full.
+        /// Verifies that the connection pool manager creates new connections up to MaxPoolSize.
+        /// </summary>
         public async Task AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull()
         {
             // Arrange
             var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            
+
             // Act
             var connection2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
 
@@ -94,6 +142,11 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that releasing a connection returns it to the pool.
+        /// Verifies that the connection pool manager correctly tracks available connections
+        /// after releasing.
+        /// </summary>
         public async Task ReleaseAsync_ShouldReturnConnectionToPool()
         {
             // Arrange
@@ -110,6 +163,11 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that evicting a tenant removes its pool and disposes connections.
+        /// Verifies that the connection pool manager properly cleans up tenant-specific resources
+        /// and marks connections as disposed.
+        /// </summary>
         public async Task EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections()
         {
             // Arrange
@@ -131,6 +189,11 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that statistics are correctly returned for all tenants.
+        /// Verifies that the connection pool manager accurately tracks connection counts,
+        /// available connections, and waiting connections per tenant.
+        /// </summary>
         public async Task GetStatistics_ShouldReturnCorrectStats()
         {
             // Arrange
@@ -157,6 +220,11 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that acquiring a connection throws TimeoutException when pool is exhausted.
+        /// Verifies that the connection pool manager properly enforces MaxPoolSize limits
+        /// and provides helpful error messages.
+        /// </summary>
         public async Task AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted()
         {
             // Arrange - MaxPoolSize is 2
@@ -176,6 +244,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that acquiring a connection throws ArgumentException when tenantId is empty.
+        /// Verifies that the connection pool manager validates input parameters.
+        /// </summary>
         public async Task AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty()
         {
             // Arrange
@@ -190,6 +262,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that acquiring a connection throws ArgumentException when connectionString is empty.
+        /// Verifies that the connection pool manager validates input parameters.
+        /// </summary>
         public async Task AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty()
         {
             // Arrange
@@ -202,8 +278,13 @@ namespace SqliteMultiTenant.Tests
             await act.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("The value cannot be an empty string. (Parameter 'connectionString')");
         }
-        
+
         [Fact]
+        /// <summary>
+        /// Tests that idle connections are pruned and disposed after timeout.
+        /// Verifies that the connection pool manager automatically cleans up idle connections
+        /// based on IdleTimeout configuration.
+        /// </summary>
         public async Task PruneIdle_ShouldDisposeIdleConnections()
         {
             // Arrange
@@ -228,6 +309,10 @@ namespace SqliteMultiTenant.Tests
             _mockLogger.AssertLoggedContains(LogLevel.Debug, 1, "Pruned 2 idle connection(s) from tenant pool");
         }
 
+        /// <summary>
+        /// Disposes the connection pool manager and cleans up resources.
+        /// </summary>
+        /// <returns>A ValueTask representing the asynchronous disposal operation.</returns>
         public async ValueTask DisposeAsync()
         {
             if (_connectionPoolManager is not null)
