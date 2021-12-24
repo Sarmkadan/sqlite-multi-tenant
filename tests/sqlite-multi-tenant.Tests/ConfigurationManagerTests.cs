@@ -17,224 +17,294 @@ using ConfigurationManager = SqliteMultiTenant.Configuration.ConfigurationManage
 
 namespace SqliteMultiTenant.Tests
 {
-    public sealed class ConfigurationManagerTests : IDisposable {
-        private readonly IConfiguration _mockConfiguration;
-        private readonly ILogger<ConfigurationManager> _mockLogger;
-        private readonly string _tempBasePath;
+/// <summary>
+/// Contains unit tests for the <see cref="ConfigurationManager"/> class.
+/// Tests various constructor validation scenarios, configuration section retrieval,
+/// tenant-specific settings resolution, and options management functionality.
+/// </summary>
+public sealed class ConfigurationManagerTests : IDisposable
+{
+private readonly IConfiguration _mockConfiguration;
+private readonly ILogger<ConfigurationManager> _mockLogger;
+private readonly string _tempBasePath;
 
-        public ConfigurationManagerTests()
-        {
-            _mockConfiguration = Substitute.For<IConfiguration>();
-            _mockLogger = Substitute.For<ILogger<ConfigurationManager>>();
+/// <summary>
+/// Initializes a new instance of the <see cref="ConfigurationManagerTests"/> class.
+/// Sets up mock dependencies using NSubstitute and creates a temporary directory for testing.
+/// </summary>
+public ConfigurationManagerTests()
+{
+_mockConfiguration = Substitute.For<IConfiguration>();
+_mockLogger = Substitute.For<ILogger<ConfigurationManager>>();
 
-            // Create a temporary directory for BasePath testing
-            _tempBasePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            Directory.CreateDirectory(_tempBasePath);
-        }
+// Create a temporary directory for BasePath testing
+_tempBasePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+Directory.CreateDirectory(_tempBasePath);
+}
 
-        public void Dispose()
-        {
-            // Clean up the temporary directory
-            if (Directory.Exists(_tempBasePath))
-            {
-                Directory.Delete(_tempBasePath, true);
-            }
-        }
+/// <summary>
+/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+/// Cleans up the temporary directory created during test initialization.
+/// </summary>
+public void Dispose()
+{
+// Clean up the temporary directory
+if (Directory.Exists(_tempBasePath))
+{
+Directory.Delete(_tempBasePath, true);
+}
+}
 
-        private ConfigurationManager CreateManager(MultiTenantOptions options)
-        {
-            return new ConfigurationManager(_mockConfiguration, _mockLogger, Options.Create(options));
-        }
+private ConfigurationManager CreateManager(MultiTenantOptions options)
+{
+return new ConfigurationManager(_mockConfiguration, _mockLogger, Options.Create(options));
+}
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenConfigurationIsNull()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentNullException"/>
+/// when the configuration parameter is null.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenConfigurationIsNull()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
-            // Act & Assert
-            this.Invoking(_ => new ConfigurationManager(null, _mockLogger, Options.Create(options)))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("configuration");
-        }
+// Act & Assert
+this.Invoking(_ => new ConfigurationManager(null, _mockLogger, Options.Create(options)))
+.Should().Throw<ArgumentNullException>()
+.WithParameterName("configuration");
+}
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentNullException"/>
+/// when the logger parameter is null.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
-            // Act & Assert
-            this.Invoking(_ => new ConfigurationManager(_mockConfiguration, null, Options.Create(options)))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("logger");
-        }
+// Act & Assert
+this.Invoking(_ => new ConfigurationManager(_mockConfiguration, null, Options.Create(options)))
+.Should().Throw<ArgumentNullException>()
+.WithParameterName("logger");
+}
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenOptionsIsNull()
-        {
-            // Act & Assert
-            this.Invoking(_ => new ConfigurationManager(_mockConfiguration, _mockLogger, null))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("multiTenantOptions");
-        }
-        
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsZero()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 0 };
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentNullException"/>
+/// when the options parameter is null.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenOptionsIsNull()
+{
+// Act & Assert
+this.Invoking(_ => new ConfigurationManager(_mockConfiguration, _mockLogger, null))
+.Should().Throw<ArgumentNullException>()
+.WithParameterName("multiTenantOptions");
+}
 
-            // Act & Assert
-            this.Invoking(_ => CreateManager(options))
-                .Should().Throw<ArgumentOutOfRangeException>()
-                .WithParameterName("DefaultMaxConnections")
-                .WithMessage("DefaultMaxConnections must be greater than 0. (Parameter 'DefaultMaxConnections')");
-        }
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentOutOfRangeException"/>
+/// when DefaultMaxConnections is set to 0.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsZero()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 0 };
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsNegative()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = -5 };
+// Act & Assert
+this.Invoking(_ => CreateManager(options))
+.Should().Throw<ArgumentOutOfRangeException>()
+.WithParameterName("DefaultMaxConnections")
+.WithMessage("DefaultMaxConnections must be greater than 0. (Parameter 'DefaultMaxConnections')");
+}
 
-            // Act & Assert
-            this.Invoking(_ => CreateManager(options))
-                .Should().Throw<ArgumentOutOfRangeException>()
-                .WithParameterName("DefaultMaxConnections")
-                .WithMessage("DefaultMaxConnections must be greater than 0. (Parameter 'DefaultMaxConnections')");
-        }
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentOutOfRangeException"/>
+/// when DefaultMaxConnections is set to a negative value.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsNegative()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = -5 };
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsNull()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = null, DefaultMaxConnections = 10 };
+// Act & Assert
+this.Invoking(_ => CreateManager(options))
+.Should().Throw<ArgumentOutOfRangeException>()
+.WithParameterName("DefaultMaxConnections")
+.WithMessage("DefaultMaxConnections must be greater than 0. (Parameter 'DefaultMaxConnections')");
+}
 
-            // Act & Assert
-            this.Invoking(_ => CreateManager(options))
-                .Should().Throw<ArgumentException>()
-                .WithParameterName("BasePath")
-                .WithMessage("BasePath cannot be null or empty. (Parameter 'BasePath')");
-        }
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentException"/>
+/// when BasePath is null.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsNull()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = null, DefaultMaxConnections = 10 };
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsEmpty()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = "", DefaultMaxConnections = 10 };
+// Act & Assert
+this.Invoking(_ => CreateManager(options))
+.Should().Throw<ArgumentException>()
+.WithParameterName("BasePath")
+.WithMessage("BasePath cannot be null or empty. (Parameter 'BasePath')");
+}
 
-            // Act & Assert
-            this.Invoking(_ => CreateManager(options))
-                .Should().Throw<ArgumentException>()
-                .WithParameterName("BasePath")
-                .WithMessage("BasePath cannot be null or empty. (Parameter 'BasePath')");
-        }
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="ArgumentException"/>
+/// when BasePath is empty.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsEmpty()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = "", DefaultMaxConnections = 10 };
 
-        [Fact]
-        public void ConfigurationManager_Constructor_ThrowsDirectoryNotFoundException_WhenBasePathDoesNotExist()
-        {
-            // Arrange
-            var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "nonexistent");
-            var options = new MultiTenantOptions { BasePath = nonExistentPath, DefaultMaxConnections = 10 };
+// Act & Assert
+this.Invoking(_ => CreateManager(options))
+.Should().Throw<ArgumentException>()
+.WithParameterName("BasePath")
+.WithMessage("BasePath cannot be null or empty. (Parameter 'BasePath')");
+}
 
-            // Act & Assert
-            this.Invoking(_ => CreateManager(options))
-                .Should().Throw<DirectoryNotFoundException>()
-                .WithMessage($"BasePath '{nonExistentPath}' does not exist.");
-        }
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor throws <see cref="DirectoryNotFoundException"/>
+/// when BasePath does not exist.
+/// </summary>
+public void ConfigurationManager_Constructor_ThrowsDirectoryNotFoundException_WhenBasePathDoesNotExist()
+{
+// Arrange
+var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "nonexistent");
+var options = new MultiTenantOptions { BasePath = nonExistentPath, DefaultMaxConnections = 10 };
 
-        [Fact]
-        public void ConfigurationManager_Constructor_LogsSuccess_WhenOptionsAreValid()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+// Act & Assert
+this.Invoking(_ => CreateManager(options))
+.Should().Throw<DirectoryNotFoundException>()
+.WithMessage($"BasePath '{nonExistentPath}' does not exist.");
+}
 
-            // Act
-            var manager = CreateManager(options);
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager"/> constructor successfully validates options
+/// and logs a success message when valid options are provided.
+/// </summary>
+public void ConfigurationManager_Constructor_LogsSuccess_WhenOptionsAreValid()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
-            // Assert
-            _mockLogger.Received(1).LogInformation("Multi-tenant options validated successfully.");
-            manager.Should().NotBeNull();
-        }
+// Act
+var manager = CreateManager(options);
 
-        [Fact]
-        public void GetSection_ReturnsCorrectConfigurationSection()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
-            var manager = CreateManager(options);
-            var expectedSection = Substitute.For<IConfigurationSection>();
-            _mockConfiguration.GetSection("TestSection").Returns(expectedSection);
+// Assert
+_mockLogger.Received(1).LogInformation("Multi-tenant options validated successfully.");
+manager.Should().NotBeNull();
+}
 
-            // Act
-            var result = manager.GetSection("TestSection");
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager.GetSection"/> method returns the correct
+/// configuration section for the specified key.
+/// </summary>
+public void GetSection_ReturnsCorrectConfigurationSection()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+var manager = CreateManager(options);
+var expectedSection = Substitute.For<IConfigurationSection>();
+_mockConfiguration.GetSection("TestSection").Returns(expectedSection);
 
-            // Assert
-            result.Should().Be(expectedSection);
-        }
+// Act
+var result = manager.GetSection("TestSection");
 
-        [Fact]
-        public void GetTenantSetting_ReturnsTenantSpecificSetting_WhenAvailable()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
-            var manager = CreateManager(options);
-            _mockConfiguration["Tenants:tenant123:Settings:MyKey"].Returns("TenantValue");
-            _mockConfiguration["GlobalSettings:MyKey"].Returns("GlobalValue");
+// Assert
+result.Should().Be(expectedSection);
+}
 
-            // Act
-            var result = manager.GetTenantSetting("tenant123", "MyKey");
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager.GetTenantSetting"/> method returns the tenant-specific
+/// setting when it is available.
+/// </summary>
+public void GetTenantSetting_ReturnsTenantSpecificSetting_WhenAvailable()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+var manager = CreateManager(options);
+_mockConfiguration["Tenants:tenant123:Settings:MyKey"].Returns("TenantValue");
+_mockConfiguration["GlobalSettings:MyKey"].Returns("GlobalValue");
 
-            // Assert
-            result.Should().Be("TenantValue");
-        }
+// Act
+var result = manager.GetTenantSetting("tenant123", "MyKey");
 
-        [Fact]
-        public void GetTenantSetting_ReturnsGlobalSetting_WhenTenantSpecificNotAvailable()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
-            var manager = CreateManager(options);
-            _mockConfiguration["Tenants:tenant123:Settings:MyKey"].Returns(null as string); // Explicitly null
-            _mockConfiguration["GlobalSettings:MyKey"].Returns("GlobalValue");
+// Assert
+result.Should().Be("TenantValue");
+}
 
-            // Act
-            var result = manager.GetTenantSetting("tenant123", "MyKey");
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager.GetTenantSetting"/> method returns the global setting
+/// when the tenant-specific setting is not available.
+/// </summary>
+public void GetTenantSetting_ReturnsGlobalSetting_WhenTenantSpecificNotAvailable()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+var manager = CreateManager(options);
+_mockConfiguration["Tenants:tenant123:Settings:MyKey"].Returns(null as string); // Explicitly null
+_mockConfiguration["GlobalSettings:MyKey"].Returns("GlobalValue");
 
-            // Assert
-            result.Should().Be("GlobalValue");
-        }
+// Act
+var result = manager.GetTenantSetting("tenant123", "MyKey");
 
-        [Fact]
-        public void GetTenantSetting_ReturnsNull_WhenNeitherTenantSpecificNorGlobalSettingAvailable()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
-            var manager = CreateManager(options);
-            _mockConfiguration["Tenants:tenant123:Settings:MyKey"].Returns(null as string);
-            _mockConfiguration["GlobalSettings:MyKey"].Returns(null as string);
+// Assert
+result.Should().Be("GlobalValue");
+}
 
-            // Act
-            var result = manager.GetTenantSetting("tenant123", "MyKey");
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager.GetTenantSetting"/> method returns null when neither
+/// tenant-specific nor global setting is available.
+/// </summary>
+public void GetTenantSetting_ReturnsNull_WhenNeitherTenantSpecificNorGlobalSettingAvailable()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
+var manager = CreateManager(options);
+_mockConfiguration["Tenants:tenant123:Settings:MyKey"].Returns(null as string);
+_mockConfiguration["GlobalSettings:MyKey"].Returns(null as string);
 
-            // Assert
-            result.Should().BeNull();
-        }
+// Act
+var result = manager.GetTenantSetting("tenant123", "MyKey");
 
-        [Fact]
-        public void GetMultiTenantOptions_ReturnsConfiguredOptions()
-        {
-            // Arrange
-            var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 15 };
-            var manager = CreateManager(options);
+// Assert
+result.Should().BeNull();
+}
 
-            // Act
-            var result = manager.GetMultiTenantOptions();
+[Fact]
+/// <summary>
+/// Tests that the <see cref="ConfigurationManager.GetMultiTenantOptions"/> method returns the configured
+/// <see cref="MultiTenantOptions"/> instance.
+/// </summary>
+public void GetMultiTenantOptions_ReturnsConfiguredOptions()
+{
+// Arrange
+var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 15 };
+var manager = CreateManager(options);
 
-            // Assert
-            result.Should().Be(options);
-            result.DefaultMaxConnections.Should().Be(15);
-        }
-    }
+// Act
+var result = manager.GetMultiTenantOptions();
+
+// Assert
+result.Should().Be(options);
+result.DefaultMaxConnections.Should().Be(15);
+}
+}
 }
