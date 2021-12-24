@@ -12,29 +12,66 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
+/// <summary>
+/// Test suite for verifying the behavior of <see cref="GenericRepository{TEntity}"/> implementations.
+/// This class provides unit tests for the generic repository pattern used throughout the application,
+/// ensuring that basic CRUD operations and transaction handling work as expected.
+/// </summary>
 public sealed class GenericRepositoryTests {
-    private class TestEntity { public string Id { get; set; } = string.Empty; }
+    /// <summary>
+/// Test entity used for testing generic repository operations.
+/// </summary>
+private class TestEntity { public string Id { get; set; } = string.Empty; }
 
-    private class TestGenericRepository : GenericRepository<TestEntity>
+    /// <summary>
+/// Test implementation of <see cref="GenericRepository{TEntity}"/> that uses an in-memory list for storage.
+/// This allows testing repository operations without requiring a database connection.
+/// </summary>
+private class TestGenericRepository : GenericRepository<TestEntity>
     {
-        public List<TestEntity> Items { get; } = new();
+        	/// <summary>
+	/// Gets the in-memory collection of test entities.
+	/// </summary>
+	public List<TestEntity> Items { get; } = new();
 
-        public TestGenericRepository() : base(NullLogger.Instance)
+        	/// <summary>
+	/// Initializes a new instance of the <see cref="TestGenericRepository"/> class.
+	/// </summary>
+	public TestGenericRepository() : base(NullLogger.Instance)
         {
         }
 
-        public override Task<List<TestEntity>> GetAllAsync() => Task.FromResult(new List<TestEntity>(Items));
+        	/// <summary>
+	/// Asynchronously retrieves all entities from the repository.
+	/// </summary>
+	/// <returns>A task that represents the asynchronous operation. The task result contains a list of all entities.</returns>
+	public override Task<List<TestEntity>> GetAllAsync() => Task.FromResult(new List<TestEntity>(Items));
 
-        public override Task<TestEntity?> GetByIdAsync(string id) =>
+        	/// <summary>
+	/// Asynchronously retrieves an entity by its identifier.
+	/// </summary>
+	/// <param name="id">The identifier of the entity to retrieve.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result contains the entity if found, otherwise null.</returns>
+	public override Task<TestEntity?> GetByIdAsync(string id) =>
             Task.FromResult(Items.FirstOrDefault(i => i.Id == id));
 
-        public override Task<TestEntity> CreateAsync(TestEntity entity)
+        	/// <summary>
+	/// Asynchronously creates a new entity in the repository.
+	/// </summary>
+	/// <param name="entity">The entity to create.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result contains the created entity.</returns>
+	public override Task<TestEntity> CreateAsync(TestEntity entity)
         {
             Items.Add(entity);
             return Task.FromResult(entity);
         }
 
-        public override Task<bool> UpdateAsync(TestEntity entity)
+        	/// <summary>
+	/// Asynchronously updates an existing entity in the repository.
+	/// </summary>
+	/// <param name="entity">The entity to update.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result indicates whether the update was successful.</returns>
+	public override Task<bool> UpdateAsync(TestEntity entity)
         {
             var index = Items.FindIndex(i => i.Id == entity.Id);
             if (index < 0)
@@ -44,7 +81,12 @@ public sealed class GenericRepositoryTests {
             return Task.FromResult(true);
         }
 
-        public override Task<bool> DeleteAsync(string id)
+        	/// <summary>
+	/// Asynchronously deletes an entity by its identifier.
+	/// </summary>
+	/// <param name="id">The identifier of the entity to delete.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result indicates whether the deletion was successful.</returns>
+	public override Task<bool> DeleteAsync(string id)
         {
             var item = Items.FirstOrDefault(i => i.Id == id);
             if (item is null)
@@ -54,14 +96,33 @@ public sealed class GenericRepositoryTests {
             return Task.FromResult(true);
         }
 
-        public override Task<List<TestEntity>> FindAsync(Func<TestEntity, bool> predicate) =>
+        	/// <summary>
+	/// Asynchronously finds entities that match the specified predicate.
+	/// </summary>
+	/// <param name="predicate">A function to test each entity for a condition.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result contains a list of entities that match the predicate.</returns>
+	public override Task<List<TestEntity>> FindAsync(Func<TestEntity, bool> predicate) =>
             Task.FromResult(Items.Where(predicate).ToList());
 
-        public override Task<int> GetCountAsync() => Task.FromResult(Items.Count);
+        	/// <summary>
+	/// Asynchronously gets the count of entities in the repository.
+	/// </summary>
+	/// <returns>A task that represents the asynchronous operation. The task result contains the count of entities.</returns>
+	public override Task<int> GetCountAsync() => Task.FromResult(Items.Count);
 
-        public override Task<bool> ExistsAsync(string id) => Task.FromResult(Items.Any(i => i.Id == id));
+        	/// <summary>
+	/// Asynchronously checks whether an entity with the specified identifier exists.
+	/// </summary>
+	/// <param name="id">The identifier to check.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result indicates whether the entity exists.</returns>
+	public override Task<bool> ExistsAsync(string id) => Task.FromResult(Items.Any(i => i.Id == id));
 
-        public override Task<int> DeleteAsync(Func<TestEntity, bool> predicate)
+        	/// <summary>
+	/// Asynchronously deletes entities that match the specified predicate.
+	/// </summary>
+	/// <param name="predicate">A function to test each entity for a condition.</param>
+	/// <returns>A task that represents the asynchronous operation. The task result contains the count of deleted entities.</returns>
+	public override Task<int> DeleteAsync(Func<TestEntity, bool> predicate)
         {
             var toRemove = Items.Where(predicate).ToList();
             foreach (var item in toRemove)
@@ -70,22 +131,47 @@ public sealed class GenericRepositoryTests {
             return Task.FromResult(toRemove.Count);
         }
 
-        public Task<int> SaveChangesAsync() => Task.FromResult(0);
+        	/// <summary>
+	/// Asynchronously saves all changes made in the repository.
+	/// </summary>
+	/// <returns>A task that represents the asynchronous operation. The task result contains the number of changes saved (always 0 for this test implementation).</returns>
+	public Task<int> SaveChangesAsync() => Task.FromResult(0);
 
-        public Task BeginTransactionAsync() => Task.CompletedTask;
+        	/// <summary>
+	/// Asynchronously begins a new transaction.
+	/// </summary>
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	public Task BeginTransactionAsync() => Task.CompletedTask;
 
-        public Task CommitAsync() => Task.CompletedTask;
+        	/// <summary>
+	/// Asynchronously commits the current transaction.
+	/// </summary>
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	public Task CommitAsync() => Task.CompletedTask;
 
-        public Task RollbackAsync() => Task.CompletedTask;
+        	/// <summary>
+	/// Asynchronously rolls back the current transaction.
+	/// </summary>
+	/// <returns>A task that represents the asynchronous operation.</returns>
+	public Task RollbackAsync() => Task.CompletedTask;
 
-        public void Dispose()
+        	/// <summary>
+	/// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+	/// </summary>
+	public void Dispose()
         {
         }
     }
 
-    private readonly TestGenericRepository _repository;
+    	/// <summary>
+	/// Gets the test repository instance used for all test operations.
+	/// </summary>
+	private readonly TestGenericRepository _repository;
 
-    public GenericRepositoryTests()
+    	/// <summary>
+	/// Initializes a new instance of the <see cref="GenericRepositoryTests"/> class.
+	/// </summary>
+	public GenericRepositoryTests()
     {
         _repository = new TestGenericRepository();
     }
