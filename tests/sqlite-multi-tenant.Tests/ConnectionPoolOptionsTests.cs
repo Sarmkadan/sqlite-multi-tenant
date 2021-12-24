@@ -11,7 +11,13 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
+    /// <summary>
+    /// Tests for the ConnectionPoolOptions class.
+    /// </summary>
     public sealed class ConnectionPoolOptionsTests {
+        /// <summary>
+        /// Verifies that Validate does not throw an exception when given valid options.
+        /// </summary>
         [Fact]
         public void Validate_WithValidOptions_DoesNotThrow()
         {
@@ -33,6 +39,9 @@ namespace SqliteMultiTenant.Tests
             act.Should().NotThrow();
         }
 
+        /// <summary>
+        /// Verifies that Validate does not throw an exception when MinPoolSize is zero.
+        /// </summary>
         [Fact]
         public void Validate_WithMinPoolSizeZero_DoesNotThrow()
         {
@@ -54,6 +63,9 @@ namespace SqliteMultiTenant.Tests
             act.Should().NotThrow();
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when MinPoolSize is negative.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenMinPoolSizeIsNegative()
         {
@@ -69,6 +81,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("MinPoolSize must be non-negative. (Parameter 'MinPoolSize')");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when MaxPoolSize is zero.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenMaxPoolSizeIsZero()
         {
@@ -84,6 +99,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("MaxPoolSize must be at least 1. (Parameter 'MaxPoolSize')");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when MaxPoolSize is negative.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenMaxPoolSizeIsNegative()
         {
@@ -99,6 +117,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("MaxPoolSize must be at least 1. (Parameter 'MaxPoolSize')");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when MinPoolSize exceeds MaxPoolSize.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentException_WhenMinPoolSizeExceedsMaxPoolSize()
         {
@@ -113,6 +134,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("MinPoolSize cannot exceed MaxPoolSize.");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when IdleTimeout is zero.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenIdleTimeoutIsZero()
         {
@@ -128,6 +152,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("IdleTimeout must be positive. (Parameter 'IdleTimeout')");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when AcquireTimeout is zero.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenAcquireTimeoutIsZero()
         {
@@ -143,6 +170,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("AcquireTimeout must be positive. (Parameter 'AcquireTimeout')");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when MaxConnectionLifetime is zero.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenMaxConnectionLifetimeIsZero()
         {
@@ -158,6 +188,9 @@ namespace SqliteMultiTenant.Tests
                 .WithMessage("MaxConnectionLifetime must be positive. (Parameter 'MaxConnectionLifetime')");
         }
 
+        /// <summary>
+        /// Verifies that Validate throws an exception when PruneInterval is zero.
+        /// </summary>
         [Fact]
         public void Validate_ThrowsArgumentOutOfRangeException_WhenPruneIntervalIsZero()
         {
