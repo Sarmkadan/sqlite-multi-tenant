@@ -17,11 +17,29 @@ using SqliteMultiTenant.Repositories;
 
 namespace SqliteMultiTenant.Tests
 {
-    public sealed class TenantRepositoryIntegrationTests : IDisposable {
+    /// <summary>
+    /// Integration tests for the TenantRepository class.
+    /// </summary>
+    public sealed class TenantRepositoryIntegrationTests : IDisposable 
+    {
+        /// <summary>
+        /// The path to the temporary database file used for testing.
+        /// </summary>
         private readonly string _dbPath;
+
+        /// <summary>
+        /// The connection string to the temporary database file.
+        /// </summary>
         private readonly string _connectionString;
+
+        /// <summary>
+        /// The TenantRepository instance being tested.
+        /// </summary>
         private readonly TenantRepository _tenantRepository;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TenantRepositoryIntegrationTests"/> class.
+        /// </summary>
         public TenantRepositoryIntegrationTests()
         {
             _dbPath = Path.Combine(Path.GetTempPath(), $"tenant_repo_tests_{Guid.NewGuid():N}.db");
@@ -32,6 +50,9 @@ namespace SqliteMultiTenant.Tests
             SeedData();
         }
 
+        /// <summary>
+        /// Seeds the database with initial tenant data for testing.
+        /// </summary>
         private void SeedData()
         {
             using var connection = new SQLiteConnection(_connectionString);
@@ -41,6 +62,13 @@ namespace SqliteMultiTenant.Tests
             InsertTenant(connection, "repo-tenant-b", "RepositoryTenantB", "repo_tenantB.db");
         }
 
+        /// <summary>
+        /// Inserts a new tenant into the database.
+        /// </summary>
+        /// <param name="connection">The SQLite connection to use.</param>
+        /// <param name="tenantId">The ID of the tenant to insert.</param>
+        /// <param name="name">The name of the tenant to insert.</param>
+        /// <param name="databasePath">The database path of the tenant to insert.</param>
         private static void InsertTenant(SQLiteConnection connection, string tenantId, string name, string databasePath)
         {
             using var command = connection.CreateCommand();
@@ -54,6 +82,9 @@ namespace SqliteMultiTenant.Tests
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Verifies that GetAllAsync returns all tenants in the database.
+        /// </summary>
         [Fact]
         public async Task GetAllAsync_ShouldReturnAllTenants()
         {
@@ -67,6 +98,10 @@ namespace SqliteMultiTenant.Tests
             tenants.Should().Contain(t => t.Name == "RepositoryTenantB");
         }
 
+        /// <summary>
+        /// Verifies that GetByIdAsync returns the correct tenant when it exists.
+        /// </summary>
+        /// <param name="tenantId">The ID of the tenant to retrieve.</param>
         [Fact]
         public async Task GetByIdAsync_ShouldReturnCorrectTenant_WhenTenantExists()
         {
@@ -81,6 +116,10 @@ namespace SqliteMultiTenant.Tests
             tenant!.Name.Should().Be("RepositoryTenantA");
         }
 
+        /// <summary>
+        /// Verifies that GetByIdAsync returns null when the tenant does not exist.
+        /// </summary>
+        /// <param name="nonExistingId">The ID of a non-existing tenant.</param>
         [Fact]
         public async Task GetByIdAsync_ShouldReturnNull_WhenTenantDoesNotExist()
         {
@@ -94,6 +133,10 @@ namespace SqliteMultiTenant.Tests
             tenant.Should().BeNull();
         }
 
+        /// <summary>
+        /// Verifies that AddAsync adds a new tenant to the database.
+        /// </summary>
+        /// <param name="newTenant">The new tenant to add.</param>
         [Fact]
         public async Task AddAsync_ShouldAddTenantToDatabase()
         {
@@ -112,6 +155,10 @@ namespace SqliteMultiTenant.Tests
             tenantInDb!.Name.Should().Be("RepositoryTenantC");
         }
 
+        /// <summary>
+        /// Verifies that UpdateAsync updates an existing tenant in the database.
+        /// </summary>
+        /// <param name="tenantToUpdate">The tenant to update.</param>
         [Fact]
         public async Task UpdateAsync_ShouldUpdateTenantInDatabase()
         {
@@ -129,6 +176,10 @@ namespace SqliteMultiTenant.Tests
             tenantInDb!.DatabasePath.Should().Be("updated_repo_tenantA.db");
         }
 
+        /// <summary>
+        /// Verifies that DeleteAsync removes a tenant from the database.
+        /// </summary>
+        /// <param name="tenantIdToDelete">The ID of the tenant to delete.</param>
         [Fact]
         public async Task DeleteAsync_ShouldRemoveTenantFromDatabase()
         {
@@ -143,6 +194,9 @@ namespace SqliteMultiTenant.Tests
             tenantInDb.Should().BeNull();
         }
 
+        /// <summary>
+        /// Disposes of the test class, deleting the temporary database file.
+        /// </summary>
         public void Dispose()
         {
             if (File.Exists(_dbPath))
