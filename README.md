@@ -26,4 +26,32 @@ string joinedSelect = benchmarks.SelectWithJoin();
 string insertQuery = benchmarks.InsertBuild();
 ```
 
+## TenantValidationBenchmarks
+
+The `TenantValidationBenchmarks` class measures the performance of tenant validation operations that run on every inbound API request creating or resolving a tenant. It benchmarks validation of tenant IDs (including reserved names and SQL injection attempts) and tenant names, as well as tenant ID generation to evaluate the throughput characteristics of the validation pipeline.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using SqliteMultiTenant.Benchmarks;
+
+var benchmarks = new TenantValidationBenchmarks();
+
+// Validate a valid tenant ID
+ValidationResult validIdResult = benchmarks.ValidateTenantId_Valid();
+
+// Validate a reserved tenant ID (e.g., "admin")
+ValidationResult reservedIdResult = benchmarks.ValidateTenantId_Reserved();
+
+// Validate a tenant ID with potential SQL injection
+ValidationResult sqlInjectionResult = benchmarks.ValidateTenantId_SqlInjection();
+
+// Validate a tenant name
+ValidationResult nameResult = benchmarks.ValidateTenantName();
+
+// Generate a tenant ID from a company name
+string generatedId = benchmarks.GenerateTenantId();
+```
+
 // existing content ...
