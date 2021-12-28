@@ -1,34 +1,8 @@
 // existing content ...
 
-## QueryBuilderBenchmarks
+## StringOperationsBenchmarks
 
-The `QueryBuilderBenchmarks` class measures SQL generation overhead in the `QueryBuilder` class, which is exercised during tenant resolution, migration execution, and backup operations. It benchmarks common query patterns like simple selects, ordered/limited queries, joins, and inserts to evaluate performance characteristics of SQL generation logic.
-
-### Usage Example
-
-```csharp
-using SqliteMultiTenant.DataOperations;
-using SqliteMultiTenant.Benchmarks;
-
-var benchmarks = new QueryBuilderBenchmarks();
-benchmarks.Setup();
-
-// Generate a simple SELECT query
-string simpleSelect = benchmarks.SimpleSelect();
-
-// Generate a SELECT with ORDER BY and LIMIT
-string orderedSelect = benchmarks.SelectWithOrderAndLimit();
-
-// Generate a SELECT with JOIN
-string joinedSelect = benchmarks.SelectWithJoin();
-
-// Generate an INSERT query
-string insertQuery = benchmarks.InsertBuild();
-```
-
-## TenantValidationBenchmarks
-
-The `TenantValidationBenchmarks` class measures the performance of tenant validation operations that run on every inbound API request creating or resolving a tenant. It benchmarks validation of tenant IDs (including reserved names and SQL injection attempts) and tenant names, as well as tenant ID generation to evaluate the throughput characteristics of the validation pipeline.
+The `StringOperationsBenchmarks` class measures the performance of string operations used in the `SqliteMultiTenant` library. It benchmarks the computation of SHA-256 and MD5 hashes, conversion of strings to snake case and camel case, and sanitization of file paths.
 
 ### Usage Example
 
@@ -36,22 +10,22 @@ The `TenantValidationBenchmarks` class measures the performance of tenant valida
 using SqliteMultiTenant.Utilities;
 using SqliteMultiTenant.Benchmarks;
 
-var benchmarks = new TenantValidationBenchmarks();
+var benchmarks = new StringOperationsBenchmarks();
 
-// Validate a valid tenant ID
-ValidationResult validIdResult = benchmarks.ValidateTenantId_Valid();
+// Compute the SHA-256 hash of a string
+string sha256Hash = benchmarks.ComputeSha256Hash("tenant-connection-string:acme-corp:primary-db");
 
-// Validate a reserved tenant ID (e.g., "admin")
-ValidationResult reservedIdResult = benchmarks.ValidateTenantId_Reserved();
+// Compute the MD5 hash of a string
+string md5Hash = benchmarks.ComputeMd5Hash("tenant-connection-string:acme-corp:primary-db");
 
-// Validate a tenant ID with potential SQL injection
-ValidationResult sqlInjectionResult = benchmarks.ValidateTenantId_SqlInjection();
+// Convert a string to snake case
+string snakeCase = benchmarks.ToSnakeCase("myTenantDatabaseConnectionString");
 
-// Validate a tenant name
-ValidationResult nameResult = benchmarks.ValidateTenantName();
+// Convert a string to camel case
+string camelCase = benchmarks.ToCamelCase("my_tenant_database_connection_string");
 
-// Generate a tenant ID from a company name
-string generatedId = benchmarks.GenerateTenantId();
+// Sanitize a file path
+string sanitizedFilePath = benchmarks.SanitizeForFilePath("tenant<db>file:name/sub|dir\\test*file");
 ```
 
 // existing content ...
