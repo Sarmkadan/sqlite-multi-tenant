@@ -84,6 +84,54 @@ Console.WriteLine($"Current requests: {status.CurrentCount}");
 await rateLimiter.ResetAsync(clientIp);
 ```
 
+## EncryptionKeyManager
+
+The `EncryptionKeyManager` class manages encryption keys for multi-tenant applications, providing key generation, rotation, retrieval, and deletion capabilities. It ensures each tenant has its own unique encryption keys and supports key rotation without data loss.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Security;
+
+// Setup in DI container
+var services = new ServiceCollection();
+services.AddSingleton<EncryptionKeyManager>();
+
+// Resolve the service
+var serviceProvider = services.BuildServiceProvider();
+var keyManager = serviceProvider.GetRequiredService<EncryptionKeyManager>();
+
+// Generate a new encryption key for a tenant
+string tenantId = "acme-corp";
+EncryptionKey newKey = await keyManager.GenerateKeyAsync(tenantId);
+Console.WriteLine($"Generated key: {newKey.KeyId}, Version: {newKey.Version}");
+
+// Get the active key for a tenant
+EncryptionKey activeKey = await keyManager.GetActiveKeyAsync(tenantId);
+Console.WriteLine($"Active key: {activeKey.KeyId}, IsActive: {activeKey.IsActive}");
+
+// Rotate the active key for a tenant (creates a new key and marks old one as inactive)
+EncryptionKey rotatedKey = await keyManager.RotateKeyAsync(tenantId);
+Console.WriteLine($"Rotated key: {rotatedKey.KeyId}, Previous: {rotatedKey.PreviousKeyId}");
+
+// Get a specific key version
+EncryptionKey specificKey = await keyManager.GetKeyVersionAsync(tenantId, 1);
+Console.WriteLine($"Key version 1: {specificKey.KeyId}");
+
+// Delete all keys for a tenant (when tenant is removed)
+bool deleted = await keyManager.DeleteTenantKeysAsync(tenantId);
+Console.WriteLine($"Tenant keys deleted: {deleted}");
+
+// EncryptionKey properties
+Console.WriteLine($"Key ID: {newKey.KeyId}");
+Console.WriteLine($"Tenant ID: {newKey.TenantId}");
+Console.WriteLine($"Key Material Length: {newKey.KeyMaterial?.Length ?? 0}");
+Console.WriteLine($"Created At: {newKey.CreatedAt}");
+Console.WriteLine($"Is Active: {newKey.IsActive}");
+Console.WriteLine($"Version: {newKey.Version}");
+```
+
 ## StringOperationsBenchmarks
 
 The `StringOperationsBenchmarks` class measures the performance of string operations used in the `SqliteMultiTenant` library. It benchmarks the computation of SHA-256 and MD5 hashes, conversion of strings to snake case and camel case, and sanitization of file paths.
