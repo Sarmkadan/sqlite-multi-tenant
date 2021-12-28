@@ -132,6 +132,43 @@ Console.WriteLine($"Is Active: {newKey.IsActive}");
 Console.WriteLine($"Version: {newKey.Version}");
 ```
 
+## MigrationException
+
+The `MigrationException` class represents exceptions that occur during database migration operations in multi-tenant applications. It provides detailed information about migration failures including the migration ID, version, and the specific type of failure that occurred. This exception type supports structured error handling for migration-related operations.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Exceptions;
+
+// Create a migration exception for a failed execution
+var executionFailed = new MigrationException("Failed to execute migration 'AddTenantIdColumn' for version '2.1.0'")
+{
+    MigrationId = "AddTenantIdColumn",
+    MigrationVersion = "2.1.0"
+};
+
+// Create a rollback failure exception
+var rollbackFailed = MigrationException.RollbackFailed("Unable to rollback migration 'CreateTenantsTable' - database in inconsistent state",
+    "CreateTenantsTable",
+    "1.0.0");
+
+// Create a not found exception
+var notFound = MigrationException.NotFound("Migration with ID 'RemoveLegacyColumns' not found in migration history",
+    "RemoveLegacyColumns");
+
+// Create an already applied exception
+var alreadyApplied = MigrationException.AlreadyApplied("Migration 'AddIndexOnTenantId' has already been applied to database",
+    "AddIndexOnTenantId",
+    "2.2.0");
+
+// Access exception properties
+Console.WriteLine($"Exception Type: {executionFailed.GetType().Name}");
+Console.WriteLine($"Message: {executionFailed.Message}");
+Console.WriteLine($"Migration ID: {executionFailed.MigrationId}");
+Console.WriteLine($"Migration Version: {executionFailed.MigrationVersion}");
+```
+
 ## StringOperationsBenchmarks
 
 The `StringOperationsBenchmarks` class measures the performance of string operations used in the `SqliteMultiTenant` library. It benchmarks the computation of SHA-256 and MD5 hashes, conversion of strings to snake case and camel case, and sanitization of file paths.
