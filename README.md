@@ -169,6 +169,39 @@ Console.WriteLine($"Migration ID: {executionFailed.MigrationId}");
 Console.WriteLine($"Migration Version: {executionFailed.MigrationVersion}");
 ```
 
+## TenantNotFoundException
+
+`TenantNotFoundException` is thrown when a requested tenant cannot be found in the system. It derives from `Exception` and exposes the missing tenant identifier through the `TenantId` property, allowing callers to react specifically to tenant‑lookup failures.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Exceptions;
+
+// Service method that looks up a tenant
+public Tenant GetTenant(string tenantId)
+{
+    var tenant = _tenantRepository.FindById(tenantId);
+    if (tenant == null)
+    {
+        // Throw a specific exception that includes the missing tenant ID
+        throw new TenantNotFoundException(tenantId);
+    }
+
+    return tenant;
+}
+
+// Caller handling the exception
+try
+{
+    var tenant = GetTenant("nonexistent-tenant");
+}
+catch (TenantNotFoundException ex)
+{
+    Console.WriteLine($"Tenant not found: {ex.TenantId}");
+}
+```
+
 ## StringOperationsBenchmarks
 
 The `StringOperationsBenchmarks` class measures the performance of string operations used in the `SqliteMultiTenant` library. It benchmarks the computation of SHA-256 and MD5 hashes, conversion of strings to snake case and camel case, and sanitization of file paths.
@@ -197,4 +230,4 @@ string camelCase = benchmarks.ToCamelCase("my_tenant_database_connection_string"
 string sanitizedFilePath = benchmarks.SanitizeForFilePath("tenant<db>file:name/sub|dir\\test*file");
 ```
 
-// existing content ...
+ // existing content ...
