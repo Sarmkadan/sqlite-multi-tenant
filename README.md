@@ -1,8 +1,8 @@
 // existing content ...
 
-## IExceptionProcessor
+## DatabaseAccessException
 
-The `IExceptionProcessor` interface provides a centralized exception processing and error handling mechanism. It converts exceptions to user-friendly error responses, handles logging, categorization, and HTTP status code mapping.
+The `DatabaseAccessException` is a custom exception class that represents a database access error. It provides additional context about the error, including the database ID and the type of operation that failed.
 
 ### Usage Example
 
@@ -10,17 +10,12 @@ The `IExceptionProcessor` interface provides a centralized exception processing 
 using SqliteMultiTenant.Exceptions;
 
 // Create an instance of the exception processor
-var exceptionProcessor = new ExceptionProcessor(ILogger<ExceptionProcessor>.CreateLogger());
-
-// Process an exception and get the error response
-var exception = new Exception("Something went wrong");
-var errorResponse = exceptionProcessor.ProcessException(exception);
+var exception = DatabaseAccessException.ConnectionFailed("my_database", new Exception("Connection failed"));
 
 // Log the exception with context information
-exception.LogWithContext(ILogger<ExceptionProcessor>.CreateLogger(), "My Context");
-
-// Check if the exception is transient (can be retried)
-var isTransient = exception.IsTransient();
+Console.WriteLine(exception.Message);
+Console.WriteLine($"Database ID: {exception.DatabaseId}");
+Console.WriteLine($"Operation Type: {exception.OperationType}");
 ```
 
 // existing content ...
