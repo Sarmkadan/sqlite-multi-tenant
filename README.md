@@ -18,4 +18,36 @@ Console.WriteLine($"Database ID: {exception.DatabaseId}");
 Console.WriteLine($"Operation Type: {exception.OperationType}");
 ```
 
+## BackupException
+
+The `BackupException` is a custom exception class that represents errors during backup operations. It provides additional context about the error, including the backup ID, database ID, and the type of backup operation that failed.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Exceptions;
+
+// Create a backup exception for a failed creation operation
+var creationException = BackupException.CreationFailed("customer_db", new Exception("Disk full"));
+Console.WriteLine(creationException.Message);
+Console.WriteLine($"Backup ID: {creationException.BackupId}");
+Console.WriteLine($"Database ID: {creationException.DatabaseId}");
+
+// Create a backup exception for a failed verification operation
+var verificationException = BackupException.VerificationFailed("backup_20241215_1430", "customer_db");
+Console.WriteLine(verificationException.Message);
+Console.WriteLine($"Backup ID: {verificationException.BackupId}");
+Console.WriteLine($"Database ID: {verificationException.DatabaseId}");
+
+// Create a backup exception for a failed restore operation
+var restoreException = BackupException.RestoreFailed("backup_20241215_1430", "customer_db", new Exception("File corrupted"));
+Console.WriteLine(restoreException.Message);
+Console.WriteLine($"Backup ID: {restoreException.BackupId}");
+Console.WriteLine($"Database ID: {restoreException.DatabaseId}");
+
+// Create a backup exception for a not found scenario
+var notFoundException = BackupException.NotFound("backup_20241215_1430");
+Console.WriteLine(notFoundException.Message);
+```
+
 // existing content ...
