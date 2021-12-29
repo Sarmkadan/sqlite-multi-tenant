@@ -1,5 +1,46 @@
 // existing content ...
 
+## IEventBus
+
+The `IEventBus` interface provides a lightweight event bus implementation for publishing and subscribing to events within the multi-tenant SQLite application. It supports strongly-typed events with compile-time safety and includes a dead-letter queue for handling failed event deliveries.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+
+// Create an event bus instance
+var eventBus = new EventBus();
+
+// Subscribe to an event type
+await eventBus.SubscribeAsync<MyCustomEvent>(async (ev) => {
+    Console.WriteLine($"Received event: {ev.Id}");
+    // Handle the event
+});
+
+// Publish an event
+var customEvent = new MyCustomEvent { Id = Guid.NewGuid().ToString(), Data = "test" };
+await eventBus.PublishAsync(customEvent);
+
+// Check subscriber count
+var subscribers = eventBus.GetSubscriberCount<MyCustomEvent>();
+
+// Access dead-letter queue for failed events
+var dlq = eventBus.GetDeadLetterQueue();
+
+// Get failed events
+var failedEvents = await dlq.GetFailedEventsAsync<MyCustomEvent>();
+
+// Remove a failed event
+if (failedEvents.Count > 0)
+{
+    await dlq.RemoveAsync(failedEvents[0].Id);
+}
+
+// Get count of failed events
+var count = await dlq.GetCountAsync<MyCustomEvent>();
+```
+
 ## DatabaseAccessException
 
 The `DatabaseAccessException` is a custom exception class that represents a database access error. It provides additional context about the error, including the database ID and the type of operation that failed.
