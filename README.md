@@ -118,4 +118,53 @@ Console.WriteLine($"Export format: {exportEvent.Format}");
 Console.WriteLine($"Operation ID: {exportEvent.OperationId}");
 ```
 
+## DomainEvent
+
+The `DomainEvent` class serves as the base class for all domain events in the multi-tenant SQLite application. It provides a standardized structure for domain events with essential metadata including a unique event identifier, timestamp, event type, and optional tenant context. Domain events enable loose coupling between components, support audit logging, and facilitate event-driven architecture patterns.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+
+// Create a tenant created event
+var tenantCreatedEvent = new TenantCreatedEvent {
+    TenantId = "tenant_123",
+    TenantName = "Acme Corporation",
+    ContactEmail = "admin@acme.com"
+};
+
+// Set tenant context (optional)
+tenantCreatedEvent.TenantId = "tenant_123";
+
+// Access base event properties
+Console.WriteLine($"Event ID: {tenantCreatedEvent.EventId}");
+Console.WriteLine($"Occurred at: {tenantCreatedEvent.OccurredAt}");
+Console.WriteLine($"Event type: {tenantCreatedEvent.EventType}");
+Console.WriteLine($"Tenant ID: {tenantCreatedEvent.TenantId}");
+
+// Publish the event to the event bus
+await eventBus.PublishAsync(tenantCreatedEvent);
+
+// Create a tenant updated event
+var tenantUpdatedEvent = new TenantUpdatedEvent {
+    TenantId = "tenant_123",
+    OldName = "Acme Corporation",
+    NewName = "Acme Corp LLC"
+};
+
+// Publish the updated event
+await eventBus.PublishAsync(tenantUpdatedEvent);
+
+// Create a tenant suspended event
+var tenantSuspendedEvent = new TenantSuspendedEvent {
+    TenantId = "tenant_456",
+    SuspendedBy = "admin@acme.com",
+    Reason = "Non-payment"
+};
+
+// Publish the suspended event
+await eventBus.PublishAsync(tenantSuspendedEvent);
+```
+
 // existing content ...
