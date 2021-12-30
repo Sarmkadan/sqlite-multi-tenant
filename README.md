@@ -68,3 +68,37 @@ var @event = new TenantCreatedNotificationEvent
 // Handle the event asynchronously
 await handler.HandleAsync(@event);
 ```
+
+## IEventPublisher
+
+The `IEventPublisher` interface provides a mechanism for publishing domain events and managing event handlers. It supports both synchronous and asynchronous event handling, with built-in logging and error resilience. The `EventPublisher` class implements this interface and manages a registry of event handlers.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+using Microsoft.Extensions.Logging;
+
+// Create a logger and event publisher
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<EventPublisher>();
+var eventPublisher = new EventPublisher(logger);
+
+// Subscribe a logging handler for MyCustomEvent
+eventPublisher.Subscribe<MyCustomEvent>(new LoggingEventHandler<MyCustomEvent>(logger));
+
+// Create and publish a custom event
+var myEvent = new MyCustomEvent
+{
+    EventId = Guid.NewGuid().ToString(),
+    EventType = "MyCustomEvent",
+    OccurredAt = DateTime.UtcNow
+};
+
+await eventPublisher.PublishAsync(myEvent);
+
+// Check how many handlers are registered for this event type
+int handlerCount = eventPublisher.GetHandlerCount<MyCustomEvent>();
+Console.WriteLine($"Registered handlers: {handlerCount}");
+```
+
