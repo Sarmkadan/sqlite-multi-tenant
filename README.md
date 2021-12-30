@@ -91,4 +91,31 @@ var notFoundException = BackupException.NotFound("backup_20241215_1430");
 Console.WriteLine(notFoundException.Message);
 ```
 
+## BulkExportStartedEvent
+
+The `BulkExportStartedEvent` is raised when a bulk export operation begins. It provides essential context for monitoring dashboards and audit trails, including the source database identifier, tables being exported, output format, and a correlation token that links this event to subsequent `BulkExportCompletedEvent` or `BulkExportFailedEvent` events.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+
+// Create a bulk export started event
+var exportEvent = new BulkExportStartedEvent {
+    DatabaseId = "customer_database_2024",
+    TableNames = new List<string> { "Customers", "Orders", "Products" },
+    Format = "Json",
+    OperationId = Guid.NewGuid().ToString()
+};
+
+// Publish the event to the event bus
+await eventBus.PublishAsync(exportEvent);
+
+// Access event properties
+Console.WriteLine($"Export started for database: {exportEvent.DatabaseId}");
+Console.WriteLine($"Tables to export: {string.Join(", ", exportEvent.TableNames)}");
+Console.WriteLine($"Export format: {exportEvent.Format}");
+Console.WriteLine($"Operation ID: {exportEvent.OperationId}");
+```
+
 // existing content ...
