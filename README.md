@@ -340,3 +340,39 @@ int handlerCount = eventPublisher.GetHandlerCount<MyCustomEvent>();
 Console.WriteLine($"Registered handlers: {handlerCount}");
 ```
 
+## HttpClientWrapper
+
+The `HttpClientWrapper` class provides a resilient wrapper around `HttpClient` to handle HTTP requests with automatic retry logic, exponential backoff, and structured logging. It simplifies interacting with external APIs by providing high-level typed methods for GET, POST, PUT, and DELETE operations, while ensuring robust error handling.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+
+// Create a logger and an HttpClient instance
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<HttpClientWrapper>();
+var httpClient = new HttpClient();
+
+// Create the wrapper instance
+var wrapper = new HttpClientWrapper(httpClient, logger, maxRetries: 3, retryDelayMs: 1000);
+
+// Configure request headers
+wrapper.AddDefaultHeader("X-Custom-Header", "Value");
+wrapper.SetBearerToken("my-secure-token");
+
+// Perform a typed GET request
+var data = await wrapper.GetAsync<Dictionary<string, string>>("https://api.example.com/data");
+
+// Perform a typed POST request
+var payload = new { Key = "Value" };
+var result = await wrapper.PostAsync<Dictionary<string, string>>("https://api.example.com/post", payload);
+
+// Perform a PUT request
+bool putSuccess = await wrapper.PutAsync("https://api.example.com/put", payload);
+
+// Perform a DELETE request
+bool deleteSuccess = await wrapper.DeleteAsync("https://api.example.com/delete/1");
+```
