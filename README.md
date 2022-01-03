@@ -122,6 +122,71 @@ var response = await httpClientService.SendAsync(
 response.EnsureSuccessStatusCode();
 ```
 
+## IWebhookHandler
+
+The `IWebhookHandler` interface provides a contract for subscribing to domain events and delivering them to external webhook endpoints. It manages webhook subscriptions, event delivery attempts, and retry logic for failed deliveries. Implementations handle registration, unregistration, and asynchronous delivery of events to configured webhook URLs.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+
+// Create a logger and HTTP client
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<WebhookHandler>();
+var httpClient = new HttpClient();
+
+// Create the webhook handler with HTTP client
+var webhookHandler = new WebhookHandler(httpClient, logger);
+
+// Register a new webhook subscription
+var subscription = new WebhookHandlerSubscription
+{
+    WebhookId = Guid.NewGuid().ToString(),
+    Url = "https://webhook.site/12345",
+    EventType = "TenantCreatedNotificationEvent",
+    Enabled = true,
+    Headers = new Dictionary<string, string>
+    {
+        { "X-Api-Key", "secret-key-123" },
+        { "Content-Type", "application/json" }
+    },
+    CreatedAt = DateTime.UtcNow
+};
+
+await webhookHandler.RegisterAsync(subscription);
+
+// Create a domain event to deliver
+var tenantEvent = new TenantCreatedNotificationEvent
+{
+    TenantId = "tenant-123",
+    TenantName = "Acme Corp",
+    TenantDescription = "Demo tenant for testing",
+    EventId = Guid.NewGuid().ToString(),
+    OccurredAt = DateTime.UtcNow
+};
+
+// Deliver the event to the registered webhook
+var delivery = new WebhookDelivery
+{
+    DeliveryId = Guid.NewGuid().ToString(),
+    WebhookId = subscription.WebhookId,
+    Url = subscription.Url,
+    Event = tenantEvent,
+    Headers = subscription.Headers,
+    RetryCount = 0,
+    MaxRetries = 3
+};
+
+await webhookHandler.DeliverAsync(delivery);
+
+// Unregister the webhook when no longer needed
+await webhookHandler.UnregisterAsync(subscription.WebhookId);
+```
+
 ## IEventPublisher
 
 The `IEventPublisher` interface provides a mechanism for publishing domain events and managing event handlers. It supports both synchronous and asynchronous event handling, with built-in logging and error resilience. The `EventPublisher` class implements this interface and manages a registry of event handlers.
