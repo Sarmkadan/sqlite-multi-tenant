@@ -254,6 +254,59 @@ var response = await client.GetAsync("/data");
 response.EnsureSuccessStatusCode();
 ```
 
+## WebhookService
+
+The `WebhookService` class manages webhook subscriptions and asynchronous event delivery to external endpoints. It supports event filtering, retry logic for failed deliveries, and automatic deactivation of webhooks after repeated failures. The service handles registration, unregistration, and delivery of events with configurable headers and optional HMAC signature verification.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+
+// Create a logger for the webhook service
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<WebhookService>();
+
+// Create the webhook service instance
+var webhookService = new WebhookService(logger);
+
+// Subscribe to a specific event type
+var subscriptionId = await webhookService.SubscribeAsync(
+    eventType: "TenantCreatedNotificationEvent",
+    webhookUrl: "https://webhook.site/12345",
+    headers: new Dictionary<string, string>
+    {
+        { "X-Api-Key", "your-secret-key-here" },
+        { "Content-Type", "application/json" }
+    },
+    secret: "webhook-secret-123"
+);
+Console.WriteLine($"Webhook subscription created with ID: {subscriptionId}");
+
+// Get all active subscriptions for an event type
+var subscriptions = await webhookService.GetSubscriptionsAsync("TenantCreatedNotificationEvent");
+foreach (var subscription in subscriptions)
+{
+    Console.WriteLine($"Subscription: {subscription.Id} -> {subscription.WebhookUrl}");
+}
+
+// Trigger webhooks for an event (delivers to all registered subscribers)
+var tenantEvent = new TenantCreatedNotificationEvent
+{
+    TenantId = "tenant-123",
+    TenantName = "Acme Corp",
+    TenantDescription = "Demo tenant for testing",
+    EventId = Guid.NewGuid().ToString(),
+    OccurredAt = DateTime.UtcNow
+};
+await webhookService.TriggerWebhooksAsync("TenantCreatedNotificationEvent", tenantEvent);
+
+// Unsubscribe when no longer needed
+var unsubscribed = await webhookService.UnsubscribeAsync(subscriptionId);
+Console.WriteLine($"Unsubscription successful: {unsubscribed}");
+```
+
 ## IEventPublisher
 
 The `IEventPublisher` interface provides a mechanism for publishing domain events and managing event handlers. It supports both synchronous and asynchronous event handling, with built-in logging and error resilience. The `EventPublisher` class implements this interface and manages a registry of event handlers.
