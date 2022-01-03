@@ -187,6 +187,73 @@ await webhookHandler.DeliverAsync(delivery);
 await webhookHandler.UnregisterAsync(subscription.WebhookId);
 ```
 
+## MultiTenantHttpClientFactory
+
+The `MultiTenantHttpClientFactory` class creates and manages HTTP clients with tenant-aware headers and configuration. It provides both direct client creation and a fluent builder pattern for configuring HTTP clients with tenant-specific settings such as API keys, timeouts, base addresses, and custom headers. Clients are cached for reuse across requests to improve performance.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+
+// Create a logger and factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<MultiTenantHttpClientFactory>();
+var factory = new MultiTenantHttpClientFactory(logger);
+
+// Create a client with tenant context (creates and caches a new client)
+var client = factory.CreateClientForTenant(
+    tenantId: "tenant-123",
+    apiKey: "your-api-key-here",
+    timeoutSeconds: 60,
+    baseAddress: "https://api.example.com"
+);
+
+// Make an authenticated request to an external API
+var response = await client.GetAsync("/users");
+response.EnsureSuccessStatusCode();
+var content = await response.Content.ReadAsStringAsync();
+
+// Get a cached client by tenant ID
+var cachedClient = factory.GetCachedClient("tenant-123");
+
+// Invalidate a specific tenant's client (useful when tenant config changes)
+factory.InvalidateClient("tenant-123");
+
+// Clear all cached clients when shutting down the application
+factory.ClearCache();
+
+// Dispose the factory (automatically clears cache)
+factory.Dispose();
+```
+
+### Using the TenantHttpClientBuilder
+
+```csharp
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+
+// Create a logger
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<MultiTenantHttpClientFactory>();
+var factory = new MultiTenantHttpClientFactory(logger);
+
+// Use the fluent builder pattern to configure a client
+var client = new TenantHttpClientBuilder()
+    .ForTenant("tenant-456")
+    .WithApiKey("builder-api-key-123")
+    .WithTimeout(120)
+    .WithBaseAddress("https://api.another-service.com")
+    .AddHeader("X-Custom-Header", "custom-value")
+    .Build();
+
+// Make requests with the configured client
+var response = await client.GetAsync("/data");
+response.EnsureSuccessStatusCode();
+```
+
 ## IEventPublisher
 
 The `IEventPublisher` interface provides a mechanism for publishing domain events and managing event handlers. It supports both synchronous and asynchronous event handling, with built-in logging and error resilience. The `EventPublisher` class implements this interface and manages a registry of event handlers.
