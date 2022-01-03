@@ -373,6 +373,39 @@ var result = await wrapper.PostAsync<Dictionary<string, string>>("https://api.ex
 // Perform a PUT request
 bool putSuccess = await wrapper.PutAsync("https://api.example.com/put", payload);
 
-// Perform a DELETE request
-bool deleteSuccess = await wrapper.DeleteAsync("https://api.example.com/delete/1");
+
+## CliApplication
+
+The `CliApplication` class serves as the main entry point for the CLI, orchestrating command parsing, execution, and providing structured output. It integrates with dependency injection to handle various tenant, database, and backup operations while ensuring consistent logging and user feedback. The associated `ConsoleWriter` provides a convenient, color-coded mechanism for displaying success, error, warning, and informational messages to the terminal.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Cli;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Using ConsoleWriter for formatted output
+var consoleWriter = new ConsoleWriter();
+consoleWriter.WriteInfo("Starting CLI application...");
+consoleWriter.WriteSuccess("Operation completed successfully.");
+consoleWriter.WriteWarning("A non-fatal issue occurred.");
+consoleWriter.WriteError("Failed to perform the requested operation.");
+
+// Constructing CliApplication via Dependency Injection
+var services = new ServiceCollection();
+// Configure necessary services
+services.AddLogging(builder => builder.AddConsole());
+services.AddSingleton<IConsoleWriter, ConsoleWriter>();
+// ... Register CommandParser, CommandExecutor, etc. ...
+
+var serviceProvider = services.BuildServiceProvider();
+var app = serviceProvider.GetRequiredService<CliApplication>();
+
+// Run the application with arguments
+string[] args = { "tenant", "list" };
+int exitCode = await app.RunAsync(args);
+Console.WriteLine($"Application exited with code: {exitCode}");
+```
+
 ```
