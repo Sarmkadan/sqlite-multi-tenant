@@ -69,6 +69,59 @@ var @event = new TenantCreatedNotificationEvent
 await handler.HandleAsync(@event);
 ```
 
+## IHttpClientService
+
+The `IHttpClientService` interface provides a resilient HTTP client wrapper for making safe HTTP requests with built-in retry logic, timeout handling, and structured logging. It simplifies integration with external services and webhooks by handling common HTTP concerns like transient error retries, request timeouts, and response deserialization.
+
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+
+// Create a logger and HttpClient
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<HttpClientService>();
+var httpClient = new HttpClient();
+
+// Configure options (optional)
+var options = new HttpClientOptions
+{
+    TimeoutSeconds = 60,
+    MaxRetries = 5,
+    EnableCompression = true,
+    EnableConnectionPooling = true
+};
+
+// Create the HTTP client service
+var httpClientService = new HttpClientService(httpClient, logger, options);
+
+// Make a GET request to fetch JSON data
+var userData = await httpClientService.GetAsync<Dictionary<string, object>>(
+    "https://api.example.com/users/123"
+);
+Console.WriteLine($"User data: {userData["name"]}");
+
+// Make a POST request with JSON body and get typed response
+var newUser = new { name = "John Doe", email = "john@example.com" };
+var createdUser = await httpClientService.PostAsync<Dictionary<string, object>>(
+    "https://api.example.com/users",
+    newUser,
+    new Dictionary<string, string> { { "Authorization", "Bearer token123" } }
+);
+Console.WriteLine($"Created user ID: {createdUser["id"]}");
+
+// Send a custom HTTP request
+var response = await httpClientService.SendAsync(
+    HttpMethod.Put,
+    "https://api.example.com/users/123",
+    "{\"status\": \"active\"}"
+);
+response.EnsureSuccessStatusCode();
+```
+
 ## IEventPublisher
 
 The `IEventPublisher` interface provides a mechanism for publishing domain events and managing event handlers. It supports both synchronous and asynchronous event handling, with built-in logging and error resilience. The `EventPublisher` class implements this interface and manages a registry of event handlers.
