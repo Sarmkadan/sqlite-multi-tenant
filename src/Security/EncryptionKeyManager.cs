@@ -1,0 +1,277 @@
+// =============================================================================
+// Author: Vladyslav Zaiets | https://sarmkadan.com
+// CTO & Software Architect
+// =============================================================================
+
+using System;
+using System.Collections.Concurrent;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+
+namespace SqliteMultiTenant.Security
+{
+    // Manages encryption keys for tenant data with rotation and versioning support
+    // Stores keys securely and enables key rotation without data loss
+    public class EncryptionKeyManager
+    {
+        private readonly ILogger<EncryptionKeyManager> _logger;
+        private readonly string _keyStorePath;
+        private readonly ConcurrentDictionary<string, EncryptionKey> _keyCache;
+
+        public EncryptionKeyManager(ILogger<EncryptionKeyManager> logger, string keyStorePath)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _keyStorePath = keyStorePath ?? throw new ArgumentNullException(nameof(keyStorePath));
+            _keyCache = new ConcurrentDictionary<string, EncryptionKey>();
+
+            Directory.CreateDirectory(_keyStorePath);
+        }
+
+        // Generates a new encryption key for a tenant
+        public async Task<EncryptionKey> GenerateKeyAsync(string tenantId, string masterPassword = null)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+
+            try
+            {
+                var key = new EncryptionKey
+                {
+                    KeyId = Guid.NewGuid().ToString(),
+                    TenantId = tenantId,
+                    KeyMaterial = GenerateRandomBytes(32), // 256-bit key
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true,
+                    Version = 1
+                };
+
+                // If master password provided, derive additional entropy
+                if (!string.IsNullOrEmpty(masterPassword))
+                {
+                    using (var kdf = new Rfc2898DeriveBytes(masterPassword, 16, 10000, HashAlgorithmName.SHA256))
+                    {
+                        var derived = kdf.GetBytes(32);
+                        for (int i = 0; i < key.KeyMaterial.Length; i++)
+                        {
+                            key.KeyMaterial[i] ^= derived[i];
+                        }
+                    }
+                }
+
+                await SaveKeyAsync(key);
+                _keyCache.AddOrUpdate(tenantId, key, (_, __) => key);
+
+                _logger.LogInformation("Encryption key generated for tenant: {TenantId}", tenantId);
+                return key;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate encryption key for tenant: {TenantId}", tenantId);
+                throw;
+            }
+        }
+
+        // Retrieves the active encryption key for a tenant
+        public async Task<EncryptionKey> GetActiveKeyAsync(string tenantId)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+
+            // Check cache first
+            if (_keyCache.TryGetValue(tenantId, out var cachedKey))
+            {
+                return cachedKey;
+            }
+
+            try
+            {
+                var keyPath = Path.Combine(_keyStorePath, $"{tenantId}_key.json");
+
+                if (!File.Exists(keyPath))
+                {
+                    _logger.LogWarning("No encryption key found for tenant: {TenantId}", tenantId);
+                    return null;
+                }
+
+                var json = await File.ReadAllTextAsync(keyPath);
+                var key = JsonSerializer.Deserialize<EncryptionKey>(json);
+
+                if (key?.IsActive == true)
+                {
+                    _keyCache.AddOrUpdate(tenantId, key, (_, __) => key);
+                    return key;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve encryption key for tenant: {TenantId}", tenantId);
+                return null;
+            }
+        }
+
+        // Rotates encryption key for tenant with versioning
+        public async Task<EncryptionKey> RotateKeyAsync(string tenantId, string masterPassword = null)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId))
+                throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+
+            try
+            {
+                var oldKey = await GetActiveKeyAsync(tenantId);
+                if (oldKey != null)
+                {
+                    oldKey.IsActive = false;
+                    oldKey.DeactivatedAt = DateTime.UtcNow;
+                    await SaveKeyAsync(oldKey);
+                }
+
+                var newKey = new EncryptionKey
+                {
+                    KeyId = Guid.NewGuid().ToString(),
+                    TenantId = tenantId,
+                    KeyMaterial = GenerateRandomBytes(32),
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true,
+                    Version = (oldKey?.Version ?? 0) + 1,
+                    PreviousKeyId = oldKey?.KeyId
+                };
+
+                // Apply master password if provided
+                if (!string.IsNullOrEmpty(masterPassword))
+                {
+                    using (var kdf = new Rfc2898DeriveBytes(masterPassword, 16, 10000, HashAlgorithmName.SHA256))
+                    {
+                        var derived = kdf.GetBytes(32);
+                        for (int i = 0; i < newKey.KeyMaterial.Length; i++)
+                        {
+                            newKey.KeyMaterial[i] ^= derived[i];
+                        }
+                    }
+                }
+
+                await SaveKeyAsync(newKey);
+                _keyCache.AddOrUpdate(tenantId, newKey, (_, __) => newKey);
+
+                _logger.LogInformation("Encryption key rotated for tenant: {TenantId} (Version: {Version})",
+                    tenantId, newKey.Version);
+
+                return newKey;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to rotate encryption key for tenant: {TenantId}", tenantId);
+                throw;
+            }
+        }
+
+        // Gets specific key version for re-encryption scenarios
+        public async Task<EncryptionKey> GetKeyVersionAsync(string tenantId, int version)
+        {
+            try
+            {
+                var keyPath = Path.Combine(_keyStorePath, $"{tenantId}_key_v{version}.json");
+
+                if (!File.Exists(keyPath))
+                {
+                    _logger.LogWarning("Key version {Version} not found for tenant: {TenantId}", version, tenantId);
+                    return null;
+                }
+
+                var json = await File.ReadAllTextAsync(keyPath);
+                return JsonSerializer.Deserialize<EncryptionKey>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve key version {Version} for tenant: {TenantId}",
+                    version, tenantId);
+                return null;
+            }
+        }
+
+        // Removes all keys for a tenant (typically during deprovisioning)
+        public async Task<bool> DeleteTenantKeysAsync(string tenantId)
+        {
+            try
+            {
+                var keyFiles = Directory.GetFiles(_keyStorePath, $"{tenantId}_key*.json");
+
+                foreach (var file in keyFiles)
+                {
+                    File.Delete(file);
+                }
+
+                _keyCache.TryRemove(tenantId, out _);
+
+                _logger.LogInformation("Encryption keys deleted for tenant: {TenantId}", tenantId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete encryption keys for tenant: {TenantId}", tenantId);
+                return false;
+            }
+        }
+
+        private async Task SaveKeyAsync(EncryptionKey key)
+        {
+            try
+            {
+                var filename = key.IsActive
+                    ? $"{key.TenantId}_key.json"
+                    : $"{key.TenantId}_key_v{key.Version}.json";
+
+                var path = Path.Combine(_keyStorePath, filename);
+                var json = JsonSerializer.Serialize(key, new JsonSerializerOptions { WriteIndented = true });
+
+                // Set restrictive permissions (owner read/write only)
+                await File.WriteAllTextAsync(path, json);
+
+                var fileInfo = new FileInfo(path);
+                if (!IsWindowsPlatform())
+                {
+                    // On Unix-like systems, set permissions to 600 (rw-------)
+                    var unixFileInfo = new System.IO.UnixFileSystemInfo(path);
+                    unixFileInfo.FileAccessPermissions = System.IO.FileAccessPermissions.UserRead
+                        | System.IO.FileAccessPermissions.UserWrite;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save encryption key");
+                throw;
+            }
+        }
+
+        private byte[] GenerateRandomBytes(int length)
+        {
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                var bytes = new byte[length];
+                rng.GetBytes(bytes);
+                return bytes;
+            }
+        }
+
+        private bool IsWindowsPlatform() =>
+            System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
+                System.Runtime.InteropServices.OSPlatform.Windows);
+    }
+
+    public class EncryptionKey
+    {
+        public string KeyId { get; set; }
+        public string TenantId { get; set; }
+        public byte[] KeyMaterial { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? DeactivatedAt { get; set; }
+        public bool IsActive { get; set; }
+        public int Version { get; set; }
+        public string PreviousKeyId { get; set; }
+    }
+}
