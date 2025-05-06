@@ -1,0 +1,75 @@
+# =============================================================================
+# Author: Vladyslav Zaiets | https://sarmkadan.com
+# CTO & Software Architect
+# Docker Compose Configuration for SQLite Multi-Tenant
+# =============================================================================
+
+version: '3.8'
+
+services:
+  sqlite-multi-tenant:
+    container_name: sqlite-multi-tenant-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist databases
+      - ./databases:/app/databases
+      # Persist backups
+      - ./backups:/app/backups
+      # Persist logs
+      - ./logs:/app/logs
+      # Configuration (read-only)
+      - ./config/appsettings.json:/app/appsettings.json:ro
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      # SQLite Multi-Tenant specific settings
+      SQLITE_MULTI_TENANT__MaxConnections: "20"
+      SQLITE_MULTI_TENANT__ConnectionTimeoutSeconds: "30"
+      SQLITE_MULTI_TENANT__BackupRetentionDays: "30"
+      SQLITE_MULTI_TENANT__EnableLogging: "true"
+      SQLITE_MULTI_TENANT__EnableAuditing: "true"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/admin/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Backup scheduler service
+  backup-scheduler:
+    container_name: sqlite-backup-scheduler
+    image: alpine:latest
+    restart: unless-stopped
+    volumes:
+      - ./backups:/backups
+      - ./databases:/databases
+      - ./scripts:/scripts:ro
+    entrypoint: /bin/sh -c "while true; do /scripts/backup.sh; sleep 86400; done"
+    depends_on:
+      - sqlite-multi-tenant
+
+  # Optional: Monitoring service (for log aggregation)
+  log-watcher:
+    container_name: sqlite-log-watcher
+    image: alpine:latest
+    restart: unless-stopped
+    volumes:
+      - ./logs:/logs:ro
+    entrypoint: /bin/sh -c "tail -f /logs/*.log"
+    depends_on:
+      - sqlite-multi-tenant
+
+volumes:
+  databases:
+  backups:
+  logs:

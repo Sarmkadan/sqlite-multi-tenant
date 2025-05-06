@@ -1,210 +1,621 @@
 # SQLite Multi-Tenant Database Manager
 
-A comprehensive .NET library for managing multi-tenant SQLite databases with per-tenant isolation, automated migrations, and backup management.
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![.NET](https://img.shields.io/badge/.NET-8.0+-blue.svg)
+![Version](https://img.shields.io/badge/Version-1.2.0-green.svg)
+
+A production-grade .NET library and framework for managing multi-tenant SQLite databases with per-tenant isolation, automated migrations, comprehensive backup management, and advanced monitoring capabilities. Designed for SaaS platforms, multi-tenant applications, and enterprise systems requiring secure data isolation and operational reliability.
+
+## Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Concepts](#core-concepts)
+- [API Reference](#api-reference)
+- [CLI Reference](#cli-reference)
+- [Configuration](#configuration)
+- [Usage Examples](#usage-examples)
+- [Advanced Topics](#advanced-topics)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-- **Multi-Tenant Isolation**: Secure per-tenant database management with complete data isolation
-- **Tenant Management**: Full lifecycle management of tenants (create, update, delete, activate, suspend)
-- **Database Migrations**: Track and execute database migrations with rollback capabilities
-- **Backup Management**: Create, verify, and restore backups with expiration policies
-- **Connection Management**: Handle tenant-specific database connections with pooling
-- **Async/Await Support**: Fully asynchronous API for high-performance applications
-- **Comprehensive Logging**: Built-in logging for all operations via ILogger
-- **Validation**: Entity validation with detailed error messages
-- **Custom Exceptions**: Specialized exception types for better error handling
+### Core Capabilities
 
-## Project Structure
+- **Multi-Tenant Isolation**: Complete data isolation with per-tenant SQLite databases and connection pooling
+- **Tenant Management**: Full lifecycle management (create, update, delete, activate, suspend, archive)
+- **Database Migrations**: Track and execute migrations with rollback, execution history, and error recovery
+- **Backup Management**: Multiple backup types (Full, Incremental, Differential) with verification and expiration policies
+- **Connection Management**: Tenant-specific database connections with automatic pooling and timeout handling
+- **Async/Await Support**: Fully asynchronous API with CancellationToken support for high-performance applications
+- **Comprehensive Logging**: Structured logging with ILogger integration and multiple output formats
+- **Entity Validation**: Fluent validation with detailed error messages and domain-specific rules
+- **Custom Exceptions**: Specialized exception types for precise error handling
+
+### Advanced Features
+
+- **API Controllers**: REST endpoints for tenant, backup, migration, database, and admin operations
+- **CLI Interface**: Command-line tool for automation and operational tasks
+- **Event System**: Pub-sub architecture with async event handlers and webhook delivery
+- **Middleware Pipeline**: Correlation ID tracking, performance monitoring, rate limiting, and request logging
+- **Health Checks**: System diagnostics with detailed status reporting
+- **Audit Logging**: Comprehensive audit trail with filtering, retention policies, and trend analysis
+- **Caching**: In-memory and distributed LRU caching with TTL support
+- **Security**: AES-256 encryption, rate limiting, authentication interceptors
+- **Monitoring**: Real-time metrics collection, statistics aggregation, and trend analysis
+- **Data Operations**: Batch processing, bulk insert, data export/import with conflict resolution
+- **Background Workers**: Automated backup scheduling, maintenance tasks, and data retention policies
+
+## Architecture
 
 ```
-src/
-├── Models/                          # Domain models
-│   ├── Tenant.cs                   # Tenant entity
-│   ├── TenantDatabase.cs           # Database configuration per tenant
-│   ├── Migration.cs                # Migration tracking
-│   ├── Backup.cs                   # Backup information
-│   ├── TenantSettings.cs           # Tenant-specific settings
-│   └── TenantContext.cs            # Runtime tenant context
-├── Services/                        # Business logic layer
-│   ├── ITenantService.cs           # Tenant service interface
-│   ├── TenantService.cs            # Tenant service implementation
-│   ├── IMigrationService.cs        # Migration service interface
-│   ├── MigrationService.cs         # Migration service implementation
-│   ├── IBackupService.cs           # Backup service interface
-│   └── BackupService.cs            # Backup service implementation
-├── Repositories/                    # Data access layer
-│   ├── ITenantRepository.cs        # Tenant repository interface
-│   ├── TenantRepository.cs         # Tenant SQLite implementation
-│   ├── IMigrationRepository.cs     # Migration repository interface
-│   ├── MigrationRepository.cs      # Migration SQLite implementation
-│   ├── IBackupRepository.cs        # Backup repository interface
-│   └── BackupRepository.cs         # Backup SQLite implementation
-├── Exceptions/                      # Custom exception types
-│   ├── TenantNotFoundException.cs
-│   ├── DatabaseAccessException.cs
-│   ├── MigrationException.cs
-│   └── BackupException.cs
-├── Constants/                       # Configuration constants and enums
-│   ├── TenantConstants.cs          # Constants
-│   └── Enums.cs                    # Enum definitions
-├── Configuration/                   # Dependency injection setup
-│   └── ServiceConfiguration.cs     # Service registration
-└── Program.cs                       # Demo application entry point
+┌─────────────────────────────────────────────────────────────┐
+│                  API Layer / CLI Interface                   │
+│  Controllers │ Commands │ Middleware │ Interceptors │ Handlers
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Service Layer (Business Logic)            │
+│  TenantService │ MigrationService │ BackupService │ Custom   │
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Repository Layer (Data Access)             │
+│  TenantRepo │ MigrationRepo │ BackupRepo │ Generic Repo     │
+└──────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│            SQLite Databases (Per-Tenant Isolation)           │
+│  Master.db │ Tenant1.db │ Tenant2.db │ ... │ TenantN.db    │
+└─────────────────────────────────────────────────────────────┘
+
+Support Layers:
+- Security: Encryption, Authentication, Rate Limiting
+- Monitoring: Audit Logs, Metrics, Health Checks
+- Caching: In-Memory & Distributed LRU Cache
+- Events: Event Bus, Webhooks, Domain Events
+- Utilities: Validation, Formatting, Extension Methods
 ```
 
 ## Installation
 
-Clone the repository and build the project:
+### Prerequisites
+
+- **.NET 8.0** or higher
+- **SQLite 3** (included with most systems)
+- **NuGet package manager**
+
+### From Source
 
 ```bash
-git clone https://github.com/vladyslav-zaiets/sqlite-multi-tenant.git
+git clone https://github.com/Sarmkadan/sqlite-multi-tenant.git
 cd sqlite-multi-tenant
+dotnet restore
 dotnet build
+dotnet pack
+```
+
+### Add to Your Project
+
+```bash
+# Via dotnet CLI
+dotnet add package SqliteMultiTenant
+
+# Or via NuGet Package Manager
+Install-Package SqliteMultiTenant
+```
+
+### Manual Integration
+
+```bash
+# Clone and reference
+git clone https://github.com/Sarmkadan/sqlite-multi-tenant.git
+# Add project reference in your .csproj:
+# <ProjectReference Include="path/to/sqlite-multi-tenant/src/SqliteMultiTenant.csproj" />
 ```
 
 ## Quick Start
 
-### 1. Configure Services
+### 1. Configure Services (Minimal Setup)
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Configuration;
+
 var services = new ServiceCollection();
 
+// Add logging (required)
 services.AddLogging(builder => builder.AddConsole());
 
-var connectionString = "Data Source=master.db;Version=3;";
-services.AddSqliteMultiTenant(connectionString, options =>
+// Add SQLite Multi-Tenant services
+var masterConnection = "Data Source=master.db;Version=3;";
+services.AddSqliteMultiTenant(masterConnection, options =>
 {
     options.MaxConnections = 20;
     options.BackupRetentionDays = 30;
-    options.EnableLogging = true;
+    options.DatabaseDirectory = "databases";
+    options.BackupDirectory = "backups";
 });
 
 var serviceProvider = services.BuildServiceProvider();
 ```
 
-### 2. Create a Tenant
+### 2. Create Your First Tenant
 
 ```csharp
 var tenantService = serviceProvider.GetRequiredService<ITenantService>();
 
 var tenant = await tenantService.CreateTenantAsync(
     name: "Acme Corporation",
-    description: "Main customer",
+    description: "Our first customer",
     contactEmail: "admin@acme.com");
 
-Console.WriteLine($"Tenant created: {tenant.TenantId}");
+Console.WriteLine($"Created tenant: {tenant.TenantId}");
 ```
 
-### 3. Manage Migrations
+### 3. Work with Databases
+
+```csharp
+// Create a database entry for this tenant
+var db = new TenantDatabase
+{
+    DatabaseId = Guid.NewGuid().ToString(),
+    TenantId = tenant.TenantId,
+    Name = "primary_db",
+    FilePath = Path.Combine("databases", $"{tenant.TenantId}.db"),
+    SchemaVersion = 1
+};
+```
+
+### 4. Manage Migrations
 
 ```csharp
 var migrationService = serviceProvider.GetRequiredService<IMigrationService>();
 
 var migration = await migrationService.CreateMigrationAsync(
-    databaseId: "db-123",
+    databaseId: db.DatabaseId,
     version: "001",
-    name: "InitialSchema",
-    upScript: "CREATE TABLE Users (Id INTEGER PRIMARY KEY, Name TEXT);",
+    name: "CreateUsersTable",
+    upScript: @"
+        CREATE TABLE Users (
+            Id INTEGER PRIMARY KEY,
+            Name TEXT NOT NULL,
+            Email TEXT UNIQUE,
+            CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        );",
     downScript: "DROP TABLE Users;");
 
-var pending = await migrationService.GetPendingMigrationsAsync("db-123");
+// Get pending migrations
+var pending = await migrationService.GetPendingMigrationsAsync(db.DatabaseId);
+Console.WriteLine($"Pending migrations: {pending.Count}");
 ```
 
-### 4. Create and Verify Backups
+### 5. Create Backups
 
 ```csharp
 var backupService = serviceProvider.GetRequiredService<IBackupService>();
 
 var backup = await backupService.CreateBackupAsync(
-    databaseId: "db-123",
+    databaseId: db.DatabaseId,
     backupType: BackupType.Full,
     createdBy: "admin@acme.com");
 
-await backupService.MarkBackupAsCompletedAsync(backup.BackupId, sizeBytes: 1024000, durationMs: 2500);
+// Complete the backup operation
+await backupService.MarkBackupAsCompletedAsync(
+    backupId: backup.BackupId,
+    sizeBytes: 1024000,
+    durationMs: 2500);
+
+// Verify integrity
 await backupService.VerifyBackupAsync(backup.BackupId, "admin@acme.com");
 ```
 
-## Core Entities
+## Core Concepts
 
 ### Tenant
-Represents a customer or organization in the system.
-- Lifecycle management (Active, Inactive, Suspended, Archived, Deleted)
-- Metadata storage for custom key-value pairs
-- Connection pooling configuration
+
+Represents a customer, organization, or isolated business unit.
+
+**Key Properties:**
+- `TenantId`: Unique identifier (GUID)
+- `Name`: Display name
+- `Status`: Active, Inactive, Suspended, Archived, Deleted
+- `CreatedAt` / `UpdatedAt`: Lifecycle timestamps
+- `Metadata`: Custom key-value pairs for extensions
+
+**Lifecycle:**
+```
+Created (Active) → Suspended ↔ Active → Archived → Deleted
+```
 
 ### TenantDatabase
-Represents a SQLite database associated with a tenant.
-- Per-tenant database isolation
-- Schema versioning
-- Size tracking
-- Encryption support
+
+Represents a SQLite database file associated with a tenant.
+
+**Key Properties:**
+- `DatabaseId`: Unique identifier
+- `TenantId`: Reference to tenant
+- `FilePath`: Absolute path to .db file
+- `SchemaVersion`: Current schema version
+- `IsReadOnly`: Backup/restore protection flag
+- `SizeBytes`: Database file size
 
 ### Migration
-Represents a database migration script.
-- Up/Down script tracking
-- Execution history
-- Rollback capabilities
-- Error tracking and recovery
+
+Represents a database schema change tracked and versioned.
+
+**Key Properties:**
+- `MigrationId`: Unique identifier
+- `DatabaseId`: Target database
+- `Version`: Semantic version (001, 002, etc.)
+- `Name`: Human-readable description
+- `Status`: Pending, Applied, Failed, RolledBack
+- `UpScript` / `DownScript`: SQL change scripts
+- `ExecutedAt` / `RolledBackAt`: Execution history
 
 ### Backup
-Represents a point-in-time backup of a tenant database.
-- Multiple backup types (Full, Incremental, Differential)
-- Verification and integrity checking
-- Expiration policies
-- Tagging system for organization
 
-## Service Layer
+Represents a point-in-time backup of a database.
 
-### ITenantService
-- GetTenantAsync() - Retrieve tenant details
-- CreateTenantAsync() - Create new tenant
-- UpdateTenantAsync() - Update tenant information
-- DeleteTenantAsync() - Remove tenant
-- GetAllTenantsAsync() - List all tenants
-- ActivateTenantAsync() / DeactivateTenantAsync() - Manage status
-- SearchTenantsAsync() - Search by name or email
-- SetTenantMetadataAsync() - Store custom metadata
+**Key Properties:**
+- `BackupId`: Unique identifier
+- `DatabaseId`: Source database
+- `BackupType`: Full, Incremental, Differential
+- `Status`: Pending, Completed, Failed, Verified
+- `SizeBytes`: Backup file size
+- `ExpiresAt`: Retention policy deadline
+- `Tags`: Organizational labels (production, daily, etc.)
 
-### IMigrationService
-- CreateMigrationAsync() - Define new migration
-- GetMigrationAsync() - Retrieve migration details
-- GetPendingMigrationsAsync() - Get pending migrations
-- GetAppliedMigrationsAsync() - Get applied migrations
-- ExecuteMigrationAsync() - Start execution
-- RollbackMigrationAsync() - Rollback migration
-- MarkMigrationAsCompletedAsync() - Mark as complete
-- MarkMigrationAsFailedAsync() - Mark as failed
+## API Reference
 
-### IBackupService
-- CreateBackupAsync() - Create new backup
-- GetBackupAsync() - Retrieve backup details
-- GetDatabaseBackupsAsync() - List all backups for database
-- GetCompletedBackupsAsync() - List completed backups
-- MarkBackupAsCompletedAsync() - Mark backup complete
-- VerifyBackupAsync() - Verify backup integrity
-- SetBackupExpirationAsync() - Set expiration date
-- AddBackupTagAsync() - Add tags for organization
-
-## Repository Layer
-
-All repositories follow the same pattern:
-- **ITenantRepository** - Full CRUD + queries for tenants
-- **IMigrationRepository** - Full CRUD + queries for migrations
-- **IBackupRepository** - Full CRUD + queries for backups
-
-Each repository provides:
-- Async methods with CancellationToken support
-- Paging support
-- Search capabilities
-- Status filtering
-- Existence checks
-
-## Exception Handling
+### Tenant Service (`ITenantService`)
 
 ```csharp
+// Create a new tenant
+Task<Tenant> CreateTenantAsync(string name, string description, string contactEmail);
+
+// Retrieve tenant details
+Task<Tenant> GetTenantAsync(string tenantId);
+
+// List all tenants
+Task<List<Tenant>> GetAllTenantsAsync();
+
+// Update tenant information
+Task UpdateTenantAsync(string tenantId, string name, string description);
+
+// Change tenant status
+Task ActivateTenantAsync(string tenantId);
+Task DeactivateTenantAsync(string tenantId);
+Task SuspendTenantAsync(string tenantId);
+Task ArchiveTenantAsync(string tenantId);
+
+// Soft delete tenant
+Task DeleteTenantAsync(string tenantId);
+
+// Search functionality
+Task<List<Tenant>> SearchTenantsAsync(string searchTerm);
+
+// Metadata management
+Task SetTenantMetadataAsync(string tenantId, string key, string value);
+Task<string> GetTenantMetadataAsync(string tenantId, string key);
+```
+
+### Migration Service (`IMigrationService`)
+
+```csharp
+// Create migration definition
+Task<Migration> CreateMigrationAsync(string databaseId, string version, 
+    string name, string upScript, string downScript);
+
+// Migration query
+Task<Migration> GetMigrationAsync(string migrationId);
+Task<List<Migration>> GetPendingMigrationsAsync(string databaseId);
+Task<List<Migration>> GetAppliedMigrationsAsync(string databaseId);
+
+// Execute migrations
+Task ExecuteMigrationAsync(string migrationId);
+Task RollbackMigrationAsync(string migrationId);
+
+// Mark completion
+Task MarkMigrationAsCompletedAsync(string migrationId, long executionMs);
+Task MarkMigrationAsFailedAsync(string migrationId, string errorMessage);
+```
+
+### Backup Service (`IBackupService`)
+
+```csharp
+// Create and manage backups
+Task<Backup> CreateBackupAsync(string databaseId, BackupType backupType, 
+    string createdBy, string backupPath = null);
+
+// Backup queries
+Task<Backup> GetBackupAsync(string backupId);
+Task<List<Backup>> GetDatabaseBackupsAsync(string databaseId, int pageSize = 50);
+Task<List<Backup>> GetCompletedBackupsAsync(string databaseId);
+
+// Backup lifecycle
+Task MarkBackupAsCompletedAsync(string backupId, long sizeBytes, long durationMs);
+Task VerifyBackupAsync(string backupId, string verifiedBy);
+
+// Backup metadata
+Task SetBackupExpirationAsync(string backupId, DateTime expiresAt);
+Task AddBackupTagAsync(string backupId, string tag);
+Task<List<string>> GetBackupTagsAsync(string backupId);
+
+// Count and statistics
+Task<int> GetBackupCountAsync(string databaseId);
+```
+
+## CLI Reference
+
+The CLI interface provides command-line access to all core functionality:
+
+```bash
+# Tenant Operations
+dotnet run -- tenant create --name "Acme Corp" --email "admin@acme.com"
+dotnet run -- tenant list [--limit 10]
+dotnet run -- tenant get --id <tenant-id>
+dotnet run -- tenant activate --id <tenant-id>
+dotnet run -- tenant suspend --id <tenant-id>
+dotnet run -- tenant delete --id <tenant-id>
+
+# Database Operations
+dotnet run -- database list --tenant-id <tenant-id>
+dotnet run -- database stats --id <db-id>
+dotnet run -- database optimize --id <db-id>
+dotnet run -- database integrity-check --id <db-id>
+
+# Migration Operations
+dotnet run -- migration list --database-id <db-id> [--status pending|applied|failed]
+dotnet run -- migration apply --database-id <db-id>
+dotnet run -- migration rollback --database-id <db-id>
+
+# Backup Operations
+dotnet run -- backup create --database-id <db-id> --type full|incremental|differential
+dotnet run -- backup list --database-id <db-id>
+dotnet run -- backup verify --id <backup-id>
+dotnet run -- backup restore --id <backup-id>
+
+# System Operations
+dotnet run -- health check
+dotnet run -- metrics show
+dotnet run -- cache clear
+dotnet run -- version
+```
+
+## Configuration
+
+### MultiTenantOptions
+
+```csharp
+services.AddSqliteMultiTenant(connectionString, options =>
+{
+    // Connection Management
+    options.MaxConnections = 20;                    // Max connections per tenant
+    options.ConnectionTimeoutSeconds = 30;         // Connection timeout
+    options.ConnectionStringTemplate = "...";      // Custom connection string format
+
+    // File Paths
+    options.DatabaseDirectory = "databases";       // Where to store tenant .db files
+    options.BackupDirectory = "backups";           // Where to store backup files
+    options.LogDirectory = "logs";                 // Where to store log files
+
+    // Backup Settings
+    options.BackupRetentionDays = 30;              // Delete backups older than this
+    options.MaxBackupsPerDatabase = 100;           // Limit backups per database
+    options.BackupCompressionEnabled = true;       // Compress backup files
+
+    // Security
+    options.EnableEncryption = false;              // Enable AES-256 encryption
+    options.EncryptionKey = "your-256-bit-key";    // Encryption key (min 32 bytes)
+
+    // Features
+    options.EnableLogging = true;                  // Enable ILogger integration
+    options.EnableAuditing = true;                 // Enable audit trail
+    options.EnableMetrics = true;                  // Enable metrics collection
+    options.AuditRetentionDays = 90;               // Delete audit logs after
+
+    // Cache Settings
+    options.EnableCaching = true;                  // Enable result caching
+    options.CacheExpirationMinutes = 15;           // Cache TTL
+    options.MaxCacheItems = 1000;                  // Max cached items
+
+    // Performance
+    options.EnableBatchOperations = true;          // Enable batch processing
+    options.BatchSize = 100;                       // Items per batch
+    options.MaxDegreeOfParallelism = 4;            // Parallel threads
+});
+```
+
+### appsettings.json Configuration
+
+```json
+{
+  "SqliteMultiTenant": {
+    "MaxConnections": 20,
+    "ConnectionTimeoutSeconds": 30,
+    "BackupRetentionDays": 30,
+    "DatabaseDirectory": "databases",
+    "BackupDirectory": "backups",
+    "EnableEncryption": false,
+    "EnableLogging": true,
+    "EnableAuditing": true,
+    "CacheExpirationMinutes": 15
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "SqliteMultiTenant": "Debug"
+    }
+  }
+}
+```
+
+## Usage Examples
+
+### Example 1: Multi-Tenant Application Setup
+
+```csharp
+// Create service provider with multi-tenant configuration
+var services = new ServiceCollection();
+services.AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Information));
+
+services.AddSqliteMultiTenant("Data Source=master.db;", options =>
+{
+    options.MaxConnections = 20;
+    options.BackupRetentionDays = 30;
+    options.DatabaseDirectory = Path.Combine(Directory.GetCurrentDirectory(), "databases");
+    options.BackupDirectory = Path.Combine(Directory.GetCurrentDirectory(), "backups");
+    options.EnableLogging = true;
+});
+
+var provider = services.BuildServiceProvider();
+var tenantService = provider.GetRequiredService<ITenantService>();
+
+// Create multiple tenants
+var tenants = new[] { "TechCorp", "FinanceInc", "RetailCo" };
+foreach (var name in tenants)
+{
+    var tenant = await tenantService.CreateTenantAsync(
+        name: name,
+        description: $"Tenant for {name}",
+        contactEmail: $"admin@{name.ToLower()}.com");
+    
+    Console.WriteLine($"Created: {tenant.TenantId} - {tenant.Name}");
+}
+```
+
+### Example 2: Database Schema Management
+
+```csharp
+var migrationService = provider.GetRequiredService<IMigrationService>();
+var backupService = provider.GetRequiredService<IBackupService>();
+
+// Create database entry
+var dbId = Guid.NewGuid().ToString();
+
+// Define migrations
+var migrations = new[]
+{
+    ("001", "CreateTables", @"
+        CREATE TABLE Users (Id INTEGER PRIMARY KEY, Name TEXT NOT NULL);
+        CREATE TABLE Posts (Id INTEGER PRIMARY KEY, UserId INTEGER, Content TEXT);"),
+    
+    ("002", "AddTimestamps", @"
+        ALTER TABLE Users ADD COLUMN CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP;
+        ALTER TABLE Posts ADD COLUMN CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP;"),
+    
+    ("003", "CreateIndexes", @"
+        CREATE INDEX idx_users_created ON Users(CreatedAt);
+        CREATE INDEX idx_posts_user ON Posts(UserId);")
+};
+
+// Create migration records
+foreach (var (version, name, upScript) in migrations)
+{
+    var downScript = version == "001" ? "DROP TABLE Users; DROP TABLE Posts;" : "";
+    
+    await migrationService.CreateMigrationAsync(
+        databaseId: dbId,
+        version: version,
+        name: name,
+        upScript: upScript,
+        downScript: downScript);
+}
+
+// Get and display pending migrations
+var pending = await migrationService.GetPendingMigrationsAsync(dbId);
+Console.WriteLine($"Pending migrations: {pending.Count}");
+foreach (var m in pending)
+    Console.WriteLine($"  - {m.Version}: {m.Name}");
+
+// Create backup before applying migrations
+var backup = await backupService.CreateBackupAsync(
+    databaseId: dbId,
+    backupType: BackupType.Full,
+    createdBy: "admin");
+
+await backupService.MarkBackupAsCompletedAsync(backup.BackupId, 102400, 1500);
+await backupService.VerifyBackupAsync(backup.BackupId, "admin");
+
+Console.WriteLine($"Backup created and verified: {backup.BackupId}");
+```
+
+### Example 3: Batch Operations
+
+```csharp
+var backupService = provider.GetRequiredService<IBackupService>();
+
+// Create backups for multiple databases
+var databaseIds = new[] { "db1", "db2", "db3", "db4" };
+
+var backupTasks = databaseIds.Select(async dbId =>
+{
+    var backup = await backupService.CreateBackupAsync(
+        databaseId: dbId,
+        backupType: BackupType.Full,
+        createdBy: "system");
+    
+    await backupService.MarkBackupAsCompletedAsync(
+        backupId: backup.BackupId,
+        sizeBytes: 1024000,
+        durationMs: 2000);
+    
+    return backup;
+});
+
+var backups = await Task.WhenAll(backupTasks);
+Console.WriteLine($"Created {backups.Length} backups");
+```
+
+### Example 4: Tenant Lifecycle Management
+
+```csharp
+var tenantService = provider.GetRequiredService<ITenantService>();
+
+// Create tenant
+var tenant = await tenantService.CreateTenantAsync(
+    "New Customer",
+    "A promising customer",
+    "contact@customer.com");
+
+Console.WriteLine($"Created: {tenant.TenantId} ({tenant.Status})");
+
+// Activate for use
+await tenantService.ActivateTenantAsync(tenant.TenantId);
+Console.WriteLine("Tenant activated");
+
+// Set metadata
+await tenantService.SetTenantMetadataAsync(tenant.TenantId, "plan", "enterprise");
+await tenantService.SetTenantMetadataAsync(tenant.TenantId, "region", "us-east-1");
+
+// Retrieve updated tenant
+var updated = await tenantService.GetTenantAsync(tenant.TenantId);
+Console.WriteLine($"Updated: {updated.Name}");
+
+// Suspend if needed
+await tenantService.SuspendTenantAsync(tenant.TenantId);
+Console.WriteLine("Tenant suspended");
+
+// Archive when inactive
+await tenantService.ArchiveTenantAsync(tenant.TenantId);
+Console.WriteLine("Tenant archived");
+```
+
+### Example 5: Error Handling
+
+```csharp
+var tenantService = provider.GetRequiredService<ITenantService>();
+
 try
 {
-    await tenantService.GetTenantAsync(tenantId);
+    // Try to get non-existent tenant
+    await tenantService.GetTenantAsync("invalid-id");
 }
 catch (TenantNotFoundException ex)
 {
@@ -214,56 +625,194 @@ catch (DatabaseAccessException ex)
 {
     Console.WriteLine($"Database error: {ex.Message}");
 }
-catch (MigrationException ex)
+catch (Exception ex)
 {
-    Console.WriteLine($"Migration error: {ex.MigrationVersion}");
-}
-catch (BackupException ex)
-{
-    Console.WriteLine($"Backup error: {ex.BackupId}");
+    Console.WriteLine($"Unexpected error: {ex.Message}");
 }
 ```
 
-## Configuration Options
+### Example 6: Health Checks and Monitoring
+
+```csharp
+// Use HealthCheckService if available
+var healthService = provider.GetService<HealthCheckService>();
+if (healthService != null)
+{
+    var health = await healthService.CheckHealthAsync();
+    Console.WriteLine($"System Status: {health.Status}");
+    Console.WriteLine($"Uptime: {health.UptimeMinutes} minutes");
+    Console.WriteLine($"Active Tenants: {health.ActiveTenants}");
+}
+
+// Use MetricsService for diagnostics
+var metricsService = provider.GetService<MetricsService>();
+if (metricsService != null)
+{
+    var metrics = metricsService.GetMetrics();
+    Console.WriteLine($"Request Count: {metrics.TotalRequests}");
+    Console.WriteLine($"Avg Response Time: {metrics.AverageResponseTime}ms");
+    Console.WriteLine($"Error Rate: {metrics.ErrorRate:P}");
+}
+```
+
+### Example 7: Data Export
+
+```csharp
+// Using data exporter to export tenant data
+var exportService = provider.GetService<DataExporter>();
+if (exportService != null)
+{
+    var dbId = "tenant-database-id";
+    
+    // Export as JSON
+    var jsonData = await exportService.ExportAsJsonAsync(dbId);
+    File.WriteAllText("export.json", jsonData);
+    
+    // Export as CSV
+    var csvData = await exportService.ExportAsCsvAsync(dbId, "Users");
+    File.WriteAllText("users.csv", csvData);
+}
+```
+
+### Example 8: Search and Filtering
+
+```csharp
+var tenantService = provider.GetRequiredService<ITenantService>();
+
+// Search tenants by name
+var results = await tenantService.SearchTenantsAsync("Acme");
+Console.WriteLine($"Found {results.Count} tenants matching 'Acme'");
+
+foreach (var tenant in results)
+{
+    Console.WriteLine($"  - {tenant.Name} ({tenant.Status})");
+}
+```
+
+## Advanced Topics
+
+### Event-Driven Architecture
+
+```csharp
+// Subscribe to events
+var eventBus = provider.GetService<IEventBus>();
+if (eventBus != null)
+{
+    eventBus.Subscribe<TenantCreatedEvent>(async @event =>
+    {
+        Console.WriteLine($"Tenant created: {@event.TenantId}");
+        // Handle event
+    });
+}
+```
+
+### Custom Caching
+
+```csharp
+var cacheService = provider.GetService<CacheService>();
+if (cacheService != null)
+{
+    // Cache tenant data
+    cacheService.Set($"tenant:{tenantId}", tenant, TimeSpan.FromMinutes(15));
+    
+    // Retrieve from cache
+    var cached = cacheService.Get<Tenant>($"tenant:{tenantId}");
+}
+```
+
+### Rate Limiting
+
+```csharp
+// Middleware automatically applies rate limiting based on configuration
+// Configure in startup:
+services.AddRateLimitingMiddleware(options =>
+{
+    options.RequestsPerSecond = 100;
+    options.BurstSize = 200;
+});
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue**: "Database is locked" errors
+- **Cause**: Multiple connections trying to write simultaneously
+- **Solution**: Increase `ConnectionTimeoutSeconds` and enable connection pooling
+
+**Issue**: Migration fails with "column already exists"
+- **Cause**: Migration was partially applied in a previous run
+- **Solution**: Check migration history and adjust script or rollback
+
+**Issue**: Backup verification fails
+- **Cause**: Backup file corrupted or incomplete
+- **Solution**: Create new backup or restore from earlier backup
+
+**Issue**: Out of memory with large datasets
+- **Cause**: Loading entire dataset without pagination
+- **Solution**: Use pagination with GetDatabaseBackupsAsync(pageSize: 50)
+
+### Enable Debug Logging
+
+```csharp
+services.AddLogging(builder =>
+    builder.AddConsole()
+           .SetMinimumLevel(LogLevel.Debug)
+           .AddFilter("SqliteMultiTenant", LogLevel.Debug));
+```
+
+### Performance Tuning
 
 ```csharp
 services.AddSqliteMultiTenant(connectionString, options =>
 {
-    options.MaxConnections = 20;                    // Max connections per tenant
-    options.ConnectionTimeoutSeconds = 30;         // Connection timeout
-    options.BackupRetentionDays = 30;              // Backup retention period
-    options.EnableEncryption = false;              // Enable database encryption
-    options.BackupDirectory = "backups";           // Backup location
-    options.DatabaseDirectory = "databases";       // Database location
-    options.EnableLogging = true;                  // Enable ILogger integration
+    // Increase connection pool
+    options.MaxConnections = 50;
+    
+    // Enable caching
+    options.EnableCaching = true;
+    options.CacheExpirationMinutes = 30;
+    
+    // Enable batch operations
+    options.EnableBatchOperations = true;
+    options.BatchSize = 500;
+    options.MaxDegreeOfParallelism = Environment.ProcessorCount;
 });
 ```
 
-## Development
+## Contributing
 
-The project demonstrates:
-- **Architecture**: Layered architecture with Models, Services, and Repositories
-- **Patterns**: Repository pattern, Dependency Injection, async/await
-- **Best Practices**: Entity validation, custom exceptions, comprehensive logging
-- **Testing**: Entities with validation methods, service layer abstractions
+Contributions are welcome! Please follow these guidelines:
 
-## Requirements
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- .NET 8.0 or higher
-- SQLite 3
-- System.Data.SQLite NuGet package
+### Code Standards
+
+- Follow existing code style and naming conventions
+- Add XML documentation comments for public APIs
+- Include unit tests for new features
+- Update README.md for user-facing changes
+- Ensure all tests pass before submitting PR
 
 ## License
 
-This project is licensed under the MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
 
-## Author
+Copyright © 2026 Vladyslav Zaiets
 
-**Vladyslav Zaiets**  
-CTO & Software Architect  
-https://sarmkadan.com
+## Support
+
+For issues, questions, or suggestions:
+- GitHub Issues: [Report an issue](https://github.com/Sarmkadan/sqlite-multi-tenant/issues)
+- Email: vladyslav.zaiets@amdaris.com
+- Website: https://sarmkadan.com
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2026-05-03
+**Built by [Vladyslav Zaiets](https://sarmkadan.com) - CTO & Software Architect**
+
+[Portfolio](https://sarmkadan.com) | [GitHub](https://github.com/Sarmkadan) | [Telegram](https://t.me/sarmkadan)
