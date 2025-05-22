@@ -53,9 +53,13 @@ public static class StringUtilities
     /// </summary>
     public static string TruncateWithEllipsis(string input, int maxLength = 100)
     {
+        if (maxLength < 3)
+            throw new ArgumentOutOfRangeException(nameof(maxLength), maxLength, "Maximum length must be at least 3 to accommodate ellipsis.");
+
         if (string.IsNullOrEmpty(input) || input.Length <= maxLength)
             return input;
 
+        // Fix: Added bounds checking for maxLength to prevent index out of range exception when < 3
         return input[..(maxLength - 3)] + "...";
     }
 
@@ -217,6 +221,10 @@ public static class StringUtilities
     /// </summary>
     public static IEnumerable<string> SplitPreservingQuotes(string input, char delimiter = ',')
     {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input), "Input string cannot be null.");
+
+        // Fix: Added null check to prevent NullReferenceException during string enumeration
         var parts = new List<string>();
         var currentPart = new StringBuilder();
         bool inQuotes = false;

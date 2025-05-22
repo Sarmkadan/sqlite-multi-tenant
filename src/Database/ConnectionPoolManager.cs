@@ -333,6 +333,7 @@ public sealed class ConnectionPoolManager : IConnectionPoolManager
             return ValueTask.CompletedTask;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsHealthy(SQLiteConnection conn, DateTimeOffset now) =>
             conn.State == System.Data.ConnectionState.Open
             && _meta.TryGetValue(conn, out var m)

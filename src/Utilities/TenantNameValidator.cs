@@ -150,7 +150,7 @@ namespace SqliteMultiTenant.Utilities
         public static string GenerateTenantId(string tenantName)
         {
             if (string.IsNullOrWhiteSpace(tenantName))
-                throw new ArgumentException("Tenant name cannot be empty", nameof(tenantName));
+                throw new ArgumentNullException(nameof(tenantName), "Tenant name cannot be null or empty when generating a tenant ID.");
 
             // Convert to lowercase, replace spaces with hyphens, remove invalid characters
             var id = tenantName.Trim().ToLower();

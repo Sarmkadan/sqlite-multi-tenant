@@ -27,7 +27,7 @@ public class TenantService : ITenantService
     public async Task<Tenant?> GetTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
-            throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+            throw new ArgumentException($"Tenant ID parameter '{nameof(tenantId)}' must be a valid non-empty identifier.", nameof(tenantId));
 
         try
         {
@@ -49,7 +49,7 @@ public class TenantService : ITenantService
     public async Task<Tenant> CreateTenantAsync(string name, string? description = null, string? contactEmail = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Tenant name cannot be empty", nameof(name));
+            throw new ArgumentException($"Tenant name parameter '{nameof(name)}' cannot be null or empty during creation.", nameof(name));
 
         try
         {

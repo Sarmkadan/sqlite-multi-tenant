@@ -3,6 +3,9 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -30,13 +33,14 @@ public class CacheService : ICacheService
 {
     private readonly IMemoryCache _cache;
     private readonly ILogger<CacheService> _logger;
-    private readonly Dictionary<string, DateTime> _keyTimestamps;
+    private readonly ConcurrentDictionary<string, DateTime> _keyTimestamps;
 
     public CacheService(IMemoryCache cache, ILogger<CacheService> logger)
     {
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _keyTimestamps = new Dictionary<string, DateTime>();
+        // Fix: Use ConcurrentDictionary to prevent thread-safety issues during concurrent cache operations
+        _keyTimestamps = new ConcurrentDictionary<string, DateTime>();
     }
 
     /// <summary>
@@ -95,7 +99,7 @@ public class CacheService : ICacheService
             return;
 
         _cache.Remove(key);
-        _keyTimestamps.Remove(key);
+        _keyTimestamps.TryRemove(key, out _);
 
         _logger.LogDebug($"Cache removed: {key}");
     }
@@ -126,8 +130,11 @@ public class CacheService : ICacheService
     /// </summary>
     public void Clear()
     {
-        // IMemoryCache doesn't provide Clear(), so we dispose and rebuild
-        _cache.Dispose();
+        // Fix: Dispose breaks the injected IMemoryCache singleton. Instead, we manually remove tracked keys.
+        foreach (var key in _keyTimestamps.Keys)
+        {
+            _cache.Remove(key);
+        }
         _keyTimestamps.Clear();
 
         _logger.LogWarning("Cache cleared (all entries removed)");
