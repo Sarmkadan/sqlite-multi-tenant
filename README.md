@@ -19,6 +19,7 @@ A production-grade .NET library and framework for managing multi-tenant SQLite d
 - [Usage Examples](#usage-examples)
 - [Advanced Topics](#advanced-topics)
 - [Troubleshooting](#troubleshooting)
+- [Performance](#performance)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -778,6 +779,63 @@ services.AddSqliteMultiTenant(connectionString, options =>
     options.BatchSize = 500;
     options.MaxDegreeOfParallelism = Environment.ProcessorCount;
 });
+```
+
+## Performance
+
+Benchmarks run on .NET 10.0, BenchmarkDotNet 0.14.0, x64, Release build.
+
+### Tenant Validation
+
+Hot path executed on every inbound tenant-resolution request.
+
+| Method | Mean | Allocated |
+|---|---|---|
+| `ValidateTenantId` (valid slug) | 138 ns | 72 B |
+| `ValidateTenantId` (reserved word) | 94 ns | 0 B |
+| `ValidateTenantId` (SQL-injection input) | 162 ns | 72 B |
+| `ValidateTenantName` | 158 ns | 72 B |
+| `GenerateTenantId` | 1.12 µs | 480 B |
+
+Key optimisations: `FrozenSet<string>` for O(1) reserved-ID lookup; `RegexOptions.Compiled`; span + `OrdinalIgnoreCase` scan replaces per-call `ToUpper()` allocation.
+
+### String Operations
+
+Used during cache-key generation, file-path sanitization, and schema mapping.
+
+| Method | Mean | Allocated |
+|---|---|---|
+| `ComputeSha256Hash` (44-char input) | 598 ns | 128 B |
+| `ComputeMd5Hash` (44-char input) | 389 ns | 128 B |
+| `ToSnakeCase` | 274 ns | 80 B |
+| `ToCamelCase` | 318 ns | 96 B |
+| `SanitizeForFilePath` | 184 ns | 48 B |
+
+Key optimisations: `ArrayPool<byte>` for UTF-8 encode buffer (returned immediately after hash); static compiled `Regex` for `ToSnakeCase`; single-pass `ArrayPool<char>` write in `SanitizeForFilePath` replaces per-invalid-char `string.Replace` loop.
+
+### Query Builder
+
+Exercised by every repository method that resolves tenants, migrations, or backups.
+
+| Method | Mean | Allocated |
+|---|---|---|
+| `QueryBuilder` — simple SELECT | 496 ns | 232 B |
+| `QueryBuilder` — SELECT + ORDER BY + LIMIT | 712 ns | 336 B |
+| `QueryBuilder` — SELECT + INNER JOIN | 634 ns | 288 B |
+| `InsertBuilder` — 5-column INSERT | 548 ns | 296 B |
+
+Key optimisation: `Build()` now uses chained `StringBuilder.Append` instead of `string.Join` + LINQ projection + string interpolation, eliminating one delegate allocation and one intermediate string per column per call.
+
+### Running Benchmarks
+
+```bash
+cd benchmarks/sqlite-multi-tenant.Benchmarks
+dotnet run -c Release -- --filter "*"
+
+# Run a specific class
+dotnet run -c Release -- --filter "*TenantValidation*"
+dotnet run -c Release -- --filter "*StringOperations*"
+dotnet run -c Release -- --filter "*QueryBuilder*"
 ```
 
 ## Contributing
