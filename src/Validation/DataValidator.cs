@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,8 +12,7 @@ namespace SqliteMultiTenant.Validation;
 /// Comprehensive data validation service for input validation and sanitization.
 /// Provides fluent validation API with custom validators and error messages.
 /// </summary>
-public class DataValidator
-{
+public sealed class DataValidator {
     private readonly List<ValidationError> _errors;
     private readonly ILogger<DataValidator> _logger;
 
@@ -117,7 +117,7 @@ public class DataValidator
     /// </summary>
     public DataValidator RequireNotEmpty<T>(IEnumerable<T>? collection, string fieldName)
     {
-        if (collection == null || !collection.Any())
+        if (collection is null || !collection.Any())
             _errors.Add(new ValidationError(fieldName, $"{fieldName} must contain at least one item"));
 
         return this;
@@ -171,8 +171,7 @@ public class DataValidator
     }
 }
 
-public class ValidationError
-{
+public sealed class ValidationError {
     public string FieldName { get; set; }
     public string Message { get; set; }
 
@@ -185,8 +184,7 @@ public class ValidationError
     public override string ToString() => $"{FieldName}: {Message}";
 }
 
-public class ValidationResult
-{
+public sealed class ValidationResult {
     public bool IsValid { get; set; }
     public List<ValidationError> Errors { get; set; } = new();
 

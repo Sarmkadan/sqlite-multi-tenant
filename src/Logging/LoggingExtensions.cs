@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -249,8 +250,7 @@ public static class LoggingExtensions
 /// Structured logging context for operation tracking.
 /// Implements IDisposable to auto-log completion on scope exit.
 /// </summary>
-public class OperationContext : IDisposable
-{
+public sealed class OperationContext : IDisposable {
     private readonly ILogger _logger;
     private readonly string _operationName;
     private readonly System.Diagnostics.Stopwatch _stopwatch;

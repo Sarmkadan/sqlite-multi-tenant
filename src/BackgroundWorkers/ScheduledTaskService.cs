@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -19,8 +20,7 @@ public interface IScheduledTaskService
     Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId);
 }
 
-public class ScheduledTaskService : IScheduledTaskService
-{
+public sealed class ScheduledTaskService : IScheduledTaskService {
     private readonly Dictionary<string, ScheduledTask> _tasks;
     private readonly Dictionary<string, CancellationTokenSource> _cancellationTokens;
     private readonly ILogger<ScheduledTaskService> _logger;
@@ -248,8 +248,7 @@ public class ScheduledTaskService : IScheduledTaskService
     }
 }
 
-public class ScheduledTask
-{
+public sealed class ScheduledTask {
     public string Id { get; set; } = string.Empty;
     public Func<Task> Action { get; set; } = null!;
     public TimeSpan Interval { get; set; }
@@ -261,8 +260,7 @@ public class ScheduledTask
     public string? LastError { get; set; }
 }
 
-public class TaskExecutionStatus
-{
+public sealed class TaskExecutionStatus {
     public string TaskId { get; set; } = string.Empty;
     public bool IsEnabled { get; set; }
     public bool IsRunning { get; set; }

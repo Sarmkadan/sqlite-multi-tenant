@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Services;
 /// <summary>
 /// Service implementation for database migration management
 /// </summary>
-public class MigrationService : IMigrationService
-{
+public sealed class MigrationService : IMigrationService {
     private readonly IMigrationRepository _repository;
     private readonly ILogger<MigrationService> _logger;
 
@@ -105,7 +105,7 @@ public class MigrationService : IMigrationService
         try
         {
             var existingMigration = await _repository.GetByVersionAsync(databaseId, version, cancellationToken);
-            if (existingMigration != null)
+            if (existingMigration is not null)
                 throw new MigrationException.AlreadyApplied(version);
 
             var migrations = await _repository.GetByDatabaseAsync(databaseId, cancellationToken);
@@ -150,7 +150,7 @@ public class MigrationService : IMigrationService
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
-            if (migration == null)
+            if (migration is null)
                 throw new MigrationException.NotFound(migrationId);
 
             migration.MarkAsStarted(executedBy);
@@ -172,7 +172,7 @@ public class MigrationService : IMigrationService
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
-            if (migration == null)
+            if (migration is null)
                 throw new MigrationException.NotFound(migrationId);
 
             if (!migration.CanRollback())
@@ -197,7 +197,7 @@ public class MigrationService : IMigrationService
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
-            if (migration == null)
+            if (migration is null)
                 throw new MigrationException.NotFound(migrationId);
 
             migration.MarkAsCompleted(executionTimeMs);
@@ -219,7 +219,7 @@ public class MigrationService : IMigrationService
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
-            if (migration == null)
+            if (migration is null)
                 throw new MigrationException.NotFound(migrationId);
 
             migration.MarkAsFailed(errorMessage);
@@ -260,7 +260,7 @@ public class MigrationService : IMigrationService
         try
         {
             var migration = await _repository.GetByVersionAsync(databaseId, version, cancellationToken);
-            return migration != null && migration.Status == MigrationStatus.Completed;
+            return migration is not null && migration.Status == MigrationStatus.Completed;
         }
         catch (Exception ex)
         {

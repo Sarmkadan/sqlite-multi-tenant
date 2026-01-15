@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Repositories;
 /// <summary>
 /// SQLite implementation of the migration repository
 /// </summary>
-public class MigrationRepository : IMigrationRepository
-{
+public sealed class MigrationRepository : IMigrationRepository {
     private readonly string _connectionString;
     private readonly ILogger<MigrationRepository> _logger;
 
@@ -315,7 +315,7 @@ public class MigrationRepository : IMigrationRepository
             command.Parameters.AddWithValue("@MigrationId", migrationId);
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != null && (long)result > 0;
+            return result is not null && (long)result > 0;
         }
         catch (Exception ex)
         {
@@ -337,7 +337,7 @@ public class MigrationRepository : IMigrationRepository
             command.Parameters.AddWithValue("@DatabaseId", databaseId);
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != null ? (int)(long)result : 0;
+            return result is not null ? (int)(long)result : 0;
         }
         catch (Exception ex)
         {

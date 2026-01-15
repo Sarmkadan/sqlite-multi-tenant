@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -133,8 +134,7 @@ public static class ServiceCollectionExtensions
 /// <summary>
 /// Configuration options for service registration.
 /// </summary>
-public class ServiceOptions
-{
+public sealed class ServiceOptions {
     public int MaxCacheItems { get; set; } = 1000;
     public int HttpClientTimeoutSeconds { get; set; } = 30;
     public bool EnableAuiting { get; set; } = true;

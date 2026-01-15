@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -24,8 +25,7 @@ public interface IHttpClientService
 /// <summary>
 /// HTTP client service implementation with retry and timeout policies.
 /// </summary>
-public class HttpClientService : IHttpClientService
-{
+public sealed class HttpClientService : IHttpClientService {
     private readonly HttpClient _httpClient;
     private readonly ILogger<HttpClientService> _logger;
     private readonly HttpClientOptions _options;
@@ -169,7 +169,7 @@ public class HttpClientService : IHttpClientService
     /// </summary>
     private void ApplyHeaders(HttpRequestMessage request, Dictionary<string, string> headers)
     {
-        if (headers == null)
+        if (headers is null)
             return;
 
         foreach (var header in headers)
@@ -192,8 +192,7 @@ public class HttpClientService : IHttpClientService
 /// <summary>
 /// Configuration options for HTTP client behavior.
 /// </summary>
-public class HttpClientOptions
-{
+public sealed class HttpClientOptions {
     /// <summary>
     /// Request timeout in seconds (default: 30s).
     /// </summary>

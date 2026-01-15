@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -8,8 +9,7 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents the current tenant context for a request or operation
 /// </summary>
-public class TenantContext
-{
+public sealed class TenantContext {
     public string TenantId { get; set; } = string.Empty;
     public string? TenantName { get; set; }
     public string? UserId { get; set; }

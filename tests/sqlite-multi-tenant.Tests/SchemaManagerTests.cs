@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ using System.Linq;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class SchemaManagerTests : IDisposable
-    {
+    public sealed class SchemaManagerTests : IDisposable {
         private readonly ILogger<SchemaManager> _mockLogger;
         private SQLiteConnection _connection;
         private string _connectionString = "Data Source=:memory:";
@@ -38,7 +38,7 @@ namespace SqliteMultiTenant.Tests
             {
                 command.CommandText = $"SELECT name FROM sqlite_master WHERE type='table' AND name='{tableName}';";
                 var result = await command.ExecuteScalarAsync();
-                return result != null;
+                return result is not null;
             }
         }
 
@@ -67,7 +67,7 @@ namespace SqliteMultiTenant.Tests
             {
                 command.CommandText = $"SELECT name FROM sqlite_master WHERE type='index' AND name='{indexName}';";
                 var result = await command.ExecuteScalarAsync();
-                return result != null;
+                return result is not null;
             }
         }
 

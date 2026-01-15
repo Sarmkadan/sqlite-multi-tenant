@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class CacheServiceTests
-    {
+    public sealed class CacheServiceTests {
         private readonly IMemoryCache _mockMemoryCache;
         private readonly ILogger<CacheService> _mockLogger;
         private readonly CacheService _sut;

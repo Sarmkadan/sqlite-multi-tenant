@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -9,8 +10,7 @@ namespace SqliteMultiTenant.Events;
 /// Raised when a bulk export operation begins.
 /// Enables monitoring dashboards and audit trails to record operation start times.
 /// </summary>
-public class BulkExportStartedEvent : DomainEvent
-{
+public sealed class BulkExportStartedEvent : DomainEvent {
     /// <summary>Identifier of the source database being exported.</summary>
     public string DatabaseId { get; set; } = string.Empty;
 
@@ -31,8 +31,7 @@ public class BulkExportStartedEvent : DomainEvent
 /// Raised when a bulk export operation finishes successfully.
 /// Carries final statistics for metrics collection and audit logging.
 /// </summary>
-public class BulkExportCompletedEvent : DomainEvent
-{
+public sealed class BulkExportCompletedEvent : DomainEvent {
     /// <summary>Identifier of the exported database.</summary>
     public string DatabaseId { get; set; } = string.Empty;
 
@@ -59,8 +58,7 @@ public class BulkExportCompletedEvent : DomainEvent
 /// Raised when a bulk export operation terminates with an unrecoverable error.
 /// Triggers alerting and allows downstream systems to initiate recovery.
 /// </summary>
-public class BulkExportFailedEvent : DomainEvent
-{
+public sealed class BulkExportFailedEvent : DomainEvent {
     /// <summary>Identifier of the database that failed to export.</summary>
     public string DatabaseId { get; set; } = string.Empty;
 
@@ -78,8 +76,7 @@ public class BulkExportFailedEvent : DomainEvent
 /// Raised when a bulk import operation begins.
 /// Enables monitoring systems to track in-progress write operations.
 /// </summary>
-public class BulkImportStartedEvent : DomainEvent
-{
+public sealed class BulkImportStartedEvent : DomainEvent {
     /// <summary>Identifier of the target database receiving the import.</summary>
     public string DatabaseId { get; set; } = string.Empty;
 
@@ -100,8 +97,7 @@ public class BulkImportStartedEvent : DomainEvent
 /// Raised when a bulk import operation finishes successfully.
 /// Carries final row counts for metrics collection and audit logging.
 /// </summary>
-public class BulkImportCompletedEvent : DomainEvent
-{
+public sealed class BulkImportCompletedEvent : DomainEvent {
     /// <summary>Identifier of the database that received the import.</summary>
     public string DatabaseId { get; set; } = string.Empty;
 
@@ -125,8 +121,7 @@ public class BulkImportCompletedEvent : DomainEvent
 /// Raised when a bulk import operation terminates with an unrecoverable error.
 /// Triggers alerting and allows downstream systems to initiate recovery or retry.
 /// </summary>
-public class BulkImportFailedEvent : DomainEvent
-{
+public sealed class BulkImportFailedEvent : DomainEvent {
     /// <summary>Identifier of the target database where the import failed.</summary>
     public string DatabaseId { get; set; } = string.Empty;
 

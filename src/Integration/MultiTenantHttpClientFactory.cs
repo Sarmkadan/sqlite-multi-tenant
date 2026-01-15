@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Integration
 {
     // Creates and manages HTTP clients with tenant-aware headers and configuration
-    public class MultiTenantHttpClientFactory
-    {
+    public sealed class MultiTenantHttpClientFactory {
         private readonly ILogger<MultiTenantHttpClientFactory> _logger;
         private readonly ConcurrentDictionary<string, HttpClient> _clientCache;
         private readonly string _defaultUserAgent;
@@ -122,8 +122,7 @@ namespace SqliteMultiTenant.Integration
     }
 
     // Builder for creating HTTP clients with fluent API
-    public class TenantHttpClientBuilder
-    {
+    public sealed class TenantHttpClientBuilder {
         private string _tenantId;
         private string _apiKey;
         private int _timeoutSeconds = 30;

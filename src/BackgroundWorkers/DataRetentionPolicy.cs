@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
 {
     // Implements data retention policies for managing old records
     // Automatically archives or deletes data based on configurable rules
-    public class DataRetentionPolicy
-    {
+    public sealed class DataRetentionPolicy {
         private readonly ILogger<DataRetentionPolicy> _logger;
 
         public DataRetentionPolicy(ILogger<DataRetentionPolicy> logger)
@@ -26,10 +26,10 @@ namespace SqliteMultiTenant.BackgroundWorkers
         public async Task<RetentionResult> ApplyRetentionPolicyAsync(SQLiteConnection connection,
             RetentionPolicyConfig policy)
         {
-            if (connection == null)
+            if (connection is null)
                 throw new ArgumentNullException(nameof(connection));
 
-            if (policy == null)
+            if (policy is null)
                 throw new ArgumentNullException(nameof(policy));
 
             var result = new RetentionResult();
@@ -146,15 +146,13 @@ namespace SqliteMultiTenant.BackgroundWorkers
         }
     }
 
-    public class RetentionPolicyConfig
-    {
+    public sealed class RetentionPolicyConfig {
         public string TenantId { get; set; }
         public List<RetentionRule> Rules { get; set; } = new List<RetentionRule>();
         public bool AutoExecute { get; set; }
     }
 
-    public class RetentionRule
-    {
+    public sealed class RetentionRule {
         public string TableName { get; set; }
         public string DateColumn { get; set; }
         public RetentionType RetentionType { get; set; }
@@ -171,8 +169,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
         YearsOld
     }
 
-    public class RetentionResult
-    {
+    public sealed class RetentionResult {
         public bool IsSuccessful { get; set; }
         public int TotalRecordsDeleted { get; set; }
         public DateTime ExecutedAt { get; set; }
@@ -181,8 +178,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
             new Dictionary<string, RuleExecutionResult>();
     }
 
-    public class RuleExecutionResult
-    {
+    public sealed class RuleExecutionResult {
         public string TableName { get; set; }
         public int RecordsDeleted { get; set; }
         public string Status { get; set; }
