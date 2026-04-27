@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -42,7 +43,7 @@ class ErrorHandlingExample
         try
         {
             var tenant = await tenantService.GetTenantAsync("non-existent-id");
-            if (tenant == null)
+            if (tenant is null)
             {
                 logger.LogWarning("  Tenant not found");
             }
@@ -134,7 +135,7 @@ class ErrorHandlingExample
             maxRetries: 3,
             logger);
 
-        if (result != null)
+        if (result is not null)
         {
             logger.LogInformation($"  ✓ Operation succeeded: {result.TenantId}");
         }

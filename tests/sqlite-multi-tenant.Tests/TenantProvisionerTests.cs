@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,8 +12,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class TenantProvisionerTests
-{
+public sealed class TenantProvisionerTests {
     private readonly TenantProvisioner _provisioner;
     private readonly ILogger<TenantProvisioner> _mockLogger;
 

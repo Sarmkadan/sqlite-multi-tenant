@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ using SqliteMultiTenant.Models;
 namespace SqliteMultiTenant.Utilities
 {
     // Helper class for managing tenant context in multi-tenant operations
-    public class TenantContextHelper
-    {
+    public sealed class TenantContextHelper {
         private readonly ILogger<TenantContextHelper> _logger;
         private static readonly AsyncLocal<TenantContext> _currentContext = new AsyncLocal<TenantContext>();
 
@@ -26,7 +26,7 @@ namespace SqliteMultiTenant.Utilities
         // Sets the current tenant context
         public void SetTenantContext(TenantContext context)
         {
-            if (context == null)
+            if (context is null)
                 throw new ArgumentNullException(nameof(context));
 
             _currentContext.Value = context;
@@ -37,7 +37,7 @@ namespace SqliteMultiTenant.Utilities
         public TenantContext GetTenantContext()
         {
             var context = _currentContext.Value;
-            if (context == null)
+            if (context is null)
             {
                 _logger.LogWarning("No tenant context is set");
             }
@@ -48,7 +48,7 @@ namespace SqliteMultiTenant.Utilities
         // Checks if a tenant context is set
         public bool HasTenantContext()
         {
-            return _currentContext.Value != null;
+            return _currentContext.Value is not null;
         }
 
         // Gets the current tenant ID
@@ -69,7 +69,7 @@ namespace SqliteMultiTenant.Utilities
         {
             var context = GetTenantContext();
 
-            if (context == null)
+            if (context is null)
             {
                 _logger.LogWarning("Tenant context validation failed: context is null");
                 return false;
@@ -114,7 +114,7 @@ namespace SqliteMultiTenant.Utilities
         public Dictionary<string, object> GetContextMetadata()
         {
             var context = GetTenantContext();
-            if (context == null)
+            if (context is null)
                 return new Dictionary<string, object>();
 
             return new Dictionary<string, object>
@@ -130,7 +130,7 @@ namespace SqliteMultiTenant.Utilities
         public string EnrichErrorWithContext(string errorMessage)
         {
             var context = GetTenantContext();
-            if (context == null)
+            if (context is null)
                 return errorMessage;
 
             return $"{errorMessage} [TenantId: {context.TenantId}]";
@@ -152,7 +152,7 @@ namespace SqliteMultiTenant.Utilities
             {
                 if (_disposed) return;
 
-                if (_previousContext != null)
+                if (_previousContext is not null)
                 {
                     _helper.SetTenantContext(_previousContext);
                 }

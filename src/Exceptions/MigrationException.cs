@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -8,8 +9,7 @@ namespace SqliteMultiTenant.Exceptions;
 /// <summary>
 /// Thrown when migration operations fail
 /// </summary>
-public class MigrationException : Exception
-{
+public sealed class MigrationException : Exception {
     public string? MigrationId { get; }
     public string? MigrationVersion { get; }
 

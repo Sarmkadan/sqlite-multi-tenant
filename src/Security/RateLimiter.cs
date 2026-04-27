@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ public interface IRateLimiter
     Task<RateLimitStatus> GetStatusAsync(string identifier);
 }
 
-public class RateLimiter : IRateLimiter
-{
+public sealed class RateLimiter : IRateLimiter {
     private readonly Dictionary<string, RateLimitBucket> _buckets;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<RateLimiter> _logger;
@@ -206,16 +206,14 @@ public class RateLimiter : IRateLimiter
     }
 }
 
-public class RateLimitBucket
-{
+public sealed class RateLimitBucket {
     public string Identifier { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime LastAccessedAt { get; set; }
     public List<DateTime> Requests { get; set; } = new();
 }
 
-public class RateLimitResult
-{
+public sealed class RateLimitResult {
     public bool IsAllowed { get; set; }
     public int CurrentCount { get; set; }
     public int MaxCount { get; set; }
@@ -224,16 +222,14 @@ public class RateLimitResult
     public TimeSpan TimeUntilReset => ResetTime - DateTime.UtcNow;
 }
 
-public class RateLimitStatus
-{
+public sealed class RateLimitStatus {
     public string Identifier { get; set; } = string.Empty;
     public int CurrentCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime LastAccessedAt { get; set; }
 }
 
-public class RateLimiterStatistics
-{
+public sealed class RateLimiterStatistics {
     public int ActiveBuckets { get; set; }
     public int TotalRequests { get; set; }
     public DateTime OldestBucket { get; set; }

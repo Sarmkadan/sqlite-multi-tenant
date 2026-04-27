@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.BackgroundWorkers
 {
     // Manages backup file rotation and cleanup to prevent disk space issues
-    public class BackupRotationManager
-    {
+    public sealed class BackupRotationManager {
         private readonly ILogger<BackupRotationManager> _logger;
 
         public BackupRotationManager(ILogger<BackupRotationManager> logger)
@@ -29,7 +29,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
             if (string.IsNullOrWhiteSpace(backupDirectory))
                 throw new ArgumentException("Backup directory cannot be empty", nameof(backupDirectory));
 
-            if (policy == null)
+            if (policy is null)
                 throw new ArgumentNullException(nameof(policy));
 
             var result = new BackupRotationResult();
@@ -214,15 +214,13 @@ namespace SqliteMultiTenant.BackgroundWorkers
         }
     }
 
-    public class BackupRotationPolicy
-    {
+    public sealed class BackupRotationPolicy {
         public TimeSpan MaxBackupAge { get; set; } = TimeSpan.FromDays(30);
         public int MaxBackupCount { get; set; } = 20;
         public long MaxDiskUsage { get; set; } = 10 * 1024 * 1024 * 1024; // 10GB
     }
 
-    public class BackupRotationResult
-    {
+    public sealed class BackupRotationResult {
         public bool IsSuccessful { get; set; }
         public int TotalBackups { get; set; }
         public int RemainingBackups { get; set; }
@@ -232,8 +230,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
         public string Error { get; set; }
     }
 
-    public class BackupVerificationResult
-    {
+    public sealed class BackupVerificationResult {
         public string FilePath { get; set; }
         public string FileName { get; set; }
         public long FileSize { get; set; }
@@ -245,8 +242,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
         public string Error { get; set; }
     }
 
-    public class BackupStatistics
-    {
+    public sealed class BackupStatistics {
         public int TotalBackups { get; set; }
         public DateTime? OldestBackup { get; set; }
         public DateTime? NewestBackup { get; set; }

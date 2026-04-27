@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -23,8 +24,7 @@ public interface IEncryptionService
     string HashPassword(string password);
 }
 
-public class EncryptionService : IEncryptionService
-{
+public sealed class EncryptionService : IEncryptionService {
     private readonly string _encryptionKey;
     private readonly ILogger<EncryptionService> _logger;
     private const int KeySize = 256 / 8; // 256 bits

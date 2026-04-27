@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/settings")]
-public class SettingsController : ControllerBase
-{
+public sealed class SettingsController : ControllerBase {
     private readonly IConfigurationManager _configManager;
     private readonly ILogger<SettingsController> _logger;
 
@@ -124,7 +124,7 @@ public class SettingsController : ControllerBase
     {
         try
         {
-            if (settings == null || settings.Count == 0)
+            if (settings is null || settings.Count == 0)
                 return BadRequest(ApiResponse<object>.Error("No settings provided"));
 
             _logger.LogInformation($"Batch settings update: {settings.Count} items");
@@ -232,20 +232,17 @@ public class SettingsController : ControllerBase
     }
 }
 
-public class SetSettingRequest
-{
+public sealed class SetSettingRequest {
     public object? Value { get; set; }
 }
 
-public class SettingValue
-{
+public sealed class SettingValue {
     public string Key { get; set; } = string.Empty;
     public object? Value { get; set; }
     public string Type { get; set; } = string.Empty;
 }
 
-public class BatchSettingUpdateResult
-{
+public sealed class BatchSettingUpdateResult {
     public int UpdatedCount { get; set; }
     public int FailedCount { get; set; }
     public int TotalCount { get; set; }
@@ -253,8 +250,7 @@ public class BatchSettingUpdateResult
     public DateTime Timestamp { get; set; }
 }
 
-public class AppInfo
-{
+public sealed class AppInfo {
     public string Name { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
     public DateTime StartTime { get; set; }

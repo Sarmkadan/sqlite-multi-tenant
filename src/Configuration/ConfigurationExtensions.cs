@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -164,8 +165,7 @@ public static class ConfigurationExtensions
 /// Helper for building configuration from multiple sources.
 /// Centralizes configuration setup logic.
 /// </summary>
-public class ConfigurationBuilder
-{
+public sealed class ConfigurationBuilder {
     private readonly Microsoft.Extensions.Configuration.ConfigurationBuilder _builder;
 
     public ConfigurationBuilder()

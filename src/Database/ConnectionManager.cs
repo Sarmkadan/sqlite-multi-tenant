@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ namespace SqliteMultiTenant.Database
 {
     // Manages connection pooling and lifecycle for per-tenant SQLite databases
     // Implements connection reuse to minimize resource overhead and improve performance
-    public class ConnectionManager : IDisposable
-    {
+    public sealed class ConnectionManager : IDisposable {
         private readonly ConcurrentDictionary<string, ConnectionPool> _pools;
         private readonly ILogger<ConnectionManager> _logger;
         private readonly int _maxConnectionsPerPool;
@@ -172,8 +172,7 @@ namespace SqliteMultiTenant.Database
         }
     }
 
-    public class PoolStatistics
-    {
+    public sealed class PoolStatistics {
         public string TenantId { get; set; }
         public int AvailableConnections { get; set; }
         public int TotalConnections { get; set; }

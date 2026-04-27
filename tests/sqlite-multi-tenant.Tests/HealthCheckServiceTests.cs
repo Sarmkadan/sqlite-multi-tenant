@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,8 +12,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class HealthCheckServiceTests
-{
+public sealed class HealthCheckServiceTests {
     private readonly ILogger<HealthCheckService> _mockLogger;
     private readonly HealthCheckService _healthCheckService;
 

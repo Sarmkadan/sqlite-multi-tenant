@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -174,8 +175,7 @@ public static class DependencyInjectionSetup
 /// Builder pattern for fluent configuration of multi-tenant options.
 /// Enables progressive configuration without modifying ServiceConfiguration directly.
 /// </summary>
-public class MultiTenantOptionsBuilder
-{
+public sealed class MultiTenantOptionsBuilder {
     private readonly SqliteMultiTenantOptions _options;
 
     public MultiTenantOptionsBuilder()

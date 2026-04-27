@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -20,8 +21,7 @@ public interface IConfigurationManager
     Dictionary<string, object> GetAll();
 }
 
-public class ConfigurationManager : IConfigurationManager
-{
+public sealed class ConfigurationManager : IConfigurationManager {
     private readonly Dictionary<string, object> _configuration;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<ConfigurationManager> _logger;
@@ -63,7 +63,7 @@ public class ConfigurationManager : IConfigurationManager
         {
             _semaphore.Wait();
 
-            if (value == null)
+            if (value is null)
             {
                 _configuration.Remove(key);
                 _logger.LogInformation($"Configuration removed: {key}");
@@ -102,7 +102,7 @@ public class ConfigurationManager : IConfigurationManager
                 try
                 {
                     value = (T?)Convert.ChangeType(configValue, typeof(T));
-                    return value != null;
+                    return value is not null;
                 }
                 catch
                 {
@@ -201,8 +201,7 @@ public class ConfigurationManager : IConfigurationManager
 /// <summary>
 /// Validates configuration values.
 /// </summary>
-public class ConfigurationValidator
-{
+public sealed class ConfigurationValidator {
     public bool ValidateConnectionString(string? connectionString)
     {
         return !string.IsNullOrWhiteSpace(connectionString) &&
@@ -239,8 +238,7 @@ public class ConfigurationValidator
 /// <summary>
 /// Configuration settings for the application.
 /// </summary>
-public class AppConfiguration
-{
+public sealed class AppConfiguration {
     public string MasterConnectionString { get; set; } = string.Empty;
     public string DatabaseDirectory { get; set; } = string.Empty;
     public string BackupDirectory { get; set; } = string.Empty;

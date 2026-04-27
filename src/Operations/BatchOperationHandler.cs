@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -21,8 +22,7 @@ public interface IBatchOperationHandler
 /// <summary>
 /// Batch operation definition with resources and parameters.
 /// </summary>
-public class BatchOperation
-{
+public sealed class BatchOperation {
     public string OperationId { get; set; } = Guid.NewGuid().ToString();
     public string OperationType { get; set; }
     public List<string> ResourceIds { get; set; } = new();
@@ -33,8 +33,7 @@ public class BatchOperation
 /// <summary>
 /// Result of batch operation execution.
 /// </summary>
-public class BatchOperationResult
-{
+public sealed class BatchOperationResult {
     public string OperationId { get; set; }
     public int TotalResources { get; set; }
     public int SuccessCount { get; set; }
@@ -47,8 +46,7 @@ public class BatchOperationResult
 /// <summary>
 /// Result for individual resource in batch operation.
 /// </summary>
-public class BatchResourceResult
-{
+public sealed class BatchResourceResult {
     public string ResourceId { get; set; }
     public bool Success { get; set; }
     public string Message { get; set; }
@@ -58,8 +56,7 @@ public class BatchResourceResult
 /// <summary>
 /// Status of ongoing batch operation.
 /// </summary>
-public class BatchOperationStatus
-{
+public sealed class BatchOperationStatus {
     public string OperationId { get; set; }
     public string State { get; set; } // pending, running, completed, failed
     public int TotalResources { get; set; }
@@ -72,8 +69,7 @@ public class BatchOperationStatus
 /// <summary>
 /// Batch operation handler implementation.
 /// </summary>
-public class BatchOperationHandler : IBatchOperationHandler
-{
+public sealed class BatchOperationHandler : IBatchOperationHandler {
     private readonly ILogger<BatchOperationHandler> _logger;
     private readonly Dictionary<string, BatchOperationStatus> _statusTracker = new();
 

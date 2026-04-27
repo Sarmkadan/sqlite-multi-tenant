@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/admin")]
-public class AdminController : ControllerBase
-{
+public sealed class AdminController : ControllerBase {
     private readonly HealthCheckService _healthCheckService;
     private readonly MetricsService _metricsService;
     private readonly ILogger<AdminController> _logger;
@@ -192,16 +192,14 @@ public class AdminController : ControllerBase
     }
 }
 
-public class HealthCheckResponse
-{
+public sealed class HealthCheckResponse {
     public bool IsHealthy { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
     public string Version { get; set; } = string.Empty;
 }
 
-public class SystemMetrics
-{
+public sealed class SystemMetrics {
     public DateTime Timestamp { get; set; }
     public long ProcessMemoryMb { get; set; }
     public int ThreadCount { get; set; }
@@ -210,15 +208,13 @@ public class SystemMetrics
     public double AverageResponseTimeMs { get; set; }
 }
 
-public class CacheClearResult
-{
+public sealed class CacheClearResult {
     public long MemoryFreedBytes { get; set; }
     public DateTime Timestamp { get; set; }
     public string Message { get; set; } = string.Empty;
 }
 
-public class DiagnosticsInfo
-{
+public sealed class DiagnosticsInfo {
     public string DotNetVersion { get; set; } = string.Empty;
     public string OSVersion { get; set; } = string.Empty;
     public int ProcessorCount { get; set; }

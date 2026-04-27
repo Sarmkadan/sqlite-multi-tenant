@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,7 +18,7 @@ public static class CollectionExtensions
     /// </summary>
     public static T SafeGet<T>(this IList<T> list, int index, T defaultValue = default)
     {
-        if (list == null || index < 0 || index >= list.Count)
+        if (list is null || index < 0 || index >= list.Count)
             return defaultValue;
 
         return list[index];
@@ -76,7 +77,7 @@ public static class CollectionExtensions
     /// </summary>
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> source) where T : class
     {
-        return source.Where(x => x != null);
+        return source.Where(x => x is not null);
     }
 
     /// <summary>

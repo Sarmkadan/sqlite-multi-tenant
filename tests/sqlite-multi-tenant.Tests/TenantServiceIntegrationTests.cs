@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -20,8 +21,7 @@ using Microsoft.Extensions.Options;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class TenantServiceIntegrationTests : IDisposable
-    {
+    public sealed class TenantServiceIntegrationTests : IDisposable {
         private readonly SqliteConnection _connection;
         private readonly DbContextOptions<TenantContext> _dbContextOptions;
         private readonly ILogger<TenantService> _logger;

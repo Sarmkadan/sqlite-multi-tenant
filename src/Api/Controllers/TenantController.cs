@@ -18,8 +18,7 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// Handles CRUD operations for multi-tenant database instances.
 /// All operations are validated and logged for audit purposes.
 /// </summary>
-public class TenantController
-{
+public sealed class TenantController {
     private readonly ITenantService _tenantService;
     private readonly ILogger<TenantController> _logger;
 
@@ -77,7 +76,7 @@ public class TenantController
         try
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
-            if (tenant == null)
+            if (tenant is null)
                 return ApiResponse<TenantResponse>.NotFound($"Tenant {tenantId} not found");
 
             var response = new TenantResponse
@@ -136,7 +135,7 @@ public class TenantController
         try
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
-            if (tenant == null)
+            if (tenant is null)
                 return ApiResponse<TenantResponse>.NotFound($"Tenant {tenantId} not found");
 
             if (!string.IsNullOrWhiteSpace(request.Name))
@@ -176,7 +175,7 @@ public class TenantController
         try
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
-            if (tenant == null)
+            if (tenant is null)
                 return ApiResponse<object>.NotFound($"Tenant {tenantId} not found");
 
             tenant.Status = Constants.TenantStatus.Suspended;

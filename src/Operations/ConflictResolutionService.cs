@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Operations
 {
     // Handles data conflict resolution in multi-tenant scenarios
     // Useful for merge operations, data synchronization, and concurrent updates
-    public class ConflictResolutionService
-    {
+    public sealed class ConflictResolutionService {
         private readonly ILogger<ConflictResolutionService> _logger;
 
         public ConflictResolutionService(ILogger<ConflictResolutionService> logger)
@@ -28,7 +28,7 @@ namespace SqliteMultiTenant.Operations
         {
             var result = new ConflictDetectionResult();
 
-            if (localVersion == null || remoteVersion == null)
+            if (localVersion is null || remoteVersion is null)
             {
                 return result;
             }
@@ -80,7 +80,7 @@ namespace SqliteMultiTenant.Operations
         {
             var result = new ConflictResolutionResult();
 
-            if (conflicts == null || conflicts.Conflicts.Count == 0)
+            if (conflicts is null || conflicts.Conflicts.Count == 0)
             {
                 return result;
             }
@@ -122,7 +122,7 @@ namespace SqliteMultiTenant.Operations
             string tableName, string keyColumn, object keyValue,
             ConflictResolutionResult resolution)
         {
-            if (connection == null || string.IsNullOrEmpty(tableName))
+            if (connection is null || string.IsNullOrEmpty(tableName))
                 return false;
 
             try
@@ -181,8 +181,8 @@ namespace SqliteMultiTenant.Operations
 
         private object MergeValues(object local, object remote)
         {
-            if (local == null) return remote;
-            if (remote == null) return local;
+            if (local is null) return remote;
+            if (remote is null) return local;
 
             // For numeric values, use the average
             if (local is int l && remote is int r)
@@ -200,22 +200,20 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
-    public class ConflictDetectionResult
-    {
+    public sealed class ConflictDetectionResult {
         public List<DataConflict> Conflicts { get; } = new List<DataConflict>();
         public bool HasConflicts => Conflicts.Count > 0;
 
         public void AddConflict(DataConflict conflict)
         {
-            if (conflict != null)
+            if (conflict is not null)
             {
                 Conflicts.Add(conflict);
             }
         }
     }
 
-    public class DataConflict
-    {
+    public sealed class DataConflict {
         public string Field { get; set; }
         public ConflictType ConflictType { get; set; }
         public object LocalValue { get; set; }
@@ -239,8 +237,7 @@ namespace SqliteMultiTenant.Operations
         Merge
     }
 
-    public class ConflictResolutionResult
-    {
+    public sealed class ConflictResolutionResult {
         public Dictionary<string, object> ResolvedValues { get; } = new Dictionary<string, object>();
         public bool IsSuccessful { get; set; }
         public string Error { get; set; }

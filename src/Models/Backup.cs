@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a backup of a tenant database
 /// </summary>
-public class Backup
-{
+public sealed class Backup {
     public string BackupId { get; set; } = string.Empty;
     public string DatabaseId { get; set; } = string.Empty;
     public string BackupPath { get; set; } = string.Empty;

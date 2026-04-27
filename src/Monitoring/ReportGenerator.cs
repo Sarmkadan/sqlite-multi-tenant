@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Monitoring
 {
     // Generates comprehensive reports for system monitoring and analysis
-    public class ReportGenerator
-    {
+    public sealed class ReportGenerator {
         private readonly ILogger<ReportGenerator> _logger;
 
         public ReportGenerator(ILogger<ReportGenerator> logger)

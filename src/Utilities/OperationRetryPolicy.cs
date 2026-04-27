@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Utilities
 {
     // Implements exponential backoff retry logic for transient failures
-    public class OperationRetryPolicy
-    {
+    public sealed class OperationRetryPolicy {
         private readonly ILogger<OperationRetryPolicy> _logger;
         private readonly int _maxRetries;
         private readonly TimeSpan _initialDelay;
@@ -29,7 +29,7 @@ namespace SqliteMultiTenant.Utilities
         // Executes an operation with retry logic
         public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, string operationName = null)
         {
-            if (operation == null)
+            if (operation is null)
                 throw new ArgumentNullException(nameof(operation));
 
             var opName = operationName ?? operation.GetType().Name;
@@ -70,7 +70,7 @@ namespace SqliteMultiTenant.Utilities
         // Executes an operation without return value
         public async Task ExecuteAsync(Func<Task> operation, string operationName = null)
         {
-            if (operation == null)
+            if (operation is null)
                 throw new ArgumentNullException(nameof(operation));
 
             var opName = operationName ?? operation.GetType().Name;
@@ -139,8 +139,7 @@ namespace SqliteMultiTenant.Utilities
     }
 
     // Builder for configurable retry policies
-    public class RetryPolicyBuilder
-    {
+    public sealed class RetryPolicyBuilder {
         private int _maxRetries = 3;
         private int _initialDelayMs = 100;
         private double _backoffMultiplier = 2.0;
@@ -172,7 +171,7 @@ namespace SqliteMultiTenant.Utilities
 
         public OperationRetryPolicy Build()
         {
-            if (_logger == null)
+            if (_logger is null)
                 throw new InvalidOperationException("Logger is required");
 
             return new OperationRetryPolicy(_logger, _maxRetries, _initialDelayMs, _backoffMultiplier);

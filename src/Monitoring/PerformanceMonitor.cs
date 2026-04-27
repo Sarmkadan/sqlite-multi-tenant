@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -14,8 +15,7 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.Monitoring
 {
     // Tracks application performance metrics including query times, memory usage, and operation latencies
-    public class PerformanceMonitor
-    {
+    public sealed class PerformanceMonitor {
         private readonly ILogger<PerformanceMonitor> _logger;
         private readonly ConcurrentDictionary<string, List<PerformanceMetric>> _metrics;
         private readonly Stopwatch _uptime;
@@ -108,7 +108,7 @@ namespace SqliteMultiTenant.Monitoring
             foreach (var kvp in _metrics)
             {
                 var opStats = GetOperationStats(kvp.Key);
-                if (opStats != null)
+                if (opStats is not null)
                 {
                     stats[kvp.Key] = opStats;
                 }
@@ -195,8 +195,7 @@ namespace SqliteMultiTenant.Monitoring
     }
 
     // Disposable tracker for measuring operation duration
-    public class PerformanceTracker : IDisposable
-    {
+    public sealed class PerformanceTracker : IDisposable {
         private readonly PerformanceMonitor _monitor;
         private readonly string _operationName;
         private readonly string _tenantId;
@@ -223,8 +222,7 @@ namespace SqliteMultiTenant.Monitoring
         }
     }
 
-    public class PerformanceMetric
-    {
+    public sealed class PerformanceMetric {
         public string OperationName { get; set; }
         public long ElapsedMilliseconds { get; set; }
         public string TenantId { get; set; }
@@ -233,8 +231,7 @@ namespace SqliteMultiTenant.Monitoring
         public string ExceptionType { get; set; }
     }
 
-    public class OperationStatistics
-    {
+    public sealed class OperationStatistics {
         public string OperationName { get; set; }
         public long TotalExecutions { get; set; }
         public long SuccessfulExecutions { get; set; }
@@ -246,8 +243,7 @@ namespace SqliteMultiTenant.Monitoring
         public DateTime? LastExecutedAt { get; set; }
     }
 
-    public class SystemHealthSummary
-    {
+    public sealed class SystemHealthSummary {
         public double UptimeSeconds { get; set; }
         public long TotalOperations { get; set; }
         public double SuccessRate { get; set; }

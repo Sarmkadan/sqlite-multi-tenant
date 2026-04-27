@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Utilities
 {
     // Generic resource pool for managing expensive resource creation and reuse
     // Useful for database connections, HTTP clients, and other pooled resources
-    public class AsyncResourcePool<T> : IDisposable where T : class
-    {
+    public sealed class AsyncResourcePool<T> : IDisposable where T : class {
         private readonly Func<Task<T>> _resourceFactory;
         private readonly Func<T, Task> _resourceDisposer;
         private readonly ILogger<AsyncResourcePool<T>> _logger;
@@ -65,7 +65,7 @@ namespace SqliteMultiTenant.Utilities
         // Releases a resource back to the pool
         private async Task ReleaseResourceAsync(T resource)
         {
-            if (resource != null && _pool.Count < _maxPoolSize)
+            if (resource is not null && _pool.Count < _maxPoolSize)
             {
                 _pool.Add(resource);
                 _logger.LogDebug("Resource returned to pool. Available: {Count}", _pool.Count);
@@ -110,8 +110,7 @@ namespace SqliteMultiTenant.Utilities
     }
 
     // Disposable wrapper for pooled resources
-    public class PooledResource<T> : IAsyncDisposable, IDisposable where T : class
-    {
+    public sealed class PooledResource<T> : IAsyncDisposable, IDisposable where T : class {
         private readonly T _resource;
         private readonly Func<T, Task> _onDispose;
         private bool _disposed;
@@ -141,8 +140,7 @@ namespace SqliteMultiTenant.Utilities
         }
     }
 
-    public class PoolStatistics
-    {
+    public sealed class PoolStatistics {
         public int AvailableResources { get; set; }
         public int TotalCreated { get; set; }
         public int WaitingRequests { get; set; }

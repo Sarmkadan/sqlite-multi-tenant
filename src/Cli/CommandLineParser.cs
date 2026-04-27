@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -11,14 +12,13 @@ using System.Text;
 namespace SqliteMultiTenant.Cli
 {
     // Advanced command-line argument parser with support for options, flags, and subcommands
-    public class CommandLineParser
-    {
+    public sealed class CommandLineParser {
         private readonly Dictionary<string, CommandDefinition> _commands;
         private readonly List<string> _arguments;
 
         public CommandLineParser(params string[] args)
         {
-            _arguments = new List<string>(args ?? Array.Empty<string>());
+            _arguments = new List<string>(args ?? []);
             _commands = new Dictionary<string, CommandDefinition>();
         }
 
@@ -34,7 +34,7 @@ namespace SqliteMultiTenant.Cli
                 Name = name,
                 Description = description,
                 Handler = handler,
-                Aliases = new List<string>(aliases ?? Array.Empty<string>())
+                Aliases = new List<string>(aliases ?? [])
             };
 
             _commands[name] = command;
@@ -108,7 +108,7 @@ namespace SqliteMultiTenant.Cli
                     var optionDef = commandDef.Options.Values.FirstOrDefault(o =>
                         o.Name.Equals(optionName, StringComparison.OrdinalIgnoreCase));
 
-                    if (optionDef != null)
+                    if (optionDef is not null)
                     {
                         if (position + 1 < _arguments.Count && !_arguments[position + 1].StartsWith("-"))
                         {
@@ -124,11 +124,11 @@ namespace SqliteMultiTenant.Cli
                     var flagDef = commandDef.Flags.Values.FirstOrDefault(f => f.ShortName == shortName);
                     var optionDef = commandDef.Options.Values.FirstOrDefault(o => o.ShortName == shortName);
 
-                    if (flagDef != null)
+                    if (flagDef is not null)
                     {
                         parsed.Flags[flagDef.Name] = true;
                     }
-                    else if (optionDef != null)
+                    else if (optionDef is not null)
                     {
                         if (position + 1 < _arguments.Count && !_arguments[position + 1].StartsWith("-"))
                         {
@@ -269,8 +269,7 @@ namespace SqliteMultiTenant.Cli
         }
     }
 
-    public class ParsedCommand
-    {
+    public sealed class ParsedCommand {
         public string Command { get; set; }
         public Dictionary<string, string> Options { get; set; } = new Dictionary<string, string>();
         public Dictionary<string, bool> Flags { get; set; } = new Dictionary<string, bool>();
@@ -296,7 +295,7 @@ namespace SqliteMultiTenant.Cli
                 {
                     return (T)Convert.ChangeType(value, typeof(T));
                 }
-                catch { }
+                catch { /* Ignored */ }
             }
 
             return defaultValue;

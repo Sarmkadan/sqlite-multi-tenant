@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class QueryBuilderTests
-{
+public sealed class QueryBuilderTests {
     // Existing tests - modified to use QueryBuilder(tableName) constructor
     [Fact]
     public void Build_EmptyQuery_ReturnsValidString()

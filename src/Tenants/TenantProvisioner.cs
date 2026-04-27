@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -16,8 +17,7 @@ namespace SqliteMultiTenant.Tenants
 {
     // Handles the complete lifecycle of tenant database provisioning
     // Creates isolated SQLite databases for each tenant with proper initialization
-    public class TenantProvisioner
-    {
+    public sealed class TenantProvisioner {
         private readonly ITenantRepository _tenantRepository;
         private readonly SchemaManager _schemaManager;
         private readonly ILogger<TenantProvisioner> _logger;
@@ -100,7 +100,7 @@ namespace SqliteMultiTenant.Tenants
             try
             {
                 var sourceTenant = await _tenantRepository.GetByIdAsync(sourceTenantId);
-                if (sourceTenant == null)
+                if (sourceTenant is null)
                     throw new InvalidOperationException($"Source tenant {sourceTenantId} not found");
 
                 var targetDir = Path.Combine(_basePath, targetTenantId);
@@ -134,7 +134,7 @@ namespace SqliteMultiTenant.Tenants
             try
             {
                 var tenant = await _tenantRepository.GetByIdAsync(tenantId);
-                if (tenant == null)
+                if (tenant is null)
                 {
                     _logger.LogWarning("Tenant not found for deprovisioning: {TenantId}", tenantId);
                     return false;
@@ -172,7 +172,7 @@ namespace SqliteMultiTenant.Tenants
             try
             {
                 var tenant = await _tenantRepository.GetByIdAsync(tenantId);
-                if (tenant == null)
+                if (tenant is null)
                 {
                     _logger.LogWarning("Tenant not found: {TenantId}", tenantId);
                     return false;

@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -29,8 +30,7 @@ public interface ICacheService
 /// Memory cache implementation using IMemoryCache.
 /// Thread-safe via underlying MemoryCache synchronization.
 /// </summary>
-public class CacheService : ICacheService
-{
+public sealed class CacheService : ICacheService {
     private readonly IMemoryCache _cache;
     private readonly ILogger<CacheService> _logger;
     private readonly ConcurrentDictionary<string, DateTime> _keyTimestamps;
@@ -68,7 +68,7 @@ public class CacheService : ICacheService
     /// </summary>
     public void Set<T>(string key, T value, TimeSpan? expiration = null)
     {
-        if (string.IsNullOrWhiteSpace(key) || value == null)
+        if (string.IsNullOrWhiteSpace(key) || value is null)
             return;
 
         var cacheOptions = new MemoryCacheEntryOptions();
@@ -170,8 +170,7 @@ public static class CacheKeys
 /// Cache invalidation handler for updating cache when data changes.
 /// Implements event-driven cache invalidation for consistency.
 /// </summary>
-public class CacheInvalidationService
-{
+public sealed class CacheInvalidationService {
     private readonly ICacheService _cache;
     private readonly ILogger<CacheInvalidationService> _logger;
 

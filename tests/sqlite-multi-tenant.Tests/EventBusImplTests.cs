@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -10,8 +11,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public class EventBusImplTests
-{
+public sealed class EventBusImplTests {
     private readonly EventBusImpl _eventBus;
 
     public EventBusImplTests()

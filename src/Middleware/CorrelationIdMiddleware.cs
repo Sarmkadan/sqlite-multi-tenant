@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -12,8 +13,7 @@ namespace SqliteMultiTenant.Middleware;
 /// Generates unique ID if not present in headers, and includes it in responses.
 /// Enables request tracking across multiple services and logs.
 /// </summary>
-public class CorrelationIdMiddleware
-{
+public sealed class CorrelationIdMiddleware {
     private readonly RequestDelegate _next;
     private readonly ILogger<CorrelationIdMiddleware> _logger;
     private const string CorrelationIdHeader = "X-Correlation-Id";

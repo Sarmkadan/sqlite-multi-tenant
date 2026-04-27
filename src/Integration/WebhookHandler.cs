@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -24,8 +25,7 @@ public interface IWebhookHandler
 /// <summary>
 /// Webhook subscription configuration.
 /// </summary>
-public class WebhookSubscription
-{
+public sealed class WebhookSubscription {
     public string WebhookId { get; set; } = Guid.NewGuid().ToString();
     public string Url { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
@@ -37,8 +37,7 @@ public class WebhookSubscription
 /// <summary>
 /// Webhook delivery request.
 /// </summary>
-public class WebhookDelivery
-{
+public sealed class WebhookDelivery {
     public string DeliveryId { get; set; } = Guid.NewGuid().ToString();
     public string WebhookId { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
@@ -51,8 +50,7 @@ public class WebhookDelivery
 /// <summary>
 /// Webhook handler implementation with HTTP delivery and retry logic.
 /// </summary>
-public class WebhookHandler : IWebhookHandler
-{
+public sealed class WebhookHandler : IWebhookHandler {
     private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookHandler> _logger;
     private readonly Dictionary<string, WebhookSubscription> _subscriptions = new();
@@ -69,7 +67,7 @@ public class WebhookHandler : IWebhookHandler
     /// </summary>
     public async Task DeliverAsync(WebhookDelivery delivery, CancellationToken cancellationToken)
     {
-        if (delivery == null)
+        if (delivery is null)
             throw new ArgumentNullException(nameof(delivery));
 
         while (delivery.RetryCount <= delivery.MaxRetries)
@@ -148,7 +146,7 @@ public class WebhookHandler : IWebhookHandler
     /// </summary>
     public Task RegisterAsync(WebhookSubscription subscription)
     {
-        if (subscription == null)
+        if (subscription is null)
             throw new ArgumentNullException(nameof(subscription));
 
         _subscriptions[subscription.WebhookId] = subscription;
@@ -191,8 +189,7 @@ public class WebhookHandler : IWebhookHandler
 /// <summary>
 /// Event handler that delivers webhook notifications for all domain events.
 /// </summary>
-public class WebhookEventHandler<T> : IEventHandler<T> where T : DomainEvent
-{
+public sealed class WebhookEventHandler<T> : IEventHandler<T> where T : DomainEvent {
     private readonly IWebhookHandler _webhookHandler;
     private readonly ILogger<WebhookEventHandler<T>> _logger;
 

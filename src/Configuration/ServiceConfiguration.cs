@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -48,7 +49,7 @@ public static class ServiceConfiguration
         string masterConnectionString,
         Action<MultiTenantOptions> configureOptions)
     {
-        if (configureOptions == null)
+        if (configureOptions is null)
             throw new ArgumentNullException(nameof(configureOptions));
 
         var options = new MultiTenantOptions();

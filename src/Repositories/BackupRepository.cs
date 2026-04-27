@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -13,8 +14,7 @@ namespace SqliteMultiTenant.Repositories;
 /// <summary>
 /// SQLite implementation of the backup repository
 /// </summary>
-public class BackupRepository : IBackupRepository
-{
+public sealed class BackupRepository : IBackupRepository {
     private readonly string _connectionString;
     private readonly ILogger<BackupRepository> _logger;
 
@@ -317,7 +317,7 @@ public class BackupRepository : IBackupRepository
             command.Parameters.AddWithValue("@BackupId", backupId);
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != null && (long)result > 0;
+            return result is not null && (long)result > 0;
         }
         catch (Exception ex)
         {
@@ -339,7 +339,7 @@ public class BackupRepository : IBackupRepository
             command.Parameters.AddWithValue("@DatabaseId", databaseId);
 
             var result = await command.ExecuteScalarAsync(cancellationToken);
-            return result != null ? (int)(long)result : 0;
+            return result is not null ? (int)(long)result : 0;
         }
         catch (Exception ex)
         {

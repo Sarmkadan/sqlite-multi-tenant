@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -17,8 +18,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class ConnectionPoolManagerIntegrationTests : IAsyncDisposable
-    {
+    public sealed class ConnectionPoolManagerIntegrationTests : IAsyncDisposable {
         private readonly ILogger<ConnectionPoolManager> _mockLogger;
         private ConnectionPoolOptions _options;
         private IConnectionPoolManager _connectionPoolManager;
@@ -226,7 +226,7 @@ namespace SqliteMultiTenant.Tests
 
         public async ValueTask DisposeAsync()
         {
-            if (_connectionPoolManager != null)
+            if (_connectionPoolManager is not null)
             {
                 await _connectionPoolManager.DisposeAsync();
             }

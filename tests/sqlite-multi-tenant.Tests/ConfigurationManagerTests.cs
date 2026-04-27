@@ -1,3 +1,4 @@
+#nullable enable
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
@@ -15,8 +16,7 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public class ConfigurationManagerTests : IDisposable
-    {
+    public sealed class ConfigurationManagerTests : IDisposable {
         private readonly IConfiguration _mockConfiguration;
         private readonly ILogger<ConfigurationManager> _mockLogger;
         private readonly string _tempBasePath;
