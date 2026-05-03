@@ -189,7 +189,7 @@ services.AddSqliteMultiTenant(connectionString, options => {});
 
 - **Issues**: [GitHub Issues](https://github.com/Sarmkadan/sqlite-multi-tenant/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Sarmkadan/sqlite-multi-tenant/discussions)
-- **Email**: vladyslav.zaiets@amdaris.com
+- **Email**: rutova2@gmail.com
 
 ## Contributing
 
