@@ -511,7 +511,7 @@ Paste error messages or logs here
 ## Questions?
 
 - **Issues**: [GitHub Issues](https://github.com/Sarmkadan/sqlite-multi-tenant/issues)
-- **Email**: vladyslav.zaiets@amdaris.com
+- **Email**: rutova2@gmail.com
 - **Website**: https://sarmkadan.com
 
 ## License
