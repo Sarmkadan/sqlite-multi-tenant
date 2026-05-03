@@ -381,31 +381,34 @@ The `CliApplication` class serves as the main entry point for the CLI, orchestra
 ### Usage Example
 
 ```csharp
-using SqliteMultiTenant.Cli;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-
-// Using ConsoleWriter for formatted output
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<CliApplication>();
 var consoleWriter = new ConsoleWriter();
-consoleWriter.WriteInfo("Starting CLI application...");
-consoleWriter.WriteSuccess("Operation completed successfully.");
-consoleWriter.WriteWarning("A non-fatal issue occurred.");
-consoleWriter.WriteError("Failed to perform the requested operation.");
+var parser = new CommandParser();
+var executor = new CommandExecutor();
 
-// Constructing CliApplication via Dependency Injection
-var services = new ServiceCollection();
-// Configure necessary services
-services.AddLogging(builder => builder.AddConsole());
-services.AddSingleton<IConsoleWriter, ConsoleWriter>();
-// ... Register CommandParser, CommandExecutor, etc. ...
-
-var serviceProvider = services.BuildServiceProvider();
-var app = serviceProvider.GetRequiredService<CliApplication>();
-
-// Run the application with arguments
-string[] args = { "tenant", "list" };
-int exitCode = await app.RunAsync(args);
-Console.WriteLine($"Application exited with code: {exitCode}");
+var app = new CliApplication(parser, executor, logger, consoleWriter);
+var args = new[] { "tenant", "list" };
+var exitCode = await app.RunAsync(args);
+consoleWriter.WriteSuccess($"Application exited with code: {exitCode}");
 ```
 
+## CliApplication
+
+The `CliApplication` class is used to run the CLI application with the given arguments. 
+
+### Usage Example
+
+```csharp
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<CliApplication>();
+var consoleWriter = new ConsoleWriter();
+var parser = new CommandParser();
+var executor = new CommandExecutor();
+
+var app = new CliApplication(parser, executor, logger, consoleWriter);
+var args = new[] { "tenant", "list" };
+var exitCode = await app.RunAsync(args);
+consoleWriter.WriteSuccess($"Application exited with code: {exitCode}");
+```
 ```
