@@ -145,7 +145,7 @@ public sealed class AuditLogger : IAuditLogger {
             var cutoffTime = DateTime.UtcNow - retentionPeriod;
             int removedCount = _entries.RemoveAll(e => e.Timestamp < cutoffTime);
 
-            _logger.LogInformation($"Purged {removedCount} old audit entries");
+            _logger.LogInformation("Purged {RemovedCount} old audit entries", removedCount);
         }
         finally
         {

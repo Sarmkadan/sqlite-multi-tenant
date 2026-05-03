@@ -56,13 +56,13 @@ public sealed class CliApplication {
             else
             {
                 _consoleWriter.WriteError(result.Message);
-                _logger.LogError($"Command failed: {result.Message}");
+                _logger.LogError("Command failed: {Message}", result.Message);
                 return 1;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Unhandled CLI exception: {ex.Message}\n{ex.StackTrace}");
+            _logger.LogError("Unhandled CLI exception: {Message}\n{StackTrace}", ex.Message, ex.StackTrace);
             _consoleWriter.WriteError($"Fatal error: {ex.Message}");
             return 1;
         }

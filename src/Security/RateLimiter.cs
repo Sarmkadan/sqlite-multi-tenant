@@ -110,7 +110,7 @@ public sealed class RateLimiter : IRateLimiter {
 
             if (_buckets.Remove(identifier))
             {
-                _logger.LogInformation($"Rate limit reset for {identifier}");
+                _logger.LogInformation("Rate limit reset for {Identifier}", identifier);
             }
         }
         finally
@@ -188,11 +188,11 @@ public sealed class RateLimiter : IRateLimiter {
                 _buckets.Remove(key);
 
             if (keysToRemove.Count > 0)
-                _logger.LogInformation($"Cleaned up {keysToRemove.Count} expired rate limit buckets");
+                _logger.LogInformation("Cleaned up {Count} expired rate limit buckets", keysToRemove.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error during rate limiter cleanup: {ex.Message}");
+            _logger.LogError("Error during rate limiter cleanup: {Message}", ex.Message);
         }
         finally
         {

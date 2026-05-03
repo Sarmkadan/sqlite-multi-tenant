@@ -45,7 +45,7 @@ public sealed class CsvFormatter {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"CSV formatting error: {ex.Message}");
+            _logger.LogError("CSV formatting error: {Message}", ex.Message);
             return string.Empty;
         }
     }

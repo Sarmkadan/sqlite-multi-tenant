@@ -46,7 +46,7 @@ public sealed class SettingsController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting settings: {ex.Message}");
+            _logger.LogError("Error getting settings: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve settings"));
         }
     }
@@ -60,7 +60,7 @@ public sealed class SettingsController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Setting requested: {key}");
+            _logger.LogInformation("Setting requested: {Key}", key);
 
             if (_configManager.TryGet<object>(key, out var value))
             {
@@ -78,7 +78,7 @@ public sealed class SettingsController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting setting: {ex.Message}");
+            _logger.LogError("Error getting setting: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve setting"));
         }
     }
@@ -95,7 +95,7 @@ public sealed class SettingsController : ControllerBase {
             if (!ModelState.IsValid)
                 return BadRequest(ApiResponse<object>.Error("Invalid request"));
 
-            _logger.LogInformation($"Setting updated: {key}");
+            _logger.LogInformation("Setting updated: {Key}", key);
 
             _configManager.Set(key, request.Value);
 
@@ -110,7 +110,7 @@ public sealed class SettingsController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error setting configuration: {ex.Message}");
+            _logger.LogError("Error setting configuration: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to update setting"));
         }
     }
@@ -127,7 +127,7 @@ public sealed class SettingsController : ControllerBase {
             if (settings is null || settings.Count == 0)
                 return BadRequest(ApiResponse<object>.Error("No settings provided"));
 
-            _logger.LogInformation($"Batch settings update: {settings.Count} items");
+            _logger.LogInformation("Batch settings update: {Count} items", settings.Count);
 
             int updatedCount = 0;
             var errors = new List<string>();
@@ -158,7 +158,7 @@ public sealed class SettingsController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating batch settings: {ex.Message}");
+            _logger.LogError("Error updating batch settings: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to update settings"));
         }
     }
@@ -172,7 +172,7 @@ public sealed class SettingsController : ControllerBase {
     {
         try
         {
-            _logger.LogInformation($"Setting removed: {key}");
+            _logger.LogInformation("Setting removed: {Key}", key);
 
             _configManager.Remove(key);
 
@@ -180,7 +180,7 @@ public sealed class SettingsController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error removing setting: {ex.Message}");
+            _logger.LogError("Error removing setting: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to remove setting"));
         }
     }
@@ -191,7 +191,7 @@ public sealed class SettingsController : ControllerBase {
     [HttpHead("{key}")]
     public IActionResult CheckSetting(string key)
     {
-        _logger.LogInformation($"Setting existence check: {key}");
+        _logger.LogInformation("Setting existence check: {Key}", key);
 
         if (_configManager.Contains(key))
             return Ok();
@@ -226,7 +226,7 @@ public sealed class SettingsController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting app info: {ex.Message}");
+            _logger.LogError("Error getting app info: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve app info"));
         }
     }

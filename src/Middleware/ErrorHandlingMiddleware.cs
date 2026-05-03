@@ -36,32 +36,32 @@ public sealed class ErrorHandlingMiddleware {
         }
         catch (TenantNotFoundException ex)
         {
-            _logger.LogWarning($"Tenant not found: {ex.Message}");
+            _logger.LogWarning("Tenant not found: {Message}", ex.Message);
             await HandleExceptionAsync(context, 404, "TENANT_NOT_FOUND", ex.Message);
         }
         catch (DatabaseAccessException ex)
         {
-            _logger.LogError($"Database access error: {ex.Message}");
+            _logger.LogError("Database access error: {Message}", ex.Message);
             await HandleExceptionAsync(context, 500, "DATABASE_ERROR", "Database operation failed");
         }
         catch (MigrationException ex)
         {
-            _logger.LogError($"Migration error: {ex.Message}");
+            _logger.LogError("Migration error: {Message}", ex.Message);
             await HandleExceptionAsync(context, 400, "MIGRATION_FAILED", ex.Message);
         }
         catch (BackupException ex)
         {
-            _logger.LogError($"Backup error: {ex.Message}");
+            _logger.LogError("Backup error: {Message}", ex.Message);
             await HandleExceptionAsync(context, 500, "BACKUP_FAILED", ex.Message);
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning($"Invalid argument: {ex.Message}");
+            _logger.LogWarning("Invalid argument: {Message}", ex.Message);
             await HandleExceptionAsync(context, 400, "INVALID_ARGUMENT", ex.Message);
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning($"Unauthorized: {ex.Message}");
+            _logger.LogWarning("Unauthorized: {Message}", ex.Message);
             await HandleExceptionAsync(context, 401, "UNAUTHORIZED", ex.Message);
         }
         catch (Exception ex)
