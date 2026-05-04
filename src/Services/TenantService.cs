@@ -41,7 +41,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error retrieving tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -79,7 +79,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating tenant: {ex.Message}");
+            _logger.LogError("Error creating tenant: {Message}", ex.Message);
             throw;
         }
     }
@@ -122,11 +122,11 @@ public sealed class TenantService : ITenantService {
                 throw new TenantNotFoundException(tenantId);
 
             await _repository.DeleteAsync(tenantId, cancellationToken);
-            _logger.LogInformation($"Tenant deleted: {tenantId}");
+            _logger.LogInformation("Tenant deleted: {TenantId}", tenantId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error deleting tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -139,7 +139,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving all tenants: {ex.Message}");
+            _logger.LogError("Error retrieving all tenants: {Message}", ex.Message);
             throw;
         }
     }
@@ -152,7 +152,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving active tenants: {ex.Message}");
+            _logger.LogError("Error retrieving active tenants: {Message}", ex.Message);
             throw;
         }
     }
@@ -170,11 +170,11 @@ public sealed class TenantService : ITenantService {
 
             tenant.Activate();
             await _repository.UpdateAsync(tenant, cancellationToken);
-            _logger.LogInformation($"Tenant activated: {tenantId}");
+            _logger.LogInformation("Tenant activated: {TenantId}", tenantId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error activating tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error activating tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -192,11 +192,11 @@ public sealed class TenantService : ITenantService {
 
             tenant.Deactivate();
             await _repository.UpdateAsync(tenant, cancellationToken);
-            _logger.LogInformation($"Tenant deactivated: {tenantId}");
+            _logger.LogInformation("Tenant deactivated: {TenantId}", tenantId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deactivating tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error deactivating tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -215,11 +215,11 @@ public sealed class TenantService : ITenantService {
             tenant.Status = TenantStatus.Suspended;
             tenant.UpdatedAt = DateTime.UtcNow;
             await _repository.UpdateAsync(tenant, cancellationToken);
-            _logger.LogInformation($"Tenant suspended: {tenantId}");
+            _logger.LogInformation("Tenant suspended: {TenantId}", tenantId);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error suspending tenant {tenantId}: {ex.Message}");
+            _logger.LogError("Error suspending tenant {TenantId}: {Message}", tenantId, ex.Message);
             throw;
         }
     }
@@ -235,7 +235,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error checking tenant existence: {ex.Message}");
+            _logger.LogError("Error checking tenant existence: {Message}", ex.Message);
             throw;
         }
     }
@@ -248,7 +248,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting tenant count: {ex.Message}");
+            _logger.LogError("Error getting tenant count: {Message}", ex.Message);
             throw;
         }
     }
@@ -264,7 +264,7 @@ public sealed class TenantService : ITenantService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error searching tenants: {ex.Message}");
+            _logger.LogError("Error searching tenants: {Message}", ex.Message);
             throw;
         }
     }
@@ -285,11 +285,11 @@ public sealed class TenantService : ITenantService {
 
             tenant.SetMetadata(key, value);
             await _repository.UpdateAsync(tenant, cancellationToken);
-            _logger.LogInformation($"Tenant metadata updated: {tenantId} -> {key}");
+            _logger.LogInformation("Tenant metadata updated: {TenantId} -> {Key}", tenantId, key);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error setting tenant metadata: {ex.Message}");
+            _logger.LogError("Error setting tenant metadata: {Message}", ex.Message);
             throw;
         }
     }

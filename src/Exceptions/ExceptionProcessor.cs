@@ -63,7 +63,7 @@ public sealed class ExceptionProcessor : IExceptionProcessor {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error processing exception: {ex.Message}");
+            _logger.LogError("Error processing exception: {Message}", ex.Message);
             return new ErrorResponse
             {
                 ErrorId = Guid.NewGuid().ToString(),

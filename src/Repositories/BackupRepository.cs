@@ -47,7 +47,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving backup {backupId}: {ex.Message}");
+            _logger.LogError("Error retrieving backup {BackupId}: {Message}", backupId, ex.Message);
             throw;
         }
     }
@@ -81,7 +81,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving backups for database {databaseId}: {ex.Message}");
+            _logger.LogError("Error retrieving backups for database {DatabaseId}: {Message}", databaseId, ex.Message);
             throw;
         }
     }
@@ -116,7 +116,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving completed backups: {ex.Message}");
+            _logger.LogError("Error retrieving completed backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -150,7 +150,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving verified backups: {ex.Message}");
+            _logger.LogError("Error retrieving verified backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -185,7 +185,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving failed backups: {ex.Message}");
+            _logger.LogError("Error retrieving failed backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -214,7 +214,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving latest backup: {ex.Message}");
+            _logger.LogError("Error retrieving latest backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -245,7 +245,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error adding backup: {ex.Message}");
+            _logger.LogError("Error adding backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -278,7 +278,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error updating backup: {ex.Message}");
+            _logger.LogError("Error updating backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -299,7 +299,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting backup: {ex.Message}");
+            _logger.LogError("Error deleting backup: {Message}", ex.Message);
             throw;
         }
     }
@@ -321,7 +321,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error checking backup existence: {ex.Message}");
+            _logger.LogError("Error checking backup existence: {Message}", ex.Message);
             throw;
         }
     }
@@ -343,7 +343,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting backup count: {ex.Message}");
+            _logger.LogError("Error getting backup count: {Message}", ex.Message);
             throw;
         }
     }
@@ -377,7 +377,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving expired backups: {ex.Message}");
+            _logger.LogError("Error retrieving expired backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -415,7 +415,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving paged backups: {ex.Message}");
+            _logger.LogError("Error retrieving paged backups: {Message}", ex.Message);
             throw;
         }
     }
@@ -506,7 +506,7 @@ public sealed class BackupRepository : IBackupRepository {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error initializing backup repository database: {ex.Message}");
+            _logger.LogError("Error initializing backup repository database: {Message}", ex.Message);
             throw;
         }
     }

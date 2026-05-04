@@ -47,7 +47,7 @@ public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreate
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error handling tenant created event: {ex.Message}");
+            _logger.LogError("Error handling tenant created event: {Message}", ex.Message);
             throw;
         }
     }
@@ -85,7 +85,7 @@ public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDelete
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error handling tenant deleted event: {ex.Message}");
+            _logger.LogError("Error handling tenant deleted event: {Message}", ex.Message);
             throw;
         }
     }
@@ -125,7 +125,7 @@ public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupComp
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error handling backup completed event: {ex.Message}");
+            _logger.LogError("Error handling backup completed event: {Message}", ex.Message);
             throw;
         }
     }
@@ -164,7 +164,7 @@ public sealed class MigrationCompletedEventHandler : IDomainEventHandler<Migrati
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error handling migration completed event: {ex.Message}");
+            _logger.LogError("Error handling migration completed event: {Message}", ex.Message);
             throw;
         }
     }
