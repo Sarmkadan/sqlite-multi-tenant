@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SqliteMultiTenant</AssemblyName>
@@ -11,8 +11,8 @@
     <Authors>Vladyslav Zaiets</Authors>
     <Description>Multi-tenant SQLite database manager for .NET - per-tenant isolation, migrations, backups</Description>
     <PackageTags>sqlite;multi-tenant;database;migration;backup</PackageTags>
-    <RepositoryUrl>https://github.com/vladyslav-zaiets/sqlite-multi-tenant</RepositoryUrl>
-    <LicenseExpression>MIT</LicenseExpression>
+    <RepositoryUrl>https://github.com/sarmkadan/sqlite-multi-tenant</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
