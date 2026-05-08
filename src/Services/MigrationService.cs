@@ -106,7 +106,7 @@ public sealed class MigrationService : IMigrationService {
         {
             var existingMigration = await _repository.GetByVersionAsync(databaseId, version, cancellationToken);
             if (existingMigration is not null)
-                throw new MigrationException.AlreadyApplied(version);
+                throw MigrationException.AlreadyApplied(version);
 
             var migrations = await _repository.GetByDatabaseAsync(databaseId, cancellationToken);
             int executionOrder = migrations.Count + 1;
