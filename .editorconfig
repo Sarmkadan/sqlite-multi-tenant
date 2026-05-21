@@ -123,6 +123,10 @@ dotnet_naming_symbols.private_field_symbols.applicable_kinds = field
 dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private,protected,protected_internal,private_protected
 dotnet_naming_symbols.private_field_symbols.required_modifiers =
 
+# XML files
+[*.{xml,csproj,props,targets}]
+indent_size = 2
+
 # JSON files
 [*.json]
 indent_size = 2

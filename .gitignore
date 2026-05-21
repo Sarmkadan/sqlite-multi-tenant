@@ -63,3 +63,9 @@ Desktop.ini
 
 ## dotnet tool
 .dotnet/
+
+## SQLite databases (test/local artifacts)
+*.sqlite
+*.sqlite3
+*.db
+!*.csproj
