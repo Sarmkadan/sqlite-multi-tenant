@@ -46,7 +46,7 @@ class MigrationsExample
                 name: "MigrationTest Corp",
                 description: "Testing migrations",
                 contactEmail: "admin@test.com");
-            logger.LogInformation($"✓ Tenant created: {tenant.TenantId}\n");
+            logger.LogInformation("✓ Tenant created: {TenantId}\n", tenant.TenantId);
 
             // Create database entry
             var databaseId = Guid.NewGuid().ToString();
@@ -60,7 +60,7 @@ class MigrationsExample
                 IsReadOnly = false,
                 CreatedAt = DateTime.UtcNow
             };
-            logger.LogInformation($"Step 2: Created database entry: {databaseId}\n");
+            logger.LogInformation("Step 2: Created database entry: {DatabaseId}\n", databaseId);
 
             // Create backup before migrations
             logger.LogInformation("Step 3: Creating baseline backup...");
@@ -69,7 +69,7 @@ class MigrationsExample
                 backupType: Constants.BackupType.Full,
                 createdBy: "admin");
             await backupService.MarkBackupAsCompletedAsync(backup.BackupId, 0, 0);
-            logger.LogInformation($"✓ Backup created: {backup.BackupId}\n");
+            logger.LogInformation("✓ Backup created: {BackupId}\n", backup.BackupId);
 
             // Define migrations
             logger.LogInformation("Step 4: Creating migrations...");
@@ -125,17 +125,17 @@ class MigrationsExample
                     upScript: mig.Up,
                     downScript: mig.Down);
 
-                logger.LogInformation($"  ✓ Created: {mig.Version} - {mig.Name}");
+                logger.LogInformation("  ✓ Created: {Version} - {Name}", mig.Version, mig.Name);
             }
             logger.LogInformation();
 
             // Get pending migrations
             logger.LogInformation("Step 5: Viewing pending migrations...");
             var pending = await migrationService.GetPendingMigrationsAsync(databaseId);
-            logger.LogInformation($"✓ Pending migrations: {pending.Count}");
+            logger.LogInformation("✓ Pending migrations: {Count}", pending.Count);
             foreach (var m in pending.OrderBy(x => x.Version))
             {
-                logger.LogInformation($"  - {m.Version}: {m.Name} (Rollbackable: {m.IsRollbackable})");
+                logger.LogInformation("  - {Version}: {Name} (Rollbackable: {IsRollbackable})", m.Version, m.Name, m.IsRollbackable);
             }
             logger.LogInformation();
 
@@ -146,7 +146,7 @@ class MigrationsExample
                 var startTime = DateTime.UtcNow;
 
                 // In real scenario, execute pending_mig.UpScript on actual database
-                logger.LogInformation($"  Executing: {pending_mig.Version} - {pending_mig.Name}");
+                logger.LogInformation("  Executing: {Version} - {Name}", pending_mig.Version, pending_mig.Name);
 
                 // Simulate execution delay
                 await Task.Delay(100);
@@ -158,17 +158,17 @@ class MigrationsExample
                     migrationId: pending_mig.MigrationId,
                     executionMs: (long)duration);
 
-                logger.LogInformation($"    ✓ Completed ({duration}ms)");
+                logger.LogInformation("    ✓ Completed ({Duration}ms)", duration);
             }
             logger.LogInformation();
 
             // Get applied migrations
             logger.LogInformation("Step 7: Viewing applied migrations...");
             var applied = await migrationService.GetAppliedMigrationsAsync(databaseId);
-            logger.LogInformation($"✓ Applied migrations: {applied.Count}");
+            logger.LogInformation("✓ Applied migrations: {Count}", applied.Count);
             foreach (var m in applied.OrderBy(x => x.Version))
             {
-                logger.LogInformation($"  - {m.Version}: {m.Name} (Applied: {m.ExecutedAt:O})");
+                logger.LogInformation("  - {Version}: {Name} (Applied: {ExecutedAt})", m.Version, m.Name, m.ExecutedAt);
             }
             logger.LogInformation();
 
@@ -177,21 +177,21 @@ class MigrationsExample
             var lastMigration = applied.OrderByDescending(x => x.Version).FirstOrDefault();
             if (lastMigration?.IsRollbackable ?? false)
             {
-                logger.LogInformation($"✓ Migration {lastMigration.Version} can be rolled back");
+                logger.LogInformation("✓ Migration {Version} can be rolled back", lastMigration.Version);
                 logger.LogInformation($"  Down script available: {!string.IsNullOrEmpty(lastMigration.DownScript)}");
             }
             logger.LogInformation();
 
             logger.LogInformation("✓ Migrations example completed successfully!");
             logger.LogInformation("\nSummary:");
-            logger.LogInformation($"  Total Migrations Created: {migrations.Length}");
-            logger.LogInformation($"  Applied Migrations: {applied.Count}");
-            logger.LogInformation($"  Database: {tenantDb.FilePath}");
+            logger.LogInformation("  Total Migrations Created: {Length}", migrations.Length);
+            logger.LogInformation("  Applied Migrations: {Count}", applied.Count);
+            logger.LogInformation("  Database: {FilePath}", tenantDb.FilePath);
             logger.LogInformation($"  Ready for production use!");
         }
         catch (Exception ex)
         {
-            logger.LogError($"Error: {ex.Message}");
+            logger.LogError("Error: {Message}", ex.Message);
             Environment.Exit(1);
         }
     }

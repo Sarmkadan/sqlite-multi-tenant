@@ -37,7 +37,7 @@ public sealed class BackupController {
     /// </summary>
     public async Task<ApiResponse<BackupResponse>> CreateBackupAsync(string databaseId, string createdBy)
     {
-        _logger.LogInformation($"Creating backup for database: {databaseId} by {createdBy}");
+        _logger.LogInformation("Creating backup for database: {DatabaseId} by {CreatedBy}", databaseId, createdBy);
 
         try
         {
@@ -57,12 +57,12 @@ public sealed class BackupController {
                 ExpiresAt = backup.ExpiresAt
             };
 
-            _logger.LogInformation($"Backup created: {backup.BackupId}");
+            _logger.LogInformation("Backup created: {BackupId}", backup.BackupId);
             return ApiResponse<BackupResponse>.Success(response, "Backup created successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating backup: {ex.Message}");
+            _logger.LogError("Error creating backup: {Message}", ex.Message);
             return ApiResponse<BackupResponse>.InternalServerError(ex.Message);
         }
     }
@@ -95,7 +95,7 @@ public sealed class BackupController {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving backup: {ex.Message}");
+            _logger.LogError("Error retrieving backup: {Message}", ex.Message);
             return ApiResponse<BackupResponse>.InternalServerError(ex.Message);
         }
     }
@@ -109,7 +109,7 @@ public sealed class BackupController {
         try
         {
             var backupCount = await _backupService.GetBackupCountAsync(databaseId);
-            _logger.LogInformation($"Found {backupCount} backups for database {databaseId}");
+            _logger.LogInformation("Found {BackupCount} backups for database {DatabaseId}", backupCount, databaseId);
 
             // In production, implement pagination and filtering
             var backups = new List<BackupResponse>();
@@ -119,7 +119,7 @@ public sealed class BackupController {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error listing backups: {ex.Message}");
+            _logger.LogError("Error listing backups: {Message}", ex.Message);
             return ApiResponse<IEnumerable<BackupResponse>>.InternalServerError(ex.Message);
         }
     }
@@ -131,18 +131,18 @@ public sealed class BackupController {
     /// </summary>
     public async Task<ApiResponse<object>> VerifyBackupAsync(string backupId, string verifiedBy)
     {
-        _logger.LogInformation($"Verifying backup: {backupId}");
+        _logger.LogInformation("Verifying backup: {BackupId}", backupId);
 
         try
         {
             await _backupService.VerifyBackupAsync(backupId, verifiedBy);
 
-            _logger.LogInformation($"Backup verified: {backupId}");
+            _logger.LogInformation("Backup verified: {BackupId}", backupId);
             return ApiResponse<object>.Success(new { verified = true, message = "Backup verified successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error verifying backup: {ex.Message}");
+            _logger.LogError("Error verifying backup: {Message}", ex.Message);
             return ApiResponse<object>.InternalServerError(ex.Message);
         }
     }
@@ -154,7 +154,7 @@ public sealed class BackupController {
     /// </summary>
     public async Task<ApiResponse<object>> RestoreBackupAsync(string backupId, string databaseId, string restoredBy)
     {
-        _logger.LogWarning($"Initiating backup restore: {backupId} to {databaseId} by {restoredBy}");
+        _logger.LogWarning("Initiating backup restore: {BackupId} to {DatabaseId} by {RestoredBy}", backupId, databaseId, restoredBy);
 
         try
         {
@@ -166,12 +166,12 @@ public sealed class BackupController {
             if (backup.Status != Constants.BackupStatus.Completed)
                 return ApiResponse<object>.BadRequest("Backup must be completed before restore");
 
-            _logger.LogWarning($"Backup restore started by {restoredBy}");
+            _logger.LogWarning("Backup restore started by {RestoredBy}", restoredBy);
             return ApiResponse<object>.Success(new { message = "Restore initiated", backupId });
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error restoring backup: {ex.Message}");
+            _logger.LogError("Error restoring backup: {Message}", ex.Message);
             return ApiResponse<object>.InternalServerError(ex.Message);
         }
     }
@@ -189,12 +189,12 @@ public sealed class BackupController {
 
             await _backupService.AddBackupTagAsync(backupId, tag);
 
-            _logger.LogInformation($"Tag added to backup {backupId}: {tag}");
+            _logger.LogInformation("Tag added to backup {BackupId}: {Tag}", backupId, tag);
             return ApiResponse<object>.Success(new { message = "Tag added successfully" });
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error tagging backup: {ex.Message}");
+            _logger.LogError("Error tagging backup: {Message}", ex.Message);
             return ApiResponse<object>.InternalServerError(ex.Message);
         }
     }

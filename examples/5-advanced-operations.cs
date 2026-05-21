@@ -66,7 +66,7 @@ class AdvancedOperationsExample
             }
             catch (Exception ex)
             {
-                logger.LogError($"  Failed to create {name}: {ex.Message}");
+                logger.LogError("  Failed to create {Name}: {Message}", name, ex.Message);
                 return null;
             }
         });
@@ -74,7 +74,7 @@ class AdvancedOperationsExample
         var tenantResults = await Task.WhenAll(tenantTasks);
         createdTenants = tenantResults.Where(t => t is not null).ToList();
 
-        logger.LogInformation($"  ✓ Created {createdTenants.Count} tenants\n");
+        logger.LogInformation("  ✓ Created {Count} tenants\n", createdTenants.Count);
 
         // Part 2: Metadata Management
         logger.LogInformation("Part 2: Tenant Metadata Management");
@@ -91,7 +91,7 @@ class AdvancedOperationsExample
             await tenantService.SetTenantMetadataAsync(
                 tenant.TenantId, "employee_count", "500");
 
-            logger.LogInformation($"  ✓ Set metadata for: {tenant.Name}");
+            logger.LogInformation("  ✓ Set metadata for: {Name}", tenant.Name);
         }
 
         logger.LogInformation();
@@ -102,10 +102,10 @@ class AdvancedOperationsExample
         // Search for specific tenant
         var searchTerm = "Tech";
         var searchResults = await tenantService.SearchTenantsAsync(searchTerm);
-        logger.LogInformation($"  Search for '{searchTerm}': {searchResults.Count} results");
+        logger.LogInformation("  Search for '{SearchTerm}': {Count} results", searchTerm, searchResults.Count);
         foreach (var result in searchResults)
         {
-            logger.LogInformation($"    - {result.Name}");
+            logger.LogInformation("    - {Name}", result.Name);
         }
 
         logger.LogInformation();
@@ -118,22 +118,22 @@ class AdvancedOperationsExample
             var testTenant = createdTenants[0];
 
             // Activate
-            logger.LogInformation($"  Activating: {testTenant.Name}");
+            logger.LogInformation("  Activating: {Name}", testTenant.Name);
             await tenantService.ActivateTenantAsync(testTenant.TenantId);
             var activated = await tenantService.GetTenantAsync(testTenant.TenantId);
-            logger.LogInformation($"    Status: {activated.Status}");
+            logger.LogInformation("    Status: {Status}", activated.Status);
 
             // Suspend
-            logger.LogInformation($"  Suspending: {testTenant.Name}");
+            logger.LogInformation("  Suspending: {Name}", testTenant.Name);
             await tenantService.SuspendTenantAsync(testTenant.TenantId);
             var suspended = await tenantService.GetTenantAsync(testTenant.TenantId);
-            logger.LogInformation($"    Status: {suspended.Status}");
+            logger.LogInformation("    Status: {Status}", suspended.Status);
 
             // Reactivate
-            logger.LogInformation($"  Reactivating: {testTenant.Name}");
+            logger.LogInformation("  Reactivating: {Name}", testTenant.Name);
             await tenantService.ActivateTenantAsync(testTenant.TenantId);
             var reactivated = await tenantService.GetTenantAsync(testTenant.TenantId);
-            logger.LogInformation($"    Status: {reactivated.Status}");
+            logger.LogInformation("    Status: {Status}", reactivated.Status);
 
             logger.LogInformation();
         }
@@ -153,7 +153,7 @@ class AdvancedOperationsExample
                 CreatedAt = DateTime.UtcNow
             };
 
-            logger.LogInformation($"  Created database for {tenant.Name}: {databaseId}");
+            logger.LogInformation("  Created database for {Name}: {DatabaseId}", tenant.Name, databaseId);
 
             // Create initial migration
             var migration = await migrationService.CreateMigrationAsync(
@@ -168,7 +168,7 @@ class AdvancedOperationsExample
                 );",
                 downScript: "DROP TABLE Customers;");
 
-            logger.LogInformation($"    Created migration: {migration.Version}");
+            logger.LogInformation("    Created migration: {Version}", migration.Version);
         }
 
         logger.LogInformation();
@@ -177,7 +177,7 @@ class AdvancedOperationsExample
         logger.LogInformation("Part 6: Statistics and Reporting");
 
         var allTenants = await tenantService.GetAllTenantsAsync();
-        logger.LogInformation($"  Total Tenants: {allTenants.Count}");
+        logger.LogInformation("  Total Tenants: {Count}", allTenants.Count);
 
         // Group by status
         var byStatus = allTenants
@@ -187,7 +187,7 @@ class AdvancedOperationsExample
         logger.LogInformation("  Tenants by Status:");
         foreach (var kvp in byStatus)
         {
-            logger.LogInformation($"    {kvp.Key}: {kvp.Value}");
+            logger.LogInformation("    {Key}: {Value}", kvp.Key, kvp.Value);
         }
 
         // Analyze created dates
@@ -196,12 +196,12 @@ class AdvancedOperationsExample
 
         if (oldestTenant is not null)
         {
-            logger.LogInformation($"  Oldest Tenant: {oldestTenant.Name} ({oldestTenant.CreatedAt:O})");
+            logger.LogInformation("  Oldest Tenant: {Name} ({CreatedAt})", oldestTenant.Name, oldestTenant.CreatedAt);
         }
 
         if (newestTenant is not null)
         {
-            logger.LogInformation($"  Newest Tenant: {newestTenant.Name} ({newestTenant.CreatedAt:O})");
+            logger.LogInformation("  Newest Tenant: {Name} ({CreatedAt})", newestTenant.Name, newestTenant.CreatedAt);
         }
 
         logger.LogInformation();
@@ -229,22 +229,22 @@ class AdvancedOperationsExample
                 await backupService.VerifyBackupAsync(backup.BackupId, "system");
 
                 backupCount++;
-                logger.LogInformation($"  ✓ Backed up: {tenant.Name}");
+                logger.LogInformation("  ✓ Backed up: {Name}", tenant.Name);
             }
             catch (Exception ex)
             {
-                logger.LogError($"  ✗ Backup failed for {tenant.Name}: {ex.Message}");
+                logger.LogError("  ✗ Backup failed for {Name}: {Message}", tenant.Name, ex.Message);
             }
         }
 
-        logger.LogInformation($"  Total Backups Created: {backupCount}\n");
+        logger.LogInformation("  Total Backups Created: {BackupCount}\n", backupCount);
 
         // Summary
         logger.LogInformation("✓ Advanced operations example completed!");
         logger.LogInformation($"\nSummary:");
-        logger.LogInformation($"  Tenants Created: {createdTenants.Count}");
-        logger.LogInformation($"  Total Tenants (including existing): {allTenants.Count}");
-        logger.LogInformation($"  Backups Created: {backupCount}");
+        logger.LogInformation("  Tenants Created: {Count}", createdTenants.Count);
+        logger.LogInformation("  Total Tenants (including existing): {Count}", allTenants.Count);
+        logger.LogInformation("  Backups Created: {BackupCount}", backupCount);
         logger.LogInformation($"  Caching: Enabled");
         logger.LogInformation($"  Ready for multi-tenant operations!");
     }

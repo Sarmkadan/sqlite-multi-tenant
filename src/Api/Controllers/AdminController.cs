@@ -60,7 +60,7 @@ public sealed class AdminController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Health check error: {ex.Message}");
+            _logger.LogError("Health check error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Health check failed"));
         }
     }
@@ -91,7 +91,7 @@ public sealed class AdminController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Metrics retrieval error: {ex.Message}");
+            _logger.LogError("Metrics retrieval error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve metrics"));
         }
     }
@@ -124,7 +124,7 @@ public sealed class AdminController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Cache clear error: {ex.Message}");
+            _logger.LogError("Cache clear error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Cache clear failed"));
         }
     }
@@ -148,7 +148,7 @@ public sealed class AdminController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"GC error: {ex.Message}");
+            _logger.LogError("GC error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Garbage collection failed"));
         }
     }
@@ -180,7 +180,7 @@ public sealed class AdminController : ControllerBase {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Diagnostics error: {ex.Message}");
+            _logger.LogError("Diagnostics error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Diagnostics failed"));
         }
     }

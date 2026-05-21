@@ -47,7 +47,7 @@ public sealed class XmlFormatter {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"XML formatting error: {ex.Message}");
+            _logger.LogError("XML formatting error: {Message}", ex.Message);
             return $"<error>{EscapeXml(ex.Message)}</error>";
         }
     }
