@@ -90,7 +90,7 @@ public abstract class GenericRepository<T> where T : class
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error getting paged results: {ex.Message}");
+            _logger.LogError("Error getting paged results: {Message}", ex.Message);
             throw;
         }
     }
@@ -110,12 +110,12 @@ public abstract class GenericRepository<T> where T : class
                 count++;
             }
 
-            _logger.LogInformation($"Bulk created {count} entities");
+            _logger.LogInformation("Bulk created {Count} entities", count);
             return count;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error in bulk create: {ex.Message}");
+            _logger.LogError("Error in bulk create: {Message}", ex.Message);
             throw;
         }
     }
@@ -135,12 +135,12 @@ public abstract class GenericRepository<T> where T : class
                     count++;
             }
 
-            _logger.LogInformation($"Bulk updated {count} entities");
+            _logger.LogInformation("Bulk updated {Count} entities", count);
             return count;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error in bulk update: {ex.Message}");
+            _logger.LogError("Error in bulk update: {Message}", ex.Message);
             throw;
         }
     }
@@ -160,12 +160,12 @@ public abstract class GenericRepository<T> where T : class
                     count++;
             }
 
-            _logger.LogInformation($"Bulk deleted {count} entities");
+            _logger.LogInformation("Bulk deleted {Count} entities", count);
             return count;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error in bulk delete: {ex.Message}");
+            _logger.LogError("Error in bulk delete: {Message}", ex.Message);
             throw;
         }
     }
@@ -212,7 +212,7 @@ public sealed class UnitOfWork : IUnitOfWork {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error saving changes: {ex.Message}");
+            _logger.LogError("Error saving changes: {Message}", ex.Message);
             throw;
         }
     }
@@ -226,7 +226,7 @@ public sealed class UnitOfWork : IUnitOfWork {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error starting transaction: {ex.Message}");
+            _logger.LogError("Error starting transaction: {Message}", ex.Message);
             throw;
         }
     }
@@ -243,7 +243,7 @@ public sealed class UnitOfWork : IUnitOfWork {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error committing transaction: {ex.Message}");
+            _logger.LogError("Error committing transaction: {Message}", ex.Message);
             throw;
         }
     }
@@ -260,7 +260,7 @@ public sealed class UnitOfWork : IUnitOfWork {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error rolling back transaction: {ex.Message}");
+            _logger.LogError("Error rolling back transaction: {Message}", ex.Message);
             throw;
         }
     }

@@ -46,7 +46,7 @@ class Program
         catch (Exception ex)
         {
             var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError($"Application error: {ex.Message}");
+            logger.LogError("Application error: {Message}", ex.Message);
             Environment.Exit(1);
         }
     }
@@ -69,18 +69,18 @@ class Program
             description: "Main tenant for demonstration",
             contactEmail: "admin@acme.example.com");
 
-        logger.LogInformation($"✓ Tenant created: {tenant.TenantId}");
-        logger.LogInformation($"  Name: {tenant.Name}");
-        logger.LogInformation($"  Status: {tenant.Status}");
-        logger.LogInformation($"  Created: {tenant.CreatedAt:O}\n");
+        logger.LogInformation("✓ Tenant created: {TenantId}", tenant.TenantId);
+        logger.LogInformation("  Name: {Name}", tenant.Name);
+        logger.LogInformation("  Status: {Status}", tenant.Status);
+        logger.LogInformation("  Created: {CreatedAt}\n", tenant.CreatedAt);
 
         // Retrieve the tenant
         logger.LogInformation("Retrieving tenant...");
         var retrievedTenant = await tenantService.GetTenantAsync(tenant.TenantId);
         if (retrievedTenant is not null)
         {
-            logger.LogInformation($"✓ Tenant retrieved: {retrievedTenant.Name}");
-            logger.LogInformation($"  Last accessed: {retrievedTenant.LastAccessedAt:O}\n");
+            logger.LogInformation("✓ Tenant retrieved: {Name}", retrievedTenant.Name);
+            logger.LogInformation("  Last accessed: {LastAccessedAt}\n", retrievedTenant.LastAccessedAt);
         }
 
         // Create a database entry for the tenant
@@ -96,9 +96,9 @@ class Program
             IsReadOnly = false
         };
 
-        logger.LogInformation($"✓ Database entry created: {tenantDb.DatabaseId}");
-        logger.LogInformation($"  Tenant: {tenantDb.TenantId}");
-        logger.LogInformation($"  Path: {tenantDb.FilePath}\n");
+        logger.LogInformation("✓ Database entry created: {DatabaseId}", tenantDb.DatabaseId);
+        logger.LogInformation("  Tenant: {TenantId}", tenantDb.TenantId);
+        logger.LogInformation("  Path: {FilePath}\n", tenantDb.FilePath);
 
         // Create migrations
         logger.LogInformation("Creating migrations...");
@@ -110,8 +110,8 @@ class Program
             downScript: "DROP TABLE Users;");
 
         logger.LogInformation($"✓ Migration 1 created: {migration1.GetDisplayName()}");
-        logger.LogInformation($"  Status: {migration1.Status}");
-        logger.LogInformation($"  Rollbackable: {migration1.IsRollbackable}\n");
+        logger.LogInformation("  Status: {Status}", migration1.Status);
+        logger.LogInformation("  Rollbackable: {IsRollbackable}\n", migration1.IsRollbackable);
 
         var migration2 = await migrationService.CreateMigrationAsync(
             databaseId: tenantDb.DatabaseId,
@@ -125,7 +125,7 @@ class Program
         // Get pending migrations
         logger.LogInformation("Retrieving pending migrations...");
         var pendingMigrations = await migrationService.GetPendingMigrationsAsync(tenantDb.DatabaseId);
-        logger.LogInformation($"✓ Found {pendingMigrations.Count} pending migrations:");
+        logger.LogInformation("✓ Found {Count} pending migrations:", pendingMigrations.Count);
         foreach (var mig in pendingMigrations)
         {
             logger.LogInformation($"  - {mig.GetDisplayName()} (Order: {mig.ExecutionOrder})");
@@ -140,11 +140,11 @@ class Program
             createdBy: "admin@acme.example.com",
             backupPath: null);
 
-        logger.LogInformation($"✓ Backup created: {backup.BackupId}");
-        logger.LogInformation($"  Type: {backup.BackupType}");
-        logger.LogInformation($"  Status: {backup.Status}");
-        logger.LogInformation($"  Path: {backup.BackupPath}");
-        logger.LogInformation($"  Expires: {backup.ExpiresAt:O}\n");
+        logger.LogInformation("✓ Backup created: {BackupId}", backup.BackupId);
+        logger.LogInformation("  Type: {BackupType}", backup.BackupType);
+        logger.LogInformation("  Status: {Status}", backup.Status);
+        logger.LogInformation("  Path: {BackupPath}", backup.BackupPath);
+        logger.LogInformation("  Expires: {ExpiresAt}\n", backup.ExpiresAt);
 
         // Complete the backup
         logger.LogInformation("Completing backup...");
@@ -167,27 +167,27 @@ class Program
         if (backupDetails is not null)
         {
             logger.LogInformation($"✓ Backup details retrieved:");
-            logger.LogInformation($"  Status: {backupDetails.Status}");
-            logger.LogInformation($"  Size: {backupDetails.SizeBytes} bytes");
-            logger.LogInformation($"  Verified: {backupDetails.IsVerified}");
+            logger.LogInformation("  Status: {Status}", backupDetails.Status);
+            logger.LogInformation("  Size: {SizeBytes} bytes", backupDetails.SizeBytes);
+            logger.LogInformation("  Verified: {IsVerified}", backupDetails.IsVerified);
             logger.LogInformation($"  Tags: {string.Join(", ", backupDetails.GetTags())}\n");
         }
 
         // Get all tenants
         logger.LogInformation("Retrieving all tenants...");
         var allTenants = await tenantService.GetAllTenantsAsync();
-        logger.LogInformation($"✓ Total tenants: {allTenants.Count}\n");
+        logger.LogInformation("✓ Total tenants: {Count}\n", allTenants.Count);
 
         // Get backup count
         logger.LogInformation("Getting backup count...");
         var backupCount = await backupService.GetBackupCountAsync(tenantDb.DatabaseId);
-        logger.LogInformation($"✓ Backups for this database: {backupCount}\n");
+        logger.LogInformation("✓ Backups for this database: {BackupCount}\n", backupCount);
 
         // Summary
         logger.LogInformation("=== Demonstration Complete ===");
-        logger.LogInformation($"Tenant ID: {tenant.TenantId}");
-        logger.LogInformation($"Database ID: {tenantDb.DatabaseId}");
-        logger.LogInformation($"Backup ID: {backup.BackupId}");
+        logger.LogInformation("Tenant ID: {TenantId}", tenant.TenantId);
+        logger.LogInformation("Database ID: {DatabaseId}", tenantDb.DatabaseId);
+        logger.LogInformation("Backup ID: {BackupId}", backup.BackupId);
         logger.LogInformation("\nAll multi-tenant operations completed successfully!");
     }
 }

@@ -47,7 +47,7 @@ class BackupRestoreExample
                 name: "BackupTest Corp",
                 description: "Testing backups",
                 contactEmail: "admin@backup-test.com");
-            logger.LogInformation($"✓ Tenant: {tenant.TenantId}\n");
+            logger.LogInformation("✓ Tenant: {TenantId}\n", tenant.TenantId);
 
             // Create database entry
             var databaseId = Guid.NewGuid().ToString();
@@ -76,7 +76,7 @@ class BackupRestoreExample
                 sizeBytes: 1024000,
                 durationMs: 2500);
             backups.Add(fullBackup.BackupId);
-            logger.LogInformation($"    ✓ Full: {fullBackup.BackupId}");
+            logger.LogInformation("    ✓ Full: {BackupId}", fullBackup.BackupId);
 
             // Incremental backup
             logger.LogInformation("  Creating incremental backup...");
@@ -89,7 +89,7 @@ class BackupRestoreExample
                 sizeBytes: 204800,
                 durationMs: 800);
             backups.Add(incrBackup.BackupId);
-            logger.LogInformation($"    ✓ Incremental: {incrBackup.BackupId}");
+            logger.LogInformation("    ✓ Incremental: {BackupId}", incrBackup.BackupId);
 
             // Differential backup
             logger.LogInformation("  Creating differential backup...");
@@ -102,7 +102,7 @@ class BackupRestoreExample
                 sizeBytes: 512000,
                 durationMs: 1500);
             backups.Add(diffBackup.BackupId);
-            logger.LogInformation($"    ✓ Differential: {diffBackup.BackupId}\n");
+            logger.LogInformation("    ✓ Differential: {BackupId}\n", diffBackup.BackupId);
 
             // Add tags to backups
             logger.LogInformation("Step 3: Adding backup tags...");
@@ -110,7 +110,7 @@ class BackupRestoreExample
             {
                 await backupService.AddBackupTagAsync(backupId, "production");
                 await backupService.AddBackupTagAsync(backupId, "daily");
-                logger.LogInformation($"  ✓ Tagged: {backupId}");
+                logger.LogInformation("  ✓ Tagged: {BackupId}", backupId);
             }
             logger.LogInformation();
 
@@ -120,8 +120,8 @@ class BackupRestoreExample
             {
                 await backupService.VerifyBackupAsync(backupId, "admin");
                 var backup = await backupService.GetBackupAsync(backupId);
-                logger.LogInformation($"  ✓ Verified: {backupId}");
-                logger.LogInformation($"    Status: {backup.Status}, IsVerified: {backup.IsVerified}");
+                logger.LogInformation("  ✓ Verified: {BackupId}", backupId);
+                logger.LogInformation("    Status: {Status}, IsVerified: {IsVerified}", backup.Status, backup.IsVerified);
             }
             logger.LogInformation();
 
@@ -130,15 +130,15 @@ class BackupRestoreExample
             var allBackups = await backupService.GetDatabaseBackupsAsync(
                 databaseId: databaseId,
                 pageSize: 50);
-            logger.LogInformation($"✓ Total backups: {allBackups.Count}");
+            logger.LogInformation("✓ Total backups: {Count}", allBackups.Count);
             foreach (var b in allBackups.OrderByDescending(x => x.CreatedAt))
             {
                 var tags = await backupService.GetBackupTagsAsync(b.BackupId);
-                logger.LogInformation($"  - {b.BackupType}");
-                logger.LogInformation($"    ID: {b.BackupId}");
+                logger.LogInformation("  - {BackupType}", b.BackupType);
+                logger.LogInformation("    ID: {BackupId}", b.BackupId);
                 logger.LogInformation($"    Size: {b.SizeBytes / 1024.0:F2} KB");
-                logger.LogInformation($"    Created: {b.CreatedAt:O}");
-                logger.LogInformation($"    Status: {b.Status}, Verified: {b.IsVerified}");
+                logger.LogInformation("    Created: {CreatedAt}", b.CreatedAt);
+                logger.LogInformation("    Status: {Status}, Verified: {IsVerified}", b.Status, b.IsVerified);
                 logger.LogInformation($"    Tags: {string.Join(", ", tags)}");
             }
             logger.LogInformation();
@@ -146,17 +146,17 @@ class BackupRestoreExample
             // Get completed backups only
             logger.LogInformation("Step 6: Getting completed backups...");
             var completedBackups = await backupService.GetCompletedBackupsAsync(databaseId);
-            logger.LogInformation($"✓ Completed backups: {completedBackups.Count}\n");
+            logger.LogInformation("✓ Completed backups: {Count}\n", completedBackups.Count);
 
             // Get backup count
             logger.LogInformation("Step 7: Getting backup statistics...");
             var backupCount = await backupService.GetBackupCountAsync(databaseId);
-            logger.LogInformation($"✓ Total backups for database: {backupCount}");
+            logger.LogInformation("✓ Total backups for database: {BackupCount}", backupCount);
 
             // Calculate total backup size
             var totalSize = allBackups.Sum(b => b.SizeBytes);
             var totalSizeMB = totalSize / (1024.0 * 1024.0);
-            logger.LogInformation($"✓ Total backup size: {totalSizeMB:F2} MB");
+            logger.LogInformation("✓ Total backup size: {TotalSizeMB} MB", totalSizeMB);
 
             // Set backup expiration
             logger.LogInformation("Step 8: Setting backup expiration...");
@@ -165,19 +165,19 @@ class BackupRestoreExample
             await backupService.SetBackupExpirationAsync(
                 backupId: oldestBackup.BackupId,
                 expiresAt: expirationDate);
-            logger.LogInformation($"✓ Set expiration for {oldestBackup.BackupId}");
-            logger.LogInformation($"  Expires: {expirationDate:O}\n");
+            logger.LogInformation("✓ Set expiration for {BackupId}", oldestBackup.BackupId);
+            logger.LogInformation("  Expires: {ExpirationDate}\n", expirationDate);
 
             logger.LogInformation("✓ Backup example completed successfully!");
             logger.LogInformation("\nSummary:");
-            logger.LogInformation($"  Database: {databaseId}");
-            logger.LogInformation($"  Total Backups: {backupCount}");
+            logger.LogInformation("  Database: {DatabaseId}", databaseId);
+            logger.LogInformation("  Total Backups: {BackupCount}", backupCount);
             logger.LogInformation($"  Backup Types: Full, Incremental, Differential");
             logger.LogInformation($"  All Verified: {allBackups.All(b => b.IsVerified)}");
         }
         catch (Exception ex)
         {
-            logger.LogError($"Error: {ex.Message}");
+            logger.LogError("Error: {Message}", ex.Message);
             Environment.Exit(1);
         }
     }

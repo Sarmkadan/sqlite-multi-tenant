@@ -33,7 +33,7 @@ public sealed class MigrationController {
     /// </summary>
     public async Task<ApiResponse<MigrationResponse>> CreateMigrationAsync(CreateMigrationRequest request)
     {
-        _logger.LogInformation($"Creating migration: v{request.Version} - {request.Name}");
+        _logger.LogInformation("Creating migration: v{Version} - {Name}", request.Version, request.Name);
 
         try
         {
@@ -61,12 +61,12 @@ public sealed class MigrationController {
                 CreatedAt = migration.CreatedAt
             };
 
-            _logger.LogInformation($"Migration created: {response.Version} - {response.Name}");
+            _logger.LogInformation("Migration created: {Version} - {Name}", response.Version, response.Name);
             return ApiResponse<MigrationResponse>.Success(response, "Migration created successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error creating migration: {ex.Message}");
+            _logger.LogError("Error creating migration: {Message}", ex.Message);
             return ApiResponse<MigrationResponse>.InternalServerError(ex.Message);
         }
     }
@@ -93,12 +93,12 @@ public sealed class MigrationController {
                 CreatedAt = m.CreatedAt
             });
 
-            _logger.LogInformation($"Found {pending.Count} pending migrations for database {databaseId}");
+            _logger.LogInformation("Found {Count} pending migrations for database {DatabaseId}", pending.Count, databaseId);
             return ApiResponse<IEnumerable<MigrationResponse>>.Success(responses);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving pending migrations: {ex.Message}");
+            _logger.LogError("Error retrieving pending migrations: {Message}", ex.Message);
             return ApiResponse<IEnumerable<MigrationResponse>>.InternalServerError(ex.Message);
         }
     }
@@ -110,7 +110,7 @@ public sealed class MigrationController {
     /// </summary>
     public async Task<ApiResponse<MigrationBatchResponse>> ApplyMigrationsAsync(string databaseId, string appliedBy)
     {
-        _logger.LogInformation($"Applying migrations to database: {databaseId} by {appliedBy}");
+        _logger.LogInformation("Applying migrations to database: {DatabaseId} by {AppliedBy}", databaseId, appliedBy);
 
         try
         {
@@ -123,7 +123,7 @@ public sealed class MigrationController {
             {
                 // In production, implement actual execution
                 successCount++;
-                _logger.LogInformation($"Applied migration: {migration.Version}");
+                _logger.LogInformation("Applied migration: {Version}", migration.Version);
             }
 
             var response = new MigrationBatchResponse
@@ -139,7 +139,7 @@ public sealed class MigrationController {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error applying migrations: {ex.Message}");
+            _logger.LogError("Error applying migrations: {Message}", ex.Message);
             return ApiResponse<MigrationBatchResponse>.InternalServerError(ex.Message);
         }
     }
@@ -151,7 +151,7 @@ public sealed class MigrationController {
     /// </summary>
     public async Task<ApiResponse<MigrationResponse>> RollbackLastMigrationAsync(string databaseId, string rollbackBy)
     {
-        _logger.LogWarning($"Requesting rollback for database: {databaseId} by {rollbackBy}");
+        _logger.LogWarning("Requesting rollback for database: {DatabaseId} by {RollbackBy}", databaseId, rollbackBy);
 
         try
         {
@@ -171,12 +171,12 @@ public sealed class MigrationController {
                 Status = "RolledBack"
             };
 
-            _logger.LogWarning($"Rollback completed for migration: {lastMigration.Version}");
+            _logger.LogWarning("Rollback completed for migration: {Version}", lastMigration.Version);
             return ApiResponse<MigrationResponse>.Success(response, "Migration rolled back successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error rolling back migration: {ex.Message}");
+            _logger.LogError("Error rolling back migration: {Message}", ex.Message);
             return ApiResponse<MigrationResponse>.InternalServerError(ex.Message);
         }
     }
@@ -204,7 +204,7 @@ public sealed class MigrationController {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error retrieving migration history: {ex.Message}");
+            _logger.LogError("Error retrieving migration history: {Message}", ex.Message);
             return ApiResponse<MigrationHistoryResponse>.InternalServerError(ex.Message);
         }
     }

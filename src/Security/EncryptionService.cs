@@ -57,7 +57,7 @@ public sealed class EncryptionService : IEncryptionService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Encryption error: {ex.Message}");
+            _logger.LogError("Encryption error: {Message}", ex.Message);
             throw;
         }
     }
@@ -78,7 +78,7 @@ public sealed class EncryptionService : IEncryptionService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Decryption error: {ex.Message}");
+            _logger.LogError("Decryption error: {Message}", ex.Message);
             throw;
         }
     }
@@ -122,7 +122,7 @@ public sealed class EncryptionService : IEncryptionService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Byte encryption error: {ex.Message}");
+            _logger.LogError("Byte encryption error: {Message}", ex.Message);
             throw;
         }
     }
@@ -164,7 +164,7 @@ public sealed class EncryptionService : IEncryptionService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Byte decryption error: {ex.Message}");
+            _logger.LogError("Byte decryption error: {Message}", ex.Message);
             throw;
         }
     }
@@ -202,7 +202,7 @@ public sealed class EncryptionService : IEncryptionService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Hash verification error: {ex.Message}");
+            _logger.LogError("Hash verification error: {Message}", ex.Message);
             return false;
         }
     }
@@ -231,7 +231,7 @@ public sealed class EncryptionService : IEncryptionService {
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Password hashing error: {ex.Message}");
+            _logger.LogError("Password hashing error: {Message}", ex.Message);
             throw;
         }
     }
