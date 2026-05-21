@@ -30,10 +30,21 @@ namespace SqliteMultiTenant.Database
             _pools = new ConcurrentDictionary<string, ConnectionPool>();
         }
 
-        // Acquires a connection for the given tenant with timeout protection
+        /// <summary>
+        /// Acquires a connection for the given tenant with timeout protection.
+        /// Returns an open <see cref="SQLiteConnection"/> from the pool or creates a new one.
+        /// </summary>
+        /// <param name="tenantId">The unique identifier of the tenant.</param>
+        /// <param name="connectionString">SQLite connection string for the tenant database.</param>
+        /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+        /// <returns>An open SQLite connection bound to the tenant database.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the connection manager has been disposed.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when tenantId or connectionString is null or empty.</exception>
         public async Task<SQLiteConnection> GetConnectionAsync(string tenantId, string connectionString,
             CancellationToken cancellationToken = default)
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+
             if (string.IsNullOrEmpty(tenantId))
                 throw new ArgumentNullException(nameof(tenantId));
 
@@ -46,7 +57,12 @@ namespace SqliteMultiTenant.Database
             return await pool.GetConnectionAsync(cancellationToken);
         }
 
-        // Releases a connection back to the pool for reuse
+        /// <summary>
+        /// Releases a connection back to the pool for reuse.
+        /// Broken connections are disposed rather than returned to the pool.
+        /// </summary>
+        /// <param name="tenantId">The tenant whose pool should receive the connection.</param>
+        /// <param name="connection">The connection to release.</param>
         public async Task ReleaseConnectionAsync(string tenantId, SQLiteConnection connection)
         {
             if (_pools.TryGetValue(tenantId, out var pool))
@@ -55,9 +71,13 @@ namespace SqliteMultiTenant.Database
             }
         }
 
-        // Clears all connections for a specific tenant (useful for tenant deletion)
+        /// <summary>
+        /// Clears all connections for a specific tenant (useful for tenant deletion or suspension).
+        /// </summary>
+        /// <param name="tenantId">The tenant whose connection pool should be removed.</param>
         public async Task ClearTenantPoolAsync(string tenantId)
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             if (_pools.TryRemove(tenantId, out var pool))
             {
                 await pool.DisposeAsync();
