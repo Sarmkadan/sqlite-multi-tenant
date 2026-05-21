@@ -15,8 +15,11 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Security
 {
-    // Manages encryption keys for tenant data with rotation and versioning support
-    // Stores keys securely and enables key rotation without data loss
+    /// <summary>
+    /// Manages per-tenant AES-256 encryption keys with rotation and versioning support.
+    /// Keys are stored as JSON files with restrictive permissions and cached in memory
+    /// for fast retrieval. Supports master password derivation via PBKDF2 (SHA-256, 10k iterations).
+    /// </summary>
     public sealed class EncryptionKeyManager {
         private readonly ILogger<EncryptionKeyManager> _logger;
         private readonly string _keyStorePath;
@@ -31,7 +34,13 @@ namespace SqliteMultiTenant.Security
             Directory.CreateDirectory(_keyStorePath);
         }
 
-        // Generates a new encryption key for a tenant
+        /// <summary>
+        /// Generates a new 256-bit encryption key for a tenant. If a master password is provided,
+        /// additional entropy is derived via PBKDF2 and XORed into the key material.
+        /// </summary>
+        /// <param name="tenantId">The tenant to generate the key for.</param>
+        /// <param name="masterPassword">Optional master password for additional key derivation.</param>
+        /// <returns>The newly created <see cref="EncryptionKey"/> with version 1.</returns>
         public async Task<EncryptionKey> GenerateKeyAsync(string tenantId, string masterPassword = null)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -75,7 +84,12 @@ namespace SqliteMultiTenant.Security
             }
         }
 
-        // Retrieves the active encryption key for a tenant
+        /// <summary>
+        /// Retrieves the currently active encryption key for a tenant.
+        /// Results are cached in memory after the first file-system read.
+        /// </summary>
+        /// <param name="tenantId">The tenant to look up.</param>
+        /// <returns>The active <see cref="EncryptionKey"/>, or <c>null</c> if no active key exists.</returns>
         public async Task<EncryptionKey> GetActiveKeyAsync(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -115,7 +129,13 @@ namespace SqliteMultiTenant.Security
             }
         }
 
-        // Rotates encryption key for tenant with versioning
+        /// <summary>
+        /// Rotates the encryption key for a tenant. The previous key is deactivated and
+        /// archived with a version suffix. The new key's version is incremented automatically.
+        /// </summary>
+        /// <param name="tenantId">The tenant whose key should be rotated.</param>
+        /// <param name="masterPassword">Optional master password for key derivation.</param>
+        /// <returns>The newly generated <see cref="EncryptionKey"/> with incremented version.</returns>
         public async Task<EncryptionKey> RotateKeyAsync(string tenantId, string masterPassword = null)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -170,7 +190,13 @@ namespace SqliteMultiTenant.Security
             }
         }
 
-        // Gets specific key version for re-encryption scenarios
+        /// <summary>
+        /// Retrieves a specific historical key version, typically used during re-encryption
+        /// when migrating data from an older key to the current active key.
+        /// </summary>
+        /// <param name="tenantId">The tenant to look up.</param>
+        /// <param name="version">The key version number to retrieve.</param>
+        /// <returns>The <see cref="EncryptionKey"/> for the specified version, or <c>null</c> if not found.</returns>
         public async Task<EncryptionKey> GetKeyVersionAsync(string tenantId, int version)
         {
             try
@@ -194,7 +220,12 @@ namespace SqliteMultiTenant.Security
             }
         }
 
-        // Removes all keys for a tenant (typically during deprovisioning)
+        /// <summary>
+        /// Removes all encryption keys (active and archived) for a tenant from both
+        /// the filesystem and the in-memory cache. Typically called during tenant deprovisioning.
+        /// </summary>
+        /// <param name="tenantId">The tenant whose keys should be deleted.</param>
+        /// <returns><c>true</c> if keys were deleted successfully; <c>false</c> on error.</returns>
         public async Task<bool> DeleteTenantKeysAsync(string tenantId)
         {
             try
@@ -263,14 +294,26 @@ namespace SqliteMultiTenant.Security
                 System.Runtime.InteropServices.OSPlatform.Windows);
     }
 
+    /// <summary>
+    /// Represents an encryption key with versioning metadata. Active keys are stored
+    /// as {tenantId}_key.json; deactivated keys are archived as {tenantId}_key_v{version}.json.
+    /// </summary>
     public sealed class EncryptionKey {
+        /// <summary>Unique identifier for this key instance.</summary>
         public string KeyId { get; set; }
+        /// <summary>The tenant this key belongs to.</summary>
         public string TenantId { get; set; }
+        /// <summary>Raw 256-bit key bytes used for AES encryption.</summary>
         public byte[] KeyMaterial { get; set; }
+        /// <summary>UTC timestamp when this key was generated.</summary>
         public DateTime CreatedAt { get; set; }
+        /// <summary>UTC timestamp when this key was deactivated, or <c>null</c> if still active.</summary>
         public DateTime? DeactivatedAt { get; set; }
+        /// <summary>Whether this key is the current active key for the tenant.</summary>
         public bool IsActive { get; set; }
+        /// <summary>Monotonically increasing version number, incremented on each rotation.</summary>
         public int Version { get; set; }
+        /// <summary>KeyId of the previous key in the rotation chain, or <c>null</c> for version 1.</summary>
         public string PreviousKeyId { get; set; }
     }
 }
