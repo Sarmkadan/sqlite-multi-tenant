@@ -76,15 +76,16 @@ public sealed class AdminController : ControllerBase {
         try
         {
             _logger.LogInformation("Metrics requested");
+            var snapshot = _metricsService.GetSnapshot();
 
             var metrics = new SystemMetrics
             {
                 Timestamp = DateTime.UtcNow,
                 ProcessMemoryMb = GC.GetTotalMemory(false) / (1024 * 1024),
                 ThreadCount = System.Diagnostics.Process.GetCurrentProcess().Threads.Count,
-                ActiveConnections = _metricsService.GetActiveConnectionCount(),
-                RequestsProcessed = _metricsService.GetRequestCount(),
-                AverageResponseTimeMs = _metricsService.GetAverageResponseTime()
+                ActiveConnections = 0, // Not available directly in snapshot
+                RequestsProcessed = snapshot.TotalRequests,
+                AverageResponseTimeMs = snapshot.AverageResponseTimeMs
             };
 
             return Ok(ApiResponse<SystemMetrics>.Success(metrics));
@@ -93,6 +94,27 @@ public sealed class AdminController : ControllerBase {
         {
             _logger.LogError("Metrics retrieval error: {Message}", ex.Message);
             return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve metrics"));
+        }
+    }
+
+    /// <summary>
+    /// Retrieves a comprehensive metrics dashboard.
+    /// Includes system performance, request metrics, and backup/migration statistics.
+    /// </summary>
+    [HttpGet("dashboard")]
+    [ProduceResponseType(typeof(ApiResponse<MetricsSnapshot>), StatusCodes.Status200OK)]
+    public IActionResult GetMetricsDashboard()
+    {
+        try
+        {
+            _logger.LogInformation("Metrics dashboard requested");
+            var snapshot = _metricsService.GetSnapshot();
+            return Ok(ApiResponse<MetricsSnapshot>.Success(snapshot));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Metrics dashboard error: {Message}", ex.Message);
+            return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve dashboard metrics"));
         }
     }
 
