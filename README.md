@@ -1,10 +1,10 @@
-![CI](https://github.com/sarmkadan/sqlite-multi-tenant/actions/workflows/ci.yml/badge.svg)
+# SQLite Multi-Tenant
+A production-grade .NET library for managing isolated multi-tenant SQLite databases.
+
+![Build](https://github.com/sarmkadan/sqlite-multi-tenant/actions/workflows/build.yml/badge.svg)
 ![License](https://img.shields.io/github/license/sarmkadan/sqlite-multi-tenant)
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 
-# SQLite Multi-Tenant Database Manager
-
-A production-grade .NET library and framework for managing multi-tenant SQLite databases with per-tenant isolation, automated migrations, comprehensive backup management, and advanced monitoring capabilities. Designed for SaaS platforms, multi-tenant applications, and enterprise systems requiring secure data isolation and operational reliability.
 
 ## Table of Contents
 
