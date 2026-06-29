@@ -461,6 +461,13 @@ services.AddSqliteMultiTenant(connectionString, options =>
 
 ## Usage Examples
 
+### Dedicated Example Files
+For more in-depth, runnable examples, please refer to the `/examples` directory:
+
+- [BasicUsage.cs](examples/BasicUsage.cs) - Minimal setup and first tenant creation.
+- [AdvancedUsage.cs](examples/AdvancedUsage.cs) - Configuration, custom options, and error handling.
+- [IntegrationExample.cs](examples/IntegrationExample.cs) - Wiring into ASP.NET Core dependency injection.
+
 ### Example 1: Multi-Tenant Application Setup
 
 ```csharp
