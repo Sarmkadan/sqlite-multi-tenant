@@ -13,11 +13,11 @@ namespace SqliteMultiTenant.Formatters;
 /// Formats objects as JSON with customizable serialization options.
 /// Supports pretty-printing, null handling, and circular reference detection.
 /// </summary>
-public sealed class JsonFormatter {
+public sealed class JsonExportFormatter {
     private readonly JsonSerializerOptions _options;
-    private readonly ILogger<JsonFormatter> _logger;
+    private readonly ILogger<JsonExportFormatter> _logger;
 
-    public JsonFormatter(ILogger<JsonFormatter> logger, bool prettyPrint = true)
+    public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint = true)
     {
         _logger = logger;
         _options = new JsonSerializerOptions

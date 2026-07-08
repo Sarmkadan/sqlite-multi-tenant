@@ -13,6 +13,7 @@ namespace SqliteMultiTenant.Repositories;
 /// </summary>
 public interface IMigrationRepository
 {
+    Task<List<Migration>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<Migration?> GetByIdAsync(string migrationId, CancellationToken cancellationToken = default);
     Task<List<Migration>> GetByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default);
     Task<List<Migration>> GetPendingMigrationsAsync(string databaseId, CancellationToken cancellationToken = default);

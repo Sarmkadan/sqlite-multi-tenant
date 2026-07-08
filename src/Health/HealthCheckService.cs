@@ -20,6 +20,8 @@ public interface IHealthCheckService
     Task<HealthCheckResponse> GetHealthStatusAsync();
     Task<bool> IsDatabaseHealthyAsync();
     Task<bool> IsDiskSpaceHealthyAsync(long minimumFreeBytesRequired = 1_000_000_000); // 1GB default
+    Task<bool> IsSystemHealthyAsync();
+    Task<string> GetDetailedStatusAsync();
 }
 
 /// <summary>
@@ -161,6 +163,28 @@ public class HealthCheckService : IHealthCheckService {
             _logger.LogWarning(ex, "Memory health check failed");
             return true; // Don't fail health check on error
         }
+    }
+
+    /// <summary>
+    /// Aggregates all component checks into a single overall health flag.
+    /// Used by lightweight endpoints that only need a boolean result.
+    /// </summary>
+    public async Task<bool> IsSystemHealthyAsync()
+    {
+        var databaseHealthy = await IsDatabaseHealthyAsync();
+        var diskHealthy = await IsDiskSpaceHealthyAsync();
+        var memoryHealthy = IsMemoryHealthy();
+
+        return databaseHealthy && diskHealthy && memoryHealthy;
+    }
+
+    /// <summary>
+    /// Returns a short overall status string ("healthy" or "unhealthy").
+    /// </summary>
+    public async Task<string> GetDetailedStatusAsync()
+    {
+        var response = await GetHealthStatusAsync();
+        return response.Status;
     }
 }
 

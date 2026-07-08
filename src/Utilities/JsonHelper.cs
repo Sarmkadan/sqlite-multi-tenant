@@ -20,10 +20,7 @@ namespace SqliteMultiTenant.Utilities
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            Converters = new List<JsonConverter>
-            {
-                new JsonStringEnumConverter()
-            }
+            Converters = { new JsonStringEnumConverter() }
         };
 
         private static readonly JsonSerializerOptions CompactOptions = new()
@@ -31,10 +28,7 @@ namespace SqliteMultiTenant.Utilities
             PropertyNameCaseInsensitive = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            Converters = new List<JsonConverter>
-            {
-                new JsonStringEnumConverter()
-            }
+            Converters = { new JsonStringEnumConverter() }
         };
 
         // Serializes an object to formatted JSON

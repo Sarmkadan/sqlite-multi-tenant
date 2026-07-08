@@ -18,7 +18,7 @@ public interface IDistributedCache
     Task<bool> RemoveAsync(string key);
     Task RemoveByPatternAsync(string pattern);
     Task ClearAsync();
-    Task<CacheStatistics> GetStatisticsAsync();
+    Task<DistributedCacheStatistics> GetStatisticsAsync();
 }
 
 public sealed class DistributedCacheService : IDistributedCache {
@@ -183,7 +183,7 @@ public sealed class DistributedCacheService : IDistributedCache {
     /// <summary>
     /// Gets cache statistics.
     /// </summary>
-    public async Task<CacheStatistics> GetStatisticsAsync()
+    public async Task<DistributedCacheStatistics> GetStatisticsAsync()
     {
         try
         {
@@ -192,7 +192,7 @@ public sealed class DistributedCacheService : IDistributedCache {
             var totalSize = _cache.Values.Sum(e => e.Size);
             var hitRate = (_hits + _misses) > 0 ? (double)_hits / (_hits + _misses) : 0;
 
-            return new CacheStatistics
+            return new DistributedCacheStatistics
             {
                 ItemCount = _cache.Count,
                 TotalSizeBytes = totalSize,
@@ -262,7 +262,7 @@ public sealed class CacheEntry {
     public long Size { get; set; }
 }
 
-public sealed class CacheStatistics {
+public sealed class DistributedCacheStatistics {
     public int ItemCount { get; set; }
     public long TotalSizeBytes { get; set; }
     public long Hits { get; set; }

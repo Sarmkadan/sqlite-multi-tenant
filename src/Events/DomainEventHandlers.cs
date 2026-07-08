@@ -19,7 +19,7 @@ public interface IDomainEventHandler<T> where T : DomainEvent
 /// Handles tenant created events.
 /// Logs creation, sends notifications, and initializes tenant resources.
 /// </summary>
-public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedEvent> {
+public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedNotificationEvent> {
     private readonly ILogger<TenantCreatedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -31,7 +31,7 @@ public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreate
         _webhookService = webhookService;
     }
 
-    public async Task HandleAsync(TenantCreatedEvent @event)
+    public async Task HandleAsync(TenantCreatedNotificationEvent @event)
     {
         try
         {
@@ -95,7 +95,7 @@ public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDelete
 /// Handles backup completed events.
 /// Verifies backup and sends notifications.
 /// </summary>
-public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedEvent> {
+public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedNotificationEvent> {
     private readonly ILogger<BackupCompletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -107,7 +107,7 @@ public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupComp
         _webhookService = webhookService;
     }
 
-    public async Task HandleAsync(BackupCompletedEvent @event)
+    public async Task HandleAsync(BackupCompletedNotificationEvent @event)
     {
         try
         {
@@ -171,23 +171,35 @@ public sealed class MigrationCompletedEventHandler : IDomainEventHandler<Migrati
 }
 
 // Domain event types
-public sealed class TenantCreatedEvent : DomainEvent {
+public sealed class TenantCreatedNotificationEvent : DomainEvent {
     public string TenantId { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
     public string? TenantDescription { get; set; }
+
+    public TenantCreatedNotificationEvent() : base(nameof(TenantCreatedNotificationEvent))
+    {
+    }
 }
 
 public sealed class TenantDeletedEvent : DomainEvent {
     public string TenantId { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
+
+    public TenantDeletedEvent() : base(nameof(TenantDeletedEvent))
+    {
+    }
 }
 
-public sealed class BackupCompletedEvent : DomainEvent {
+public sealed class BackupCompletedNotificationEvent : DomainEvent {
     public string BackupId { get; set; } = string.Empty;
     public string DatabaseId { get; set; } = string.Empty;
     public long SizeBytes { get; set; }
     public long DurationMs { get; set; }
     public bool IsVerified { get; set; }
+
+    public BackupCompletedNotificationEvent() : base(nameof(BackupCompletedNotificationEvent))
+    {
+    }
 }
 
 public sealed class MigrationCompletedEvent : DomainEvent {
@@ -195,4 +207,8 @@ public sealed class MigrationCompletedEvent : DomainEvent {
     public string MigrationVersion { get; set; } = string.Empty;
     public string MigrationName { get; set; } = string.Empty;
     public long DurationMs { get; set; }
+
+    public MigrationCompletedEvent() : base(nameof(MigrationCompletedEvent))
+    {
+    }
 }

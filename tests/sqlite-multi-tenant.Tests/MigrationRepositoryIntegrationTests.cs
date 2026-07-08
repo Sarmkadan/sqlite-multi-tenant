@@ -5,10 +5,11 @@
 // =============================================================================
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 using SqliteMultiTenant.Models;
@@ -19,44 +20,52 @@ using System.Collections.Generic;
 namespace SqliteMultiTenant.Tests
 {
     public sealed class MigrationRepositoryIntegrationTests : IDisposable {
-        private readonly SqliteConnection _connection;
-        private readonly DbContextOptions<TenantContext> _dbContextOptions;
+        private readonly string _dbPath;
+        private readonly string _connectionString;
         private readonly MigrationRepository _migrationRepository;
 
         public MigrationRepositoryIntegrationTests()
         {
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
+            _dbPath = Path.Combine(Path.GetTempPath(), $"migration_repo_tests_{Guid.NewGuid():N}.db");
+            _connectionString = $"Data Source={_dbPath};Version=3;";
 
-            _dbContextOptions = new DbContextOptionsBuilder<TenantContext>()
-                .UseSqlite(_connection)
-                .Options;
+            _migrationRepository = new MigrationRepository(_connectionString, NullLogger<MigrationRepository>.Instance);
 
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                context.Database.EnsureCreated();
-                SeedData(context);
-            }
-
-            _migrationRepository = new MigrationRepository(new TenantContext(_dbContextOptions));
+            SeedData();
         }
 
-        private void SeedData(TenantContext context)
+        private void SeedData()
         {
-            if (!context.Migrations.Any())
-            {
-                context.Migrations.Add(new Migration { MigrationId = "mig1", DatabaseId = "db1", Version = "1.0", Name = "Initial", Status = MigrationStatus.Completed, CreatedAt = DateTime.UtcNow.AddHours(-3), ExecutionOrder = 1 });
-                context.Migrations.Add(new Migration { MigrationId = "mig2", DatabaseId = "db1", Version = "1.1", Name = "AddUserTable", Status = MigrationStatus.Pending, CreatedAt = DateTime.UtcNow.AddHours(-2), ExecutionOrder = 2 });
-                context.Migrations.Add(new Migration { MigrationId = "mig3", DatabaseId = "db2", Version = "1.0", Name = "Initial", Status = MigrationStatus.Completed, CreatedAt = DateTime.UtcNow.AddHours(-1), ExecutionOrder = 1 });
-                context.Migrations.Add(new Migration { MigrationId = "mig4", DatabaseId = "db1", Version = "1.2", Name = "AddIndex", Status = MigrationStatus.Failed, CreatedAt = DateTime.UtcNow.AddHours(-1), ExecutionOrder = 3, ErrorMessage = "Failed to create index" });
-                context.SaveChanges();
-            }
+            using var connection = new SQLiteConnection(_connectionString);
+            connection.Open();
+
+            InsertMigration(connection, "mig1", "db1", "1.0", "Initial", MigrationStatus.Completed, DateTime.UtcNow.AddHours(-3), 1, null);
+            InsertMigration(connection, "mig2", "db1", "1.1", "AddUserTable", MigrationStatus.Pending, DateTime.UtcNow.AddHours(-2), 2, null);
+            InsertMigration(connection, "mig3", "db2", "1.0", "Initial", MigrationStatus.Completed, DateTime.UtcNow.AddHours(-1), 1, null);
+            InsertMigration(connection, "mig4", "db1", "1.2", "AddIndex", MigrationStatus.Failed, DateTime.UtcNow.AddHours(-1), 3, "Failed to create index");
+        }
+
+        private static void InsertMigration(SQLiteConnection connection, string migrationId, string databaseId, string version, string name, MigrationStatus status, DateTime createdAt, int executionOrder, string? errorMessage)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO Migrations (MigrationId, DatabaseId, Version, Name, UpScript, Status, CreatedAt, ExecutionTimeMs, ExecutionOrder, IsRollbackable, ErrorMessage)
+                VALUES (@MigrationId, @DatabaseId, @Version, @Name, @UpScript, @Status, @CreatedAt, 0, @ExecutionOrder, 1, @ErrorMessage)";
+            command.Parameters.AddWithValue("@MigrationId", migrationId);
+            command.Parameters.AddWithValue("@DatabaseId", databaseId);
+            command.Parameters.AddWithValue("@Version", version);
+            command.Parameters.AddWithValue("@Name", name);
+            command.Parameters.AddWithValue("@UpScript", $"-- up script for {name}");
+            command.Parameters.AddWithValue("@Status", (int)status);
+            command.Parameters.AddWithValue("@CreatedAt", createdAt);
+            command.Parameters.AddWithValue("@ExecutionOrder", executionOrder);
+            command.Parameters.AddWithValue("@ErrorMessage", (object?)errorMessage ?? DBNull.Value);
+            command.ExecuteNonQuery();
         }
 
         [Fact]
         public async Task GetAllAsync_ShouldReturnAllMigrations()
         {
-            // Arrange
             // Act
             var migrations = await _migrationRepository.GetAllAsync();
 
@@ -76,7 +85,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             migration.Should().NotBeNull();
-            migration.MigrationId.Should().Be(migrationId);
+            migration!.MigrationId.Should().Be(migrationId);
             migration.DatabaseId.Should().Be("db1");
         }
 
@@ -97,7 +106,7 @@ namespace SqliteMultiTenant.Tests
         public async Task AddAsync_ShouldAddMigrationToDatabase()
         {
             // Arrange
-            var newMigration = new Migration { MigrationId = "mig5", DatabaseId = "db3", Version = "1.0", Name = "NewDB", Status = MigrationStatus.Pending, CreatedAt = DateTime.UtcNow, ExecutionOrder = 1 };
+            var newMigration = new Migration { MigrationId = "mig5", DatabaseId = "db3", Version = "1.0", Name = "NewDB", UpScript = "-- create db3", Status = MigrationStatus.Pending, CreatedAt = DateTime.UtcNow, ExecutionOrder = 1 };
 
             // Act
             var addedMigration = await _migrationRepository.AddAsync(newMigration);
@@ -106,40 +115,28 @@ namespace SqliteMultiTenant.Tests
             addedMigration.Should().NotBeNull();
             addedMigration.MigrationId.Should().Be("mig5");
 
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var migrationInDb = await context.Migrations.FirstOrDefaultAsync(m => m.MigrationId == "mig5");
-                migrationInDb.Should().NotBeNull();
-                migrationInDb.DatabaseId.Should().Be("db3");
-            }
+            var migrationInDb = await _migrationRepository.GetByIdAsync("mig5");
+            migrationInDb.Should().NotBeNull();
+            migrationInDb!.DatabaseId.Should().Be("db3");
         }
 
         [Fact]
         public async Task UpdateAsync_ShouldUpdateMigrationInDatabase()
         {
             // Arrange
-            Migration migrationToUpdate;
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                migrationToUpdate = await context.Migrations.FirstAsync(m => m.MigrationId == "mig2");
-                migrationToUpdate.Status = MigrationStatus.Completed;
-                migrationToUpdate.ExecutionTimeMs = 150;
-            }
+            var migrationToUpdate = await _migrationRepository.GetByIdAsync("mig2");
+            migrationToUpdate.Should().NotBeNull();
+            migrationToUpdate!.Status = MigrationStatus.Completed;
+            migrationToUpdate.ExecutionTimeMs = 150;
 
             // Act
-            var updatedMigration = await _migrationRepository.UpdateAsync(migrationToUpdate);
+            await _migrationRepository.UpdateAsync(migrationToUpdate);
 
             // Assert
-            updatedMigration.Should().NotBeNull();
-            updatedMigration.Status.Should().Be(MigrationStatus.Completed);
-            updatedMigration.ExecutionTimeMs.Should().Be(150);
-
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var migrationInDb = await context.Migrations.FirstOrDefaultAsync(m => m.MigrationId == "mig2");
-                migrationInDb.Should().NotBeNull();
-                migrationInDb.Status.Should().Be(MigrationStatus.Completed);
-            }
+            var migrationInDb = await _migrationRepository.GetByIdAsync("mig2");
+            migrationInDb.Should().NotBeNull();
+            migrationInDb!.Status.Should().Be(MigrationStatus.Completed);
+            migrationInDb.ExecutionTimeMs.Should().Be(150);
         }
 
         [Fact]
@@ -152,11 +149,8 @@ namespace SqliteMultiTenant.Tests
             await _migrationRepository.DeleteAsync(migrationIdToDelete);
 
             // Assert
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var migrationInDb = await context.Migrations.FirstOrDefaultAsync(m => m.MigrationId == migrationIdToDelete);
-                migrationInDb.Should().BeNull();
-            }
+            var migrationInDb = await _migrationRepository.GetByIdAsync(migrationIdToDelete);
+            migrationInDb.Should().BeNull();
         }
 
         [Fact]
@@ -218,7 +212,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             migration.Should().NotBeNull();
-            migration.MigrationId.Should().Be("mig2");
+            migration!.MigrationId.Should().Be("mig2");
         }
 
         [Fact]
@@ -265,8 +259,10 @@ namespace SqliteMultiTenant.Tests
 
         public void Dispose()
         {
-            _connection.Close();
-            _connection.Dispose();
+            if (File.Exists(_dbPath))
+            {
+                File.Delete(_dbPath);
+            }
         }
     }
 }

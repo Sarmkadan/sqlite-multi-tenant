@@ -151,7 +151,7 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw new MigrationException.NotFound(migrationId);
+                throw MigrationException.NotFound(migrationId);
 
             migration.MarkAsStarted(executedBy);
             await _repository.UpdateAsync(migration, cancellationToken);
@@ -173,7 +173,7 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw new MigrationException.NotFound(migrationId);
+                throw MigrationException.NotFound(migrationId);
 
             if (!migration.CanRollback())
                 throw new MigrationException($"Migration cannot be rolled back: {migration.GetDisplayName()}");
@@ -198,7 +198,7 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw new MigrationException.NotFound(migrationId);
+                throw MigrationException.NotFound(migrationId);
 
             migration.MarkAsCompleted(executionTimeMs);
             await _repository.UpdateAsync(migration, cancellationToken);
@@ -220,7 +220,7 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw new MigrationException.NotFound(migrationId);
+                throw MigrationException.NotFound(migrationId);
 
             migration.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(migration, cancellationToken);

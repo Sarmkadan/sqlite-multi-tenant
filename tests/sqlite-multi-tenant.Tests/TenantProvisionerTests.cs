@@ -4,23 +4,42 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System;
+using System.IO;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using SqliteMultiTenant.Database;
+using SqliteMultiTenant.Repositories;
 using SqliteMultiTenant.Tenants;
 using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public sealed class TenantProvisionerTests {
+public sealed class TenantProvisionerTests : IDisposable {
     private readonly TenantProvisioner _provisioner;
     private readonly ILogger<TenantProvisioner> _mockLogger;
+    private readonly string _basePath;
 
     public TenantProvisionerTests()
     {
         _mockLogger = Substitute.For<ILogger<TenantProvisioner>>();
+        _basePath = Path.Combine(Path.GetTempPath(), $"tenant_provisioner_tests_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_basePath);
+
+        var tenantRepository = Substitute.For<ITenantRepository>();
+        var schemaManager = new SchemaManager(Substitute.For<ILogger<SchemaManager>>(), "Data Source=:memory:;Version=3;");
+
         // Instantiating with mock logger
-        _provisioner = new TenantProvisioner(_mockLogger);
+        _provisioner = new TenantProvisioner(tenantRepository, schemaManager, _mockLogger, _basePath);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_basePath))
+        {
+            Directory.Delete(_basePath, true);
+        }
     }
 
     [Fact]

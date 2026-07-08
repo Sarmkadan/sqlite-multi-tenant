@@ -47,12 +47,12 @@ public static class ServiceConfiguration
     public static IServiceCollection AddSqliteMultiTenant(
         this IServiceCollection services,
         string masterConnectionString,
-        Action<MultiTenantOptions> configureOptions)
+        Action<SqliteMultiTenantOptions> configureOptions)
     {
         if (configureOptions is null)
             throw new ArgumentNullException(nameof(configureOptions));
 
-        var options = new MultiTenantOptions();
+        var options = new SqliteMultiTenantOptions();
         configureOptions(options);
 
         // Register options
@@ -61,4 +61,18 @@ public static class ServiceConfiguration
         // Use the standard configuration
         return services.AddSqliteMultiTenant(masterConnectionString);
     }
+}
+
+/// <summary>
+/// Configuration options for multi-tenant system
+/// </summary>
+public class SqliteMultiTenantOptions
+{
+    public int MaxConnections { get; set; } = 10;
+    public int ConnectionTimeoutSeconds { get; set; } = 30;
+    public int BackupRetentionDays { get; set; } = 30;
+    public bool EnableEncryption { get; set; } = false;
+    public string BackupDirectory { get; set; } = "backups";
+    public string DatabaseDirectory { get; set; } = "databases";
+    public bool EnableLogging { get; set; } = true;
 }

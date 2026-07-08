@@ -13,6 +13,7 @@ using SqliteMultiTenant.Configuration;
 using System;
 using System.IO;
 using Xunit;
+using ConfigurationManager = SqliteMultiTenant.Configuration.ConfigurationManager;
 
 namespace SqliteMultiTenant.Tests
 {

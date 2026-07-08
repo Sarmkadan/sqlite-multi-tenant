@@ -42,6 +42,13 @@ public sealed class ApiResponse<T> {
 
     public static ApiResponse<T> Forbidden(string message = "Forbidden")
         => new() { StatusCode = 403, IsSuccess = false, Message = message };
+
+    /// <summary>
+    /// Generic error response. Callers typically wrap this with the appropriate
+    /// HTTP status code (e.g. <c>StatusCode(500, ApiResponse&lt;object&gt;.Error(...))</c>).
+    /// </summary>
+    public static ApiResponse<T> Error(string message)
+        => new() { IsSuccess = false, Message = message };
 }
 
 /// <summary>

@@ -26,6 +26,79 @@ public sealed class ConfigurationManager : IConfigurationManager {
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<ConfigurationManager> _logger;
     private readonly ConfigurationValidator _validator;
+    private readonly Microsoft.Extensions.Configuration.IConfiguration? _appConfiguration;
+    private readonly MultiTenantOptions? _multiTenantOptions;
+
+    /// <summary>
+    /// Creates a configuration manager backed by an <see cref="Microsoft.Extensions.Configuration.IConfiguration"/>
+    /// source and validated <see cref="MultiTenantOptions"/>.
+    /// </summary>
+    public ConfigurationManager(
+        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        ILogger<ConfigurationManager> logger,
+        Microsoft.Extensions.Options.IOptions<MultiTenantOptions> multiTenantOptions)
+    {
+        _appConfiguration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        if (multiTenantOptions is null)
+            throw new ArgumentNullException(nameof(multiTenantOptions));
+
+        var options = multiTenantOptions.Value ?? throw new ArgumentNullException(nameof(multiTenantOptions));
+
+        if (options.DefaultMaxConnections <= 0)
+            throw new ArgumentOutOfRangeException(nameof(options.DefaultMaxConnections), "DefaultMaxConnections must be greater than 0.");
+
+        if (string.IsNullOrEmpty(options.BasePath))
+            throw new ArgumentException("BasePath cannot be null or empty.", nameof(options.BasePath));
+
+        if (!Directory.Exists(options.BasePath))
+            throw new DirectoryNotFoundException($"BasePath '{options.BasePath}' does not exist.");
+
+        _multiTenantOptions = options;
+        _configuration = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        _semaphore = new SemaphoreSlim(1);
+        _validator = new ConfigurationValidator();
+
+        _logger.LogInformation("Multi-tenant options validated successfully.");
+    }
+
+    /// <summary>
+    /// Gets a configuration section from the underlying <see cref="Microsoft.Extensions.Configuration.IConfiguration"/> source.
+    /// </summary>
+    public Microsoft.Extensions.Configuration.IConfigurationSection GetSection(string key)
+    {
+        if (_appConfiguration is null)
+            throw new InvalidOperationException("This ConfigurationManager instance was not created with an IConfiguration source.");
+
+        return _appConfiguration.GetSection(key);
+    }
+
+    /// <summary>
+    /// Gets a tenant-specific setting, falling back to the global setting when not overridden.
+    /// </summary>
+    public string? GetTenantSetting(string tenantId, string key)
+    {
+        if (_appConfiguration is null)
+            throw new InvalidOperationException("This ConfigurationManager instance was not created with an IConfiguration source.");
+
+        var tenantValue = _appConfiguration[$"Tenants:{tenantId}:Settings:{key}"];
+        if (!string.IsNullOrEmpty(tenantValue))
+            return tenantValue;
+
+        return _appConfiguration[$"GlobalSettings:{key}"];
+    }
+
+    /// <summary>
+    /// Gets the validated multi-tenant options associated with this manager.
+    /// </summary>
+    public MultiTenantOptions GetMultiTenantOptions()
+    {
+        if (_multiTenantOptions is null)
+            throw new InvalidOperationException("This ConfigurationManager instance was not created with MultiTenantOptions.");
+
+        return _multiTenantOptions;
+    }
 
     public ConfigurationManager(ILogger<ConfigurationManager> logger)
     {

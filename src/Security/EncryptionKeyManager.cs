@@ -267,9 +267,7 @@ namespace SqliteMultiTenant.Security
                 if (!IsWindowsPlatform())
                 {
                     // On Unix-like systems, set permissions to 600 (rw-------)
-                    var unixFileInfo = new System.IO.UnixFileSystemInfo(path);
-                    unixFileInfo.FileAccessPermissions = System.IO.FileAccessPermissions.UserRead
-                        | System.IO.FileAccessPermissions.UserWrite;
+                    File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
                 }
             }
             catch (Exception ex)

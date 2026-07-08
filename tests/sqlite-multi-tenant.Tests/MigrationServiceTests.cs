@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;

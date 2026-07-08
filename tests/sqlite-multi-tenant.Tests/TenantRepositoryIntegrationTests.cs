@@ -5,10 +5,11 @@
 // =============================================================================
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 using SqliteMultiTenant.Models;
@@ -17,42 +18,45 @@ using SqliteMultiTenant.Repositories;
 namespace SqliteMultiTenant.Tests
 {
     public sealed class TenantRepositoryIntegrationTests : IDisposable {
-        private readonly SqliteConnection _connection;
-        private readonly DbContextOptions<TenantContext> _dbContextOptions;
+        private readonly string _dbPath;
+        private readonly string _connectionString;
         private readonly TenantRepository _tenantRepository;
 
         public TenantRepositoryIntegrationTests()
         {
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
+            _dbPath = Path.Combine(Path.GetTempPath(), $"tenant_repo_tests_{Guid.NewGuid():N}.db");
+            _connectionString = $"Data Source={_dbPath};Version=3;";
 
-            _dbContextOptions = new DbContextOptionsBuilder<TenantContext>()
-                .UseSqlite(_connection)
-                .Options;
+            _tenantRepository = new TenantRepository(_connectionString, NullLogger<TenantRepository>.Instance);
 
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                context.Database.EnsureCreated();
-                SeedData(context);
-            }
-
-            _tenantRepository = new TenantRepository(new TenantContext(_dbContextOptions));
+            SeedData();
         }
 
-        private void SeedData(TenantContext context)
+        private void SeedData()
         {
-            if (!context.Tenants.Any())
-            {
-                context.Tenants.Add(new Tenant { Id = Guid.NewGuid(), Name = "RepositoryTenantA", ConnectionString = "DataSource=repo_tenantA.db" });
-                context.Tenants.Add(new Tenant { Id = Guid.NewGuid(), Name = "RepositoryTenantB", ConnectionString = "DataSource=repo_tenantB.db" });
-                context.SaveChanges();
-            }
+            using var connection = new SQLiteConnection(_connectionString);
+            connection.Open();
+
+            InsertTenant(connection, "repo-tenant-a", "RepositoryTenantA", "repo_tenantA.db");
+            InsertTenant(connection, "repo-tenant-b", "RepositoryTenantB", "repo_tenantB.db");
+        }
+
+        private static void InsertTenant(SQLiteConnection connection, string tenantId, string name, string databasePath)
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO Tenants (TenantId, Name, Status, CreatedAt, UpdatedAt, DatabasePath, IsDataIsolated, MaxConnections)
+                VALUES (@TenantId, @Name, 0, @CreatedAt, @CreatedAt, @DatabasePath, 1, 10)";
+            command.Parameters.AddWithValue("@TenantId", tenantId);
+            command.Parameters.AddWithValue("@Name", name);
+            command.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+            command.Parameters.AddWithValue("@DatabasePath", databasePath);
+            command.ExecuteNonQuery();
         }
 
         [Fact]
         public async Task GetAllAsync_ShouldReturnAllTenants()
         {
-            // Arrange
             // Act
             var tenants = await _tenantRepository.GetAllAsync();
 
@@ -67,25 +71,21 @@ namespace SqliteMultiTenant.Tests
         public async Task GetByIdAsync_ShouldReturnCorrectTenant_WhenTenantExists()
         {
             // Arrange
-            Guid tenantId;
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                tenantId = context.Tenants.First(t => t.Name == "RepositoryTenantA").Id;
-            }
+            var tenantId = "repo-tenant-a";
 
             // Act
             var tenant = await _tenantRepository.GetByIdAsync(tenantId);
 
             // Assert
             tenant.Should().NotBeNull();
-            tenant.Name.Should().Be("RepositoryTenantA");
+            tenant!.Name.Should().Be("RepositoryTenantA");
         }
 
         [Fact]
         public async Task GetByIdAsync_ShouldReturnNull_WhenTenantDoesNotExist()
         {
             // Arrange
-            var nonExistingId = Guid.NewGuid();
+            var nonExistingId = Guid.NewGuid().ToString();
 
             // Act
             var tenant = await _tenantRepository.GetByIdAsync(nonExistingId);
@@ -98,7 +98,7 @@ namespace SqliteMultiTenant.Tests
         public async Task AddAsync_ShouldAddTenantToDatabase()
         {
             // Arrange
-            var newTenant = new Tenant { Id = Guid.NewGuid(), Name = "RepositoryTenantC", ConnectionString = "DataSource=repo_tenantC.db" };
+            var newTenant = new Tenant { TenantId = "repo-tenant-c", Name = "RepositoryTenantC", DatabasePath = "repo_tenantC.db" };
 
             // Act
             var addedTenant = await _tenantRepository.AddAsync(newTenant);
@@ -107,65 +107,48 @@ namespace SqliteMultiTenant.Tests
             addedTenant.Should().NotBeNull();
             addedTenant.Name.Should().Be("RepositoryTenantC");
 
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var tenantInDb = await context.Tenants.FirstOrDefaultAsync(t => t.Id == newTenant.Id);
-                tenantInDb.Should().NotBeNull();
-                tenantInDb.Name.Should().Be("RepositoryTenantC");
-            }
+            var tenantInDb = await _tenantRepository.GetByIdAsync(newTenant.TenantId);
+            tenantInDb.Should().NotBeNull();
+            tenantInDb!.Name.Should().Be("RepositoryTenantC");
         }
 
         [Fact]
         public async Task UpdateAsync_ShouldUpdateTenantInDatabase()
         {
             // Arrange
-            Tenant tenantToUpdate;
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                tenantToUpdate = await context.Tenants.FirstAsync(t => t.Name == "RepositoryTenantA");
-                tenantToUpdate.ConnectionString = "DataSource=updated_repo_tenantA.db";
-            }
+            var tenantToUpdate = await _tenantRepository.GetByIdAsync("repo-tenant-a");
+            tenantToUpdate.Should().NotBeNull();
+            tenantToUpdate!.DatabasePath = "updated_repo_tenantA.db";
 
             // Act
-            var updatedTenant = await _tenantRepository.UpdateAsync(tenantToUpdate);
+            await _tenantRepository.UpdateAsync(tenantToUpdate);
 
             // Assert
-            updatedTenant.Should().NotBeNull();
-            updatedTenant.ConnectionString.Should().Be("DataSource=updated_repo_tenantA.db");
-
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var tenantInDb = await context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantToUpdate.Id);
-                tenantInDb.Should().NotBeNull();
-                tenantInDb.ConnectionString.Should().Be("DataSource=updated_repo_tenantA.db");
-            }
+            var tenantInDb = await _tenantRepository.GetByIdAsync("repo-tenant-a");
+            tenantInDb.Should().NotBeNull();
+            tenantInDb!.DatabasePath.Should().Be("updated_repo_tenantA.db");
         }
 
         [Fact]
         public async Task DeleteAsync_ShouldRemoveTenantFromDatabase()
         {
             // Arrange
-            Guid tenantIdToDelete;
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                tenantIdToDelete = context.Tenants.First(t => t.Name == "RepositoryTenantB").Id;
-            }
+            var tenantIdToDelete = "repo-tenant-b";
 
             // Act
             await _tenantRepository.DeleteAsync(tenantIdToDelete);
 
             // Assert
-            using (var context = new TenantContext(_dbContextOptions))
-            {
-                var tenantInDb = await context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantIdToDelete);
-                tenantInDb.Should().BeNull();
-            }
+            var tenantInDb = await _tenantRepository.GetByIdAsync(tenantIdToDelete);
+            tenantInDb.Should().BeNull();
         }
 
         public void Dispose()
         {
-            _connection.Close();
-            _connection.Dispose();
+            if (File.Exists(_dbPath))
+            {
+                File.Delete(_dbPath);
+            }
         }
     }
 }

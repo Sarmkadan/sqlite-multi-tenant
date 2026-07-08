@@ -184,7 +184,7 @@ class Program
         {
             logger.LogInformation($" - {mig.GetDisplayName()} (Order: {mig.ExecutionOrder})");
         }
-        logger.LogInformation();
+        logger.LogInformation("");
 
         // Create a backup
         logger.LogInformation("Creating backup...");
