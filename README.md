@@ -1305,6 +1305,48 @@ foreach (var result in verificationResults)
 }
 ```
 
+## ExportProgress
+
+The `ExportProgress` record represents incremental progress snapshots emitted during bulk export operations. It is designed for streaming export pipelines where large datasets are processed in batches, allowing consumers to update progress bars, monitoring dashboards, or other UI elements without buffering the entire result set.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BulkOperations;
+using Microsoft.Extensions.Logging;
+
+// Create a logger for progress tracking
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ExportProgress>();
+
+// Simulate export progress tracking for a table
+var progress = new ExportProgress(
+    TableName: "Customers",
+    RowsProcessed: 1500,
+    TotalRowsEstimate: 5000,
+    BatchSequence: 1
+);
+
+Console.WriteLine($"Exporting {progress.TableName}");
+Console.WriteLine($"Progress: {progress.PercentComplete:F1}%");
+Console.WriteLine($"Rows processed: {progress.RowsProcessed}/{progress.TotalRowsEstimate}");
+Console.WriteLine($"Batch sequence: {progress.BatchSequence}");
+
+// Track progress across multiple batches
+var progressUpdates = new[]
+{
+    new ExportProgress("Customers", 1000, 5000, 0),
+    new ExportProgress("Customers", 2500, 5000, 1),
+    new ExportProgress("Customers", 4000, 5000, 2),
+    new ExportProgress("Customers", 5000, 5000, 3)
+};
+
+foreach (var update in progressUpdates)
+{
+    Console.WriteLine($"Batch {update.BatchSequence}: {update.PercentComplete:F1}% complete");
+}
+```
+
 ## Backup
 
 The `Backup` class represents a backup operation for a tenant database, capturing metadata about the backup process including timing, size, status, and encryption settings. It is used to track backup jobs and their outcomes for monitoring, verification, and restoration purposes.
