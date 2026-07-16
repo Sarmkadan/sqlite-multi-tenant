@@ -517,7 +517,7 @@ var parser = new CommandLineParser(new[] { "tenant", "--description", "A new ten
 
 // Register a command and its options
 parser.RegisterCommand("tenant", "Manage tenants", (cmd) => { Console.WriteLine("Tenant command invoked"); })
-      .RegisterOption("description", "Tenant description", 'd', required: false);
+    .RegisterOption("description", "Tenant description", 'd', required: false);
 
 // Parse the arguments
 var parsed = parser.Parse();
@@ -533,6 +533,71 @@ else
 }
 ```
 
+## LoggingExtensions
+
+The `LoggingExtensions` class provides structured logging extension methods for the SQLite multi-tenant application. It enables semantic, context-rich logging that improves log searchability and analysis in centralized logging systems. The extension methods follow structured logging best practices and automatically include relevant context for each operation type.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Logging;
+using Microsoft.Extensions.Logging;
+using System;
+
+// Create a logger
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<Program>();
+
+// Log tenant operations
+logger.LogTenantOperation("TenantCreated", "acme-corp", "success", 150);
+logger.LogTenantOperation("TenantDeleted", "globex", "failed", 45);
+
+// Log database operations with performance tracking
+logger.LogDatabaseOperation("QueryExecution", "acme-corp-db", 250, success: true);
+logger.LogDatabaseOperation("Migration", "shared-schema", 8500, success: false); // Slow operation
+
+// Log backup operations
+logger.LogBackupOperation("CreateBackup", "acme-2024-07-16", 15_728_640, 1250, success: true);
+
+// Log migration operations
+logger.LogMigrationOperation("ApplyMigration", "m20240716-001", "1.2.3", "AddTenantsTable", 3200, success: true);
+
+// Log API requests
+logger.LogApiRequest("GET", "/api/tenants/acme-corp", 200, 42);
+logger.LogApiRequest("POST", "/api/tenants", 400, 156); // Bad request
+
+// Log cache operations
+logger.LogCacheOperation("GetTenant", "tenant:acme-corp:config", hit: true, durationMs: 2);
+logger.LogCacheOperation("SetTenant", "tenant:globex:metadata", hit: false, durationMs: 8);
+
+// Log validation errors
+var validationErrors = new Dictionary<string, string>
+{
+    { "Name", "Name is required" },
+    { "Email", "Email format is invalid" }
+};
+logger.LogValidationError("Tenant", validationErrors);
+
+// Log webhook delivery
+logger.LogWebhookDelivery("wh-12345", "https://webhook.site/abc", retry: 1, maxRetries: 3, success: false);
+
+// Log background jobs
+logger.LogBackgroundJob("TenantCleanupJob", 12500, itemsProcessed: 42, success: true);
+
+// Log health checks
+logger.LogHealthCheck("DatabaseConnection", healthy: true, durationMs: 25, message: "Connection established");
+logger.LogHealthCheck("BackupService", healthy: false, durationMs: 1500, message: "Backup directory not found");
+
+// Log configuration errors
+logger.LogConfigurationError("Database:ConnectionString", "Server=localhost;Database=multi-tenant", "Server=unknown-host");
+
+// Use OperationContext for scoped operations
+using (var operation = new OperationContext(logger, "FullTenantSetup"))
+{
+    // Your tenant setup logic here
+    // Operation completion is automatically logged on Dispose
+}
+```
 ## IRequestResponseLogger
 
 The `IRequestResponseLogger` interface provides a mechanism for logging HTTP request and response details for debugging, monitoring, and analytics purposes. It captures comprehensive information including headers, body content, query parameters, IP addresses, status codes, and timing metrics. The implementation includes sampling to manage log volume and thread-safe operations for concurrent access.
