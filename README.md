@@ -1485,6 +1485,96 @@ Console.WriteLine($"Query contains tenant filter: {queryValidation.ContainsTenan
 Console.WriteLine($"Query: {queryValidation.Query}");
 ```
 
+## ConnectionManager
+
+The `ConnectionManager` class provides centralized connection pooling and lifecycle management for per-tenant SQLite databases. It efficiently manages database connections across multiple tenants, enabling connection reuse to minimize resource overhead and improve performance. The manager supports both regular and encrypted connections (using SQLCipher), and provides monitoring capabilities through pool statistics.
+
+### Public Members
+
+```csharp
+public sealed class ConnectionManager : IDisposable
+public ConnectionManager(ILogger<ConnectionManager> logger, int maxConnectionsPerPool = 10)
+public async Task<SQLiteConnection> GetConnectionAsync(string tenantId, string connectionString, CancellationToken cancellationToken = default)
+public async Task<SQLiteConnection> GetEncryptedConnectionAsync(string tenantId, string connectionString, string encryptionKey, CancellationToken cancellationToken = default)
+public async Task ReleaseConnectionAsync(string tenantId, SQLiteConnection connection)
+public async Task ClearTenantPoolAsync(string tenantId)
+public Dictionary<string, PoolStatistics> GetPoolStatistics()
+public void Dispose()
+
+private class ConnectionPool : IAsyncDisposable
+public async Task<SQLiteConnection> GetConnectionAsync(CancellationToken cancellationToken)
+public async Task ReleaseConnectionAsync(SQLiteConnection connection)
+public ValueTask DisposeAsync()
+public void Dispose()
+
+public sealed class PoolStatistics
+public string TenantId { get; set; }
+public int AvailableConnections { get; set; }
+public int TotalConnections { get; set; }
+public int WaitingRequests { get; set; }
+```
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Database;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ConnectionManager>();
+
+// Create the connection manager with default pool size (10 connections per tenant)
+var connectionManager = new ConnectionManager(logger);
+
+// Example 1: Get a regular connection for a tenant
+var regularConnection = await connectionManager.GetConnectionAsync(
+    tenantId: "acme-corp",
+    connectionString: "Data Source=acme-corp.db;Version=3;"
+);
+
+// Use the connection for database operations
+using var command = regularConnection.CreateCommand();
+command.CommandText = "SELECT COUNT(*) FROM Invoices WHERE TenantId = @tenantId";
+command.Parameters.AddWithValue("@tenantId", "acme-corp");
+var count = await command.ExecuteScalarAsync();
+
+// Release the connection back to the pool when done
+await connectionManager.ReleaseConnectionAsync("acme-corp", regularConnection);
+
+// Example 2: Get an encrypted connection (requires SQLCipher package)
+var encryptedConnection = await connectionManager.GetEncryptedConnectionAsync(
+    tenantId: "secure-tenant",
+    connectionString: "Data Source=secure-tenant.db;Version=3;",
+    encryptionKey: "my-secret-key-1234567890abcdef"
+);
+
+// Use the encrypted connection for sensitive operations
+using var secureCommand = encryptedConnection.CreateCommand();
+secureCommand.CommandText = "SELECT * FROM SensitiveData";
+var results = await secureCommand.ExecuteReaderAsync();
+
+// Release the encrypted connection
+await connectionManager.ReleaseConnectionAsync("secure-tenant", encryptedConnection);
+
+// Example 3: Monitor connection pool statistics
+var statistics = connectionManager.GetPoolStatistics();
+foreach (var stat in statistics)
+{
+    Console.WriteLine($"Tenant: {stat.Key}");
+    Console.WriteLine($" Available connections: {stat.Value.AvailableConnections}");
+    Console.WriteLine($" Total connections: {stat.Value.TotalConnections}");
+    Console.WriteLine($" Waiting requests: {stat.Value.WaitingRequests}");
+}
+
+// Example 4: Clear a tenant's connection pool (e.g., during tenant deletion)
+await connectionManager.ClearTenantPoolAsync("acme-corp");
+
+// Example 5: Dispose the connection manager when shutting down the application
+connectionManager.Dispose();
+```
+
 ## BackupService
 
 The `BackupService` class provides comprehensive backup management for multi-tenant SQLite databases. It handles creation, tracking, verification, and rotation of database backups with support for both full and incremental backups, progress reporting, and automated cleanup based on retention policies.
