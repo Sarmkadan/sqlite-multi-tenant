@@ -479,6 +479,98 @@ var tenantService = serviceProvider.GetRequiredService<ITenantService>();
 var backupService = serviceProvider.GetRequiredService<IBackupService>();
 ```
 
+## ConfigurationExtensions
+
+The `ConfigurationExtensions` class provides a comprehensive set of extension methods for working with `IConfiguration` in .NET applications. It simplifies reading configuration values with type safety, fallback handling, and validation, while supporting environment variable overrides for sensitive values. The class also includes a `ConfigurationBuilder` helper for centralized configuration setup.
+
+### Key Features
+
+- **Safe value retrieval** with type conversion and default values
+- **Required value validation** with descriptive error messages
+- **Section binding** to strongly-typed objects
+- **Connection string management** with fallback support
+- **Environment variable overrides** for sensitive configuration
+- **Configuration validation** with required keys checking
+- **Configuration export** as dictionary for debugging
+- **Configuration reloading** for hot-reload scenarios
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using SqliteMultiTenant.Configuration;
+
+// Create configuration with multiple sources
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false)
+    .AddEnvironmentVariables("MYAPP_")
+    .Build();
+
+// Safe value retrieval with type conversion and default
+var timeout = configuration.GetValueSafe<int>("Database:TimeoutSeconds", 30);
+var maxConnections = configuration.GetValueSafe<int>("Database:MaxConnections", 10);
+var featureEnabled = configuration.GetValueSafe<bool>("Features:MultiTenant", false);
+
+// Required value validation - throws if missing
+var requiredConnectionString = configuration.GetRequiredValue("Database:ConnectionString");
+
+// Bind configuration section to strongly-typed object
+var databaseConfig = configuration.BindSection<DatabaseSettings>("Database");
+
+// Get connection string with fallback
+var connectionString = configuration.GetConnectionStringSafe("PrimaryDatabase");
+
+// Check if configuration key exists
+bool hasLoggingEnabled = configuration.HasValue("Logging:Enabled");
+
+// Get configuration section as dictionary for debugging
+var databaseSettings = configuration.GetSectionAsDictionary("Database");
+
+// Validate required configuration keys
+var validationErrors = configuration.ValidateConfiguration(
+    "Database:ConnectionString",
+    "Database:TimeoutSeconds",
+    "Logging:Level"
+);
+if (validationErrors.Any())
+{
+    foreach (var error in validationErrors)
+    {
+        Console.WriteLine($"Configuration error: {error}");
+    }
+}
+
+// Get value with environment variable override
+var apiKey = configuration.GetValueWithEnvironmentOverride("Api:Key");
+// Will check environment variable "API_KEY" if not found in config
+
+// Use the built-in ConfigurationBuilder helper
+var standardConfig = ConfigurationExtensions.ConfigurationBuilder.BuildStandardConfiguration();
+```
+
+### Public Members
+
+```csharp
+public static T GetValueSafe<T>(this IConfiguration config, string key, T defaultValue = default)
+public static string GetRequiredValue(this IConfiguration config, string key)
+public static T BindSection<T>(this IConfiguration config, string sectionKey) where T : new()
+public static string GetConnectionStringSafe(this IConfiguration config, string name, string defaultValue = null)
+public static bool HasValue(this IConfiguration config, string key)
+public static Dictionary<string, string> GetSectionAsDictionary(this IConfiguration config, string sectionKey)
+public static IEnumerable<string> ValidateConfiguration(this IConfiguration config, params string[] requiredKeys)
+public static void Reload(this IConfigurationRoot config)
+public static string GetValueWithEnvironmentOverride(this IConfiguration config, string key, string envVar = null)
+
+public sealed class ConfigurationBuilder
+public ConfigurationBuilder()
+public ConfigurationBuilder AddJsonFile(string path, bool optional = false, bool reloadOnChange = true)
+public ConfigurationBuilder AddEnvironmentVariables(string prefix = null)
+public ConfigurationBuilder AddInMemory(Dictionary<string, string> settings)
+public IConfigurationRoot Build()
+public static IConfigurationRoot BuildStandardConfiguration(string environment = null)
+```
+
 ## CliApplication
 
 The `CliApplication` class serves as the main entry point for the CLI, orchestrating command parsing, execution, and providing structured output. It integrates with dependency injection to handle various tenant, database, and backup operations while ensuring consistent logging and user feedback. The associated `ConsoleWriter` provides a convenient, color-coded mechanism for displaying success, error, warning, and informational messages to the terminal.
