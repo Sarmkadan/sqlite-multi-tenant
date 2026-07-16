@@ -220,6 +220,86 @@ Console.WriteLine($"Total items: {paginatedResult.Pagination.TotalCount}");
 var failedPaginatedResult = PaginatedResult<object>.Fail("Database connection failed");
 ```
 
+## ApiResponse
+
+The `ApiResponse<T>` class provides a standardized wrapper for API responses, enabling consistent error handling and success tracking across the application. It implements the Result pattern to provide status codes, success indicators, messages, and data in a single object, eliminating HTTP status code ambiguity at the application layer. The generic type parameter allows for strongly-typed data payloads while maintaining a consistent response structure.
+
+### Public Members
+
+```csharp
+public sealed class ApiResponse<T>
+public int StatusCode { get; set; }
+public bool IsSuccess { get; set; }
+public string Message { get; set; }
+public T? Data { get; set; }
+public Dictionary<string, string>? Errors { get; set; }
+public DateTime Timestamp { get; set; }
+
+public static ApiResponse<T> Success(T data, string message = "Success")
+public static ApiResponse<T> Created(T data, string message = "Created")
+public static ApiResponse<T> BadRequest(string message, Dictionary<string, string>? errors = null)
+public static ApiResponse<T> NotFound(string message)
+public static ApiResponse<T> Conflict(string message)
+public static ApiResponse<T> InternalServerError(string message)
+public static ApiResponse<T> Unauthorized(string message = "Unauthorized")
+public static ApiResponse<T> Forbidden(string message = "Forbidden")
+public static ApiResponse<T> Error(string message)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Responses;
+using Microsoft.Extensions.Logging;
+
+// Create a logger
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<Program>();
+
+// Example 1: Successful response with data
+var user = new { Id = 1, Name = "John Doe", Email = "john@example.com" };
+var successResponse = ApiResponse<object>.Success(user, "User retrieved successfully");
+
+if (successResponse.IsSuccess)
+{
+    Console.WriteLine($"Status: {successResponse.StatusCode}");
+    Console.WriteLine($"Message: {successResponse.Message}");
+    Console.WriteLine($"Data: {successResponse.Data}");
+    Console.WriteLine($"Timestamp: {successResponse.Timestamp}");
+}
+
+// Example 2: Error response with validation errors
+var validationErrors = new Dictionary<string, string>
+{
+    { "email", "Email format is invalid" },
+    { "password", "Password must be at least 8 characters" }
+};
+var errorResponse = ApiResponse<object>.BadRequest("Validation failed", validationErrors);
+
+if (!errorResponse.IsSuccess)
+{
+    Console.WriteLine($"Error: {errorResponse.Message}");
+    Console.WriteLine($"Status Code: {errorResponse.StatusCode}");
+    foreach (var error in errorResponse.Errors ?? new Dictionary<string, string>())
+    {
+        Console.WriteLine($"  - {error.Key}: {error.Value}");
+    }
+}
+
+// Example 3: Standard HTTP status responses
+var notFoundResponse = ApiResponse<object>.NotFound("User with ID 42 not found");
+var conflictResponse = ApiResponse<object>.Conflict("Username already exists");
+var unauthorizedResponse = ApiResponse<object>.Unauthorized("Invalid credentials");
+var forbiddenResponse = ApiResponse<object>.Forbidden("Insufficient permissions");
+var internalErrorResponse = ApiResponse<object>.InternalServerError("Database connection failed");
+
+// Example 4: Created response for POST operations
+var createdResponse = ApiResponse<object>.Created(
+    new { Id = 42, Name = "New User" },
+    "User created successfully"
+);
+```
+
 ## CreateTenantRequest
 
 The `CreateTenantRequest` class represents the data transfer object used to create a new tenant in the multi-tenant SQLite system. It contains the essential tenant information required for provisioning: name, description, and contact email address. This request is validated in the controller to ensure all required fields are provided before tenant creation proceeds.
