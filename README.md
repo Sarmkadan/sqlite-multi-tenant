@@ -1054,6 +1054,67 @@ await tenantService.DeactivateTenantAsync("acme-corp");
 await tenantService.DeleteTenantAsync("acme-corp");
 ```
 
+## TenantProvisioner
+
+The `TenantProvisioner` class handles the complete lifecycle of tenant database provisioning. It creates isolated SQLite databases for each tenant with schema initialization, supports cloning for replication, and manages deprovisioning with cleanup. The provisioner supports both regular and encrypted tenant databases using SQLCipher.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tenants;
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Database;
+using Microsoft.Extensions.Logging;
+
+// Setup dependencies
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<TenantProvisioner>();
+var tenantRepository = new TenantRepository(/* connection */);
+var schemaManager = new SchemaManager(loggerFactory.CreateLogger<SchemaManager>(), connectionString);
+
+// Create provisioner instance
+var provisioner = new TenantProvisioner(
+    tenantRepository,
+    schemaManager,
+    logger,
+    basePath: "/data/tenants",
+    loggerFactory
+);
+
+// Example 1: Provision a new tenant
+var newTenant = await provisioner.ProvisionTenantAsync(
+    tenantId: "acme-corp",
+    tenantName: "Acme Corporation"
+);
+Console.WriteLine($"Provisioned tenant: {newTenant.TenantId}");
+
+// Example 2: Clone an existing tenant for testing or backup
+var clonedDbPath = await provisioner.CloneTenantAsync(
+    sourceTenantId: "acme-corp",
+    targetTenantId: "acme-corp-test"
+);
+Console.WriteLine($"Cloned database to: {clonedDbPath}");
+
+// Example 3: Provision an encrypted tenant (requires SQLCipher)
+var encryptedTenant = await provisioner.ProvisionEncryptedTenantAsync(
+    tenantId: "secure-tenant",
+    tenantName: "Secure Tenant",
+    encryptionKey: "my-secret-key-123"
+);
+Console.WriteLine($"Provisioned encrypted tenant: {encryptedTenant.TenantId}");
+
+// Example 4: Validate tenant database integrity
+bool isValid = await provisioner.ValidateTenantDatabaseAsync("acme-corp");
+Console.WriteLine($"Database valid: {isValid}");
+
+// Example 5: Deprovision a tenant (irreversible operation)
+bool deprovisioned = await provisioner.DeprovisionTenantAsync(
+    tenantId: "acme-corp-test",
+    deleteBackups: true
+);
+Console.WriteLine($"Tenant deprovisioned: {deprovisioned}");
+```
+
 ## MigrationService
 
 The `MigrationService` class provides comprehensive database migration management for the multi-tenant SQLite system. It handles the creation, execution, tracking, and rollback of database migrations across tenant databases, enabling schema evolution and data transformations while maintaining audit trails and version control.
