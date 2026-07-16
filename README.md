@@ -948,6 +948,63 @@ tenantContext.SetContextData("processingStartTime", DateTime.UtcNow);
 Console.WriteLine($"Tenant context: {tenantContext}");
 ```
 
+## BackupRotationManager
+
+The `BackupRotationManager` class manages automatic rotation and cleanup of tenant database backups according to configurable retention policies. It enforces limits on backup age, total backup count, and disk usage, automatically deleting old backups when thresholds are exceeded. The manager also provides verification capabilities to ensure backup integrity and statistics for monitoring backup storage usage.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BackgroundWorkers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BackupRotationManager>();
+
+// Configure backup rotation policy
+var policyOptions = Options.Create(new BackupRotationPolicy
+{
+    MaxBackupAge = TimeSpan.FromDays(30),      // Keep backups for max 30 days
+    MaxBackupCount = 10,                      // Keep max 10 backups
+    MaxDiskUsage = 5 * 1024 * 1024 * 1024   // Max 5 GB disk usage
+});
+
+// Create the backup rotation manager
+var backupRotationManager = new BackupRotationManager(
+    logger,
+    policyOptions,
+    new TenantDatabaseService(/* dependencies */),
+    new BackupVerificationService(/* dependencies */)
+);
+
+// Estimate current backup disk usage
+long currentUsage = await backupRotationManager.EstimateBackupDiskUsage();
+Console.WriteLine($"Current backup disk usage: {currentUsage:N0} bytes");
+
+// Get backup statistics
+var statistics = backupRotationManager.GetBackupStatistics();
+Console.WriteLine($"Total backups: {statistics.TotalBackups}");
+Console.WriteLine($"Oldest backup: {statistics.OldestBackupDate}");
+Console.WriteLine($"Newest backup: {statistics.NewestBackupDate}");
+
+// Rotate backups (automatically enforces policy)
+var rotationResult = await backupRotationManager.RotateBackupsAsync();
+Console.WriteLine($"Rotation successful: {rotationResult.IsSuccessful}");
+Console.WriteLine($"Total backups before rotation: {rotationResult.TotalBackups}");
+Console.WriteLine($"Backups deleted by age: {rotationResult.DeletedByAge}");
+Console.WriteLine($"Backups deleted by count: {rotationResult.DeletedByCount}");
+Console.WriteLine($"Remaining backups: {rotationResult.RemainingBackups}");
+
+// Verify remaining backups
+var verificationResults = await backupRotationManager.VerifyBackupsAsync();
+foreach (var result in verificationResults)
+{
+    Console.WriteLine($"Verified: {result.FilePath} - {(result.IsValid ? "OK" : "FAILED")}");
+}
+```
+
 ## Backup
 
 The `Backup` class represents a backup operation for a tenant database, capturing metadata about the backup process including timing, size, status, and encryption settings. It is used to track backup jobs and their outcomes for monitoring, verification, and restoration purposes.
