@@ -138,6 +138,88 @@ await handler.HandleAsync(@event);
 
 The `IRequestInterceptor` interface provides a mechanism for preprocessing HTTP requests and post-processing responses in ASP.NET Core applications. Interceptors enable cross-cutting concerns like tenant context extraction, request validation, correlation ID tracking, and audit logging without cluttering controller logic. The interface supports both request pre-processing (with validation) and response post-processing hooks.
 
+## Result
+
+The `Result` type provides a standardized wrapper for API responses, enabling consistent error handling and success tracking across the application. It supports both data-bearing operations (`Result<T>`) and paginated results (`PaginatedResult<T>`), with built-in metadata for tracing and debugging. The type includes success status, error collection, and optional message fields to simplify API response construction.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Responses;
+using Microsoft.Extensions.Logging;
+
+// Create a logger
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<Program>();
+
+// Example 1: Successful result with data
+var user = new { Id = 1, Name = "John Doe", Email = "john@example.com" };
+var successResult = Result<object>.Ok(user, "User retrieved successfully");
+
+if (successResult.Success)
+{
+    Console.WriteLine(successResult.Message);
+    Console.WriteLine($"User: {successResult.Data}");
+}
+
+// Example 2: Failed result with error message
+var errorResult = Result<object>.Fail("User not found");
+
+if (!errorResult.Success)
+{
+    Console.WriteLine("Errors:");
+    foreach (var error in errorResult.Errors)
+    {
+        Console.WriteLine($"- {error}");
+    }
+}
+
+// Example 3: Failed result with multiple errors
+var validationErrors = new List<string>
+{
+    "Email is required",
+    "Email format is invalid",
+    "Password must be at least 8 characters"
+};
+var multiErrorResult = Result<object>.Fail(validationErrors);
+
+// Example 4: Result with metadata
+await Task.Delay(100); // Simulate async operation
+var resultWithMetadata = Result<object>.Ok(user);
+resultWithMetadata.Metadata = new ResultMetadata
+{
+    Timestamp = DateTime.UtcNow,
+    TraceId = Guid.NewGuid().ToString(),
+    StatusCode = 200,
+    AdditionalData = new Dictionary<string, object>
+    {
+        { "processingTimeMs", 100 },
+        { "method", "GetUserById" }
+    }
+};
+
+// Example 5: Paginated result
+var users = new List<object>
+{
+    new { Id = 1, Name = "User 1" },
+    new { Id = 2, Name = "User 2" },
+    new { Id = 3, Name = "User 3" }
+};
+
+var paginatedResult = PaginatedResult<object>.Ok(
+    items: users,
+    pageNumber: 1,
+    pageSize: 10,
+    totalCount: 42
+);
+
+Console.WriteLine($"Page {paginatedResult.Pagination.PageNumber} of {paginatedResult.Pagination.TotalPages}");
+Console.WriteLine($"Total items: {paginatedResult.Pagination.TotalCount}");
+
+// Example 6: Failed paginated result
+var failedPaginatedResult = PaginatedResult<object>.Fail("Database connection failed");
+```
+
 ## CreateTenantRequest
 
 The `CreateTenantRequest` class represents the data transfer object used to create a new tenant in the multi-tenant SQLite system. It contains the essential tenant information required for provisioning: name, description, and contact email address. This request is validated in the controller to ensure all required fields are provided before tenant creation proceeds.
