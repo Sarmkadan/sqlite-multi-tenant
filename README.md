@@ -506,7 +506,76 @@ if (helpParsed.IsHelpCommand)
 
 The `CommandLineParser` class provides a robust mechanism for registering and parsing command-line arguments in the SQLite multi-tenant application. It supports hierarchical command structures with subcommands, options, flags, and aliases, and facilitates automatic help text generation for CLI tools.
 
+## DataRetentionPolicy
+
+The `DataRetentionPolicy` class implements automated data retention management for multi-tenant SQLite databases. It applies configurable retention rules to automatically archive or delete old records based on age criteria, helping maintain database performance and compliance with data retention policies.
+
 ### Usage Example
+
+```csharp
+using SqliteMultiTenant.BackgroundWorkers;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DataRetentionPolicy>();
+
+// Create the retention policy service
+var retentionPolicy = new DataRetentionPolicy(logger);
+
+// Get default policy configuration for a tenant
+var policy = retentionPolicy.GetDefaultPolicy("acme-corp");
+
+// Add a custom retention rule for audit logs older than 2 years
+policy.Rules.Add(new RetentionRule
+{
+    TableName = "AuditLog",
+    DateColumn = "CreatedAt",
+    RetentionType = RetentionType.YearsOld,
+    RetentionValue = 2,
+    IsEnabled = true,
+    ArchiveBeforeDelete = false
+});
+
+// Add a rule for temporary data older than 30 days with archiving
+policy.Rules.Add(new RetentionRule
+{
+    TableName = "TemporaryData",
+    DateColumn = "ExpirationDate",
+    RetentionType = RetentionType.DaysOld,
+    RetentionValue = 30,
+    IsEnabled = true,
+    ArchiveBeforeDelete = true,
+    ArchiveTableName = "ArchivedTemporaryData"
+});
+
+// Apply the retention policy to a tenant database
+var connectionString = "Data Source=acme-corp.db;Version=3;";
+await using var connection = new SQLiteConnection(connectionString);
+connection.Open();
+
+var result = await retentionPolicy.ApplyRetentionPolicyAsync(connection, policy);
+
+if (result.IsSuccessful)
+{
+    Console.WriteLine($"Retention policy executed successfully!");
+    Console.WriteLine($"Total records deleted: {result.TotalRecordsDeleted}");
+    Console.WriteLine($"Executed at: {result.ExecutedAt}");
+    
+    foreach (var ruleResult in result.ProcessedRules.Values)
+    {
+        Console.WriteLine($"Table: {ruleResult.TableName}");
+        Console.WriteLine($"  Records deleted: {ruleResult.RecordsDeleted}");
+        Console.WriteLine($"  Status: {ruleResult.Status}");
+    }
+}
+else
+{
+    Console.WriteLine($"Failed to apply retention policy: {result.Error}");
+}
+
+```
 
 ```csharp
 using SqliteMultiTenant.Cli;
