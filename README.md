@@ -1281,6 +1281,174 @@ int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db
 Console.WriteLine($"Total migrations: {migrationCount}");
 ```
 
+## DependencyInjectionSetup
+
+The `DependencyInjectionSetup` class provides centralized dependency injection configuration for the multi-tenant SQLite application. It follows the composition root pattern to register all application services including API controllers, middleware, caching, events, formatters, validation, health checks, background workers, and integration services. The class provides both granular service registration methods and a convenience `AddPhase2Services` method that registers all services in one call.
+
+### Public Members
+
+```csharp
+public static class DependencyInjectionSetup
+public static IServiceCollection AddApiControllers(this IServiceCollection services)
+public static IServiceCollection AddMiddlewareServices(this IServiceCollection services)
+public static IServiceCollection AddCachingServices(this IServiceCollection services)
+public static IServiceCollection AddEventServices(this IServiceCollection services)
+public static IServiceCollection AddFormatterServices(this IServiceCollection services)
+public static IServiceCollection AddValidationServices(this IServiceCollection services)
+public static IServiceCollection AddHealthCheckServices(this IServiceCollection services, string databasePath = ".")
+public static IServiceCollection AddBackgroundWorkers(this IServiceCollection services)
+public static IServiceCollection AddIntegrationServices(this IServiceCollection services)
+public static IServiceCollection AddPhase2Services(
+    this IServiceCollection services,
+    string databasePath = ".")
+public sealed class MultiTenantOptionsBuilder
+public MultiTenantOptionsBuilder WithBackupRetention(int days)
+public MultiTenantOptionsBuilder WithMaxConnections(int count)
+public MultiTenantOptionsBuilder WithConnectionTimeout(int seconds)
+public MultiTenantOptionsBuilder WithEncryption(bool enabled)
+public MultiTenantOptionsBuilder WithBackupDirectory(string path)
+public MultiTenantOptionsBuilder WithDatabaseDirectory(string path)
+public MultiTenantOptionsBuilder WithLogging(bool enabled)
+public SqliteMultiTenantOptions Build()
+```
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Api.Controllers;
+using Microsoft.Extensions.Logging;
+
+// Create service collection
+var services = new ServiceCollection();
+
+// Configure logging
+services.AddLogging(builder => builder.AddConsole());
+
+// Register all Phase 2 services in one call
+services.AddPhase2Services(databasePath: "/data/sqlite-databases");
+
+// Or register services individually for more control
+services.AddApiControllers();
+services.AddMiddlewareServices();
+services.AddCachingServices();
+services.AddEventServices();
+services.AddFormatterServices();
+services.AddValidationServices();
+services.AddHealthCheckServices(databasePath: "/data/sqlite-databases");
+services.AddBackgroundWorkers();
+services.AddIntegrationServices();
+
+// Build the service provider
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve services as needed
+var tenantController = serviceProvider.GetRequiredService<TenantController>();
+var backupController = serviceProvider.GetRequiredService<BackupController>();
+
+// Example: Configure multi-tenant options using the builder pattern
+var options = new MultiTenantOptionsBuilder()
+    .WithBackupRetention(days: 30)
+    .WithMaxConnections(count: 100)
+    .WithConnectionTimeout(seconds: 30)
+    .WithEncryption(enabled: true)
+    .WithBackupDirectory(path: "/backups")
+    .WithDatabaseDirectory(path: "/data/sqlite-databases")
+    .WithLogging(enabled: true)
+    .Build();
+
+Console.WriteLine($"Multi-tenant options configured: MaxConnections={options.MaxConnections}, " +
+    $"BackupRetentionDays={options.BackupRetentionDays}");
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<MigrationService>();
+
+// Create the migration service
+var migrationService = new MigrationService(
+    new MigrationRepository(/* database connection */),
+    logger
+);
+
+// Example 1: Create a new migration
+var migration = await migrationService.CreateMigrationAsync(
+    databaseId: "acme-corp-db",
+    version: "1.2.3",
+    name: "AddTenantsTable",
+    upScript: @"
+CREATE TABLE IF NOT EXISTS Tenants (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    IsActive BOOLEAN NOT NULL DEFAULT 1
+);",
+    downScript: @"
+DROP TABLE IF EXISTS Tenants;
+"
+);
+
+Console.WriteLine($"Migration created: {migration.MigrationId}");
+
+// Example 2: Execute a migration
+await migrationService.ExecuteMigrationAsync(
+    migrationId: migration.MigrationId,
+    executedBy: "migration-service"
+);
+
+// Simulate migration execution time
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+// Execute database schema changes here...
+System.Threading.Thread.Sleep(150); // Simulate work
+stopwatch.Stop();
+
+// Mark migration as completed
+await migrationService.MarkMigrationAsCompletedAsync(
+    migrationId: migration.MigrationId,
+    executionTimeMs: stopwatch.ElapsedMilliseconds
+);
+
+// Example 3: Check if a migration is applied
+bool isApplied = await migrationService.IsMigrationAppliedAsync(
+    databaseId: "acme-corp-db",
+    version: "1.2.3"
+);
+
+Console.WriteLine($"Migration is applied: {isApplied}");
+
+// Example 4: Get all migrations for a database
+var allMigrations = await migrationService.GetDatabaseMigrationsAsync("acme-corp-db");
+foreach (var m in allMigrations)
+{
+    Console.WriteLine($"Migration: {m.Name} - Status: {m.Status}");
+}
+
+// Example 5: Get pending migrations
+var pendingMigrations = await migrationService.GetPendingMigrationsAsync("acme-corp-db");
+Console.WriteLine($"Pending migrations: {pendingMigrations.Count}");
+
+// Example 6: Rollback a migration (if rollbackable)
+if (migration.IsRollbackable)
+{
+    await migrationService.RollbackMigrationAsync(
+        migrationId: migration.MigrationId,
+        executedBy: "rollback-service"
+    );
+}
+
+// Example 7: Get migration count
+int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db");
+Console.WriteLine($"Total migrations: {migrationCount}");
+```
+
 ## TenantRecoveryService
 
 The `TenantRecoveryService` class provides disaster recovery capabilities for tenant databases, enabling database repair, backup restoration, stale backup cleanup, and point-in-time recovery operations. This service is essential for maintaining database integrity and recovering from corruption, accidental data loss, or other disasters.
