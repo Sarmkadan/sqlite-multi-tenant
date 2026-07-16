@@ -138,6 +138,34 @@ await handler.HandleAsync(@event);
 
 The `IRequestInterceptor` interface provides a mechanism for preprocessing HTTP requests and post-processing responses in ASP.NET Core applications. Interceptors enable cross-cutting concerns like tenant context extraction, request validation, correlation ID tracking, and audit logging without cluttering controller logic. The interface supports both request pre-processing (with validation) and response post-processing hooks.
 
+## CreateTenantRequest
+
+The `CreateTenantRequest` class represents the data transfer object used to create a new tenant in the multi-tenant SQLite system. It contains the essential tenant information required for provisioning: name, description, and contact email address. This request is validated in the controller to ensure all required fields are provided before tenant creation proceeds.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Requests;
+using SqliteMultiTenant.Services;
+using Microsoft.Extensions.Logging;
+
+// Create a logger
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<Program>();
+
+// Create a tenant creation request
+var createRequest = new CreateTenantRequest
+{
+    Name = "Acme Corporation",
+    Description = "Global technology solutions provider for enterprise clients",
+    ContactEmail = "admin@acme-corp.com"
+};
+
+// Use the request to create a tenant
+// var tenantService = new TenantService(...);
+// var newTenant = await tenantService.CreateTenantAsync(createRequest);
+```
+
 
 
 
