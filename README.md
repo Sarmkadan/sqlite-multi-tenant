@@ -1206,6 +1206,64 @@ int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db
 Console.WriteLine($"Total migrations: {migrationCount}");
 ```
 
+## TenantIsolationVerifier
+
+The `TenantIsolationVerifier` class provides comprehensive verification of tenant isolation boundaries in multi-tenant SQLite databases. It validates that tenant data remains isolated across different isolation strategies (connection-per-tenant and shared-schema), detects potential data leakage between tenants, and ensures query-level tenant isolation is properly enforced.
+
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tenants;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<TenantIsolationVerifier>();
+
+// Create the isolation verifier instance
+var verifier = new TenantIsolationVerifier(
+    new TenantDatabaseService(/* dependencies */),
+    logger
+);
+
+// Example 1: Verify tenant isolation for a specific tenant
+var verificationResult = await verifier.VerifyTenantIsolationAsync("acme-corp");
+
+Console.WriteLine($"Tenant: {verificationResult.TenantId}");
+Console.WriteLine($"Isolation valid: {verificationResult.IsIsolated}");
+Console.WriteLine($"Audit log isolation: {(verificationResult.AuditLogIsolationValid ? "PASS" : "FAIL")}");
+Console.WriteLine($"Connection restriction: {(verificationResult.ConnectionRestrictionValid ? "PASS" : "FAIL")}");
+Console.WriteLine($"Query isolation: {(verificationResult.QueryIsolationValid ? "PASS" : "FAIL")}");
+Console.WriteLine($"Verified at: {verificationResult.VerifiedAt}");
+
+// Example 2: Detect potential data leaks across tenants
+var dataLeaks = await verifier.DetectPotentialDataLeaksAsync();
+
+if (dataLeaks.Any())
+{
+    Console.WriteLine($"Found {dataLeaks.Count} potential data leakage issues:");
+    foreach (var leak in dataLeaks)
+    {
+        Console.WriteLine($" - [{leak.Severity}] {leak.Type}: {leak.Description}");
+    }
+}
+else
+{
+    Console.WriteLine("No data leakage detected ✓");
+}
+
+// Example 3: Validate that a specific query enforces tenant isolation
+var queryValidation = await verifier.ValidateQueryTenantIsolationAsync(
+    tenantId: "acme-corp",
+    query: "SELECT * FROM Invoices WHERE TenantId = @tenantId"
+);
+
+Console.WriteLine($"Query validation for tenant '{queryValidation.TenantId}':");
+Console.WriteLine($"Query contains tenant filter: {queryValidation.ContainsTenantFilter}");
+Console.WriteLine($"Query: {queryValidation.Query}");
+```
+
 ## BackupService
 
 The `BackupService` class provides comprehensive backup management for multi-tenant SQLite databases. It handles creation, tracking, verification, and rotation of database backups with support for both full and incremental backups, progress reporting, and automated cleanup based on retention policies.
