@@ -1,3 +1,68 @@
+# SqliteMultiTenant
+
+A multi-tenant data layer for SQLite that supports two isolation strategies:
+a dedicated database file per tenant (connection-per-tenant) or a single shared
+database where every table carries a `TenantId` discriminator (shared-schema).
+
+## Quickstart
+
+The 30-line sample below provisions two tenants in connection-per-tenant mode,
+writes a row for each, and shows that neither tenant can read the other's data.
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Database;
+
+// One physical file per tenant == hard isolation boundary.
+static string Conn(string tenant) => $"Data Source={tenant}.db;Version=3;";
+
+using var connections = new ConnectionManager(NullLogger<ConnectionManager>.Instance);
+
+foreach (var tenant in new[] { "acme", "globex" })
+{
+    await using var conn = await connections.GetConnectionAsync(tenant, Conn(tenant));
+    using var create = conn.CreateCommand();
+    create.CommandText = "CREATE TABLE IF NOT EXISTS Invoices (Id INTEGER PRIMARY KEY, Note TEXT);";
+    await create.ExecuteNonQueryAsync();
+
+    using var insert = conn.CreateCommand();
+    insert.CommandText = "INSERT INTO Invoices (Id, Note) VALUES (1, @note);";
+    insert.Parameters.AddWithValue("@note", $"{tenant}-private");
+    await insert.ExecuteNonQueryAsync();
+}
+
+// acme's connection can only ever see acme's file.
+await using var acme = await connections.GetConnectionAsync("acme", Conn("acme"));
+using var read = acme.CreateCommand();
+read.CommandText = "SELECT Note FROM Invoices";
+Console.WriteLine(await read.ExecuteScalarAsync()); // -> acme-private (never globex-private)
+```
+
+For shared-schema mode, keep one connection string and add `WHERE TenantId = @tid`
+to every read, write, and delete. See `tests/.../TenantIsolationEnforcementTests.cs`
+for executable proof of both strategies, and `BackupRestoreRoundTripTests.cs` for
+the backup/restore cycle.
+
+## Choosing an isolation strategy
+
+| Concern | Connection-per-tenant | Shared-schema |
+| --- | --- | --- |
+| Isolation guarantee | Hard - physical file boundary, no query can cross it | Soft - depends on every query carrying `TenantId` |
+| Blast radius of a bad query | Single tenant | All tenants |
+| Per-tenant backup / restore | Trivial (copy one file) | Requires filtered export |
+| Per-tenant encryption keys | Natural (one key per file) | Not possible per row |
+| Noisy-neighbour isolation | Strong (separate files/locks) | Weak (shared write lock) |
+| Number of tenants that scale well | Tens to low thousands | Thousands to millions |
+| Cross-tenant reporting | Hard (must attach/union files) | Easy (single query) |
+| Schema migrations | Run N times, once per file | Run once |
+| Open file-handle / connection cost | Grows with tenant count | Constant |
+| Best fit | Regulated data, few large tenants, strict isolation | Many small tenants, shared analytics |
+
+Rule of thumb: default to connection-per-tenant when isolation or per-tenant
+backup/encryption matters; reach for shared-schema when you have a very large
+number of small tenants or need cheap cross-tenant queries.
+
 ## EventBusImpl
 
 The `EventBusImpl` class provides a production-grade event bus implementation that supports asynchronous event handling with priority-based subscriber ordering. It maintains an event history for monitoring and debugging purposes.
