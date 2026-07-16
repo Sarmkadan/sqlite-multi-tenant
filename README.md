@@ -525,6 +525,94 @@ var databaseSection = configManagerWithSource.GetSection("Database");
 var connectionString = databaseSection.GetValue<string>("ConnectionString");
 ```
 
+## ServiceCollectionExtensions
+
+The `ServiceCollectionExtensions` class provides extension methods for registering SQLite Multi-Tenant services in the dependency injection container. It enables fluent configuration of core services, caching, event bus, integration services, monitoring, validation, and background workers through a comprehensive set of extension methods. Each method can be used independently for granular control or combined for complete service registration.
+
+### Public Members
+
+```csharp
+public static IServiceCollection AddSqliteMultiTenantServices(this IServiceCollection services, Action<ServiceOptions>? configureOptions = null)
+public static IServiceCollection AddExceptionHandling(this IServiceCollection services)
+public static IServiceCollection AddEventHandlers(this IServiceCollection services)
+public static IServiceCollection AddHealthChecks(this IServiceCollection services)
+public static IServiceCollection AddFormatters(this IServiceCollection services)
+public static IApplicationBuilder UseRequestResponseLogging(this IApplicationBuilder app)
+
+public sealed class ServiceOptions
+public int MaxCacheItems
+public int HttpClientTimeoutSeconds
+public bool EnableAuiting
+public bool EnableMetrics
+public bool EnableEventBus
+```
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Events;
+using SqliteMultiTenant.Integration;
+using Microsoft.Extensions.Logging;
+
+// Create service collection
+var services = new ServiceCollection();
+
+// Configure logging
+services.AddLogging(builder => builder.AddConsole());
+
+// Register all core services with custom options
+services.AddSqliteMultiTenantServices(options =>
+{
+    options.MaxCacheItems = 5000;
+    options.HttpClientTimeoutSeconds = 60;
+    options.EnableAuiting = true;
+    options.EnableMetrics = true;
+    options.EnableEventBus = true;
+});
+
+// Register exception handling services
+services.AddExceptionHandling();
+
+// Register event handlers for domain events
+services.AddEventHandlers();
+
+// Register health check services
+services.AddHealthChecks();
+
+// Register formatters for different output formats
+services.AddFormatters();
+
+// Build service provider
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve services as needed
+var configurationManager = serviceProvider.GetRequiredService<IConfigurationManager>();
+var webhookService = serviceProvider.GetRequiredService<WebhookService>();
+var exceptionProcessor = serviceProvider.GetRequiredService<Exceptions.IExceptionProcessor>();
+var healthCheckService = serviceProvider.GetRequiredService<Health.HealthCheckService>();
+```
+
+### Using Request/Response Logging Middleware
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using SqliteMultiTenant.Configuration;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to DI container
+builder.Services.AddSqliteMultiTenantServices();
+
+var app = builder.Build();
+
+// Configure request/response logging middleware
+app.UseRequestResponseLogging();
+
+app.Run();
+```
+
 ## ServiceConfiguration
 
 The `ServiceConfiguration` class provides extension methods for configuring multi-tenant SQLite services in the dependency injection container. It enables centralized registration of repositories, services, and configuration options through the `SqliteMultiTenantOptions` class, supporting both basic and advanced configuration scenarios.
