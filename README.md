@@ -1583,6 +1583,76 @@ foreach (var expiredBackup in expiredBackups)
 }
 ```
 
+## IConnectionPoolManager
+
+The `IConnectionPoolManager` interface provides a centralized mechanism for managing per-tenant SQLite connection pools. It handles connection acquisition, release, and eviction while enforcing configurable pool-size limits and automatically pruning idle or long-lived connections. This ensures efficient resource utilization and prevents connection leaks in multi-tenant applications.
+
+### Public Members
+
+```csharp
+public interface IConnectionPoolManager : IAsyncDisposable
+public async Task<SQLiteConnection> AcquireAsync(string tenantId, string connectionString, CancellationToken cancellationToken = default)
+public Task ReleaseAsync(string tenantId, SQLiteConnection connection)
+public Task EvictTenantAsync(string tenantId)
+public IReadOnlyDictionary<string, PoolStatisticsSnapshot> GetStatistics()
+```
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Database;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ConnectionPoolManager>();
+
+// Configure connection pool options
+var poolOptions = new ConnectionPoolOptions
+{
+    MaxPoolSize = 20,
+    MinPoolSize = 5,
+    IdleTimeout = TimeSpan.FromMinutes(5),
+    MaxConnectionLifetime = TimeSpan.FromHours(1),
+    AcquireTimeout = TimeSpan.FromSeconds(30),
+    PruneInterval = TimeSpan.FromMinutes(1)
+};
+
+// Create the connection pool manager
+var connectionPoolManager = new ConnectionPoolManager(poolOptions, logger);
+
+// Example 1: Acquire a connection for a tenant
+var connectionString = "Data Source=acme-corp.db;Version=3;";
+var connection = await connectionPoolManager.AcquireAsync("acme-corp", connectionString);
+
+// Use the connection for database operations
+using var command = connection.CreateCommand();
+command.CommandText = "SELECT COUNT(*) FROM Invoices WHERE TenantId = @tenantId";
+command.Parameters.AddWithValue("@tenantId", "acme-corp");
+var count = await command.ExecuteScalarAsync();
+
+// Example 2: Release the connection back to the pool when done
+await connectionPoolManager.ReleaseAsync("acme-corp", connection);
+
+// Example 3: Get statistics for all tenant pools
+var statistics = connectionPoolManager.GetStatistics();
+foreach (var stat in statistics)
+{
+    Console.WriteLine($"Tenant: {stat.Key}");
+    Console.WriteLine($"  Available connections: {stat.Value.Available}");
+    Console.WriteLine($"  Total connections: {stat.Value.Total}");
+    Console.WriteLine($"  Waiting for connections: {stat.Value.Waiting}");
+    Console.WriteLine($"  Pruned connections: {stat.Value.PrunedTotal}");
+}
+
+// Example 4: Evict a tenant's connections (e.g., during tenant deletion)
+await connectionPoolManager.EvictTenantAsync("acme-corp");
+
+// Example 5: Dispose the pool manager when shutting down the application
+await connectionPoolManager.DisposeAsync();
+```
+
 ## ConflictResolutionService
 
 The `ConflictResolutionService` class provides conflict detection and resolution capabilities for multi-tenant SQLite databases. It handles scenarios where data has been modified both locally and remotely, allowing you to detect conflicts, apply resolution strategies, and persist the resolved values back to the database. This is particularly useful for merge operations, data synchronization workflows, and handling concurrent updates from different sources.
