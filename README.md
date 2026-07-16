@@ -1101,6 +1101,58 @@ var simpleResult = await batchProcessor.ProcessAsync(tenantIds, cleanupOperation
 Console.WriteLine($"Cleanup completed: {simpleResult.SuccessCount} succeeded");
 ```
 
+## IBatchOperationHandler
+
+The `IBatchOperationHandler` interface provides a mechanism for executing batch operations across multiple resources with parallel processing, progress tracking, and detailed result reporting. It enables efficient bulk operations like database migrations, backups, or tenant management while handling partial failures gracefully.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Operations;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BatchOperationHandler>();
+
+// Create the batch operation handler
+var batchHandler = new BatchOperationHandler(logger);
+
+// Define a batch operation to process multiple tenants
+var operation = new BatchOperation
+{
+    OperationId = Guid.NewGuid().ToString(),
+    OperationType = "apply-migration",
+    ResourceIds = new List<string> { "tenant-001", "tenant-002", "tenant-003", "tenant-004" },
+    Parameters = new Dictionary<string, object>
+    {
+        { "migration-name", "AddTenantsTable" },
+        { "timeout-seconds", 30 }
+    }
+};
+
+// Execute the batch operation
+var result = await batchHandler.ExecuteAsync(operation, CancellationToken.None);
+
+// Analyze results
+Console.WriteLine($"Operation completed: {result.SuccessCount}/{result.TotalResources} successful");
+Console.WriteLine($"Duration: {result.Duration.TotalMilliseconds}ms");
+
+// Process individual resource results
+foreach (var resourceResult in result.ResourceResults)
+{
+    Console.WriteLine($"Resource {resourceResult.ResourceId}: {(resourceResult.Success ? "Success" : "Failed")}");
+    if (!resourceResult.Success)
+    {
+        Console.WriteLine($"  Error: {resourceResult.Message}");
+    }
+}
+
+// Get operation status (useful for polling)
+var status = await batchHandler.GetStatusAsync(operation.OperationId);
+Console.WriteLine($"Progress: {status.ProgressPercent}% ({status.ProcessedResources}/{status.TotalResources})");
+```
+
 ## BulkInsertBuilder
 
 The `BulkInsertBuilder` class provides an efficient way to insert multiple records into a SQLite database table using batch processing and transaction management. It supports fluent interface for adding records, configurable batch sizes, and both execution and SQL generation modes. This is particularly useful for bulk data loading scenarios where performance is critical.
