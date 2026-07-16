@@ -2263,6 +2263,66 @@ await connectionPoolManager.DisposeAsync();
 
 The `ConflictResolutionService` class provides conflict detection and resolution capabilities for multi-tenant SQLite databases. It handles scenarios where data has been modified both locally and remotely, allowing you to detect conflicts, apply resolution strategies, and persist the resolved values back to the database. This is particularly useful for merge operations, data synchronization workflows, and handling concurrent updates from different sources.
 
+## ApiResponseBuilder
+
+The `ApiResponseBuilder<T>` class provides a fluent interface for constructing consistent, well-structured API responses with standardized error handling and metadata support. It enables building responses with proper HTTP status codes, success/failure states, detailed error information, and custom metadata through a clean builder pattern.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api;
+using System.Net;
+
+// Create a new response builder
+var responseBuilder = new ApiResponseBuilder<object>();
+
+// Build a successful response with data
+var successResponse = responseBuilder
+    .WithStatusCode(HttpStatusCode.OK)
+    .WithMessage("User retrieved successfully")
+    .WithData(new { Id = 123, Name = "John Doe", Email = "john@example.com" })
+    .Success()
+    .Build();
+
+Console.WriteLine($"Status: {successResponse.StatusCode}");
+Console.WriteLine($"Success: {successResponse.IsSuccess}");
+Console.WriteLine($"Message: {successResponse.Message}");
+
+// Build an error response with validation errors
+var validationResponse = new ApiResponseBuilder<object>()
+    .WithStatusCode(HttpStatusCode.BadRequest)
+    .WithMessage("Validation failed")
+    .AddError("Email is required", "VALIDATION_ERROR", "email")
+    .AddError("Password must be at least 8 characters", "VALIDATION_ERROR", "password")
+    .ValidationError()
+    .Build();
+
+Console.WriteLine($"Errors: {string.Join(", ", validationResponse.Errors.Select(e => e.Message))}");
+
+// Build a not found response
+var notFoundResponse = new ApiResponseBuilder<object>()
+    .WithStatusCode(HttpStatusCode.NotFound)
+    .NotFound("User with ID 999 not found")
+    .Build();
+
+// Build a server error response from an exception
+var errorResponse = ApiResponseBuilder<object>.ExceptionResponseBuilder
+    .FromException(new InvalidOperationException("Database connection failed"))
+    .WithMessage("Database operation failed")
+    .Build();
+
+// Build a response with metadata
+var responseWithMetadata = new ApiResponseBuilder<Dictionary<string, object>>()
+    .WithStatusCode(HttpStatusCode.OK)
+    .WithMessage("Operation completed")
+    .WithData(new Dictionary<string, object> { { "users", 42 }, { "active", true } })
+    .AddMetadata("page", 1)
+    .AddMetadata("pageSize", 10)
+    .AddMetadata("total", 420)
+    .Success()
+    .Build();
+```
+
 ### Usage Example
 
 ```csharp
