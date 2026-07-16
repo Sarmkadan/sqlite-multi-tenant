@@ -1153,6 +1153,161 @@ var status = await batchHandler.GetStatusAsync(operation.OperationId);
 Console.WriteLine($"Progress: {status.ProgressPercent}% ({status.ProcessedResources}/{status.TotalResources})");
 ```
 
+## BulkDataService
+
+The `BulkDataService` class provides high-performance bulk data export and import operations for multi-tenant SQLite databases. It supports exporting entire databases or individual tables to CSV, JSON, or SQL formats, and importing data from these formats back into the database. The service uses streaming for large datasets, integrates with the domain event bus for monitoring, and leverages batch processing for concurrent table operations.
+
+### Public Members
+
+```csharp
+public BulkDataService(
+    DataExporter exporter,
+    DataImporter importer,
+    IBatchProcessor batchProcessor,
+    IEventBus eventBus,
+    ILogger<BulkDataService> logger,
+    BulkDataOptions options)
+public async Task<BulkExportResult> ExportDatabaseAsync(
+    string databaseId,
+    BulkDataFormat format,
+    ExportOptions? options = null,
+    IProgress<ExportProgress>? progress = null,
+    CancellationToken cancellationToken = default)
+public async Task<BulkExportResult> ExportTableAsync(
+    string databaseId,
+    string tableName,
+    BulkDataFormat format,
+    ExportOptions? options = null,
+    IProgress<ExportProgress>? progress = null,
+    CancellationToken cancellationToken = default)
+public async IAsyncEnumerable<ExportBatch> StreamExportAsync(
+    string databaseId,
+    string tableName,
+    BulkDataFormat format,
+    int batchSize = 1_000,
+    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+public async Task<BulkImportResult> ImportTableAsync(
+    string databaseId,
+    string tableName,
+    Stream dataStream,
+    BulkDataFormat format,
+    ImportOptions? options = null,
+    IProgress<ImportProgress>? progress = null,
+    CancellationToken cancellationToken = default)
+public async Task<BulkImportResult> StreamImportAsync(
+    string databaseId,
+    IAsyncEnumerable<ImportBatch> batches,
+    ImportOptions? options = null,
+    IProgress<ImportProgress>? progress = null,
+    CancellationToken cancellationToken = default)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BulkOperations;
+using SqliteMultiTenant.Events;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BulkDataService>();
+
+// Configure bulk data options
+var options = Options.Create(new BulkDataOptions
+{
+    DefaultBatchSize = 1000,
+    MaxConcurrentTables = 3,
+    DefaultExportDirectory = "./exports",
+    BaseDatabasePath = "/data/sqlite-databases"
+});
+
+// Create required dependencies
+var exporter = new DataExporter();
+var importer = new DataImporter();
+var batchProcessor = new BatchProcessor(logger);
+var eventBus = new EventBusImpl(logger);
+
+// Create the bulk data service
+var bulkDataService = new BulkDataService(
+    exporter,
+    importer,
+    batchProcessor,
+    eventBus,
+    logger,
+    options.Value
+);
+
+// Example 1: Export an entire database to JSON
+var exportResult = await bulkDataService.ExportDatabaseAsync(
+    databaseId: "acme-corp",
+    format: BulkDataFormat.Json,
+    options: new ExportOptions
+    {
+        IncludeMetadata = true,
+        OutputFilePath = "./exports/acme-corp-backup.json"
+    }
+);
+
+if (exportResult.IsSuccess)
+{
+    Console.WriteLine($"Exported {exportResult.TotalRowsExported} rows from {exportResult.TablesProcessed.Count} tables");
+    Console.WriteLine($"Output saved to: {exportResult.OutputPath}");
+}
+
+// Example 2: Export a single table to CSV with progress reporting
+var progress = new Progress<ExportProgress>();
+progress.ProgressChanged += (sender, progressArgs) =>
+{
+    Console.WriteLine($"Export progress: {progressArgs.PercentComplete:F1}% - {progressArgs.RowsProcessed} rows processed");
+};
+
+var tableExportResult = await bulkDataService.ExportTableAsync(
+    databaseId: "acme-corp",
+    tableName: "Customers",
+    format: BulkDataFormat.Csv,
+    options: new ExportOptions { IncludeCsvHeaders = true },
+    progress: progress
+);
+
+// Example 3: Stream export a large table in batches
+await foreach (var batch in bulkDataService.StreamExportAsync(
+    databaseId: "acme-corp",
+    tableName: "Orders",
+    format: BulkDataFormat.Json,
+    batchSize: 500
+))
+{
+    Console.WriteLine($"Processing batch {batch.SequenceNumber} with {batch.RowCount} rows");
+    // Process each batch (e.g., send to external system, transform, etc.)
+    // batch.Data contains the serialized batch content
+}
+
+// Example 4: Import data from a JSON file
+using var fileStream = File.OpenRead("./exports/acme-corp-backup.json");
+var importResult = await bulkDataService.ImportTableAsync(
+    databaseId: "acme-corp",
+    tableName: "Customers",
+    dataStream: fileStream,
+    format: BulkDataFormat.Json,
+    options: new ImportOptions { TruncateBeforeImport = true }
+);
+
+if (importResult.IsSuccess)
+{
+    Console.WriteLine($"Imported {importResult.TotalRowsImported} rows successfully");
+}
+
+// Example 5: Stream import from multiple batches
+var batches = GenerateImportBatches(); // Your IAsyncEnumerable<ImportBatch> implementation
+var streamImportResult = await bulkDataService.StreamImportAsync(
+    databaseId: "acme-corp",
+    batches: batches,
+    options: new ImportOptions { SkipFailedRows = true }
+);
+```
+
 ## BulkDataOptions
 
 The `BulkDataOptions` class provides global configuration for the async bulk import/export subsystem. It controls batch sizes, concurrency limits, timeouts, and other operational parameters that apply across all bulk operations unless overridden by operation-specific options.
