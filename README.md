@@ -1423,6 +1423,37 @@ Console.WriteLine($"SQL import completed: {sqlImportResult.TotalRowsImported} ro
 connection.Close();
 ```
 
+## QueryBuilder
+
+The QueryBuilder class provides a fluent SQL query builder for constructing parameterized SELECT statements. It supports WHERE, AND/OR conditions, INNER/LEFT JOIN, ORDER BY, LIMIT, and OFFSET clauses. Column names are automatically bracket-quoted for safety.
+
+### Usage Example
+```csharp
+var query = new QueryBuilder("Users")
+    .Select("Name", "Email")
+    .Where("IsActive = @active", ("active", true))
+    .OrderBy("Name")
+    .Limit(10)
+    .Build();
+
+// Result: SELECT [Name], [Email] FROM [Users] WHERE IsActive = @active ORDER BY [Name] ASC LIMIT 10
+```
+
+```csharp
+// Complex query with joins and multiple conditions
+var complexQuery = new QueryBuilder("Orders")
+    .Select("o.Id", "o.Total", "c.Name as CustomerName")
+    .InnerJoin("Customers c", "c.Id = o.CustomerId")
+    .Where("o.Status = @status", ("status", "Completed"))
+    .And("o.OrderDate >= @minDate", ("minDate", new DateTime(2024, 1, 1)))
+    .OrderBy("o.OrderDate", "DESC")
+    .Limit(50)
+    .Offset(100)
+    .Build();
+
+// Result: SELECT [o].[Id], [o].[Total], [c].[Name] as CustomerName FROM [Orders] INNER JOIN Customers c ON c.Id = o.CustomerId WHERE (o.Status = @status) AND (o.OrderDate >= @minDate) ORDER BY [o].[OrderDate] DESC LIMIT 50 OFFSET 100
+```
+
 ## BulkInsertBuilder
 
 The `BulkInsertBuilder` class provides an efficient way to insert multiple records into a SQLite database table using batch processing and transaction management. It supports fluent interface for adding records, configurable batch sizes, and both execution and SQL generation modes. This is particularly useful for bulk data loading scenarios where performance is critical.
