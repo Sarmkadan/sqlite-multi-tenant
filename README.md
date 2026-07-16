@@ -2138,6 +2138,48 @@ The `CommandExecutor` integrates with `CommandParser` to transform parsed comman
 
 
 
+## ErrorHandlingMiddleware
+
+The `ErrorHandlingMiddleware` class provides centralized exception handling for ASP.NET Core applications, converting exceptions into structured `Result<T>` responses and ensuring consistent error responses across all API endpoints. It automatically handles exceptions, logs them using the configured logger, and returns appropriate HTTP status codes with detailed error information.
+
+### Usage Example
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Middleware;
+using SqliteMultiTenant.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddConsole();
+
+var app = builder.Build();
+
+// Register ErrorHandlingMiddleware to enable centralized exception handling
+app.UseErrorHandling();
+
+// Example endpoint that might throw exceptions
+app.MapGet("/api/tenants/{id}", async (string id, HttpContext context) =>
+{
+    // Simulate a service that might fail
+    var tenantService = new TenantService();
+    
+    // This will automatically be wrapped in proper error handling
+    var result = await tenantService.GetTenantAsync(id);
+    
+    if (result.IsSuccess)
+    {
+        return Results.Ok(result.Value);
+    }
+    
+    // Error responses are automatically handled by the middleware
+    return Results.BadRequest(result.ErrorMessage);
+});
+
+app.Run();
+```
+
 ## CorrelationIdMiddleware
 
 The `CorrelationIdMiddleware` class adds unique correlation IDs to HTTP requests for distributed tracing and request tracking across services. It automatically generates a correlation ID if one isn't present in request headers or query parameters, stores it in the HTTP context for retrieval, and includes it in response headers. This enables end-to-end request tracking and logging across microservices or layered applications.
