@@ -1115,6 +1115,81 @@ bool deprovisioned = await provisioner.DeprovisionTenantAsync(
 Console.WriteLine($"Tenant deprovisioned: {deprovisioned}");
 ```
 
+## SchemaManager
+
+The `SchemaManager` class provides centralized schema management for SQLite databases, enabling safe schema modifications, table operations, and index management. It handles schema initialization, column additions, table renaming, and index creation with built-in validation to prevent duplicates and ensure idempotent operations.
+
+### Public Members
+
+```csharp
+public sealed class SchemaManager
+public SchemaManager(ILogger<SchemaManager> logger, string connectionString)
+public async Task InitializeSchemaAsync(string tenantId)
+public async Task<bool> AddColumnAsync(string tenantId, string tableName, string columnName, string columnDefinition)
+public async Task RenameTableAsync(string oldTableName, string newTableName)
+public async Task<bool> CreateIndexAsync(string tableName, string indexName, params string[] columns)
+public async Task<List<string>> GetTablesAsync()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Database;
+using Microsoft.Extensions.Logging;
+using System.Data.SQLite;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<SchemaManager>();
+
+// Create the schema manager with connection string
+var schemaManager = new SchemaManager(
+    logger,
+    "Data Source=acme-corp.db;Version=3;"
+);
+
+// Example 1: Initialize the standard multi-tenant schema
+await schemaManager.InitializeSchemaAsync("acme-corp");
+
+// Example 2: Add a new column to an existing table
+bool columnAdded = await schemaManager.AddColumnAsync(
+    tenantId: "acme-corp",
+    tableName: "Customers",
+    columnName: "LastLoginDate",
+    columnDefinition: "TEXT NULL"
+);
+
+if (columnAdded)
+{
+    Console.WriteLine("Column added successfully");
+}
+
+// Example 3: Rename a table
+await schemaManager.RenameTableAsync(
+    oldTableName: "OldCustomers",
+    newTableName: "LegacyCustomers"
+);
+
+// Example 4: Create an index on frequently queried columns
+bool indexCreated = await schemaManager.CreateIndexAsync(
+    tableName: "Orders",
+    indexName: "idx_Orders_CustomerId_Date",
+    columns: new[] { "CustomerId", "OrderDate" }
+);
+
+if (indexCreated)
+{
+    Console.WriteLine("Index created successfully");
+}
+
+// Example 5: Get all tables in the database
+var tables = await schemaManager.GetTablesAsync();
+foreach (var table in tables)
+{
+    Console.WriteLine($"Table: {table}");
+}
+```
+
 ## MigrationService
 
 The `MigrationService` class provides comprehensive database migration management for the multi-tenant SQLite system. It handles the creation, execution, tracking, and rollback of database migrations across tenant databases, enabling schema evolution and data transformations while maintaining audit trails and version control.
