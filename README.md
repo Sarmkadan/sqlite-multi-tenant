@@ -1039,6 +1039,104 @@ int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db
 Console.WriteLine($"Total migrations: {migrationCount}");
 ```
 
+## BackupService
+
+The `BackupService` class provides comprehensive backup management for multi-tenant SQLite databases. It handles creation, tracking, verification, and rotation of database backups with support for both full and incremental backups, progress reporting, and automated cleanup based on retention policies.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+using System.Data.SQLite;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BackupService>();
+
+// Create the backup service
+var backupService = new BackupService(
+  new BackupRepository(/* database connection */),
+  logger
+);
+
+// Example 1: Create a new backup
+var backup = await backupService.CreateBackupAsync(
+  databaseId: "acme-corp",
+  backupType: BackupType.Full,
+  createdBy: "backup-service"
+);
+
+Console.WriteLine($"Backup created: {backup.BackupId}");
+
+// Example 2: Execute the backup process (copy database file)
+var sourcePath = "acme-corp.db";
+var destinationPath = backup.BackupPath;
+
+// Create progress reporter
+var progress = new Progress<BackupProgress>();
+progress.ProgressChanged += (sender, progressArgs) => {
+  Console.WriteLine($"Backup progress: {progressArgs.PercentComplete:F1}% " +
+                  $"({progressArgs.PagesCopied}/{progressArgs.TotalPages} pages)");
+};
+
+// Perform the backup with progress tracking
+await backupService.BackupWithProgressAsync(
+  sourceDatabasePath: sourcePath,
+  destinationPath: destinationPath,
+  progress: progress
+);
+
+// Mark backup as completed with size and duration
+var fileInfo = new FileInfo(destinationPath);
+await backupService.MarkBackupAsCompletedAsync(
+  backupId: backup.BackupId,
+  sizeBytes: fileInfo.Length,
+  durationMs: 1250
+);
+
+// Example 3: Verify the backup integrity
+await backupService.VerifyBackupAsync(
+  backupId: backup.BackupId,
+  verifiedBy: "backup-verifier"
+);
+
+// Example 4: Add tags to the backup
+await backupService.AddBackupTagAsync(backup.BackupId, "daily");
+await backupService.AddBackupTagAsync(backup.BackupId, "full");
+
+// Example 5: Get backup information
+var retrievedBackup = await backupService.GetBackupAsync(backup.BackupId);
+Console.WriteLine($"Backup status: {retrievedBackup?.Status}");
+Console.WriteLine($"Backup size: {retrievedBackup?.SizeBytes} bytes");
+
+// Example 6: List all backups for a database
+var allBackups = await backupService.GetDatabaseBackupsAsync("acme-corp");
+Console.WriteLine($"Total backups: {allBackups.Count}");
+
+// Example 7: Get the latest backup
+var latestBackup = await backupService.GetLatestBackupAsync("acme-corp");
+Console.WriteLine($"Latest backup: {latestBackup?.BackupId}");
+
+// Example 8: Set custom expiration date
+await backupService.SetBackupExpirationAsync(
+  backupId: backup.BackupId,
+  expirationDate: DateTime.UtcNow.AddDays(90)
+);
+
+// Example 9: Count backups for a database
+int backupCount = await backupService.GetBackupCountAsync("acme-corp");
+Console.WriteLine($"Backup count: {backupCount}");
+
+// Example 10: Delete expired backups
+var expiredBackups = await backupService.GetExpiredBackupsAsync();
+foreach (var expiredBackup in expiredBackups)
+{
+  await backupService.DeleteBackupAsync(expiredBackup.BackupId);
+}
+```
+
 ## ConflictResolutionService
 
 The `ConflictResolutionService` class provides conflict detection and resolution capabilities for multi-tenant SQLite databases. It handles scenarios where data has been modified both locally and remotely, allowing you to detect conflicts, apply resolution strategies, and persist the resolved values back to the database. This is particularly useful for merge operations, data synchronization workflows, and handling concurrent updates from different sources.
