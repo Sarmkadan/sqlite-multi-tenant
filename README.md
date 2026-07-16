@@ -1499,6 +1499,48 @@ int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db
 Console.WriteLine($"Total migrations: {migrationCount}");
 ```
 
+## MultiTenantOptions
+
+The `MultiTenantOptions` class provides centralized configuration for multi-tenant SQLite database operations. It controls connection pooling, backup scheduling, performance monitoring, data encryption, caching behavior, and rate limiting across all tenant databases. Configure these options through dependency injection or programmatically to tailor the system to your specific multi-tenant requirements.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Services;
+
+// Create service collection
+var services = new ServiceCollection();
+
+// Configure multi-tenant options with custom settings
+services.Configure<MultiTenantOptions>(options =>
+{
+    options.BasePath = "/var/lib/sqlite-databases";
+    options.DefaultMaxConnections = 50;
+    options.MaxConnectionsPerTenant = 20;
+    options.MaxBackupCount = 30;
+    options.BackupRetention = TimeSpan.FromDays(90);
+    options.EnableBackupScheduling = true;
+    options.BackupInterval = TimeSpan.FromHours(2);
+    options.EnableAuditLogging = true;
+    options.EnablePerformanceMonitoring = true;
+    options.EnableDataEncryption = true;
+    options.EncryptionKeyPath = "/etc/sqlite-keys";
+    options.MaxCacheSize = 5000;
+    options.DefaultCacheTTL = TimeSpan.FromHours(2);
+    options.RateLimitRequestsPerMinute = 5000;
+    options.VerboseLogging = false;
+});
+
+// Build service provider
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve services that use MultiTenantOptions
+var tenantService = serviceProvider.GetRequiredService<ITenantService>();
+var backupService = serviceProvider.GetRequiredService<IBackupService>();
+```
+
 ## DependencyInjectionSetup
 
 The `DependencyInjectionSetup` class provides centralized dependency injection configuration for the multi-tenant SQLite application. It follows the composition root pattern to register all application services including API controllers, middleware, caching, events, formatters, validation, health checks, background workers, and integration services. The class provides both granular service registration methods and a convenience `AddPhase2Services` method that registers all services in one call.
