@@ -1351,6 +1351,151 @@ var streamImportResult = await bulkDataService.StreamImportAsync(
 );
 ```
 
+## DataConsistencyChecker
+
+The `DataConsistencyChecker` class provides comprehensive data integrity validation for SQLite multi-tenant databases. It performs integrity checks, detects duplicate records, validates record counts, and identifies constraint violations, foreign key issues, and missing indexes. This is essential for maintaining database health and ensuring data consistency across tenant databases.
+
+### Public Members
+
+```csharp
+public sealed class DataConsistencyChecker
+public DataConsistencyChecker()
+public async Task<ConsistencyCheckResult> CheckDatabaseIntegrityAsync()
+public async Task<List<DuplicateRecord>> FindDuplicatesAsync()
+public async Task<bool> ValidateRecordCountsAsync()
+
+public sealed class ConsistencyCheckResult
+public bool IsHealthy { get; }
+public bool IntegrityCheckPassed { get; }
+public List<string> OrphanedRecords { get; }
+public List<ConstraintViolation> ForeignKeyViolations { get; }
+public List<string> MissingIndexes { get; }
+public Dictionary<string, TableStatistics> TableStatistics { get; }
+public DateTime CheckedAt { get; }
+
+public sealed class ConstraintViolation
+public string Table { get; set; }
+public long Rowid { get; set; }
+public string ParentTable { get; set; }
+public long ParentRowid { get; set; }
+
+public sealed class TableStatistics
+public string TableName { get; set; }
+public long RowCount { get; set; }
+public long IndexCount { get; set; }
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.DataOperations;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DataConsistencyChecker>();
+
+// Create a SQLite connection to the tenant database
+var connectionString = "Data Source=acme-corp.db;Version=3;";
+await using var connection = new SQLiteConnection(connectionString);
+await connection.OpenAsync();
+
+// Create the data consistency checker instance
+var consistencyChecker = new DataConsistencyChecker();
+
+// Example 1: Run a comprehensive database integrity check
+var integrityResult = await consistencyChecker.CheckDatabaseIntegrityAsync();
+
+if (integrityResult.IsHealthy)
+{
+    Console.WriteLine("Database integrity check PASSED ✓");
+    Console.WriteLine($"Integrity check passed: {integrityResult.IntegrityCheckPassed}");
+    Console.WriteLine($"Checked at: {integrityResult.CheckedAt:yyyy-MM-dd HH:mm:ss}");
+    
+    // Display table statistics
+    foreach (var tableStat in integrityResult.TableStatistics)
+    {
+        Console.WriteLine($"\nTable: {tableStat.Key}");
+        Console.WriteLine($"  Rows: {tableStat.Value.RowCount}");
+        Console.WriteLine($"  Indexes: {tableStat.Value.IndexCount}");
+    }
+    
+    if (integrityResult.ForeignKeyViolations.Any())
+    {
+        Console.WriteLine("\nForeign key violations found:");
+        foreach (var violation in integrityResult.ForeignKeyViolations)
+        {
+            Console.WriteLine($"  - Table '{violation.Table}' (row {violation.Rowid}) " +
+                           $"references missing parent in '{violation.ParentTable}' (row {violation.ParentRowid})");
+        }
+    }
+    
+    if (integrityResult.MissingIndexes.Any())
+    {
+        Console.WriteLine("\nMissing indexes detected:");
+        foreach (var missingIndex in integrityResult.MissingIndexes)
+        {
+            Console.WriteLine($"  - {missingIndex}");
+        }
+    }
+}
+else
+{
+    Console.WriteLine("Database integrity check FAILED ✗");
+    Console.WriteLine("Issues detected:");
+    
+    if (integrityResult.ForeignKeyViolations.Any())
+    {
+        Console.WriteLine($"  Foreign key violations: {integrityResult.ForeignKeyViolations.Count}");
+    }
+    
+    if (integrityResult.OrphanedRecords.Any())
+    {
+        Console.WriteLine($"  Orphaned records: {integrityResult.OrphanedRecords.Count}");
+    }
+    
+    if (integrityResult.MissingIndexes.Any())
+    {
+        Console.WriteLine($"  Missing indexes: {integrityResult.MissingIndexes.Count}");
+    }
+}
+
+// Example 2: Find duplicate records in the database
+await connection.OpenAsync();
+var duplicateRecords = await consistencyChecker.FindDuplicatesAsync();
+
+if (duplicateRecords.Any())
+{
+    Console.WriteLine($"\nFound {duplicateRecords.Count} duplicate record(s):");
+    foreach (var duplicate in duplicateRecords)
+    {
+        Console.WriteLine($"  - Table: {duplicate.TableName}");
+        Console.WriteLine($"    Key: {duplicate.KeyColumn} = {duplicate.KeyValue}");
+        Console.WriteLine($"    Duplicate rows: {string.Join(", ", duplicate.RowIds)}");
+    }
+}
+else
+{
+    Console.WriteLine("\nNo duplicate records found ✓");
+}
+
+// Example 3: Validate record counts across all tables
+var countValidationResult = await consistencyChecker.ValidateRecordCountsAsync();
+
+if (countValidationResult)
+{
+    Console.WriteLine("\nRecord count validation PASSED ✓");
+}
+else
+{
+    Console.WriteLine("\nRecord count validation FAILED ✗");
+}
+
+// Clean up
+connection.Close();
+```
+
 ## BulkDataOptions
 
 The `BulkDataOptions` class provides global configuration for the async bulk import/export subsystem. It controls batch sizes, concurrency limits, timeouts, and other operational parameters that apply across all bulk operations unless overridden by operation-specific options.
