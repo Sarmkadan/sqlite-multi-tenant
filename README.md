@@ -502,6 +502,50 @@ if (helpParsed.IsHelpCommand)
 }
 ```
 
+## CommandExecutor
+
+The `CommandExecutor` class executes parsed CLI commands asynchronously and returns structured results. It encapsulates the business logic for tenant management, database operations, and backup/restore workflows, returning success status and descriptive messages for each operation.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Cli;
+using Microsoft.Extensions.Logging;
+
+// Create a logger and executor instance
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<CommandExecutor>();
+var executor = new CommandExecutor();
+
+// Execute a tenant list command
+var result = await executor.ExecuteAsync(new[] { "tenant", "list" });
+
+if (result.Success)
+{
+    Console.WriteLine("Tenants retrieved successfully:");
+    Console.WriteLine(result.Message);
+}
+else
+{
+    Console.WriteLine($"Error: {result.Message}");
+}
+
+// Execute a backup command with required arguments
+var backupResult = await executor.ExecuteAsync(new[] { "backup", "create", "--tenant-id", "acme", "--output", "/backups/acme.db.zip" });
+
+if (backupResult.Success)
+{
+    Console.WriteLine($"Backup created: {backupResult.Message}");
+}
+else
+{
+    Console.WriteLine($"Backup failed: {backupResult.Message}");
+}
+```
+
+The `CommandExecutor` integrates with `CommandParser` to transform parsed commands into executable operations, handling both simple commands and complex workflows with multiple arguments and subcommands.
+
+
 The `CliApplication` class is used to run the CLI application with the given arguments. 
 
 ### Usage Example
