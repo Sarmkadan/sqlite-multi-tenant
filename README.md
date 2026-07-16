@@ -717,6 +717,58 @@ Console.WriteLine($"Most common path: {statistics.MostCommonPath}");
 Console.WriteLine($"Most common method: {statistics.MostCommonMethod}");
 ```
 
+## Backup
+
+The `Backup` class represents a backup operation for a tenant database, capturing metadata about the backup process including timing, size, status, and encryption settings. It is used to track backup jobs and their outcomes for monitoring, verification, and restoration purposes.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Create a backup instance representing a completed backup operation
+var backup = new Backup
+{
+    BackupId = Guid.NewGuid().ToString(),
+    DatabaseId = "acme-corp-db",
+    BackupPath = "/backups/acme-corp-2024-07-16.db.backup",
+    BackupType = BackupType.Full,
+    Status = BackupStatus.Completed,
+    CreatedAt = DateTime.UtcNow.AddMinutes(-15),
+    CompletedAt = DateTime.UtcNow,
+    VerifiedAt = DateTime.UtcNow.AddSeconds(-30),
+    SizeBytes = 15_728_640, // 15 MB
+    OriginalSizeBytes = 20_971_520, // 20 MB
+    CompressionRatio = 25, // 25% of original size
+    CreatedBy = "backup-service",
+    VerifiedBy = "backup-verifier",
+    ErrorMessage = null,
+    DurationMs = 1250, // 1.25 seconds
+    IsEncrypted = true,
+    IsVerified = true,
+    ExpiresAt = DateTime.UtcNow.AddDays(30),
+    Tags = "daily,full,encrypted"
+};
+
+Console.WriteLine($"Backup created: {backup.BackupId}");
+Console.WriteLine($"Database: {backup.DatabaseId}");
+Console.WriteLine($"Type: {backup.BackupType}");
+Console.WriteLine($"Status: {backup.Status}");
+Console.WriteLine($"Size: {backup.SizeBytes:N0} bytes (compressed from {backup.OriginalSizeBytes:N0})");
+Console.WriteLine($"Compression: {backup.CompressionRatio}%");
+Console.WriteLine($"Encrypted: {backup.IsEncrypted}");
+Console.WriteLine($"Verified: {backup.IsVerified}");
+Console.WriteLine($"Expires: {backup.ExpiresAt:yyyy-MM-dd}");
+
+// Access computed properties
+if (backup.IsVerified && backup.CompletedAt.HasValue)
+{
+    var duration = backup.CompletedAt.Value - backup.CreatedAt;
+    Console.WriteLine($"Backup completed in {duration.TotalSeconds:F2} seconds");
+}
+```
+
 ## CommandExecutor
 
 The `CommandExecutor` class executes parsed CLI commands asynchronously and returns structured results. It encapsulates the business logic for tenant management, database operations, and backup/restore workflows, returning success status and descriptive messages for each operation.
