@@ -134,6 +134,74 @@ var @event = new TenantCreatedNotificationEvent
 await handler.HandleAsync(@event);
 ```
 
+## IRequestInterceptor
+
+The `IRequestInterceptor` interface provides a mechanism for preprocessing HTTP requests and post-processing responses in ASP.NET Core applications. Interceptors enable cross-cutting concerns like tenant context extraction, request validation, correlation ID tracking, and audit logging without cluttering controller logic. The interface supports both request pre-processing (with validation) and response post-processing hooks.
+
+
+
+
+### Usage Example
+
+
+```csharp
+using SqliteMultiTenant.Api.Interceptors;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Create interceptors for different concerns
+var tenantInterceptor = new TenantContextInterceptor(
+    loggerFactory.CreateLogger<TenantContextInterceptor>()
+);
+
+var validationInterceptor = new RequestValidationInterceptor(
+    loggerFactory.CreateLogger<RequestValidationInterceptor>()
+);
+
+var correlationInterceptor = new CorrelationIdInterceptor(
+    loggerFactory.CreateLogger<CorrelationIdInterceptor>()
+);
+
+// Example: Use interceptor pipeline in ASP.NET Core
+var builder = WebApplication.CreateBuilder(args);
+
+// Register interceptors
+builder.Services.AddSingleton<IRequestInterceptor>(tenantInterceptor);
+builder.Services.AddSingleton<IRequestInterceptor>(validationInterceptor);
+builder.Services.AddSingleton<IRequestInterceptor>(correlationInterceptor);
+
+var app = builder.Build();
+
+// Middleware that uses interceptors
+app.Use(async (context, next) =>
+{
+    // Create pipeline and register interceptors
+    var pipeline = new InterceptorPipeline(
+        app.Services.GetRequiredService<ILogger<InterceptorPipeline>>()
+    );
+    pipeline.Register(tenantInterceptor);
+    pipeline.Register(validationInterceptor);
+    pipeline.Register(correlationInterceptor);
+
+    // Execute request interceptors
+    if (await pipeline.ExecuteRequestInterceptorsAsync(context))
+    {
+        await next(context);
+    }
+    else
+    {
+        context.Response.StatusCode = 400;
+        await context.Response.WriteAsync("Request validation failed");
+    }
+
+    // Execute response interceptors
+    await pipeline.ExecuteResponseInterceptorsAsync(context);
+});
+
+app.Run();
+```
+
 ## IHttpClientService
 
 The `IHttpClientService` interface provides a resilient HTTP client wrapper for making safe HTTP requests with built-in retry logic, timeout handling, and structured logging. It simplifies integration with external services and webhooks by handling common HTTP concerns like transient error retries, request timeouts, and response deserialization.
