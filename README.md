@@ -948,6 +948,86 @@ tenantContext.SetContextData("processingStartTime", DateTime.UtcNow);
 Console.WriteLine($"Tenant context: {tenantContext}");
 ```
 
+## ConflictResolutionService
+
+The `ConflictResolutionService` class provides conflict detection and resolution capabilities for multi-tenant SQLite databases. It handles scenarios where data has been modified both locally and remotely, allowing you to detect conflicts, apply resolution strategies, and persist the resolved values back to the database. This is particularly useful for merge operations, data synchronization workflows, and handling concurrent updates from different sources.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Operations;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ConflictResolutionService>();
+
+// Create the conflict resolution service
+var conflictService = new ConflictResolutionService(logger);
+
+// Simulate local and remote data versions (e.g., from a sync operation)
+var localData = new Dictionary<string, object>
+{
+    { "Name", "Acme Corporation" },
+    { "Status", "Active" },
+    { "EmployeeCount", 150 },
+    { "LastUpdated", DateTime.UtcNow.AddDays(-1) }
+};
+
+var remoteData = new Dictionary<string, object>
+{
+    { "Name", "Acme Corporation" },
+    { "Status", "Inactive" },  // Conflict: different status
+    { "EmployeeCount", 200 },  // Conflict: different employee count
+    { "Revenue", 1_500_000 } // Conflict: field exists remotely but not locally
+};
+
+// Step 1: Detect conflicts
+var conflictResult = conflictService.DetectConflicts(localData, remoteData);
+
+if (conflictResult.HasConflicts)
+{
+    Console.WriteLine($"Found {conflictResult.Conflicts.Count} conflicts:");
+    foreach (var conflict in conflictResult.Conflicts)
+    {
+        Console.WriteLine($"  - {conflict.Field}: {conflict.ConflictType}");
+        Console.WriteLine($"    Local: {conflict.LocalValue}");
+        Console.WriteLine($"    Remote: {conflict.RemoteValue}");
+    }
+
+    // Step 2: Resolve conflicts using a strategy
+    var resolutionResult = await conflictService.ResolveConflictsAsync(
+        conflictResult,
+        ConflictResolutionStrategy.Merge
+    );
+
+    if (resolutionResult.IsSuccessful)
+    {
+        Console.WriteLine("Conflicts resolved successfully!");
+        foreach (var resolved in resolutionResult.ResolvedValues)
+        {
+            Console.WriteLine($"  {resolved.Key} = {resolved.Value}");
+        }
+
+        // Step 3: Apply resolutions to database
+        var connectionString = "Data Source=acme-corp.db;Version=3;";
+        await using var connection = new SQLiteConnection(connectionString);
+        connection.Open();
+
+        bool applied = await conflictService.ApplyResolutionAsync(
+            connection,
+            "Tenants",
+            "Id",
+            "acme-corp",
+            resolutionResult
+        );
+
+        Console.WriteLine($"Resolution applied to database: {applied}");
+    }
+}
+```
+
 ## BackupRotationManager
 
 The `BackupRotationManager` class manages automatic rotation and cleanup of tenant database backups according to configurable retention policies. It enforces limits on backup age, total backup count, and disk usage, automatically deleting old backups when thresholds are exceeded. The manager also provides verification capabilities to ensure backup integrity and statistics for monitoring backup storage usage.
