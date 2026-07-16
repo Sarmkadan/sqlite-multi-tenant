@@ -2093,6 +2093,76 @@ if (migration.CanRollback())
 Console.WriteLine($"Migration display name: {migration.GetDisplayName()}");
 ```
 
+## PerformanceMiddleware
+
+The `PerformanceMiddleware` class provides request performance monitoring and metrics collection for ASP.NET Core applications. It automatically records request timing, memory usage, and other performance metrics for every HTTP request, enabling performance analysis, monitoring, and optimization. The middleware integrates with `PerformanceMonitor` to aggregate and retrieve statistics across multiple requests.
+
+### Usage Example
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Middleware;
+using SqliteMultiTenant.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+builder.Logging.AddConsole();
+
+// Register PerformanceMiddleware early in the pipeline to monitor all requests
+builder.Services.AddSingleton<PerformanceMonitor>();
+var app = builder.Build();
+
+app.UsePerformanceMiddleware();
+
+// Your endpoints and middleware configuration
+app.MapGet("/api/tenants/{id}", async (string id, PerformanceMonitor performanceMonitor) =>
+{
+    // Simulate some work
+    await Task.Delay(50);
+    
+    // The middleware automatically recorded metrics for this request
+    // You can access aggregated performance statistics
+    var stats = await performanceMonitor.GetStatsAsync();
+    
+    return Results.Ok(new {
+        TenantId = id,
+        AverageResponseTime = stats.AverageElapsedMs,
+        RequestsProcessed = stats.TotalRequests
+    });
+});
+
+app.Run();
+```
+
+### Public Members
+
+```csharp
+public sealed class PerformanceMiddleware
+public PerformanceMiddleware(RequestDelegate next, PerformanceMonitor performanceMonitor)
+public async Task InvokeAsync(HttpContext context)
+
+public sealed class RequestMetrics
+public string Method { get; }
+public string Path { get; }
+public int StatusCode { get; }
+public long ElapsedMs { get; }
+public long MemoryUsedKb { get; }
+public DateTime Timestamp { get; }
+
+public sealed class PerformanceMonitor
+public async Task RecordMetricAsync(RequestMetrics metrics)
+public async Task<PerformanceStats> GetStatsAsync()
+public async Task<List<RequestMetrics>> GetRecentMetricsAsync(int limit = 100)
+
+public sealed class PerformanceStats
+public int TotalRequests { get; }
+public double AverageElapsedMs { get; }
+public long MaxElapsedMs { get; }
+public long MinElapsedMs { get; }
+public double AverageMemoryUsedKb { get; }
+```
+
 ## CommandExecutor
 
 The `CommandExecutor` class executes parsed CLI commands asynchronously and returns structured results. It encapsulates the business logic for tenant management, database operations, and backup/restore workflows, returning success status and descriptive messages for each operation.
