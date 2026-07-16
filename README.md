@@ -717,6 +717,63 @@ Console.WriteLine($"Most common path: {statistics.MostCommonPath}");
 Console.WriteLine($"Most common method: {statistics.MostCommonMethod}");
 ```
 
+## TenantContext
+
+The `TenantContext` class provides tenant-aware context information throughout the application, carrying tenant identification, user details, request metadata, and extensible context data. It is designed to flow through the application's request pipeline, enabling automatic tenant isolation and contextual logging without requiring explicit tenant parameters in every method.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+using System;
+
+// Create a tenant context for a new request
+var tenantContext = new TenantContext
+{
+    TenantId = "acme-corp",
+    TenantName = "Acme Corporation",
+    UserId = "user-456",
+    UserEmail = "john.doe@acme.com",
+    EstablishedAt = new DateTime(2024, 1, 15),
+    CreatedAt = DateTime.UtcNow,
+    RequestId = "req-789",
+    ConnectionId = "conn-abc-123",
+    DatabasePath = "/data/acme-corp.db",
+    ContextData = new Dictionary<string, object>
+    {
+        { "requestSource", "web-portal" },
+        { "userAgent", "Mozilla/5.0" },
+        { "sessionId", "sess-xyz-789" }
+    }
+};
+
+// Validate the context
+if (tenantContext.IsValid)
+{
+    Console.WriteLine($"Valid tenant context for {tenantContext.TenantName}");
+    Console.WriteLine($"Tenant established: {tenantContext.EstablishedAt:yyyy-MM-dd}");
+}
+else
+{
+    Console.WriteLine("Invalid tenant context");
+    tenantContext.Validate(); // Returns validation errors
+}
+
+// Access context data
+var requestSource = tenantContext.GetContextData("requestSource") as string;
+Console.WriteLine($"Request source: {requestSource}");
+
+// Update context data
+tenantContext.SetContextData("processingStartTime", DateTime.UtcNow);
+
+// Invalidate the context when tenant is no longer valid
+// tenantContext.Invalidate();
+
+// String representation
+Console.WriteLine($"Tenant context: {tenantContext}");
+```
+
 ## Backup
 
 The `Backup` class represents a backup operation for a tenant database, capturing metadata about the backup process including timing, size, status, and encryption settings. It is used to track backup jobs and their outcomes for monitoring, verification, and restoration purposes.
