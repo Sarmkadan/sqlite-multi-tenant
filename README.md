@@ -2314,6 +2314,118 @@ connection.Open();
 var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 var logger = loggerFactory.CreateLogger<BulkInsertBuilder>();
 
+// Create a bulk insert builder for the "Customers" table
+var bulkInsert = new BulkInsertBuilder(connection, logger, "Customers", batchSize: 500);
+
+// Add records to the batch
+bulkInsert.AddRecord(new Dictionary<string, object>
+{
+    {"Id", 1},
+    {"Name", "Acme Corporation"},
+    {"Email", "contact@acme.com"}
+});
+
+bulkInsert.AddRecord(new Dictionary<string, object>
+{
+    {"Id", 2},
+    {"Name", "Globex Corporation"},
+    {"Email", "info@globex.com"}
+});
+
+// Execute the bulk insert
+var result = await bulkInsert.ExecuteAsync();
+
+if (result.IsSuccessful)
+{
+    Console.WriteLine($"Inserted {result.InsertedRecords} records successfully");
+}
+else
+{
+    Console.WriteLine($"Error: {result.Error}");
+}
+
+// Clean up
+connection.Close();
+```
+
+## ConnectionPoolOptions
+
+The `ConnectionPoolOptions` class provides configuration for managing per-tenant SQLite connection pools. It controls pool sizing, idle connection behavior, and connection lifetime management to optimize database resource usage and prevent connection exhaustion.
+
+### Public Members
+
+```csharp
+public int MinPoolSize
+public int MaxPoolSize
+public TimeSpan IdleTimeout
+public TimeSpan AcquireTimeout
+public TimeSpan MaxConnectionLifetime
+public TimeSpan PruneInterval
+public void Validate()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Database;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Configure connection pooling options at application startup
+var services = new ServiceCollection();
+
+services.Configure<ConnectionPoolOptions>(options =>
+{
+    options.MinPoolSize = 2;           // Keep at least 2 connections alive per tenant
+    options.MaxPoolSize = 20;          // Allow up to 20 concurrent connections per tenant
+    options.IdleTimeout = TimeSpan.FromMinutes(10);  // Idle connections expire after 10 minutes
+    options.AcquireTimeout = TimeSpan.FromSeconds(45); // Wait up to 45 seconds for a connection
+    options.MaxConnectionLifetime = TimeSpan.FromHours(2); // Replace connections after 2 hours
+    options.PruneInterval = TimeSpan.FromSeconds(30);  // Prune idle connections every 30 seconds
+});
+
+var serviceProvider = services.BuildServiceProvider();
+var poolOptions = serviceProvider.GetRequiredService<IOptions<ConnectionPoolOptions>>().Value;
+
+// Validate configuration before use
+poolOptions.Validate();
+
+// Register the connection pool manager with DI
+services.AddSingleton<ConnectionPoolManager>();
+
+// Example: Create a connection pool manager with custom options
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ConnectionPoolManager>();
+
+var customOptions = new ConnectionPoolOptions
+{
+    MinPoolSize = 1,
+    MaxPoolSize = 15,
+    IdleTimeout = TimeSpan.FromMinutes(5),
+    AcquireTimeout = TimeSpan.FromSeconds(30),
+    MaxConnectionLifetime = TimeSpan.FromHours(1),
+    PruneInterval = TimeSpan.FromSeconds(60)
+};
+
+var poolManager = new ConnectionPoolManager(customOptions, logger);
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Operations;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a SQLite connection
+var connectionString = "Data Source=example.db;Version=3;";
+var connection = new SQLiteConnection(connectionString);
+connection.Open();
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BulkInsertBuilder>();
+
 // Create the bulk insert builder
 var bulkInsertBuilder = new BulkInsertBuilder(connection, logger, "Customers");
 
