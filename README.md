@@ -533,6 +533,65 @@ else
 }
 ```
 
+## IScheduledTaskService
+
+The `IScheduledTaskService` interface provides a mechanism for registering, managing, and executing background tasks on a configurable schedule. It supports task registration with custom intervals, status tracking, and graceful start/stop operations. Tasks are executed asynchronously and their execution status can be queried at runtime.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BackgroundWorkers;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ScheduledTaskService>();
+
+// Create the scheduled task service
+var taskService = new ScheduledTaskService(logger);
+
+// Register a background task to run every 30 seconds
+var cleanupTask = async () =>
+{
+    Console.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Running cleanup task...");
+    await Task.Delay(1000); // Simulate work
+    Console.WriteLine("Cleanup completed successfully");
+};
+
+taskService.RegisterTask("cleanup-job", cleanupTask, TimeSpan.FromSeconds(30));
+
+// Register another task to run every 5 minutes
+var backupTask = async () =>
+{
+    Console.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Running backup task...");
+    await Task.Delay(2000); // Simulate work
+    Console.WriteLine("Backup completed successfully");
+};
+
+taskService.RegisterTask("backup-job", backupTask, TimeSpan.FromMinutes(5));
+
+// Start the task service to begin executing registered tasks
+await taskService.StartAsync();
+Console.WriteLine("Task service started");
+
+// Wait for a while to see tasks execute
+await Task.Delay(TimeSpan.FromMinutes(1));
+
+// Check the status of a specific task
+var status = await taskService.GetTaskStatusAsync("cleanup-job");
+Console.WriteLine($"Cleanup task executed {status.ExecutionCount} times");
+Console.WriteLine($"Next execution: {status.NextExecutionAt:HH:mm:ss}");
+
+// Stop the task service when shutting down the application
+await taskService.StopAsync();
+Console.WriteLine("Task service stopped");
+
+// Unregister a task when it's no longer needed
+taskService.UnregisterTask("backup-job");
+```
+
 ## TenantStorageInfo
 
 The `TenantStorageInfo` record provides storage usage statistics for a single tenant database, including database size, page count, page size, and WAL file size. It is typically returned by storage monitoring operations to track tenant database growth and resource consumption.
