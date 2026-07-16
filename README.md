@@ -533,6 +533,39 @@ else
 }
 ```
 
+## TenantStorageInfo
+
+The `TenantStorageInfo` record provides storage usage statistics for a single tenant database, including database size, page count, page size, and WAL file size. It is typically returned by storage monitoring operations to track tenant database growth and resource consumption.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Create storage info for a tenant database
+var storageInfo = new TenantStorageInfo
+{
+    TenantId = "acme-corp",
+    SizeBytes = 1_048_576,      // 1 MB database
+    PageCount = 131_072,        // 131,072 pages
+    PageSize = 8_192,           // 8 KB pages
+    WalSizeBytes = 524_288      // 512 KB WAL file
+};
+
+Console.WriteLine($"Tenant: {storageInfo.TenantId}");
+Console.WriteLine($"Database size: {storageInfo.SizeBytes:N0} bytes ({storageInfo.SizeBytes / 1024:N0} KB)");
+Console.WriteLine($"Total size (with WAL): {storageInfo.TotalSizeBytes:N0} bytes ({storageInfo.TotalSizeBytes / 1024:N0} KB)");
+Console.WriteLine($"Pages: {storageInfo.PageCount:N0}, Page size: {storageInfo.PageSize} bytes");
+Console.WriteLine($"WAL size: {storageInfo.WalSizeBytes:N0} bytes");
+
+// Access computed property
+if (storageInfo.TotalSizeBytes > 2_000_000)
+{
+    Console.WriteLine("Storage threshold exceeded!");
+}
+```
+
 ## LoggingExtensions
 
 The `LoggingExtensions` class provides structured logging extension methods for the SQLite multi-tenant application. It enables semantic, context-rich logging that improves log searchability and analysis in centralized logging systems. The extension methods follow structured logging best practices and automatically include relevant context for each operation type.
