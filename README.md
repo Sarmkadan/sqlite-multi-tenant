@@ -2137,6 +2137,179 @@ else
 The `CommandExecutor` integrates with `CommandParser` to transform parsed commands into executable operations, handling both simple commands and complex workflows with multiple arguments and subcommands.
 
 
+
+## CorrelationIdMiddleware
+
+The `CorrelationIdMiddleware` class adds unique correlation IDs to HTTP requests for distributed tracing and request tracking across services. It automatically generates a correlation ID if one isn't present in request headers or query parameters, stores it in the HTTP context for retrieval, and includes it in response headers. This enables end-to-end request tracking and logging across microservices or layered applications.
+
+### Usage Example
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Middleware;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add logging services
+builder.Logging.AddConsole();
+
+var app = builder.Build();
+
+// Register CorrelationIdMiddleware to enable correlation ID tracking
+app.UseCorrelationId();
+
+// Your endpoints and middleware configuration
+app.MapGet("/api/health", () => "OK");
+app.MapGet("/api/data", (HttpContext context) => {
+    // Retrieve the correlation ID from the current HTTP context
+    string correlationId = context.GetCorrelationId();
+    
+    Console.WriteLine($"Processing request with correlation ID: {correlationId}");
+    
+    return Results.Ok(new { 
+        Message = "Request processed",
+        CorrelationId = correlationId
+    });
+});
+
+app.Run();
+```
+
+### Key Features
+
+- **Automatic Correlation ID Generation**: Generates a new GUID correlation ID if none is provided in headers or query parameters
+- **Header Integration**: Uses `X-Correlation-Id` header for request/response correlation
+- **Context Storage**: Stores correlation ID in `HttpContext.Items` for easy retrieval throughout the request pipeline
+- **Response Headers**: Automatically adds correlation ID to response headers for downstream services
+- **Logging Integration**: Provides correlation ID in log messages for end-to-end tracing
+- **Query Parameter Support**: Can also accept correlation ID from `?correlationId=` query parameter
+
+### Public Members
+
+```csharp
+public sealed class CorrelationIdMiddleware
+public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
+public async Task InvokeAsync(HttpContext context)
+
+public static class CorrelationIdMiddlewareExtensions
+public static IApplicationBuilder UseCorrelationId(this IApplicationBuilder app)
+public static string GetCorrelationId(this HttpContext context)
+```
+
+### How It Works
+
+1. **Request Processing**: When a request arrives, the middleware checks for an existing correlation ID in:
+   - Request headers (`X-Correlation-Id`)
+   - Query parameters (`?correlationId=`)
+
+2. **ID Generation**: If no correlation ID is found, a new GUID is generated
+
+3. **Context Storage**: The correlation ID is stored in `HttpContext.Items` for retrieval by other middleware or endpoints
+
+4. **Response Headers**: The correlation ID is added to the response headers before the response is sent
+
+5. **Logging**: All log messages include the correlation ID for end-to-end traceability
+
+### Integration with ASP.NET Core
+
+To use `CorrelationIdMiddleware` in your ASP.NET Core application:
+
+```csharp
+// In Program.cs or Startup.cs
+var app = builder.Build();
+
+// Add CorrelationIdMiddleware early in the pipeline
+app.UseCorrelationId();
+
+// Add other middleware
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseEndpoints(...);
+
+app.Run();
+```
+
+### Retrieving Correlation ID in Controllers
+
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class OrdersController : ControllerBase
+{
+    [HttpGet("{id}")]
+    public IActionResult GetOrder(int id)
+    {
+        string correlationId = HttpContext.GetCorrelationId();
+        
+        _logger.LogInformation("Processing order {OrderId} with correlation {CorrelationId}", id, correlationId);
+        
+        // Your business logic here
+        
+        return Ok(new { OrderId = id, CorrelationId = correlationId });
+    }
+}
+```
+
+### Benefits
+
+- **Distributed Tracing**: Track requests across multiple services using a consistent correlation ID
+- **Debugging**: Easily correlate log messages from different components processing the same request
+- **Monitoring**: Monitor request flow and identify bottlenecks using correlation IDs
+- **Audit Trail**: Create comprehensive audit trails with request IDs for compliance and debugging
+
+### Best Practices
+
+- Add `UseCorrelationId()` early in your middleware pipeline
+- Include correlation ID in all log messages
+- Propagate correlation ID to downstream services via headers
+- Use the same header name (`X-Correlation-Id`) consistently across services
+
+## CommandExecutor
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Cli;
+using Microsoft.Extensions.Logging;
+
+// Create a logger and executor instance
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<CommandExecutor>();
+var executor = new CommandExecutor();
+
+// Execute a tenant list command
+var result = await executor.ExecuteAsync(new[] { "tenant", "list" });
+
+if (result.Success)
+{
+    Console.WriteLine("Tenants retrieved successfully:");
+    Console.WriteLine(result.Message);
+}
+else
+{
+    Console.WriteLine($"Error: {result.Message}");
+}
+
+// Execute a backup command with required arguments
+var backupResult = await executor.ExecuteAsync(new[] { "backup", "create", "--tenant-id", "acme", "--output", "/backups/acme.db.zip" });
+
+if (backupResult.Success)
+{
+    Console.WriteLine($"Backup created: {backupResult.Message}");
+}
+else
+{
+    Console.WriteLine($"Backup failed: {backupResult.Message}");
+}
+```
+
+The `CommandExecutor` integrates with `CommandParser` to transform parsed commands into executable operations, handling both simple commands and complex workflows with multiple arguments and subcommands.
+
+
 The `CliApplication` class is used to run the CLI application with the given arguments. 
 
 ### Usage Example
