@@ -2310,6 +2310,82 @@ public class OrdersController : ControllerBase
 - Propagate correlation ID to downstream services via headers
 - Use the same header name (`X-Correlation-Id`) consistently across services
 
+## RateLimitingMiddleware
+
+The `RateLimitingMiddleware` class provides token bucket-based rate limiting to protect your multi-tenant application from abuse and DoS attacks. It implements a sliding window algorithm that fairly distributes request capacity over time, preventing sudden bursts while allowing sustained traffic. The middleware supports both per-tenant (via `X-Tenant-Id` header) and per-IP rate limiting, with configurable thresholds for requests per minute, burst capacity, and cleanup intervals.
+
+### Usage Example
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Middleware;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Configure rate limiting options
+builder.Services.Configure<RateLimitingOptions>(options =>
+{
+    options.RequestsPerMinute = 600; // 10 requests per second
+    options.BurstCapacity = 100; // Allow bursts up to 100 requests
+    options.CleanupIntervalSeconds = 600; // Clean up every 10 minutes
+});
+
+builder.Logging.AddConsole();
+
+var app = builder.Build();
+
+// Register RateLimitingMiddleware early in the pipeline to protect all endpoints
+app.UseMiddleware<RateLimitingMiddleware>();
+
+// Your other middleware and endpoints
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapGet("/api/tenants/{id}", (string id) => 
+{
+    // Your endpoint logic
+    return Results.Ok(new { TenantId = id });
+});
+
+app.Run();
+```
+
+### Configuration Options
+
+The `RateLimitingOptions` class allows you to configure rate limiting behavior without recompiling your application:
+
+- **RequestsPerMinute**: Number of requests allowed per minute (default: 300 = 5 req/sec)
+- **BurstCapacity**: How many requests over the limit are allowed before blocking (default: 50)
+- **CleanupIntervalSeconds**: How often to remove unused rate limit buckets from memory (default: 300 seconds = 5 minutes)
+
+### How It Works
+
+1. **Token Bucket Algorithm**: Each client (tenant or IP) gets a bucket with a capacity of `RequestsPerMinute` tokens
+2. **Sliding Window**: Tokens are refilled at a rate of `RequestsPerMinute / 60` tokens per second
+3. **Request Processing**: Each request consumes one token; if no tokens available, returns HTTP 429 with `Retry-After` header
+4. **Tenant Isolation**: Uses `X-Tenant-Id` header when available, falls back to IP address for anonymous requests
+5. **Memory Management**: Unused buckets are automatically cleaned up to prevent memory bloat
+
+### Public Members
+
+```csharp
+public sealed class RateLimitingMiddleware
+public RateLimitingMiddleware(RequestDelegate next, ILogger<RateLimitingMiddleware> logger, RateLimitingOptions options)
+public async Task InvokeAsync(HttpContext context)
+
+public sealed class RateLimitingOptions
+public int RequestsPerMinute { get; set; }
+public int BurstCapacity { get; set; }
+public int CleanupIntervalSeconds { get; set; }
+
+public sealed class TokenBucket
+public TokenBucket(double capacity, double refillRate)
+public bool TryConsumeToken()
+```
+
 ## CommandExecutor
 
 ### Usage Example
