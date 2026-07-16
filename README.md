@@ -533,6 +533,92 @@ else
 }
 ```
 
+## IRequestResponseLogger
+
+The `IRequestResponseLogger` interface provides a mechanism for logging HTTP request and response details for debugging, monitoring, and analytics purposes. It captures comprehensive information including headers, body content, query parameters, IP addresses, status codes, and timing metrics. The implementation includes sampling to manage log volume and thread-safe operations for concurrent access.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Logging;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+
+// Create a logger factory and logger
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<RequestResponseLogger>();
+
+// Create the logger instance
+var requestResponseLogger = new RequestResponseLogger(logger);
+
+// Log a sample HTTP request
+var requestLog = new RequestLog
+{
+    Method = "GET",
+    Path = "/api/users",
+    Host = "localhost:5000",
+    Body = "{ \"userId\": 123 }",
+    Headers = new Dictionary<string, string>
+    {
+        { "Authorization", "Bearer token123" },
+        { "Content-Type", "application/json" },
+        { "X-Request-Id", "req-456" }
+    },
+    QueryParameters = new Dictionary<string, string>
+    {
+        { "page", "1" },
+        { "limit", "10" }
+    },
+    IpAddress = "192.168.1.100"
+};
+
+await requestResponseLogger.LogRequestAsync(requestLog);
+
+// Log a sample HTTP response
+var responseLog = new ResponseLog
+{
+    StatusCode = 200,
+    DurationMs = 42,
+    Body = "{\"users\": [{\"id\": 123, \"name\": \"John Doe\"}]}",
+    ResponseSize = 68,
+    Headers = new Dictionary<string, string>
+    {
+        { "Content-Type", "application/json" },
+        { "X-Response-Time", "42ms" }
+    }
+};
+
+await requestResponseLogger.LogResponseAsync(responseLog);
+
+// Retrieve request logs with filtering
+var requestLogs = await requestResponseLogger.GetRequestLogsAsync(new LogFilter
+{
+    Method = "GET",
+    Path = "/api",
+    Limit = 50
+});
+
+Console.WriteLine($"Found {requestLogs.Count} matching request logs");
+
+// Retrieve response logs with filtering
+var responseLogs = await requestResponseLogger.GetResponseLogsAsync(new LogFilter
+{
+    StatusCode = 200,
+    Limit = 50
+});
+
+Console.WriteLine($"Found {responseLogs.Count} successful response logs");
+
+// Get comprehensive statistics
+var statistics = await requestResponseLogger.GetStatisticsAsync();
+Console.WriteLine($"Total requests: {statistics.TotalRequestsLogged}");
+Console.WriteLine($"Total responses: {statistics.TotalResponsesLogged}");
+Console.WriteLine($"Average request size: {statistics.AverageRequestSize:F2} bytes");
+Console.WriteLine($"Average response time: {statistics.AverageResponseTime:F2} ms");
+Console.WriteLine($"Most common path: {statistics.MostCommonPath}");
+Console.WriteLine($"Most common method: {statistics.MostCommonMethod}");
+```
+
 ## CommandExecutor
 
 The `CommandExecutor` class executes parsed CLI commands asynchronously and returns structured results. It encapsulates the business logic for tenant management, database operations, and backup/restore workflows, returning success status and descriptive messages for each operation.
