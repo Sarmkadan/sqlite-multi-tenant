@@ -769,6 +769,80 @@ if (backup.IsVerified && backup.CompletedAt.HasValue)
 }
 ```
 
+## Migration
+
+The `Migration` class represents a database migration for a tenant, tracking the execution of schema changes and data migrations. It captures metadata about the migration process including scripts, timing, status, and execution details, enabling rollback capabilities and comprehensive migration auditing.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Constants;
+using System;
+
+// Create a migration instance for adding a new table
+var migration = new Migration
+{
+  MigrationId = "m20240716-001",
+  DatabaseId = "acme-corp-db",
+  Version = "1.2.3",
+  Name = "AddTenantsTable",
+  Description = "Add Tenants table for multi-tenant support",
+  UpScript = @"
+CREATE TABLE IF NOT EXISTS Tenants (
+  Id TEXT PRIMARY KEY,
+  Name TEXT NOT NULL,
+  CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  IsActive BOOLEAN NOT NULL DEFAULT 1
+);",
+  DownScript = @"
+DROP TABLE IF EXISTS Tenants;",
+  Status = MigrationStatus.Pending,
+  ExecutionOrder = 1,
+  IsRollbackable = true,
+  CreatedAt = DateTime.UtcNow
+};
+
+// Validate the migration
+if (migration.Validate(out var errors))
+{
+  Console.WriteLine("Migration is valid");
+}
+else
+{
+  Console.WriteLine("Migration validation errors:");
+  foreach (var error in errors)
+  {
+    Console.WriteLine($"- {error}");
+  }
+}
+
+// Mark migration as started
+migration.MarkAsStarted("migration-service");
+Console.WriteLine($"Migration started at: {migration.ExecutedAt}");
+
+// Simulate migration execution (in real code, this would execute the UpScript)
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+// Execute database schema changes here...
+System.Threading.Thread.Sleep(150); // Simulate work
+stopwatch.Stop();
+
+// Mark migration as completed
+migration.MarkAsCompleted(stopwatch.ElapsedMilliseconds);
+Console.WriteLine($"Migration completed in {migration.ExecutionTimeMs}ms");
+Console.WriteLine($"Status: {migration.Status}");
+Console.WriteLine($"Completed at: {migration.CompletedAt}");
+
+// Check if migration can be rolled back
+if (migration.CanRollback())
+{
+  Console.WriteLine("Migration can be rolled back");
+}
+
+// Get display name
+Console.WriteLine($"Migration display name: {migration.GetDisplayName()}");
+```
+
 ## CommandExecutor
 
 The `CommandExecutor` class executes parsed CLI commands asynchronously and returns structured results. It encapsulates the business logic for tenant management, database operations, and backup/restore workflows, returning success status and descriptive messages for each operation.
