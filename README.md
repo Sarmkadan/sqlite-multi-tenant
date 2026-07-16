@@ -1028,6 +1028,79 @@ if (conflictResult.HasConflicts)
 }
 ```
 
+## IBatchProcessor
+
+The `IBatchProcessor` interface and its implementation `BatchProcessor` provide a robust mechanism for processing collections of items in parallel with built-in error isolation and detailed result tracking. It's ideal for batch operations where individual failures shouldn't stop the entire batch, such as processing multiple tenant records, database migrations, or API calls.
+
+
+
+
+### Usage Example
+
+
+```csharp
+using SqliteMultiTenant.Operations;
+using Microsoft.Extensions.Logging;
+using System.Data.SQLite;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BatchProcessor>();
+
+// Create the batch processor
+var batchProcessor = new BatchProcessor(logger);
+
+// Sample data to process - tenant IDs to archive
+var tenantIds = new[] { "tenant-001", "tenant-002", "tenant-003", "tenant-004" };
+
+// Define the batch operation - archive each tenant's database
+var archiveOperation = async (string tenantId) =>
+{
+  // Simulate archiving a tenant database
+  await Task.Delay(100); // Simulate work
+  return $"Archived {tenantId}";
+};
+
+// Process the batch with 2 concurrent operations
+var result = await batchProcessor.ProcessAsync(tenantIds, archiveOperation, maxConcurrency: 2);
+
+// Analyze results
+Console.WriteLine(result.ToString());
+Console.WriteLine($"Successful operations: {result.SuccessCount}");
+Console.WriteLine($"Failed operations: {result.ErrorCount}");
+
+// Process errors if any occurred
+if (result.ErrorCount > 0)
+{
+  Console.WriteLine("Errors encountered:");
+  foreach (var error in result.Errors)
+  {
+    Console.WriteLine($" - Item {error.ItemId}: {error.Exception} - {error.Message}");
+    if (!string.IsNullOrEmpty(error.StackTrace))
+    {
+      Console.WriteLine($"   Stack trace: {error.StackTrace}");
+    }
+  }
+}
+
+// Access successful results
+foreach (var successResult in result.SuccessfulResults)
+{
+  Console.WriteLine($"Success: {successResult}");
+}
+
+// Alternative: Process without result transformation (fire-and-forget style)
+var cleanupOperation = async (string tenantId) =>
+{
+  // Simulate cleanup operation
+  await Task.Delay(50);
+  // No return value needed
+};
+
+var simpleResult = await batchProcessor.ProcessAsync(tenantIds, cleanupOperation);
+Console.WriteLine($"Cleanup completed: {simpleResult.SuccessCount} succeeded");
+```
+
 ## BackupRotationManager
 
 The `BackupRotationManager` class manages automatic rotation and cleanup of tenant database backups according to configurable retention policies. It enforces limits on backup age, total backup count, and disk usage, automatically deleting old backups when thresholds are exceeded. The manager also provides verification capabilities to ensure backup integrity and statistics for monitoring backup storage usage.
