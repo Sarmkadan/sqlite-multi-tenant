@@ -1101,6 +1101,101 @@ var simpleResult = await batchProcessor.ProcessAsync(tenantIds, cleanupOperation
 Console.WriteLine($"Cleanup completed: {simpleResult.SuccessCount} succeeded");
 ```
 
+## BulkInsertBuilder
+
+The `BulkInsertBuilder` class provides an efficient way to insert multiple records into a SQLite database table using batch processing and transaction management. It supports fluent interface for adding records, configurable batch sizes, and both execution and SQL generation modes. This is particularly useful for bulk data loading scenarios where performance is critical.
+
+### Public Members
+
+```csharp
+public sealed class BulkInsertBuilder
+public BulkInsertBuilder(SQLiteConnection connection, ILogger<BulkInsertBuilder> logger, string tableName, int batchSize = 1000)
+public BulkInsertBuilder AddRecord(Dictionary<string, object> record)
+public BulkInsertBuilder AddRecords(IEnumerable<Dictionary<string, object>> records)
+public async Task<BulkInsertResult> ExecuteAsync()
+public string GenerateSqlStatements()
+
+public sealed class BulkInsertResult
+public int TotalRecords { get; set; }
+public int InsertedRecords { get; set; }
+public bool IsSuccessful { get; set; }
+public string Error { get; set; }
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Operations;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a SQLite connection
+var connectionString = "Data Source=example.db;Version=3;";
+var connection = new SQLiteConnection(connectionString);
+connection.Open();
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BulkInsertBuilder>();
+
+// Create the bulk insert builder
+var bulkInsertBuilder = new BulkInsertBuilder(connection, logger, "Customers");
+
+// Add records using the fluent interface
+bulkInsertBuilder
+    .AddRecord(new Dictionary<string, object>
+    {
+        { "Id", 1 },
+        { "Name", "John Doe" },
+        { "Email", "john@example.com" },
+        { "CreatedAt", DateTime.UtcNow }
+    })
+    .AddRecord(new Dictionary<string, object>
+    {
+        { "Id", 2 },
+        { "Name", "Jane Smith" },
+        { "Email", "jane@example.com" },
+        { "CreatedAt", DateTime.UtcNow }
+    })
+    .AddRecords(new[]
+    {
+        new Dictionary<string, object>
+        {
+            { "Id", 3 },
+            { "Name", "Bob Johnson" },
+            { "Email", "bob@example.com" },
+            { "CreatedAt", DateTime.UtcNow }
+        },
+        new Dictionary<string, object>
+        {
+            { "Id", 4 },
+            { "Name", "Alice Williams" },
+            { "Email", "alice@example.com" },
+            { "CreatedAt", DateTime.UtcNow }
+        }
+    });
+
+// Execute the bulk insert operation
+var result = await bulkInsertBuilder.ExecuteAsync();
+
+if (result.IsSuccessful)
+{
+    Console.WriteLine($"Successfully inserted {result.InsertedRecords} of {result.TotalRecords} records");
+}
+else
+{
+    Console.WriteLine($"Failed to insert records: {result.Error}");
+}
+
+// Alternatively, generate SQL statements without executing
+var sqlStatements = bulkInsertBuilder.GenerateSqlStatements();
+Console.WriteLine("Generated SQL statements:");
+Console.WriteLine(sqlStatements);
+
+// Clean up
+connection.Close();
+```
+
 ## BackupRotationManager
 
 The `BackupRotationManager` class manages automatic rotation and cleanup of tenant database backups according to configurable retention policies. It enforces limits on backup age, total backup count, and disk usage, automatically deleting old backups when thresholds are exceeded. The manager also provides verification capabilities to ensure backup integrity and statistics for monitoring backup storage usage.
