@@ -439,6 +439,92 @@ var result = await wrapper.PostAsync<Dictionary<string, string>>("https://api.ex
 bool putSuccess = await wrapper.PutAsync("https://api.example.com/put", payload);
 
 
+## IConfigurationManager
+
+The `IConfigurationManager` interface provides centralized configuration management for the multi-tenant SQLite application. It supports type-safe configuration access with default values, runtime updates, and validation. The `ConfigurationManager` implementation handles both in-memory configuration and integration with `Microsoft.Extensions.Configuration.IConfiguration` sources, making it suitable for both standalone and ASP.NET Core applications.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ConfigurationManager>();
+
+// Example 1: Create an in-memory configuration manager
+var configManager = new ConfigurationManager(logger);
+
+// Set configuration values
+configManager.Set("Database:TimeoutSeconds", 30);
+configManager.Set("Database:MaxConnections", 20);
+configManager.Set("Features:MultiTenant", true);
+
+// Get configuration values with type safety and defaults
+var timeout = configManager.Get("Database:TimeoutSeconds", 15);
+var maxConnections = configManager.Get("Database:MaxConnections", 10);
+var featureEnabled = configManager.Get("Features:MultiTenant", false);
+
+Console.WriteLine($"Timeout: {timeout}, MaxConnections: {maxConnections}, MultiTenant: {featureEnabled}");
+
+// Try to get a value
+if (configManager.TryGet("Database:TimeoutSeconds", out int? timeoutValue))
+{
+    Console.WriteLine($"Timeout value: {timeoutValue}");
+}
+
+// Check if a key exists
+bool hasTimeout = configManager.Contains("Database:TimeoutSeconds");
+
+// Remove a configuration key
+configManager.Remove("Features:MultiTenant");
+
+// Get all configuration values
+var allConfig = configManager.GetAll();
+foreach (var kvp in allConfig)
+{
+    Console.WriteLine($"{kvp.Key} = {kvp.Value}");
+}
+
+// Example 2: Create a configuration manager with IConfiguration source
+var services = new ServiceCollection();
+services.AddLogging(builder => builder.AddConsole());
+
+// Configure multi-tenant options
+services.Configure<MultiTenantOptions>(options =>
+{
+    options.DefaultMaxConnections = 50;
+    options.BasePath = "/data/sqlite-databases";
+    options.BackupRetentionDays = 30;
+});
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Create configuration manager with IConfiguration
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false)
+    .Build();
+
+var configManagerWithSource = new ConfigurationManager(
+    configuration,
+    logger,
+    serviceProvider.GetRequiredService<IOptions<MultiTenantOptions>>());
+
+// Get a tenant-specific setting
+var tenantSetting = configManagerWithSource.GetTenantSetting("acme-corp", "Theme");
+
+// Get the validated multi-tenant options
+var multiTenantOptions = configManagerWithSource.GetMultiTenantOptions();
+Console.WriteLine($"Max connections: {multiTenantOptions.DefaultMaxConnections}");
+
+// Get a configuration section
+var databaseSection = configManagerWithSource.GetSection("Database");
+var connectionString = databaseSection.GetValue<string>("ConnectionString");
+```
+
 ## ServiceConfiguration
 
 The `ServiceConfiguration` class provides extension methods for configuring multi-tenant SQLite services in the dependency injection container. It enables centralized registration of repositories, services, and configuration options through the `SqliteMultiTenantOptions` class, supporting both basic and advanced configuration scenarios.
