@@ -458,7 +458,49 @@ var exitCode = await app.RunAsync(args);
 consoleWriter.WriteSuccess($"Application exited with code: {exitCode}");
 ```
 
-## CliApplication
+## CommandParser
+
+The `CommandParser` class provides a robust command-line interface parser for the SQLite multi-tenant CLI application. It parses raw command-line arguments into structured `ParsedCommand` objects, enabling hierarchical command structures with subcommands, required arguments, and help generation. The parser validates command syntax and provides detailed error messages when commands are malformed.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Cli;
+using System;
+
+// Create a command parser instance
+var parser = new CommandParser();
+
+// Parse a simple command with main command and arguments
+var parsed = parser.Parse(new[] { "tenant", "create", "acme-corp", "--description", "Acme Corporation" });
+
+if (parsed.Success)
+{
+    Console.WriteLine($"Main command: {parsed.MainCommand}");
+    Console.WriteLine($"Subcommand: {parsed.Subcommand}");
+    Console.WriteLine($"Arguments: {string.Join(", ", parsed.Arguments)}");
+    Console.WriteLine($"Description: {parsed.Description}");
+}
+else
+{
+    Console.WriteLine($"Error: {parsed.Message}");
+}
+
+// Parse a command with subcommands and required arguments
+var subcommandParsed = parser.Parse(new[] { "backup", "create", "--tenant-id", "tenant-123", "--output", "/backups/db-backup.zip" });
+
+if (subcommandParsed.IsHelpCommand)
+{
+    Console.WriteLine("Showing help for backup create command");
+}
+
+// Parse a help command
+var helpParsed = parser.Parse(new[] { "help", "tenant" });
+if (helpParsed.IsHelpCommand)
+{
+    Console.WriteLine("Displaying tenant command help");
+}
+```
 
 The `CliApplication` class is used to run the CLI application with the given arguments. 
 
