@@ -439,6 +439,46 @@ var result = await wrapper.PostAsync<Dictionary<string, string>>("https://api.ex
 bool putSuccess = await wrapper.PutAsync("https://api.example.com/put", payload);
 
 
+## ServiceConfiguration
+
+The `ServiceConfiguration` class provides extension methods for configuring multi-tenant SQLite services in the dependency injection container. It enables centralized registration of repositories, services, and configuration options through the `SqliteMultiTenantOptions` class, supporting both basic and advanced configuration scenarios.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Services;
+
+// Create service collection
+var services = new ServiceCollection();
+
+// Basic configuration - registers all services with default options
+services.AddSqliteMultiTenant(
+    masterConnectionString: "Data Source=master.db;Version=3;");
+
+// Advanced configuration - customizes multi-tenant options
+services.AddSqliteMultiTenant(
+    masterConnectionString: "Data Source=master.db;Version=3;",
+    configureOptions: options =>
+    {
+        options.MaxConnections = 50;
+        options.ConnectionTimeoutSeconds = 60;
+        options.BackupRetentionDays = 90;
+        options.EnableEncryption = true;
+        options.BackupDirectory = "/secure/backups";
+        options.DatabaseDirectory = "/data/sqlite-databases";
+        options.EnableLogging = true;
+    });
+
+// Build service provider
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve services
+var tenantService = serviceProvider.GetRequiredService<ITenantService>();
+var backupService = serviceProvider.GetRequiredService<IBackupService>();
+```
+
 ## CliApplication
 
 The `CliApplication` class serves as the main entry point for the CLI, orchestrating command parsing, execution, and providing structured output. It integrates with dependency injection to handle various tenant, database, and backup operations while ensuring consistent logging and user feedback. The associated `ConsoleWriter` provides a convenient, color-coded mechanism for displaying success, error, warning, and informational messages to the terminal.
