@@ -826,6 +826,67 @@ if (backup.IsVerified && backup.CompletedAt.HasValue)
 }
 ```
 
+## TenantDatabase
+
+The `TenantDatabase` class represents a database associated with a tenant in the multi-tenant SQLite system. It tracks database metadata including file paths, sizes, encryption settings, connection counts, and backup history. This class is central to managing tenant-specific databases and their lifecycle operations.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Create a new tenant database instance
+var tenantDb = new TenantDatabase
+{
+    DatabaseId = Guid.NewGuid().ToString(),
+    TenantId = "acme-corp",
+    Name = "Acme Corporation Database",
+    FilePath = "/data/acme-corp.db",
+    SizeBytes = 1_048_576, // 1 MB
+    SchemaVersion = 2,
+    IsReadOnly = false,
+    RequiresEncryption = true,
+    EncryptionKey = Guid.NewGuid().ToString(),
+    ActiveConnectionCount = 0,
+    CreatedAt = DateTime.UtcNow,
+    UpdatedAt = DateTime.UtcNow
+};
+
+// Validate the database entity
+if (tenantDb.Validate(out var errors))
+{
+    Console.WriteLine("Database entity is valid");
+}
+else
+{
+    Console.WriteLine("Validation errors:");
+    foreach (var error in errors)
+    {
+        Console.WriteLine($"- {error}");
+    }
+}
+
+// Update database size after operations
+tenantDb.UpdateSize(2_097_152); // 2 MB
+Console.WriteLine($"Database size updated to: {tenantDb.SizeBytes:N0} bytes");
+
+// Record a backup operation
+tenantDb.UpdateLastBackupTime();
+Console.WriteLine($"Last backup: {tenantDb.LastBackupAt}");
+
+// Increment connection count when a connection is opened
+tenantDb.IncrementConnectionCount();
+Console.WriteLine($"Active connections: {tenantDb.ActiveConnectionCount}");
+
+// Check encryption status
+Console.WriteLine($"Is encrypted: {tenantDb.IsEncrypted}");
+
+// Decrement connection count when a connection is closed
+tenantDb.DecrementConnectionCount();
+Console.WriteLine($"Active connections after close: {tenantDb.ActiveConnectionCount}");
+```
+
 ## TenantSettings
 
 The `TenantSettings` class represents tenant-specific configuration settings stored in the database. It provides a flexible key-value store for tenant preferences, feature flags, and other configuration data with support for type-safe value retrieval and encryption. The class includes validation, change tracking, and active/inactive state management for configuration lifecycle control.
