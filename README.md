@@ -1347,6 +1347,82 @@ Console.WriteLine($"Max concurrent tables: {bulkDataOptions.MaxConcurrentTables}
 Console.WriteLine($"Base database path: {bulkDataOptions.BaseDatabasePath}");
 ```
 
+## DataImporter
+
+The `DataImporter` class provides functionality for importing data into SQLite databases from various formats including JSON, CSV, and SQL files. It supports batch processing, transaction management, and progress reporting for efficient data loading operations.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BulkOperations;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a SQLite connection
+var connectionString = "Data Source=example.db;Version=3;";
+var connection = new SQLiteConnection(connectionString);
+connection.Open();
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DataImporter>();
+
+// Create the data importer instance
+var dataImporter = new DataImporter();
+
+// Example 1: Import data from a JSON file
+var jsonFilePath = "./data/import.json";
+var jsonImportResult = await dataImporter.ImportFromJsonAsync(
+    connection, 
+    "Customers",
+    jsonFilePath,
+    new ImportOptions
+    {
+        TruncateBeforeImport = true,
+        BatchSize = 1000
+    }
+);
+
+Console.WriteLine($"JSON import completed: {jsonImportResult.TotalRowsImported} rows imported");
+
+// Example 2: Import data from a CSV file
+var csvFilePath = "./data/import.csv";
+var csvImportResult = await dataImporter.ImportFromCsvAsync(
+    connection,
+    "Products",
+    csvFilePath,
+    new ImportOptions
+    {
+        SkipHeaderRow = true,
+        ColumnMapping = new Dictionary<string, string>
+        {
+            {"product_id", "Id"},
+            {"product_name", "Name"},
+            {"product_price", "Price"}
+        }
+    }
+);
+
+Console.WriteLine($"CSV import completed: {csvImportResult.TotalRowsImported} rows imported");
+
+// Example 3: Import data from SQL statements
+var sqlFilePath = "./data/import.sql";
+var sqlImportResult = await dataImporter.ImportFromSqlAsync(
+    connection,
+    sqlFilePath,
+    new ImportOptions
+    {
+        BatchSize = 500,
+        TimeoutSeconds = 300
+    }
+);
+
+Console.WriteLine($"SQL import completed: {sqlImportResult.TotalRowsImported} rows affected");
+
+// Clean up
+connection.Close();
+```
+
 ## BulkInsertBuilder
 
 The `BulkInsertBuilder` class provides an efficient way to insert multiple records into a SQLite database table using batch processing and transaction management. It supports fluent interface for adding records, configurable batch sizes, and both execution and SQL generation modes. This is particularly useful for bulk data loading scenarios where performance is critical.
