@@ -948,6 +948,112 @@ tenantContext.SetContextData("processingStartTime", DateTime.UtcNow);
 Console.WriteLine($"Tenant context: {tenantContext}");
 ```
 
+## TenantService
+
+The `TenantService` class provides comprehensive tenant lifecycle management for the multi-tenant SQLite system. It handles tenant creation, retrieval, updating, deletion, activation/deactivation, suspension, and metadata management across tenant databases. The service supports both connection-per-tenant and shared-schema isolation strategies.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<TenantService>();
+
+// Create the tenant service
+var tenantService = new TenantService(
+  new TenantRepository(/* database connection */),
+  logger
+);
+
+// Example 1: Create a new tenant
+var newTenant = await tenantService.CreateTenantAsync(new Tenant
+{
+  Id = "acme-corp",
+  Name = "Acme Corporation",
+  Description = "Global technology solutions provider",
+  IsActive = true,
+  Metadata = new Dictionary<string, string>
+  {
+    { "industry", "technology" },
+    { "region", "global" }
+  }
+});
+
+Console.WriteLine($"Created tenant: {newTenant.Id}");
+
+// Example 2: Get a tenant by ID
+var tenant = await tenantService.GetTenantAsync("acme-corp");
+if (tenant != null)
+{
+  Console.WriteLine($"Found tenant: {tenant.Name} (Status: {(tenant.IsActive ? "Active" : "Inactive")})");
+}
+
+// Example 3: Update tenant information
+await tenantService.UpdateTenantAsync(new Tenant
+{
+  Id = "acme-corp",
+  Name = "Acme Corporation",
+  Description = "Global technology solutions provider - Updated",
+  IsActive = true,
+  Metadata = new Dictionary<string, string>
+  {
+    { "industry", "technology" },
+    { "region", "global" },
+    { "employees", "5000" }
+  }
+});
+
+// Example 4: Activate a tenant
+await tenantService.ActivateTenantAsync("acme-corp");
+
+// Example 5: Get all active tenants
+var activeTenants = await tenantService.GetActiveTenantsAsync();
+Console.WriteLine($"Active tenants: {activeTenants.Count}");
+
+// Example 6: Search tenants by criteria
+var searchResults = await tenantService.SearchTenantsAsync(
+  searchTerm: "acme",
+  isActive: true,
+  maxResults: 10
+);
+
+// Example 7: Set tenant metadata
+await tenantService.SetTenantMetadataAsync(
+  tenantId: "acme-corp",
+  metadata: new Dictionary<string, string>
+  {
+    { "subscriptionTier", "enterprise" },
+    { "lastLogin", DateTime.UtcNow.ToString("o") }
+  }
+);
+
+// Example 8: Get tenant database size
+var storageInfo = await tenantService.GetTenantDatabaseSizeAsync("acme-corp");
+Console.WriteLine($"Tenant database size: {storageInfo.SizeBytes:N0} bytes");
+
+// Example 9: Check if tenant exists
+bool exists = await tenantService.TenantExistsAsync("acme-corp");
+Console.WriteLine($"Tenant exists: {exists}");
+
+// Example 10: Get tenant count
+int tenantCount = await tenantService.GetTenantCountAsync();
+Console.WriteLine($"Total tenants: {tenantCount}");
+
+// Example 11: Get all tenants
+var allTenants = await tenantService.GetAllTenantsAsync();
+Console.WriteLine($"All tenants: {allTenants.Count}");
+
+// Example 12: Deactivate a tenant
+await tenantService.DeactivateTenantAsync("acme-corp");
+
+// Example 13: Delete a tenant
+await tenantService.DeleteTenantAsync("acme-corp");
+```
+
 ## MigrationService
 
 The `MigrationService` class provides comprehensive database migration management for the multi-tenant SQLite system. It handles the creation, execution, tracking, and rollback of database migrations across tenant databases, enabling schema evolution and data transformations while maintaining audit trails and version control.
