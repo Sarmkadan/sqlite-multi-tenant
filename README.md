@@ -1153,6 +1153,45 @@ var status = await batchHandler.GetStatusAsync(operation.OperationId);
 Console.WriteLine($"Progress: {status.ProgressPercent}% ({status.ProcessedResources}/{status.TotalResources})");
 ```
 
+## BulkDataOptions
+
+The `BulkDataOptions` class provides global configuration for the async bulk import/export subsystem. It controls batch sizes, concurrency limits, timeouts, and other operational parameters that apply across all bulk operations unless overridden by operation-specific options.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BulkOperations;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Configure bulk data options via dependency injection
+var services = new ServiceCollection();
+
+services.Configure<BulkDataOptions>(options =>
+{
+    options.DefaultBatchSize = 5000;           // Larger batches for better throughput
+    options.MaxConcurrentTables = 5;            // More parallel table processing
+    options.MaxBufferSizeBytes = 20_000_000;  // 20 MB buffer
+    options.OperationTimeout = TimeSpan.FromMinutes(30);
+    options.PublishDomainEvents = true;         // Enable event publishing
+    options.EnableProgressReporting = true;      // Enable progress callbacks
+    options.DefaultExportDirectory = "./bulk-exports";
+    options.BaseDatabasePath = "/data/sqlite-databases";
+});
+
+// Or configure via configuration file (appsettings.json)
+// services.Configure<BulkDataOptions>(Configuration.GetSection("BulkData"));
+
+var serviceProvider = services.BuildServiceProvider();
+
+// Resolve the configured options
+var bulkDataOptions = serviceProvider.GetRequiredService<IOptions<BulkDataOptions>>().Value;
+
+Console.WriteLine($"Default batch size: {bulkDataOptions.DefaultBatchSize}");
+Console.WriteLine($"Max concurrent tables: {bulkDataOptions.MaxConcurrentTables}");
+Console.WriteLine($"Base database path: {bulkDataOptions.BaseDatabasePath}");
+```
+
 ## BulkInsertBuilder
 
 The `BulkInsertBuilder` class provides an efficient way to insert multiple records into a SQLite database table using batch processing and transaction management. It supports fluent interface for adding records, configurable batch sizes, and both execution and SQL generation modes. This is particularly useful for bulk data loading scenarios where performance is critical.
