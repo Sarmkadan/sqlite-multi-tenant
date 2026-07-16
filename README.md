@@ -602,6 +602,52 @@ else
 }
 ```
 
+## DatabaseMaintenanceWorker
+
+The `DatabaseMaintenanceWorker` class is a background service that performs routine SQLite database maintenance operations to optimize performance and reclaim storage space. It runs VACUUM, ANALYZE, and REINDEX commands on a configurable schedule to maintain database health across all tenant databases.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BackgroundWorkers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DatabaseMaintenanceWorker>();
+
+// Configure database maintenance options
+var options = Options.Create(new DatabaseMaintenanceOptions
+{
+    EnableVacuum = true,
+    EnableAnalyze = true,
+    EnableReindex = true,
+    IntervalHours = 24,
+    TimeoutSeconds = 300,
+    DegreeOfParallelism = 2
+});
+
+// Create the database maintenance worker
+var maintenanceWorker = new DatabaseMaintenanceWorker(
+    logger,
+    options,
+    new TenantDatabaseService(/* dependencies */)
+);
+
+// Start the background maintenance service
+await maintenanceWorker.StartAsync();
+
+// The worker will now run maintenance every 24 hours
+// Maintenance includes:
+// - VACUUM to reclaim space and rebuild database
+// - ANALYZE to update statistics for query planner
+// - REINDEX to rebuild indexes for optimal performance
+
+// Stop the maintenance service when shutting down
+await maintenanceWorker.StopAsync();
+```
+
 ## IScheduledTaskService
 
 The `IScheduledTaskService` interface provides a mechanism for registering, managing, and executing background tasks on a configurable schedule. It supports task registration with custom intervals, status tracking, and graceful start/stop operations. Tasks are executed asynchronously and their execution status can be queried at runtime.
