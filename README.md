@@ -1142,6 +1142,152 @@ var migration = await migrationService.CreateMigrationAsync(
     version: "1.2.3",
     name: "AddTenantsTable",
     upScript: @"
+CREATE TABLE IF NOT EXISTS Tenants (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    IsActive BOOLEAN NOT NULL DEFAULT 1
+);",
+    downScript: @"
+DROP TABLE IF EXISTS Tenants;
+"
+);
+
+Console.WriteLine($"Migration created: {migration.MigrationId}");
+
+// Example 2: Execute a migration
+await migrationService.ExecuteMigrationAsync(
+    migrationId: migration.MigrationId,
+    executedBy: "migration-service"
+);
+
+// Simulate migration execution time
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+// Execute database schema changes here...
+System.Threading.Thread.Sleep(150); // Simulate work
+stopwatch.Stop();
+
+// Mark migration as completed
+await migrationService.MarkMigrationAsCompletedAsync(
+    migrationId: migration.MigrationId,
+    executionTimeMs: stopwatch.ElapsedMilliseconds
+);
+
+// Example 3: Check if a migration is applied
+bool isApplied = await migrationService.IsMigrationAppliedAsync(
+    databaseId: "acme-corp-db",
+    version: "1.2.3"
+);
+
+Console.WriteLine($"Migration is applied: {isApplied}");
+
+// Example 4: Get all migrations for a database
+var allMigrations = await migrationService.GetDatabaseMigrationsAsync("acme-corp-db");
+foreach (var m in allMigrations)
+{
+    Console.WriteLine($"Migration: {m.Name} - Status: {m.Status}");
+}
+
+// Example 5: Get pending migrations
+var pendingMigrations = await migrationService.GetPendingMigrationsAsync("acme-corp-db");
+Console.WriteLine($"Pending migrations: {pendingMigrations.Count}");
+
+// Example 6: Rollback a migration (if rollbackable)
+if (migration.IsRollbackable)
+{
+    await migrationService.RollbackMigrationAsync(
+        migrationId: migration.MigrationId,
+        executedBy: "rollback-service"
+    );
+}
+
+// Example 7: Get migration count
+int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db");
+Console.WriteLine($"Total migrations: {migrationCount}");
+```
+
+## TenantRecoveryService
+
+The `TenantRecoveryService` class provides disaster recovery capabilities for tenant databases, enabling database repair, backup restoration, stale backup cleanup, and point-in-time recovery operations. This service is essential for maintaining database integrity and recovering from corruption, accidental data loss, or other disasters.
+
+### Public Members
+
+```csharp
+public sealed class TenantRecoveryService
+public TenantRecoveryService(ITenantRepository tenantRepository, ILogger<TenantRecoveryService> logger)
+public async Task<bool> RepairDatabaseAsync(string tenantId)
+public async Task<bool> RestoreFromBackupAsync(string tenantId, string backupPath)
+public async Task<int> CleanupStaleBackupsAsync(string tenantId, TimeSpan retentionPeriod)
+public async Task<bool> PointInTimeRecoveryAsync(string tenantId, DateTime targetTime, string backupDirectory)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tenants;
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<TenantRecoveryService>();
+
+// Create required dependencies
+var tenantRepository = new TenantRepository(/* database connection */);
+
+// Create the recovery service instance
+var recoveryService = new TenantRecoveryService(tenantRepository, logger);
+
+// Example 1: Repair a corrupted database
+bool repairSuccess = await recoveryService.RepairDatabaseAsync("acme-corp");
+Console.WriteLine($"Database repair successful: {repairSuccess}");
+
+// Example 2: Restore from a backup
+bool restoreSuccess = await recoveryService.RestoreFromBackupAsync(
+    tenantId: "acme-corp",
+    backupPath: "/backups/acme-corp-2024-07-16.db.backup"
+);
+Console.WriteLine($"Database restore successful: {restoreSuccess}");
+
+// Example 3: Cleanup stale backups (older than 30 days)
+int deletedCount = await recoveryService.CleanupStaleBackupsAsync(
+    tenantId: "acme-corp",
+    retentionPeriod: TimeSpan.FromDays(30)
+);
+Console.WriteLine($"Deleted {deletedCount} stale backup files");
+
+// Example 4: Perform point-in-time recovery
+bool recoverySuccess = await recoveryService.PointInTimeRecoveryAsync(
+    tenantId: "acme-corp",
+    targetTime: new DateTime(2024, 7, 15, 14, 30, 0),
+    backupDirectory: "/backups"
+);
+Console.WriteLine($"Point-in-time recovery successful: {recoverySuccess}");
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<MigrationService>();
+
+// Create the migration service
+var migrationService = new MigrationService(
+    new MigrationRepository(/* database connection */),
+    logger
+);
+
+// Example 1: Create a new migration
+var migration = await migrationService.CreateMigrationAsync(
+    databaseId: "acme-corp-db",
+    version: "1.2.3",
+    name: "AddTenantsTable",
+    upScript: @"
         CREATE TABLE IF NOT EXISTS Tenants (
             Id TEXT PRIMARY KEY,
             Name TEXT NOT NULL,
