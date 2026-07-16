@@ -1153,6 +1153,49 @@ var status = await batchHandler.GetStatusAsync(operation.OperationId);
 Console.WriteLine($"Progress: {status.ProgressPercent}% ({status.ProcessedResources}/{status.TotalResources})");
 ```
 
+## DataExporter
+
+The `DataExporter` class provides functionality to export data from a SQLite database table into various portable formats such as JSON, CSV, and raw SQL INSERT statements. It's designed for data migration, backup, and integration scenarios where you need to extract table data for external processing, reporting, or archival purposes.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.DataOperations;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DataExporter>();
+
+// Create the data exporter instance
+var dataExporter = new DataExporter(logger);
+
+// Example 1: Export a table as JSON with metadata
+var connectionString = "Data Source=example.db;Version=3;";
+await using var connection = new SQLiteConnection(connectionString);
+await connection.OpenAsync();
+
+var jsonExport = await dataExporter.ExportAsJsonAsync(connection, "Customers", includeMeta: true);
+Console.WriteLine(jsonExport);
+
+// Example 2: Export a table as JSON without metadata
+var jsonDataOnly = await dataExporter.ExportAsJsonAsync(connection, "Products", includeMeta: false);
+Console.WriteLine(jsonDataOnly);
+
+// Example 3: Export a table as CSV with headers
+var csvExport = await dataExporter.ExportAsCsvAsync(connection, "Orders", includeHeaders: true);
+Console.WriteLine(csvExport);
+
+// Example 4: Export a table as CSV without headers
+var csvDataOnly = await dataExporter.ExportAsCsvAsync(connection, "Invoices", includeHeaders: false);
+Console.WriteLine(csvDataOnly);
+
+// Example 5: Export as SQL INSERT statements
+var sqlExport = await dataExporter.ExportAsSqlAsync(connection, "Users");
+Console.WriteLine(sqlExport);
+```
+
 ## BulkDataService
 
 The `BulkDataService` class provides high-performance bulk data export and import operations for multi-tenant SQLite databases. It supports exporting entire databases or individual tables to CSV, JSON, or SQL formats, and importing data from these formats back into the database. The service uses streaming for large datasets, integrates with the domain event bus for monitoring, and leverages batch processing for concurrent table operations.
