@@ -826,6 +826,76 @@ if (backup.IsVerified && backup.CompletedAt.HasValue)
 }
 ```
 
+## TenantSettings
+
+The `TenantSettings` class represents tenant-specific configuration settings stored in the database. It provides a flexible key-value store for tenant preferences, feature flags, and other configuration data with support for type-safe value retrieval and encryption. The class includes validation, change tracking, and active/inactive state management for configuration lifecycle control.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Create a tenant settings instance for a new configuration
+var settings = new TenantSettings
+{
+    SettingId = Guid.NewGuid().ToString(),
+    TenantId = "acme-corp",
+    SettingKey = "MaxConcurrentJobs",
+    SettingValue = "10",
+    Description = "Maximum number of concurrent background jobs for this tenant",
+    DataType = "int",
+    IsEncrypted = false,
+    IsActive = true,
+    CreatedAt = DateTime.UtcNow,
+    UpdatedAt = DateTime.UtcNow,
+    LastModifiedBy = "admin@acme.com"
+};
+
+// Validate the settings
+if (settings.Validate())
+{
+    Console.WriteLine("Settings are valid");
+}
+
+// Update the setting value
+settings.UpdateValue("15");
+
+// Get the typed value
+int maxJobs = settings.GetValue<int>();
+Console.WriteLine($"Max concurrent jobs: {maxJobs}");
+
+// Set the active state
+settings.SetActive(false);
+Console.WriteLine($"Is active: {settings.IsActive}");
+
+// Create another setting with encrypted value
+var encryptedSetting = new TenantSettings
+{
+    SettingId = Guid.NewGuid().ToString(),
+    TenantId = "globex",
+    SettingKey = "ApiKey",
+    SettingValue = "secret-api-key-123",
+    Description = "External API key for third-party integration",
+    DataType = "string",
+    IsEncrypted = true,
+    IsActive = true,
+    CreatedAt = DateTime.UtcNow,
+    UpdatedAt = DateTime.UtcNow
+};
+
+// Set a typed value
+encryptedSetting.SetValue("new-secret-key-456");
+string apiKey = encryptedSetting.GetValue<string>();
+Console.WriteLine($"API key: {apiKey}");
+
+// Check if setting is valid for use
+if (settings.IsActive && settings.Validate())
+{
+    Console.WriteLine("Setting is ready for use");
+}
+```
+
 ## Migration
 
 The `Migration` class represents a database migration for a tenant, tracking the execution of schema changes and data migrations. It captures metadata about the migration process including scripts, timing, status, and execution details, enabling rollback capabilities and comprehensive migration auditing.
