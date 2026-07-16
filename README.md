@@ -948,6 +948,97 @@ tenantContext.SetContextData("processingStartTime", DateTime.UtcNow);
 Console.WriteLine($"Tenant context: {tenantContext}");
 ```
 
+## MigrationService
+
+The `MigrationService` class provides comprehensive database migration management for the multi-tenant SQLite system. It handles the creation, execution, tracking, and rollback of database migrations across tenant databases, enabling schema evolution and data transformations while maintaining audit trails and version control.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<MigrationService>();
+
+// Create the migration service
+var migrationService = new MigrationService(
+    new MigrationRepository(/* database connection */),
+    logger
+);
+
+// Example 1: Create a new migration
+var migration = await migrationService.CreateMigrationAsync(
+    databaseId: "acme-corp-db",
+    version: "1.2.3",
+    name: "AddTenantsTable",
+    upScript: @"
+        CREATE TABLE IF NOT EXISTS Tenants (
+            Id TEXT PRIMARY KEY,
+            Name TEXT NOT NULL,
+            CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            IsActive BOOLEAN NOT NULL DEFAULT 1
+        );",
+    downScript: @"
+        DROP TABLE IF EXISTS Tenants;
+    "
+);
+
+Console.WriteLine($"Migration created: {migration.MigrationId}");
+
+// Example 2: Execute a migration
+await migrationService.ExecuteMigrationAsync(
+    migrationId: migration.MigrationId,
+    executedBy: "migration-service"
+);
+
+// Simulate migration execution time
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+// Execute database schema changes here...
+System.Threading.Thread.Sleep(150); // Simulate work
+stopwatch.Stop();
+
+// Mark migration as completed
+await migrationService.MarkMigrationAsCompletedAsync(
+    migrationId: migration.MigrationId,
+    executionTimeMs: stopwatch.ElapsedMilliseconds
+);
+
+// Example 3: Check if a migration is applied
+bool isApplied = await migrationService.IsMigrationAppliedAsync(
+    databaseId: "acme-corp-db",
+    version: "1.2.3"
+);
+
+Console.WriteLine($"Migration is applied: {isApplied}");
+
+// Example 4: Get all migrations for a database
+var allMigrations = await migrationService.GetDatabaseMigrationsAsync("acme-corp-db");
+foreach (var m in allMigrations)
+{
+    Console.WriteLine($"Migration: {m.Name} - Status: {m.Status}");
+}
+
+// Example 5: Get pending migrations
+var pendingMigrations = await migrationService.GetPendingMigrationsAsync("acme-corp-db");
+Console.WriteLine($"Pending migrations: {pendingMigrations.Count}");
+
+// Example 6: Rollback a migration (if rollbackable)
+if (migration.IsRollbackable)
+{
+    await migrationService.RollbackMigrationAsync(
+        migrationId: migration.MigrationId,
+        executedBy: "rollback-service"
+    );
+}
+
+// Example 7: Get migration count
+int migrationCount = await migrationService.GetMigrationCountAsync("acme-corp-db");
+Console.WriteLine($"Total migrations: {migrationCount}");
+```
+
 ## ConflictResolutionService
 
 The `ConflictResolutionService` class provides conflict detection and resolution capabilities for multi-tenant SQLite databases. It handles scenarios where data has been modified both locally and remotely, allowing you to detect conflicts, apply resolution strategies, and persist the resolved values back to the database. This is particularly useful for merge operations, data synchronization workflows, and handling concurrent updates from different sources.
