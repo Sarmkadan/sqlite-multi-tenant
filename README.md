@@ -300,6 +300,102 @@ var createdResponse = ApiResponse<object>.Created(
 );
 ```
 
+## TenantController
+
+The `TenantController` class provides a REST API controller for comprehensive tenant lifecycle management operations. It handles CRUD operations for multi-tenant database instances with built-in validation, audit logging, and error handling. The controller enforces business rules such as unique tenant names, valid email formats, and proper authorization checks while providing standardized API responses through the `ApiResponse<T>` wrapper.
+
+### Public Members
+
+```csharp
+public sealed class TenantController
+public TenantController(ITenantService tenantService, ILogger<TenantController> logger)
+public async Task<ApiResponse<TenantResponse>> CreateTenantAsync(CreateTenantRequest request)
+public async Task<ApiResponse<TenantResponse>> GetTenantAsync(string tenantId)
+public async Task<ApiResponse<IEnumerable<TenantResponse>>> ListAllTenantsAsync()
+public async Task<ApiResponse<TenantResponse>> UpdateTenantAsync(string tenantId, UpdateTenantRequest request)
+public async Task<ApiResponse<object>> SuspendTenantAsync(string tenantId, string suspendedBy)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Controllers;
+using SqliteMultiTenant.Api.Requests;
+using SqliteMultiTenant.Api.Responses;
+using SqliteMultiTenant.Services;
+using Microsoft.Extensions.Logging;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<TenantController>();
+
+// Create tenant service (would normally be injected)
+var tenantService = new TenantService(/* dependencies */);
+
+// Create the controller instance
+var tenantController = new TenantController(tenantService, logger);
+
+// Example 1: Create a new tenant
+var createRequest = new CreateTenantRequest
+{
+    Name = "Acme Corporation",
+    Description = "Global technology solutions provider for enterprise clients",
+    ContactEmail = "admin@acme-corp.com"
+};
+
+var createResponse = await tenantController.CreateTenantAsync(createRequest);
+
+if (createResponse.IsSuccess)
+{
+    Console.WriteLine($"Created tenant: {createResponse.Data?.TenantId}");
+    Console.WriteLine($"Status: {createResponse.Data?.Status}");
+}
+
+// Example 2: Get a tenant by ID
+var tenantId = "acme-corp";
+var getResponse = await tenantController.GetTenantAsync(tenantId);
+
+if (getResponse.IsSuccess)
+{
+    Console.WriteLine($"Found tenant: {getResponse.Data?.Name}");
+    Console.WriteLine($"Created at: {getResponse.Data?.CreatedAt}");
+}
+
+// Example 3: List all tenants
+var listResponse = await tenantController.ListAllTenantsAsync();
+
+if (listResponse.IsSuccess)
+{
+    Console.WriteLine($"Total tenants: {listResponse.Data?.Count()}");
+    foreach (var tenant in listResponse.Data ?? Enumerable.Empty<TenantResponse>())
+    {
+        Console.WriteLine($" - {tenant.Name} ({tenant.Status})");
+    }
+}
+
+// Example 4: Update tenant information
+var updateRequest = new UpdateTenantRequest
+{
+    Name = "Acme Corporation Updated",
+    Description = "Updated description for the tenant"
+};
+
+var updateResponse = await tenantController.UpdateTenantAsync(tenantId, updateRequest);
+
+if (updateResponse.IsSuccess)
+{
+    Console.WriteLine("Tenant updated successfully");
+}
+
+// Example 5: Suspend a tenant
+var suspendResponse = await tenantController.SuspendTenantAsync(tenantId, "admin@acme-corp.com");
+
+if (suspendResponse.IsSuccess)
+{
+    Console.WriteLine("Tenant suspended successfully");
+}
+```
+
 ## CreateTenantRequest
 
 The `CreateTenantRequest` class represents the data transfer object used to create a new tenant in the multi-tenant SQLite system. It contains the essential tenant information required for provisioning: name, description, and contact email address. This request is validated in the controller to ensure all required fields are provided before tenant creation proceeds.
