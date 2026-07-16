@@ -502,6 +502,37 @@ if (helpParsed.IsHelpCommand)
 }
 ```
 
+## CommandLineParser
+
+The `CommandLineParser` class provides a robust mechanism for registering and parsing command-line arguments in the SQLite multi-tenant application. It supports hierarchical command structures with subcommands, options, flags, and aliases, and facilitates automatic help text generation for CLI tools.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Cli;
+using System;
+
+// Initialize with arguments
+var parser = new CommandLineParser(new[] { "tenant", "--description", "A new tenant" });
+
+// Register a command and its options
+parser.RegisterCommand("tenant", "Manage tenants", (cmd) => { Console.WriteLine("Tenant command invoked"); })
+      .RegisterOption("description", "Tenant description", 'd', required: false);
+
+// Parse the arguments
+var parsed = parser.Parse();
+
+if (parsed.IsValid)
+{
+    Console.WriteLine($"Command: {parsed.Command}");
+    Console.WriteLine($"Description: {parsed.GetOption("description", "No description provided")}");
+}
+else
+{
+    Console.WriteLine($"Error: {parsed.Error}");
+}
+```
+
 ## CommandExecutor
 
 The `CommandExecutor` class executes parsed CLI commands asynchronously and returns structured results. It encapsulates the business logic for tenant management, database operations, and backup/restore workflows, returning success status and descriptive messages for each operation.
