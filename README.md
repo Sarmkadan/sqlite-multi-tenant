@@ -689,6 +689,136 @@ var similarity = StringUtilities.GetStringSimilarity("Hello", "World");
 Console.WriteLine(similarity);
 ```
 
+## AsyncResourcePool
+
+The `AsyncResourcePool<T>` class provides a generic, asynchronous resource pooling mechanism for managing expensive resource creation and reuse. It's particularly useful for pooling database connections, HTTP clients, file handles, and other disposable resources that benefit from reuse rather than frequent creation and disposal. The pool maintains a configurable maximum size, reuses available resources when possible, and creates new ones only when necessary, with automatic cleanup and statistics tracking.
+
+### Public Members
+
+```csharp
+public sealed class AsyncResourcePool<T> : IDisposable where T : class
+public AsyncResourcePool(Func<Task<T>> resourceFactory, Func<T, Task> resourceDisposer, ILogger<AsyncResourcePool<T>> logger, int maxPoolSize = 10)
+public async Task<PooledResource<T>> AcquireAsync(CancellationToken cancellationToken = default)
+public PoolStatistics GetStatistics()
+public async Task ClearAsync()
+public void Dispose()
+
+public sealed class PooledResource<T> : IAsyncDisposable, IDisposable where T : class
+public PooledResource(T resource, Func<T, Task> onDispose)
+public T Resource { get; }
+public async ValueTask DisposeAsync()
+public void Dispose()
+
+public sealed class PoolStatistics
+public int AvailableResources { get; }
+public int TotalCreated { get; }
+public int WaitingRequests { get; }
+public int MaxPoolSize { get; }
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Setup logging
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<AsyncResourcePool<DatabaseConnection>>();
+
+// Create a resource pool for database connections
+var pool = new AsyncResourcePool<DatabaseConnection>(
+    resourceFactory: async () => await DatabaseConnection.CreateAsync("server=localhost;database=test"),
+    resourceDisposer: async conn => await conn.DisposeAsync(),
+    logger: logger,
+    maxPoolSize: 5
+);
+
+// Example 1: Acquire and use a pooled resource
+var resource1 = await pool.AcquireAsync();
+try
+{
+    // Use the resource
+    var data = await resource1.Resource.QueryAsync("SELECT * FROM users");
+    Console.WriteLine($"Retrieved {data.Count} users");
+}
+finally
+{
+    // Return the resource to the pool
+    await resource1.DisposeAsync();
+}
+
+// Example 2: Use using statement for automatic disposal
+await using (var resource2 = await pool.AcquireAsync())
+{
+    var result = await resource2.Resource.ExecuteAsync("UPDATE users SET last_login = @date", new { date = DateTime.UtcNow });
+    Console.WriteLine($"Updated {result} rows");
+}
+
+// Example 3: Get pool statistics
+var stats = pool.GetStatistics();
+Console.WriteLine($"Pool Stats - Available: {stats.AvailableResources}, " +
+                $"Total Created: {stats.TotalCreated}, " +
+                $"Waiting: {stats.WaitingRequests}, " +
+                $"Max Size: {stats.MaxPoolSize}");
+
+// Example 4: Clear the pool (dispose all resources)
+await pool.ClearAsync();
+
+// Example 5: Multiple concurrent operations with resource pooling
+var tasks = new List<Task>();
+for (int i = 0; i < 10; i++)
+{
+    tasks.Add(Task.Run(async () =>
+    {
+        await using var resource = await pool.AcquireAsync();
+        await resource.Resource.QueryAsync("SELECT 1");
+        await Task.Delay(100); // Simulate work
+    }));
+}
+await Task.WhenAll(tasks);
+
+// Dispose the pool when done
+pool.Dispose();
+
+// Example classes for demonstration
+public class DatabaseConnection : IAsyncDisposable
+{
+    private readonly string _connectionString;
+    
+    public static async Task<DatabaseConnection> CreateAsync(string connectionString)
+    {
+        await Task.Delay(50); // Simulate connection delay
+        return new DatabaseConnection(connectionString);
+    }
+    
+    public DatabaseConnection(string connectionString)
+    {
+        _connectionString = connectionString;
+    }
+    
+    public async Task<int> QueryAsync(string sql, object? parameters = null)
+    {
+        await Task.Delay(25); // Simulate query
+        return 42; // Mock result
+    }
+    
+    public async Task<int> ExecuteAsync(string sql, object? parameters = null)
+    {
+        await Task.Delay(30); // Simulate execution
+        return 1; // Mock result
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        await Task.Delay(10); // Simulate cleanup
+    }
+}
+```
+
 ## TimeUtilities
 
 The `TimeUtilities` class provides a robust set of static methods for advanced datetime manipulation, date arithmetic, and time span formatting. It simplifies common operations such as rounding dates, calculating period ranges, handling business days, and converting between UTC and Unix timestamps.
