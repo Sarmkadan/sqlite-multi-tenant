@@ -2,11 +2,9 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Utilities
@@ -31,18 +29,16 @@ namespace SqliteMultiTenant.Utilities
 
             if (!helper.ValidateTenantContext(tenantId))
             {
-                helper.SetTenantContext(new TenantContext { TenantId = tenantId, UserId = userId, CreatedAt = DateTime.UtcNow });
+                return helper.CreateScope(tenantId, userId);
             }
-            else
+
+            var existingContext = helper.GetTenantContext();
+            helper.SetTenantContext(new TenantContext
             {
-                var existingContext = helper.GetTenantContext();
-                helper.SetTenantContext(new TenantContext
-                {
-                    TenantId = tenantId,
-                    UserId = userId ?? existingContext?.UserId,
-                    CreatedAt = DateTime.UtcNow
-                });
-            }
+                TenantId = tenantId,
+                UserId = userId ?? existingContext?.UserId,
+                CreatedAt = DateTime.UtcNow
+            });
 
             return helper.CreateScope(tenantId, userId);
         }
@@ -52,6 +48,7 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         /// <param name="helper">The tenant context helper instance.</param>
         /// <returns>The current tenant ID.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when helper is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when no tenant context is set.</exception>
         public static string GetRequiredTenantId(this TenantContextHelper helper)
         {
@@ -73,6 +70,9 @@ namespace SqliteMultiTenant.Utilities
         /// <param name="tenantId">The tenant ID to set for the duration of the action.</param>
         /// <param name="action">The action to execute.</param>
         /// <param name="userId">Optional user ID to associate with the context.</param>
+        /// <exception cref="ArgumentNullException">Thrown when helper or action is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
         public static void ExecuteInTenantContext(this TenantContextHelper helper, string tenantId, Action action, string userId = null)
         {
             ArgumentNullException.ThrowIfNull(helper);
@@ -92,6 +92,9 @@ namespace SqliteMultiTenant.Utilities
         /// <param name="func">The function to execute.</param>
         /// <param name="userId">Optional user ID to associate with the context.</param>
         /// <returns>The result of the function execution.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when helper or func is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
         public static T ExecuteInTenantContext<T>(this TenantContextHelper helper, string tenantId, Func<T> func, string userId = null)
         {
             ArgumentNullException.ThrowIfNull(helper);
@@ -107,6 +110,7 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         /// <param name="helper">The tenant context helper instance.</param>
         /// <returns>The current tenant context.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when helper is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when no tenant context is set.</exception>
         public static TenantContext GetRequiredTenantContext(this TenantContextHelper helper)
         {
@@ -127,9 +131,12 @@ namespace SqliteMultiTenant.Utilities
         /// <param name="helper">The tenant context helper instance.</param>
         /// <param name="expectedTenantId">The tenant ID to compare against.</param>
         /// <returns>True if the current tenant matches the expected tenant; otherwise false.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when helper or expectedTenantId is null.</exception>
         public static bool IsCurrentTenant(this TenantContextHelper helper, string expectedTenantId)
         {
             ArgumentNullException.ThrowIfNull(helper);
+            ArgumentException.ThrowIfNullOrWhiteSpace(expectedTenantId, nameof(expectedTenantId));
+
             return string.Equals(helper.GetCurrentTenantId(), expectedTenantId, StringComparison.Ordinal);
         }
     }
