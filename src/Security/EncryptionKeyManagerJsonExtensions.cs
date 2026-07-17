@@ -43,9 +43,12 @@ namespace SqliteMultiTenant.Security
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
         /// <returns>An <see cref="EncryptionKeyManager"/> instance, or <c>null</c> if the JSON is empty or whitespace.</returns>
-        /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is <c>null</c>.</exception>
+ /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
         public static EncryptionKeyManager? FromJson(string json)
         {
+	ArgumentNullException.ThrowIfNull(json);
+
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
@@ -62,6 +65,8 @@ namespace SqliteMultiTenant.Security
         /// <returns><c>true</c> if deserialization succeeded; otherwise, <c>false</c>.</returns>
         public static bool TryFromJson(string json, out EncryptionKeyManager? value)
         {
+	ArgumentNullException.ThrowIfNull(json);
+
             value = null;
 
             if (string.IsNullOrWhiteSpace(json))
