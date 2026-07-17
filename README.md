@@ -380,6 +380,78 @@ Console.WriteLine($"Unique actors: {stats.UniqueActors}");
 Console.WriteLine($"Unique event types: {stats.UniqueEventTypes}");
 ```
  
+## StringExtensions
+ 
+`StringExtensions` provides a set of extension methods for string manipulation, focused on validation, transformation, and sanitization for database and tenant-specific contexts. These methods are designed to handle null or empty inputs gracefully, ensuring safe operations for identifiers, file paths, and JSON content.
+ 
+### Public Members
+ 
+```csharp
+public static string ToSafeDatabaseIdentifier
+public static string SafeTruncate
+public static bool IsValidTenantIdentifier
+public static T ToEnum<T>
+public static string EscapeForJson
+public static bool ContainsForbiddenCharacters
+public static string NormalizeWhitespace
+public static bool IsValidFilePath
+public static string Reverse
+```
+ 
+### Usage Example
+ 
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+ 
+// Example 1: Sanitize strings for database identifiers
+string tenantName = "Acme Corp!";
+string dbId = tenantName.ToSafeDatabaseIdentifier();
+Console.WriteLine(dbId); // Outputs: acme_corp
+ 
+// Example 2: Safely truncate strings for UI
+string description = "This is a very long tenant description that needs truncation.";
+string truncated = description.SafeTruncate(20);
+Console.WriteLine(truncated); // Outputs: This is a very l...
+ 
+// Example 3: Validate tenant identifiers
+string tenantId = "acme-corp-123";
+bool isValid = tenantId.IsValidTenantIdentifier();
+Console.WriteLine(isValid); // Outputs: True
+ 
+// Example 4: Convert to enum with safe fallback
+string status = "Active";
+var tenantStatus = status.ToEnum(TenantStatus.Inactive);
+Console.WriteLine(tenantStatus); // Outputs: Active
+ 
+// Example 5: Escape strings for JSON serialization
+string jsonContent = "Line 1\nLine 2";
+string escaped = jsonContent.EscapeForJson();
+Console.WriteLine(escaped); // Outputs: Line 1\nLine 2
+ 
+// Example 6: Check for forbidden characters in SQL scripts
+string sqlScript = "DROP TABLE users;";
+bool hasForbidden = sqlScript.ContainsForbiddenCharacters(new[] { "DROP", "DELETE" });
+Console.WriteLine(hasForbidden); // Outputs: True
+ 
+// Example 7: Normalize whitespace
+string messy = "  too    much   whitespace  ";
+string normalized = messy.NormalizeWhitespace();
+Console.WriteLine(normalized); // Outputs: too much whitespace
+ 
+// Example 8: Validate file paths
+string path = "data/tenants/acme.db";
+bool isPathValid = path.IsValidFilePath();
+Console.WriteLine(isPathValid); // Outputs: True
+ 
+// Example 9: Reverse a string
+string original = "hello";
+string reversed = original.Reverse();
+Console.WriteLine(reversed); // Outputs: olleh
+
+public enum TenantStatus { Inactive, Active, Suspended }
+```
+ 
 ## CollectionExtensions
 
 `CollectionExtensions` provides a collection of extension methods for common collection operations such as safe element access, filtering, batching, and functional-style transformations. These methods avoid LINQ performance pitfalls while providing more readable alternatives for common scenarios.
