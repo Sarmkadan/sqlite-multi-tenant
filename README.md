@@ -565,12 +565,51 @@ if (!emailValidation.IsValid)
     throw new ArgumentException($"Invalid email: {string.Join(", ", emailValidation.Errors)}");
 }
 
-// Example 7: Validate collection item count constraints
-var items = new List<int> { 1, 2, 3, 4, 5 };
-var itemsValidation = items.RequireGreaterThan("items", 0).RequireLessThan("items", 100);
-if (itemsValidation.IsValid)
+
+
+## TenantSettingsEdgeCaseTestsExtensions
+
+The `TenantSettingsEdgeCaseTestsExtensions` class provides a suite of extension methods designed for testing `TenantSettings` under various conditions, including data type conversion, validation scenarios, and edge cases. These utilities simplify the creation of test data and help verify that settings are correctly validated, updated, and parsed within a multi-tenant environment.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Tests;
+using System;
+using System.Collections.Generic;
+
+// Assume 'testInstance' is an instance of TenantSettingsEdgeCaseTests
+var testInstance = new TenantSettingsEdgeCaseTests();
+
+// 1. Create a valid TenantSettings instance
+var settings = testInstance.CreateValidSettings(settingId: "set-001", tenantId: "tenant-a");
+
+// 2. Create settings with a specific data type
+var numericSettings = testInstance.CreateSettingsWithDataType("Int32", "123");
+
+// 3. Create settings with a boolean value
+var boolSettings = testInstance.CreateBooleanSettings(true, modifiedBy: "admin");
+
+// 4. Validate settings and get error messages
+if (!testInstance.ValidateAndGetErrors(settings, out var errors))
 {
-    Console.WriteLine("Items collection has valid count.");
+    string errorMessages = testInstance.GetValidationErrorMessages(settings);
+    Console.WriteLine($"Validation failed: {errorMessages}");
 }
+
+// 5. Update a setting and verify the timestamp was updated
+var beforeUpdate = DateTime.UtcNow.AddSeconds(-1);
+testInstance.UpdateAndVerifyTimestamp(settings, "new-value", beforeUpdate);
+
+// 6. Get a value with culture-invariant parsing
+int intValue = testInstance.GetValueWithCulture<int>(numericSettings);
+
+// 7. Get a nullable value safely
+bool? nullableBool = testInstance.GetNullableValue<bool>(boolSettings);
+
+// 8. Create a collection of settings for batch testing
+IReadOnlyList<TenantSettings> settingsCollection = testInstance.CreateSettingsCollection(count: 5);
 ```
+
 
