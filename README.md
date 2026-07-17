@@ -152,3 +152,72 @@ Console.WriteLine($"Peak activity: {healthMetrics.PeakEventCount} events in one 
 Console.WriteLine($"Query performance trend: {trendAnalysis.TrendDirection}");
 Console.WriteLine($"Current volatility: {trendAnalysis.Volatility:F4}");
 ```
+
+## ReportGenerator
+
+The `ReportGenerator` class provides a set of methods for generating comprehensive monitoring and diagnostic reports for multi-tenant SQLite systems. It creates health, performance, tenant usage, error, and capacity reports by aggregating data from system statistics and diagnostics, making it ideal for operational dashboards and troubleshooting scenarios.
+
+### Public Members
+
+```csharp
+public sealed class ReportGenerator
+public ReportGenerator(IStatisticsService statisticsService, IDiagnosticsService diagnosticsService)
+public string GenerateHealthReport()
+public string GeneratePerformanceReport()
+public string GenerateTenantUsageReport()
+public string GenerateErrorReport()
+public string GenerateCapacityReport()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Monitoring;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<ReportGenerator>();
+
+// Register required services
+services.AddSingleton<IStatisticsService, StatisticsService>();
+services.AddSingleton<IDiagnosticsService, DiagnosticsService>();
+services.AddSingleton<ReportGenerator>();
+
+var serviceProvider = services.BuildServiceProvider();
+var reportGenerator = serviceProvider.GetRequiredService<ReportGenerator>();
+
+// Example 1: Generate health report
+var healthReport = reportGenerator.GenerateHealthReport();
+Console.WriteLine("=== System Health Report ===");
+Console.WriteLine(healthReport);
+
+// Example 2: Generate performance report
+var performanceReport = reportGenerator.GeneratePerformanceReport();
+Console.WriteLine("\n=== Performance Report ===");
+Console.WriteLine(performanceReport);
+
+// Example 3: Generate tenant usage report
+var tenantUsageReport = reportGenerator.GenerateTenantUsageReport();
+Console.WriteLine("\n=== Tenant Usage Report ===");
+Console.WriteLine(tenantUsageReport);
+
+// Example 4: Generate error report
+var errorReport = reportGenerator.GenerateErrorReport();
+Console.WriteLine("\n=== Error Report ===");
+Console.WriteLine(errorReport);
+
+// Example 5: Generate capacity report
+var capacityReport = reportGenerator.GenerateCapacityReport();
+Console.WriteLine("\n=== Capacity Report ===");
+Console.WriteLine(capacityReport);
+
+// Example 6: Generate all reports in sequence
+Console.WriteLine("=== System Monitoring Dashboard ===");
+Console.WriteLine(reportGenerator.GenerateHealthReport());
+Console.WriteLine(reportGenerator.GeneratePerformanceReport());
+Console.WriteLine(reportGenerator.GenerateTenantUsageReport());
+Console.WriteLine(reportGenerator.GenerateErrorReport());
+Console.WriteLine(reportGenerator.GenerateCapacityReport());
+```
