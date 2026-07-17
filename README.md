@@ -1274,3 +1274,62 @@ public class TenantConfig
 ```
 
 ```
+## TenantContextHelper
+
+The `TenantContextHelper` class provides a centralized mechanism for managing tenant-specific context across asynchronous operations in a multi-tenant environment. It allows setting, retrieving, and validating the current tenant context, and facilitates scoping operations to a specific tenant using `AsyncLocal` storage. Additionally, it helps in enriching diagnostic information and metadata with tenant-specific identifiers, ensuring consistent traceability.
+
+### Public Members
+
+```csharp
+public sealed class TenantContextHelper
+public TenantContextHelper(ILogger<TenantContextHelper> logger)
+public void SetTenantContext(TenantContext context)
+public TenantContext GetTenantContext()
+public bool HasTenantContext()
+public string GetCurrentTenantId()
+public void ClearTenantContext()
+public bool ValidateTenantContext(string expectedTenantId = null)
+public IDisposable CreateScope(string tenantId, string userId = null)
+public Dictionary<string, object> GetContextMetadata()
+public string EnrichErrorWithContext(string errorMessage)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+using System;
+
+// Setup logger and helper
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<TenantContextHelper>();
+var tenantHelper = new TenantContextHelper(logger);
+
+// Example 1: Creating a scoped context for tenant-specific operations
+using (tenantHelper.CreateScope("acme-corp", "user-123"))
+{
+    if (tenantHelper.HasTenantContext())
+    {
+        Console.WriteLine($"Current Tenant: {tenantHelper.GetCurrentTenantId()}");
+        
+        // Validate context
+        if (tenantHelper.ValidateTenantContext("acme-corp"))
+        {
+            // Operation logic here...
+        }
+    }
+} // Scope automatically clears when disposed
+
+// Example 2: Enriching error messages with tenant context
+try
+{
+    throw new Exception("Operation failed");
+}
+catch (Exception ex)
+{
+    string enrichedError = tenantHelper.EnrichErrorWithContext(ex.Message);
+    Console.WriteLine(enrichedError); // Outputs: "Operation failed [TenantId: acme-corp]"
+}
+```
