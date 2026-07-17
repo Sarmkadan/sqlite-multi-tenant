@@ -154,3 +154,60 @@ else
 ```
 
 These helpers make it easy to enforce invariants and surface configuration problems early in the request pipeline.
+
+
+## SettingsControllerExtensions
+
+The `SettingsControllerExtensions` class provides a collection of extension methods for `SettingsController` that simplify common operations when working with application settings. These methods offer strongly-typed access to settings, batch operations, and filtering capabilities, reducing boilerplate code and making settings management more intuitive.
+
+
+
+### Usage Examples
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using SqliteMultiTenant.Api.Controllers;
+using SqliteMultiTenant.Api.Responses;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Get a setting as a specific type
+var controller = new SettingsController();
+IActionResult result = controller.GetSettingAs<int>("max_connections");
+if (result is OkObjectResult okResult && okResult.Value is ApiResponse<int> response)
+{
+    Console.WriteLine($"Max connections: {response.Data}");
+}
+
+// Example 2: Set a setting with a strongly-typed value
+result = controller.SetSetting("timeout_seconds", 30);
+
+// Example 3: Update multiple settings in a batch operation
+var settings = new Dictionary<string, string>
+{
+    {"theme", "dark"},
+    {"language", "en-US"},
+    {"items_per_page", "25"}
+};
+result = controller.UpdateBatchSettings(settings);
+
+// Example 4: Check if a setting exists
+result = controller.SettingExists("maintenance_mode");
+if (result is OkObjectResult existsResult && existsResult.Value is ApiResponse<bool> existsResponse)
+{
+    Console.WriteLine($"Setting exists: {existsResponse.Data}");
+}
+
+// Example 5: Get settings filtered by a predicate
+result = controller.GetSettingsWhere(setting => setting.Key.StartsWith("app_"));
+if (result is OkObjectResult filteredResult && filteredResult.Value is ApiResponse<IReadOnlyList<SettingValue>> filteredResponse)
+{
+    foreach (var setting in filteredResponse.Data)
+    {
+        Console.WriteLine($"{setting.Key}: {setting.Value}");
+    }
+}
+
+// Example 6: Get a setting with custom parsing
+result = controller.GetSettingAs<DateTime>("last_backup", (value, type) => DateTime.Parse(value));
+```
