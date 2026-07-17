@@ -1,3 +1,45 @@
+## EncryptionKeyManagerExtensions
+
+The `EncryptionKeyManagerExtensions` class provides extension methods for the `EncryptionKeyManager` that simplify tenant-specific key operations with fluent-style APIs. These methods enable easy generation, rotation, retrieval, and management of encryption keys for individual tenants in a multi-tenant SQLite environment.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Security;
+using System;
+
+// Assume you have an EncryptionKeyManager instance
+var keyManager = new EncryptionKeyManager(...);
+
+// Example 1: Generate a new encryption key for a tenant
+var newKey = await keyManager.GenerateKeyForTenantAsync("tenant-123");
+Console.WriteLine($"Generated key version: {newKey.Version}");
+
+// Example 2: Generate a key with master password
+var secureKey = await keyManager.GenerateKeyForTenantAsync("tenant-123", "MyMasterPassword123!");
+
+// Example 3: Rotate the tenant's encryption key
+var rotatedKey = await keyManager.RotateKeyForTenantAsync("tenant-123");
+Console.WriteLine($"Rotated to key version: {rotatedKey.Version}");
+
+// Example 4: Check if tenant has an active key
+var hasActiveKey = await keyManager.HasActiveKeyAsync("tenant-123");
+Console.WriteLine("Tenant has active key: {hasActiveKey}");
+
+// Example 5: Get the active key (returns null if not found)
+var activeKey = await keyManager.GetActiveKeyForTenantAsync("tenant-123");
+
+// Example 6: Get the active key (throws if not found)
+var requiredKey = await keyManager.GetRequiredActiveKeyForTenantAsync("tenant-123");
+
+// Example 7: Get a specific key version
+var historicalKey = await keyManager.GetKeyVersionForTenantAsync("tenant-123", 1);
+
+// Example 8: Delete all keys for a tenant
+var deleted = await keyManager.DeleteTenantKeysAsync("tenant-123");
+Console.WriteLine($"Keys deleted: {deleted}");
+```
+
 ## ConnectionManagerIntegrationTests
 
 The `ConnectionManagerIntegrationTests` class provides comprehensive unit tests for the `ConnectionManager` class, verifying that connection management operations work correctly. These tests cover retrieving a connection, reusing an existing connection when available, creating a new connection when the pool is not full, releasing a connection back to the pool, and clearing the tenant pool, ensuring the connection manager operates reliably in multi-tenant SQLite environments.
