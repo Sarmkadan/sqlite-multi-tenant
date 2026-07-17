@@ -618,6 +618,138 @@ public class TenantConfig
 }
 ```
 
+## DataValidator
+
+The `DataValidator` class provides comprehensive validation capabilities for various data types and business rules in multi-tenant SQLite systems. It supports string validation, range checks, email/URL/GUID validation, regex patterns, custom validators, and collection validation. The validator uses a fluent interface that allows chaining multiple validation rules before producing a comprehensive validation result with all errors.
+
+### Public Members
+
+```csharp
+public sealed class DataValidator
+public DataValidator
+public DataValidator RequireString(string fieldName, string errorMessage = "Field is required")
+public DataValidator RequireRange<T>(string fieldName, T min, T max, string errorMessage = "Value out of range") where T : IComparable<T>
+public DataValidator RequireValidEmail(string fieldName, string errorMessage = "Invalid email format")
+public DataValidator RequireValidUrl(string fieldName, string errorMessage = "Invalid URL format")
+public DataValidator RequireValidGuid(string fieldName, string errorMessage = "Invalid GUID format")
+public DataValidator RequirePattern(string fieldName, string pattern, string errorMessage = "Pattern mismatch")
+public DataValidator Require<T>(string fieldName, Func<T, bool> predicate, string errorMessage = "Validation failed")
+public DataValidator RequireNotEmpty<T>(string fieldName, string errorMessage = "Collection cannot be empty") where T : IEnumerable
+public DataValidator RequireEqual<T>(string fieldName, T expectedValue, string errorMessage = "Values do not match")
+public DataValidator RequireNotEqual<T>(string fieldName, T unexpectedValue, string errorMessage = "Values should not match")
+public ValidationResult GetResult()
+
+public sealed class ValidationError
+public string FieldName { get; }
+public string Message { get; }
+public ValidationError(string fieldName, string message)
+public override string ToString()
+
+public sealed class ValidationResult
+public bool IsValid { get; }
+public List<ValidationError> Errors { get; }
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Validate tenant configuration with multiple rules
+var validator = new DataValidator();
+
+var tenantConfig = new TenantConfiguration
+{
+    Name = "Acme Corporation",
+    Email = "admin@acme.com",
+    Website = "https://acme.com",
+    MaxConnections = 100,
+    TenantId = Guid.NewGuid().ToString()
+};
+
+// Chain validation rules
+var result = validator
+    .RequireString(nameof(tenantConfig.Name), "Tenant name is required")
+    .RequireString(nameof(tenantConfig.Email), "Admin email is required")
+    .RequireValidEmail(nameof(tenantConfig.Email), "Invalid email format")
+    .RequireValidUrl(nameof(tenantConfig.Website), "Invalid website URL")
+    .RequireRange(nameof(tenantConfig.MaxConnections), 1, 1000, "Max connections must be between 1 and 1000")
+    .RequireValidGuid(nameof(tenantConfig.TenantId), "Invalid tenant ID format")
+    .GetResult();
+
+if (!result.IsValid)
+{
+    Console.WriteLine("Validation errors found:");
+    foreach (var error in result.Errors)
+    {
+        Console.WriteLine($" - {error.FieldName}: {error.Message}");
+    }
+}
+else
+{
+    Console.WriteLine("Tenant configuration is valid!");
+}
+
+// Example 2: Validate collection and custom predicate
+var productValidator = new DataValidator();
+var products = new List<Product> { new Product("Widget", 9.99m), new Product("Gadget", 19.99m) };
+
+var productResult = productValidator
+    .RequireNotEmpty(nameof(products), "At least one product is required")
+    .Require<decimal>(nameof(products), items => items.Sum(p => p.Price) < 1000m, 
+        "Total product price exceeds maximum allowed")
+    .GetResult();
+
+Console.WriteLine(productResult.IsValid ? "Products are valid!" : "Invalid products");
+
+// Example 3: Validate equality and inequality
+var userValidator = new DataValidator();
+string password = "SecurePassword123";
+string confirmPassword = "SecurePassword123";
+
+var passwordResult = userValidator
+    .RequireEqual(nameof(password), confirmPassword, "Passwords do not match")
+    .RequireNotEqual(nameof(password), "password", "Password is too common")
+    .GetResult();
+
+Console.WriteLine(passwordResult.IsValid ? "Password validation passed!" : "Password validation failed");
+
+// Example 4: Validate with regex pattern
+var usernameValidator = new DataValidator();
+string username = "acme_admin";
+
+var usernameResult = usernameValidator
+    .RequireString(nameof(username), "Username is required")
+    .RequirePattern(nameof(username), "^[a-z0-9_]{3,20}$", 
+        "Username must be 3-20 characters and contain only lowercase letters, numbers, and underscores")
+    .GetResult();
+
+Console.WriteLine(usernameResult.IsValid ? "Username is valid!" : "Invalid username");
+
+public class TenantConfiguration
+{
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Website { get; set; } = string.Empty;
+    public int MaxConnections { get; set; }
+    public string TenantId { get; set; } = string.Empty;
+}
+
+public class Product
+{
+    public string Name { get; }
+    public decimal Price { get; }
+    
+    public Product(string name, decimal price)
+    {
+        Name = name;
+        Price = price;
+    }
+}
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
