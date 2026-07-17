@@ -11,7 +11,8 @@ using SqliteMultiTenant.Models;
 namespace SqliteMultiTenant.Models;
 
 /// <summary>
-/// Extension methods for the Migration class providing additional functionality
+/// Extension methods for the <see cref="Migration"/> class providing additional functionality
+/// for querying and analyzing migration states, durations, and statistics.
 /// </summary>
 public static class MigrationExtensions
 {
@@ -20,14 +21,12 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration instance</param>
     /// <returns>True if the migration is in a terminal state; otherwise, false</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migration is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migration"/> is null</exception>
     public static bool IsTerminal(this Migration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
 
-        return migration.Status == MigrationStatus.Completed ||
-               migration.Status == MigrationStatus.Failed ||
-               migration.Status == MigrationStatus.RolledBack;
+        return migration.Status is MigrationStatus.Completed or MigrationStatus.Failed or MigrationStatus.RolledBack;
     }
 
     /// <summary>
@@ -35,17 +34,14 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration instance</param>
     /// <returns>The age in days, or 0 if CreatedAt is not set</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migration is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migration"/> is null</exception>
     public static double GetAgeInDays(this Migration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
 
-        if (migration.CreatedAt == default)
-        {
-            return 0;
-        }
-
-        return (DateTime.UtcNow - migration.CreatedAt).TotalDays;
+        return migration.CreatedAt == default
+            ? 0
+            : (DateTime.UtcNow - migration.CreatedAt).TotalDays;
     }
 
     /// <summary>
@@ -53,7 +49,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration instance</param>
     /// <returns>A formatted string representing the execution time, or "N/A" if not executed</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migration is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migration"/> is null</exception>
     public static string GetExecutionDuration(this Migration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
@@ -81,7 +77,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration instance</param>
     /// <returns>A formatted status string with ANSI color codes for terminal display</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migration is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migration"/> is null</exception>
     public static string GetStatusDisplay(this Migration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
@@ -102,7 +98,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migrations">Collection of migrations to analyze</param>
     /// <returns>A dictionary with status counts</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migrations is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migrations"/> is null</exception>
     public static IReadOnlyDictionary<MigrationStatus, int> GetStatusCounts(
         this IEnumerable<Migration> migrations)
     {
@@ -118,7 +114,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migrations">Collection of migrations to filter</param>
     /// <returns>Ordered enumerable of pending migrations</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migrations is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migrations"/> is null</exception>
     public static IEnumerable<Migration> GetPendingMigrations(
         this IEnumerable<Migration> migrations)
     {
@@ -134,7 +130,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migrations">Collection of migrations to analyze</param>
     /// <returns>Total execution time in milliseconds</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migrations is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migrations"/> is null</exception>
     public static long GetTotalExecutionTimeMs(this IEnumerable<Migration> migrations)
     {
         ArgumentNullException.ThrowIfNull(migrations);
@@ -149,7 +145,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migrations">Collection of migrations to analyze</param>
     /// <returns>Average execution time in milliseconds, or 0 if no completed migrations</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migrations is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migrations"/> is null</exception>
     public static double GetAverageExecutionTimeMs(this IEnumerable<Migration> migrations)
     {
         ArgumentNullException.ThrowIfNull(migrations);
@@ -168,7 +164,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migrations">Collection of migrations to filter</param>
     /// <returns>Ordered enumerable of rollbackable migrations</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migrations is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migrations"/> is null</exception>
     public static IEnumerable<Migration> GetRollbackableMigrations(
         this IEnumerable<Migration> migrations)
     {
@@ -184,7 +180,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration instance</param>
     /// <returns>The database name if available; otherwise, the database ID</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migration is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migration"/> is null</exception>
     public static string GetDatabaseName(this Migration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
@@ -197,7 +193,7 @@ public static class MigrationExtensions
     /// </summary>
     /// <param name="migration">The migration instance</param>
     /// <returns>Formatted creation timestamp using invariant culture</returns>
-    /// <exception cref="ArgumentNullException">Thrown when migration is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="migration"/> is null</exception>
     public static string GetFormattedCreatedAt(this Migration migration)
     {
         ArgumentNullException.ThrowIfNull(migration);
