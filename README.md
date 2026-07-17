@@ -1116,6 +1116,115 @@ foreach (var table in tables)
 File.Delete(testDbPath);
 ```
 
+## TenantValidatorTests
+
+The `TenantValidatorTests` class provides comprehensive unit tests for the `TenantValidator` class, verifying that tenant validation logic works correctly for both creation and update scenarios. These tests cover validation of tenant names, contact emails, and ensure proper error handling for invalid inputs, ensuring robust validation for tenant management operations.
+
+### Public Members
+
+```csharp
+public sealed class TenantValidatorTests
+public TenantValidatorTests()
+public void ValidateCreateRequest_ShouldReturnNoErrors_WithValidRequest()
+public void ValidateCreateRequest_ShouldReturnError_WhenNameIsEmpty()
+public void ValidateCreateRequest_ShouldReturnError_WhenNameIsTooShort()
+public void ValidateCreateRequest_ShouldReturnError_WhenNameIsTooLong()
+public void ValidateCreateRequest_ShouldReturnError_WhenContactEmailIsEmpty()
+public void ValidateCreateRequest_ShouldReturnError_WhenContactEmailIsInvalid()
+public void ValidateUpdateRequest_ShouldReturnNoErrors_WithValidRequest()
+public void ValidateUpdateRequest_ShouldReturnNoErrors_WhenOnlyOneFieldIsProvidedAndValid()
+public void ValidateUpdateRequest_ShouldReturnError_WhenNameIsTooShort()
+public void ValidateUpdateRequest_ShouldReturnError_WhenContactEmailIsInvalid()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using SqliteMultiTenant.Api.Requests;
+using FluentAssertions;
+
+// Create validator instance
+var validator = new TenantValidator();
+
+// Example 1: Validate a tenant creation request with valid data
+var validCreateRequest = new CreateTenantRequest
+{
+    Name = "Acme Corporation",
+    ContactEmail = "admin@acme.com"
+};
+
+var createErrors = validator.ValidateCreateRequest(validCreateRequest);
+createErrors.Should().BeEmpty("Valid creation request should have no errors");
+
+// Example 2: Validate a tenant creation request with invalid name (too short)
+var invalidNameRequest = new CreateTenantRequest
+{
+    Name = "ab", // Too short (< 3 characters)
+    ContactEmail = "admin@acme.com"
+};
+
+var nameErrors = validator.ValidateCreateRequest(invalidNameRequest);
+nameErrors.Should().ContainSingle()
+    .And.ContainKey(nameof(invalidNameRequest.Name))
+    .And.ContainValue("Tenant name must be between 3 and 255 characters");
+
+// Example 3: Validate a tenant creation request with invalid email
+var invalidEmailRequest = new CreateTenantRequest
+{
+    Name = "Acme Corporation",
+    ContactEmail = "invalid-email"
+};
+
+var emailErrors = validator.ValidateCreateRequest(invalidEmailRequest);
+emailErrors.Should().ContainSingle()
+    .And.ContainKey(nameof(invalidEmailRequest.ContactEmail))
+    .And.ContainValue("Contact email must be valid");
+
+// Example 4: Validate a tenant update request with valid data
+var validUpdateRequest = new UpdateTenantRequest
+{
+    Name = "Acme Corp Updated",
+    ContactEmail = "admin@acme-corp.com"
+};
+
+var updateErrors = validator.ValidateUpdateRequest(validUpdateRequest);
+updateErrors.Should().BeEmpty("Valid update request should have no errors");
+
+// Example 5: Validate a tenant update request with only one field
+var partialUpdateRequest = new UpdateTenantRequest
+{
+    Name = "New Tenant Name" // Only updating name, contact email is optional
+};
+
+var partialErrors = validator.ValidateUpdateRequest(partialUpdateRequest);
+partialErrors.Should().BeEmpty("Partial update with valid field should have no errors");
+
+// Example 6: Validate an empty tenant name
+var emptyNameRequest = new CreateTenantRequest
+{
+    Name = "",
+    ContactEmail = "admin@acme.com"
+};
+
+var emptyNameErrors = validator.ValidateCreateRequest(emptyNameRequest);
+emptyNameErrors.Should().ContainSingle()
+    .And.ContainKey(nameof(emptyNameRequest.Name))
+    .And.ContainValue("Tenant name is required");
+
+// Example 7: Validate an empty contact email
+var emptyEmailRequest = new CreateTenantRequest
+{
+    Name = "Acme Corporation",
+    ContactEmail = ""
+};
+
+var emptyEmailErrors = validator.ValidateCreateRequest(emptyEmailRequest);
+emptyEmailErrors.Should().ContainSingle()
+    .And.ContainKey(nameof(emptyEmailRequest.ContactEmail))
+    .And.ContainValue("Contact email is required");
+```
+
 ## TenantServiceTests
 
 The `TenantServiceTests` class provides comprehensive unit tests for the `TenantService` class, verifying that tenant management operations work correctly. These tests cover validation scenarios, repository interactions, and exception handling for tenant lifecycle operations, ensuring the tenant service operates reliably and maintains data integrity.
