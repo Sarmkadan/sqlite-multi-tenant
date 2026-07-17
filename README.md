@@ -211,3 +211,35 @@ if (result is OkObjectResult filteredResult && filteredResult.Value is ApiRespon
 // Example 6: Get a setting with custom parsing
 result = controller.GetSettingAs<DateTime>("last_backup", (value, type) => DateTime.Parse(value));
 ```
+
+## ReportGeneratorJsonExtensions
+
+The `ReportGeneratorJsonExtensions` class provides convenient extension methods for serializing and deserializing report-related data structures using `System.Text.Json`. It simplifies converting monitoring objects like health summaries, operation statistics, and performance metrics to and from JSON strings, ensuring consistent configuration and error handling.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Monitoring;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Serialize a SystemHealthSummary
+var healthSummary = new SystemHealthSummary { /* Initialize properties */ };
+string json = healthSummary.ToJson();
+Console.WriteLine($"Serialized Health Summary: {json}");
+
+// Example 2: Deserialize from JSON string
+string jsonStats = "[...]"; // JSON string of OperationStatistics collection
+var stats = ReportGeneratorJsonExtensions.FromJsonToOperationStatistics(jsonStats);
+
+// Example 3: Try deserialization with error handling
+string jsonMetric = "{...}"; // JSON string of PerformanceMetric
+if (jsonMetric.TryFromJson(out IEnumerable<PerformanceMetric>? metrics))
+{
+    Console.WriteLine($"Successfully deserialized {metrics?.Count()} metrics.");
+}
+else
+{
+    Console.WriteLine("Failed to deserialize performance metrics.");
+}
+```
