@@ -836,6 +836,118 @@ Console.WriteLine($"Total backups for acme-corp-db: {backupCount}");
 File.Delete(testDbPath);
 ```
 
+## MigrationRepositoryIntegrationTests
+
+The `MigrationRepositoryIntegrationTests` class provides comprehensive integration tests for the `MigrationRepository` class, verifying that all database operations work correctly against a real SQLite database. These tests cover CRUD operations, query methods for filtering migrations by status, version, and execution order, and ensure data integrity throughout the database migration lifecycle management system.
+
+### Public Members
+
+```csharp
+public sealed class MigrationRepositoryIntegrationTests : IDisposable
+public MigrationRepositoryIntegrationTests()
+public async Task GetAllAsync_ShouldReturnAllMigrations()
+public async Task GetByIdAsync_ShouldReturnCorrectMigration_WhenMigrationExists()
+public async Task GetByIdAsync_ShouldReturnNull_WhenMigrationDoesNotExist()
+public async Task AddAsync_ShouldAddMigrationToDatabase()
+public async Task UpdateAsync_ShouldUpdateMigrationInDatabase()
+public async Task DeleteAsync_ShouldRemoveMigrationFromDatabase()
+public async Task GetOrderedMigrationsAsync_ShouldReturnMigrationsInOrder()
+public async Task GetPendingMigrationsAsync_ShouldReturnOnlyPendingMigrations()
+public async Task GetAppliedMigrationsAsync_ShouldReturnOnlyAppliedMigrations()
+public async Task GetByVersionAsync_ShouldReturnMigration_WhenVersionExists()
+public async Task GetByVersionAsync_ShouldReturnNull_WhenVersionDoesNotExist()
+public async Task GetCountByDatabaseAsync_ShouldReturnCorrectCount()
+public async Task GetFailedMigrationsAsync_ShouldReturnOnlyFailedMigrations()
+public void Dispose()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Constants;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Threading.Tasks;
+
+// Create a test database and repository
+var testDbPath = Path.Combine(Path.GetTempPath(), $"migration_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+var migrationRepository = new MigrationRepository(connectionString, NullLogger<MigrationRepository>.Instance);
+
+// Example 1: Add a new migration
+var newMigration = new Migration
+{
+  MigrationId = "mig_init_users",
+  DatabaseId = "acme-corp",
+  Version = "1.0.0",
+  Name = "InitializeUsersTable",
+  UpScript = "CREATE TABLE Users (Id TEXT PRIMARY KEY, Name TEXT, Email TEXT)",
+  Status = MigrationStatus.Pending,
+  CreatedAt = DateTime.UtcNow,
+  ExecutionOrder = 1
+};
+
+var addedMigration = await migrationRepository.AddAsync(newMigration);
+Console.WriteLine($"Added migration: {addedMigration.MigrationId} (version: {addedMigration.Version})");
+
+// Example 2: Get all migrations for a specific database
+var acmeMigrations = await migrationRepository.GetAllAsync();
+Console.WriteLine($"Total migrations: {acmeMigrations.Count}");
+
+// Example 3: Get migrations in execution order for a database
+var orderedMigrations = await migrationRepository.GetOrderedMigrationsAsync("acme-corp");
+Console.WriteLine($"Migrations in order: {orderedMigrations.Count}");
+foreach (var migration in orderedMigrations)
+{
+  Console.WriteLine($"  - {migration.Name} (v{migration.Version}) - {migration.Status}");
+}
+
+// Example 4: Get only pending migrations for a database
+var pendingMigrations = await migrationRepository.GetPendingMigrationsAsync("acme-corp");
+Console.WriteLine($"Pending migrations: {pendingMigrations.Count}");
+
+// Example 5: Get only applied migrations for a database
+var appliedMigrations = await migrationRepository.GetAppliedMigrationsAsync("acme-corp");
+Console.WriteLine($"Applied migrations: {appliedMigrations.Count}");
+
+// Example 6: Get migration by version
+var versionMigration = await migrationRepository.GetByVersionAsync("acme-corp", "1.0.0");
+if (versionMigration != null)
+{
+  Console.WriteLine($"Found migration: {versionMigration.Name}");
+}
+
+// Example 7: Get only failed migrations for a database
+var failedMigrations = await migrationRepository.GetFailedMigrationsAsync("acme-corp");
+Console.WriteLine($"Failed migrations: {failedMigrations.Count}");
+
+// Example 8: Update migration status after execution
+if (pendingMigrations.Count > 0)
+{
+  var migrationToExecute = pendingMigrations[0];
+  migrationToExecute.Status = MigrationStatus.Completed;
+  migrationToExecute.ExecutionTimeMs = 250;
+  await migrationRepository.UpdateAsync(migrationToExecute);
+  Console.WriteLine($"Updated migration {migrationToExecute.MigrationId} to completed");
+}
+
+// Example 9: Get count of migrations for a database
+var migrationCount = await migrationRepository.GetCountByDatabaseAsync("acme-corp");
+Console.WriteLine($"Total migrations for acme-corp: {migrationCount}");
+
+// Example 10: Delete a migration (e.g., if it failed validation)
+if (failedMigrations.Count > 0)
+{
+  await migrationRepository.DeleteAsync(failedMigrations[0].MigrationId);
+  Console.WriteLine("Deleted failed migration");
+}
+
+// Cleanup
+File.Delete(testDbPath);
+```
+
 ## TenantServiceIntegrationTests
 
 The `TenantServiceIntegrationTests` class provides comprehensive integration tests for the `TenantService` class, verifying that all tenant management operations work correctly against a real SQLite database. These tests cover CRUD operations, query methods for retrieving tenants, and ensure data integrity throughout the tenant lifecycle management system.
