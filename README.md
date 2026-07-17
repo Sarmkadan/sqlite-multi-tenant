@@ -1018,6 +1018,60 @@ if (diagnosticsResult is OkObjectResult diagnosticsOkResult && diagnosticsOkResu
 ```
 
 
+## ICacheService
+
+The `ICacheService` interface provides an in-memory caching layer for frequently accessed data such as tenant configurations, migration records, and backup metadata. It reduces database queries and improves API response times by storing data in memory with configurable expiration policies. The interface supports basic cache operations including get, set, remove, and pattern-based invalidation.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Caching;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+// Setup dependency injection
+var services = new ServiceCollection();
+services.AddLogging(builder => builder.AddConsole());
+services.AddMemoryCache(); // Required for IMemoryCache
+
+// Register cache service
+services.AddSingleton<ICacheService, CacheService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var cacheService = serviceProvider.GetRequiredService<ICacheService>();
+
+// Example 1: Cache a tenant configuration
+var tenantConfig = new { Id = "acme-corp", Name = "Acme Corporation", IsActive = true };
+cacheService.Set(CacheKeys.TenantKey("acme-corp"), tenantConfig, TimeSpan.FromMinutes(30));
+
+// Example 2: Retrieve cached tenant configuration
+var cachedConfig = cacheService.Get<object>(CacheKeys.TenantKey("acme-corp"));
+if (cachedConfig != null)
+{
+    Console.WriteLine($"Retrieved tenant: {cachedConfig}");
+}
+
+// Example 3: Cache a list of all tenants
+var allTenants = new[] { "acme-corp", "globex", "contoso" };
+cacheService.Set(CacheKeys.AllTenantsKey(), allTenants, TimeSpan.FromHours(1));
+
+// Example 4: Retrieve cached list of all tenants
+var cachedTenants = cacheService.Get<string[]>(CacheKeys.AllTenantsKey());
+if (cachedTenants != null)
+{
+    Console.WriteLine($"Total tenants: {cachedTenants.Length}");
+}
+
+// Example 5: Remove a specific cache entry
+cacheService.Remove(CacheKeys.TenantKey("acme-corp"));
+
+// Example 6: Remove all tenant-related cache entries using pattern
+cacheService.RemoveByPattern(CacheKeys.TenantPattern());
+
+// Example 7: Clear entire cache (e.g., during application shutdown)
+cacheService.Clear();
+```
+
 ## GenericRepository
 
 The `GenericRepository<T>` class provides an abstract base implementation for common CRUD operations across all entity types in the multi-tenant SQLite system. It serves as the foundation for concrete repository implementations like `TenantRepository`, `BackupRepository`, and `MigrationRepository`, ensuring consistent data access patterns throughout the application.
