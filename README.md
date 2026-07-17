@@ -1159,6 +1159,95 @@ var action = () => new HealthCheckService(null!);
 Assert.Throws<ArgumentNullException>(action);
 ```
 
+## ConnectionPoolOptionsEdgeCaseTests
+
+The `ConnectionPoolOptionsEdgeCaseTests` class provides comprehensive edge-case and boundary-value tests for the `ConnectionPoolOptions` validation logic. It verifies that all invalid configurations are properly rejected while valid configurations are accepted, ensuring robust validation for connection pool parameters such as pool sizes, timeouts, and lifetime settings.
+
+### Public Members
+
+```csharp
+public sealed class ConnectionPoolOptionsEdgeCaseTests
+public void Validate_DefaultValues_DoesNotThrow()
+public void Validate_NegativeMinPoolSize_ThrowsArgumentOutOfRange()
+public void Validate_ZeroMinPoolSize_DoesNotThrow()
+public void Validate_ZeroMaxPoolSize_ThrowsArgumentOutOfRange()
+public void Validate_MinPoolSizeGreaterThanMaxPoolSize_ThrowsArgumentException()
+public void Validate_MinPoolSizeEqualsMaxPoolSize_DoesNotThrow()
+public void Validate_ZeroIdleTimeout_ThrowsArgumentOutOfRange()
+public void Validate_NegativeIdleTimeout_ThrowsArgumentOutOfRange()
+public void Validate_ZeroAcquireTimeout_ThrowsArgumentOutOfRange()
+public void Validate_ZeroMaxConnectionLifetime_ThrowsArgumentOutOfRange()
+public void Validate_ZeroPruneInterval_ThrowsArgumentOutOfRange()
+public void Validate_VerySmallPositiveTimeSpans_DoesNotThrow()
+public void PoolStatisticsSnapshot_DefaultValues_AreZeroOrEmpty()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Database;
+using FluentAssertions;
+
+// Example 1: Validate default connection pool options
+var defaultOptions = new ConnectionPoolOptions();
+var act1 = () => defaultOptions.Validate();
+act1.Should().NotThrow("Default options should be valid");
+
+// Example 2: Validate zero minimum pool size (should be valid)
+var zeroMinOptions = new ConnectionPoolOptions { MinPoolSize = 0 };
+var act2 = () => zeroMinOptions.Validate();
+act2.Should().NotThrow("Zero minimum pool size should be valid");
+
+// Example 3: Validate zero maximum pool size (should throw)
+var zeroMaxOptions = new ConnectionPoolOptions { MaxPoolSize = 0 };
+var act3 = () => zeroMaxOptions.Validate();
+act3.Should().Throw<ArgumentOutOfRangeException>("Zero maximum pool size should be invalid");
+
+// Example 4: Validate negative minimum pool size (should throw)
+var negativeOptions = new ConnectionPoolOptions { MinPoolSize = -1 };
+var act4 = () => negativeOptions.Validate();
+act4.Should().Throw<ArgumentOutOfRangeException>("Negative pool size should be invalid");
+
+// Example 5: Validate minimum pool size greater than maximum (should throw)
+var invalidRangeOptions = new ConnectionPoolOptions { MinPoolSize = 20, MaxPoolSize = 10 };
+var act5 = () => invalidRangeOptions.Validate();
+act5.Should().Throw<ArgumentException>("Min pool size greater than max should be invalid");
+
+// Example 6: Validate equal minimum and maximum pool sizes (should be valid)
+var equalOptions = new ConnectionPoolOptions { MinPoolSize = 5, MaxPoolSize = 5 };
+var act6 = () => equalOptions.Validate();
+act6.Should().NotThrow("Equal min and max pool sizes should be valid");
+
+// Example 7: Validate zero timeouts (should throw)
+var zeroTimeoutOptions = new ConnectionPoolOptions { IdleTimeout = TimeSpan.Zero };
+var act7 = () => zeroTimeoutOptions.Validate();
+act7.Should().Throw<ArgumentOutOfRangeException>("Zero timeouts should be invalid");
+
+// Example 8: Validate negative timeouts (should throw)
+var negativeTimeoutOptions = new ConnectionPoolOptions { AcquireTimeout = TimeSpan.FromSeconds(-1) };
+var act8 = () => negativeTimeoutOptions.Validate();
+act8.Should().Throw<ArgumentOutOfRangeException>("Negative timeouts should be invalid");
+
+// Example 9: Validate very small positive time spans (should be valid)
+var smallTimeoutOptions = new ConnectionPoolOptions
+{
+    IdleTimeout = TimeSpan.FromTicks(1),
+    AcquireTimeout = TimeSpan.FromTicks(1),
+    MaxConnectionLifetime = TimeSpan.FromTicks(1),
+    PruneInterval = TimeSpan.FromTicks(1)
+};
+var act9 = () => smallTimeoutOptions.Validate();
+act9.Should().NotThrow("Very small positive time spans should be valid");
+
+// Example 10: Check PoolStatisticsSnapshot default values
+var snapshot = new PoolStatisticsSnapshot();
+snapshot.TenantId.Should().BeEmpty("Default tenant ID should be empty");
+snapshot.Available.Should().Be(0, "Default available count should be 0");
+snapshot.Total.Should().Be(0, "Default total count should be 0");
+snapshot.Waiting.Should().Be(0, "Default waiting count should be 0");
+snapshot.PrunedTotal.Should().Be(0, "Default pruned total should be 0");
+```
+
 ## EventBusImplTests
 
 The `EventBusImplTests` class provides comprehensive unit tests for the `EventBusImpl` class, verifying that the event bus implementation correctly handles event publishing, subscription management, and event history tracking. These tests cover basic event operations, history management, and proper cleanup, ensuring the event-driven architecture operates reliably for multi-tenant systems.
