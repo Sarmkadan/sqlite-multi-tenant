@@ -1018,9 +1018,66 @@ if (diagnosticsResult is OkObjectResult diagnosticsOkResult && diagnosticsOkResu
 ```
 
 
-## ICacheService
+## ICacheStrategy
 
-The `ICacheService` interface provides an in-memory caching layer for frequently accessed data such as tenant configurations, migration records, and backup metadata. It reduces database queries and improves API response times by storing data in memory with configurable expiration policies. The interface supports basic cache operations including get, set, remove, and pattern-based invalidation.
+The `ICacheStrategy` interface defines a contract for asynchronous cache strategies that provide in-memory caching with configurable expiration policies. Implementations support basic cache operations (get, set, remove, clear) and enable different caching strategies like LRU (Least Recently Used) with size limits or time-based expiration. This interface is used internally by cache implementations to standardize cache behavior across the application.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Caching;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup dependency injection
+var services = new ServiceCollection();
+services.AddLogging(builder => builder.AddConsole());
+
+// Create logger for cache strategy
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<LruCacheStrategy>();
+
+// Example 1: Use LRU cache strategy with size limit
+var lruCache = new LruCacheStrategy(logger, maxSize: 5000);
+
+// Cache a tenant configuration
+await lruCache.SetAsync(CacheKeys.TenantKey("acme-corp"), tenantConfig, TimeSpan.FromMinutes(30));
+
+// Retrieve cached tenant configuration
+var cachedConfig = await lruCache.GetAsync<object>(CacheKeys.TenantKey("acme-corp"));
+if (cachedConfig != null)
+{
+    Console.WriteLine($"Retrieved tenant: {cachedConfig}");
+}
+
+// Get cache statistics
+await lruCache.SetAsync(CacheKeys.AllTenantsKey(), new[] { "acme-corp", "globex", "contoso" }, TimeSpan.FromHours(1));
+var stats = lruCache.GetStatistics();
+foreach (var stat in stats)
+{
+    Console.WriteLine($"Cache entry: {stat.Key}, AccessCount: {stat.Value.AccessCount}");
+}
+
+// Remove a specific cache entry
+await lruCache.RemoveAsync(CacheKeys.TenantKey("acme-corp"));
+
+// Clear entire cache
+await lruCache.ClearAsync();
+
+// Example 2: Use time-based cache strategy with default expiration
+var timeBasedCache = new TimeBasedCacheStrategy(logger, defaultExpiration: TimeSpan.FromHours(2));
+
+// Cache with default expiration (2 hours)
+await timeBasedCache.SetAsync(CacheKeys.MigrationKey("v1.0.0"), new { Version = "1.0.0", Applied = true });
+
+// Cache with custom expiration (15 minutes)
+await timeBasedCache.SetAsync(CacheKeys.BackupKey("backup-123"), new { Id = "backup-123", Status = "completed" }, TimeSpan.FromMinutes(15));
+
+// Retrieve cached value
+var migrationData = await timeBasedCache.GetAsync<object>(CacheKeys.MigrationKey("v1.0.0"));
+```
+
+## ICacheService
 
 ### Usage Example
 
