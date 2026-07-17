@@ -396,6 +396,113 @@ if (suspendResponse.IsSuccess)
 }
 ```
 
+## BackupController
+
+The `BackupController` class provides REST API endpoints for comprehensive backup management and disaster recovery operations. It enables creating, verifying, restoring, and organizing backups for tenant databases, ensuring data protection compliance and enabling recovery from data loss scenarios. The controller integrates with the backup service to handle backup lifecycle operations while providing standardized API responses through the `ApiResponse<T>` wrapper.
+
+### Public Members
+
+```csharp
+public sealed class BackupController
+public BackupController(IBackupService backupService, ITenantService tenantService, ILogger<BackupController> logger)
+public async Task<ApiResponse<BackupResponse>> CreateBackupAsync(string databaseId, string createdBy)
+public async Task<ApiResponse<BackupResponse>> GetBackupAsync(string backupId)
+public async Task<ApiResponse<IEnumerable<BackupResponse>>> ListBackupsAsync(string databaseId)
+public async Task<ApiResponse<object>> VerifyBackupAsync(string backupId, string verifiedBy)
+public async Task<ApiResponse<object>> RestoreBackupAsync(string backupId, string databaseId, string restoredBy)
+public async Task<ApiResponse<object>> TagBackupAsync(string backupId, string tag)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Controllers;
+using SqliteMultiTenant.Api.Responses;
+using SqliteMultiTenant.Services;
+using Microsoft.Extensions.Logging;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<BackupController>();
+
+// Create services (would normally be injected)
+var backupService = new BackupService(/* dependencies */);
+var tenantService = new TenantService(/* dependencies */);
+
+// Create the controller instance
+var backupController = new BackupController(backupService, tenantService, logger);
+
+// Example 1: Create a new backup for a tenant database
+var createResponse = await backupController.CreateBackupAsync(
+    databaseId: "acme-corp",
+    createdBy: "admin@acme-corp.com"
+);
+
+if (createResponse.IsSuccess)
+{
+    Console.WriteLine($"Backup created: {createResponse.Data?.BackupId}");
+    Console.WriteLine($"Backup type: {createResponse.Data?.BackupType}");
+    Console.WriteLine($"Status: {createResponse.Data?.Status}");
+}
+
+// Example 2: Get backup metadata and status
+var getResponse = await backupController.GetBackupAsync("backup-12345");
+
+if (getResponse.IsSuccess)
+{
+    Console.WriteLine($"Backup found: {getResponse.Data?.BackupId}");
+    Console.WriteLine($"Database: {getResponse.Data?.DatabaseId}");
+    Console.WriteLine($"Created at: {getResponse.Data?.CreatedAt}");
+    Console.WriteLine($"Size: {getResponse.Data?.SizeBytes} bytes");
+}
+
+// Example 3: List all backups for a database
+var listResponse = await backupController.ListBackupsAsync("acme-corp");
+
+if (listResponse.IsSuccess)
+{
+    Console.WriteLine($"Found {listResponse.Data?.Count()} backups");
+    foreach (var backup in listResponse.Data ?? Enumerable.Empty<BackupResponse>())
+    {
+        Console.WriteLine($" - Backup {backup.BackupId}: {backup.Status} ({backup.BackupType})");
+    }
+}
+
+// Example 4: Verify backup integrity
+var verifyResponse = await backupController.VerifyBackupAsync(
+    backupId: "backup-12345",
+    verifiedBy: "backup-admin@acme-corp.com"
+);
+
+if (verifyResponse.IsSuccess)
+{
+    Console.WriteLine("Backup verification successful");
+}
+
+// Example 5: Restore database from backup (admin operation)
+var restoreResponse = await backupController.RestoreBackupAsync(
+    backupId: "backup-12345",
+    databaseId: "acme-corp",
+    restoredBy: "admin@acme-corp.com"
+);
+
+if (restoreResponse.IsSuccess)
+{
+    Console.WriteLine("Restore initiated successfully");
+}
+
+// Example 6: Tag backup for organizational purposes
+var tagResponse = await backupController.TagBackupAsync(
+    backupId: "backup-12345",
+    tag: "production"
+);
+
+if (tagResponse.IsSuccess)
+{
+    Console.WriteLine("Backup tagged successfully");
+}
+```
+
 ## AdminController
 
 The `AdminController` class provides administrative endpoints for system-level operations, health monitoring, and diagnostics. It serves as the central hub for system administrators to monitor system health, retrieve performance metrics, clear caches, and access diagnostic information. All endpoints are protected and require administrative privileges.
