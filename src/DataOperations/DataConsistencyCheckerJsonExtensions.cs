@@ -29,6 +29,7 @@ namespace SqliteMultiTenant.DataOperations
         /// Serializes a <see cref="DataConsistencyChecker"/> instance to JSON string.
         /// </summary>
         /// <param name="value">The data consistency checker instance to serialize.</param>
+/// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
         /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
         /// <returns>A JSON string representation of the data consistency checker.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
@@ -47,7 +48,7 @@ namespace SqliteMultiTenant.DataOperations
         /// Deserializes a JSON string to a <see cref="DataConsistencyChecker"/> instance.
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
-        /// <returns>A deserialized <see cref="DataConsistencyChecker"/> instance, or null if the JSON is invalid.</returns>
+        /// <returns>A deserialized <see cref="DataConsistencyChecker"/> instance, or <see langword="null"/> if the JSON is invalid.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
         public static DataConsistencyChecker? FromJson(string json)
         {
