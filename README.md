@@ -1,4 +1,46 @@
-// ## RateLimitingMiddlewareValidation
+## TenantContextHelperExtensions
+
+The `TenantContextHelperExtensions` class provides a set of extension methods for `TenantContextHelper` that simplify common operations within multi-tenant scopes. It includes utilities for managing tenant-aware scopes, retrieving tenant information safely, and executing actions within specific tenant contexts.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using SqliteMultiTenant.Models;
+using System;
+
+// Assume 'helper' is an instance of TenantContextHelper
+var helper = new TenantContextHelper(); 
+string tenantId = "tenant-123";
+
+// 1. Check if the current tenant is the target
+if (helper.IsCurrentTenant(tenantId))
+{
+    Console.WriteLine("Already in the target tenant context.");
+}
+
+// 2. Create a validated scope and perform operations
+using (helper.CreateValidatedScope(tenantId, userId: "user-456"))
+{
+    // 3. Retrieve context information
+    var context = helper.GetRequiredTenantContext();
+    Console.WriteLine($"Current Tenant: {context.TenantId}");
+}
+
+// 4. Get the required tenant ID directly
+string currentId = helper.GetRequiredTenantId();
+
+// 5. Execute an action within a tenant context
+helper.ExecuteInTenantContext(tenantId, () => {
+    Console.WriteLine("Executing action inside tenant context...");
+});
+
+// 6. Execute a function within a tenant context and get a result
+int itemCount = helper.ExecuteInTenantContext(tenantId, () => {
+    return 42; // Example return value
+});
+```
+
 
 The `RateLimitingMiddlewareValidation` class provides validation utilities for rate limiting middleware components in multi-tenant SQLite environments. It offers methods to validate rate limiting configurations, middleware instances, and related rate limiting data structures, ensuring proper rate limit enforcement and configuration correctness.
 
