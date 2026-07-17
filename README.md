@@ -1,4 +1,4 @@
-## RateLimitingMiddlewareValidation
+// ## RateLimitingMiddlewareValidation
 
 The `RateLimitingMiddlewareValidation` class provides validation utilities for rate limiting middleware components in multi-tenant SQLite environments. It offers methods to validate rate limiting configurations, middleware instances, and related rate limiting data structures, ensuring proper rate limit enforcement and configuration correctness.
 
@@ -106,3 +106,51 @@ catch (ArgumentException ex)
     Console.WriteLine($"Rate limiting middleware validation failed: {ex.Message}");
 }
 ```
+
+## ErrorHandlingMiddlewareValidation
+
+`ErrorHandlingMiddlewareValidation` provides a set of extension methods that validate an `ErrorHandlingMiddleware` instance and `Result<T>` objects. It checks for null references, consistency between success flags and error messages, and ensures that successful results contain a non‑default value.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Middleware;
+using System;
+using System.Collections.Generic;
+
+public void ProcessMiddleware(ErrorHandlingMiddleware middleware)
+{
+    // Throw an exception if the middleware is invalid
+    middleware.EnsureValid();
+
+    // Or just check validity
+    if (!middleware.IsValid())
+    {
+        Console.WriteLine("ErrorHandlingMiddleware has validation problems:");
+        foreach (var p in middleware.Validate())
+        {
+            Console.WriteLine($"- {p}");
+        }
+    }
+    else
+    {
+        Console.WriteLine("ErrorHandlingMiddleware instance is valid.");
+    }
+}
+
+// Example with a Result<T>
+Result<string> result = GetResult(); // Assume this returns a Result<string>
+
+result.EnsureValid(); // Throws if invalid
+
+if (result.IsValid())
+{
+    Console.WriteLine($"Operation succeeded with value: {result.Value}");
+}
+else
+{
+    Console.WriteLine($"Operation failed: {result.ErrorMessage}");
+}
+```
+
+These helpers make it easy to enforce invariants and surface configuration problems early in the request pipeline.
