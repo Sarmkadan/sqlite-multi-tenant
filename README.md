@@ -1,6 +1,66 @@
 Console.WriteLine($"Uptime: {diagnostics?.Uptime.TotalHours:F2} hours");
 }
  
+## IDataMapper
+ 
+The `IDataMapper` interface defines a generic, reusable approach for transforming objects, particularly useful for mapping between domain entities and API contracts or DTOs. It provides capabilities for both simple property-based object mapping and bulk list transformations, with an emphasis on type safety and robustness during conversion.
+ 
+### Public Members
+ 
+```csharp
+public sealed class DataMapper : IDataMapper
+public DataMapper
+public TTarget Map<TSource, TTarget>(TSource source) where TTarget : class, new
+public List<TTarget> MapList<TSource, TTarget>(List<TSource> sources) where TTarget : class, new
+public sealed class MappingProfile
+public MappingProfile
+public void AddCustomMapping<TSource, TTarget>
+public bool TryGetCustomMapping
+```
+ 
+### Usage Example
+ 
+```csharp
+using SqliteMultiTenant.Utilities;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+ 
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DataMapper>();
+ 
+// Register mapper
+var mapper = new DataMapper(logger);
+ 
+// Example 1: Map an entity to a DTO
+var tenant = new TenantEntity { Id = "acme-corp", Name = "Acme Corporation", CreatedDate = DateTime.UtcNow };
+var dto = mapper.Map<TenantEntity, TenantDto>(tenant);
+ 
+Console.WriteLine($"Mapped Tenant: {dto.Name} (ID: {dto.Id})");
+ 
+// Example 2: Map a list of entities to a list of DTOs
+var tenants = new List<TenantEntity>
+{
+    new TenantEntity { Id = "globex", Name = "Globex" },
+    new TenantEntity { Id = "initech", Name = "Initech" }
+};
+var dtos = mapper.MapList<TenantEntity, TenantDto>(tenants);
+ 
+Console.WriteLine($"Mapped {dtos.Count} tenants.");
+ 
+public class TenantEntity
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; }
+}
+ 
+public class TenantDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+}
+
 ## IStatisticsService
  
 The `IStatisticsService` interface provides a standardized contract for collecting and analyzing system statistics and usage metrics. It records system events with contextual data, calculates aggregated statistics over time periods, and performs trend analysis on key metrics. This service is essential for monitoring system health, performance optimization, and capacity planning.
