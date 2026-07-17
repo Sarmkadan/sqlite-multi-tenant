@@ -16,6 +16,11 @@ namespace SqliteMultiTenant.Integration
     /// </summary>
     public static class MultiTenantHttpClientFactoryJsonExtensions
     {
+        /// <summary>
+        /// Prevents inheritance of this static class.
+        /// </summary>
+        static MultiTenantHttpClientFactoryJsonExtensions() { }
+
         private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -47,9 +52,12 @@ namespace SqliteMultiTenant.Integration
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
         /// <returns>The deserialized factory instance, or null if the JSON is null or empty.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="json"/> is null.</exception>
         /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
         public static MultiTenantHttpClientFactory? FromJson(string json)
         {
+            ArgumentNullException.ThrowIfNull(json);
+
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
@@ -64,8 +72,11 @@ namespace SqliteMultiTenant.Integration
         /// <param name="json">The JSON string to deserialize.</param>
         /// <param name="value">The deserialized factory instance, or null if deserialization fails.</param>
         /// <returns>True if deserialization succeeds; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="json"/> is null.</exception>
         public static bool TryFromJson(string json, out MultiTenantHttpClientFactory? value)
         {
+            ArgumentNullException.ThrowIfNull(json);
+
             value = null;
 
             if (string.IsNullOrWhiteSpace(json))
