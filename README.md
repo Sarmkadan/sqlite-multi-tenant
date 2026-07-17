@@ -3164,6 +3164,100 @@ if (RequestCorrelationIdGenerator.HasCorrelationId())
 RequestCorrelationIdGenerator.ClearCorrelationId();
 ```
 
+## QueryBuilderEdgeCaseTests
+
+The `QueryBuilderEdgeCaseTests` class provides comprehensive edge-case and boundary-value tests for the `QueryBuilder` SQL generation library. It verifies that all invalid configurations are properly rejected while valid configurations produce correct SQL output, ensuring robust SQL generation for multi-tenant database operations.
+
+### Public Members
+
+```csharp
+public sealed class QueryBuilderEdgeCaseTests
+public void Constructor_NullTableName_ThrowsArgumentException()
+public void Constructor_EmptyTableName_ThrowsArgumentException()
+public void Constructor_WhitespaceTableName_ThrowsArgumentException()
+public void Where_EmptyCondition_ThrowsArgumentException()
+public void And_EmptyCondition_ThrowsArgumentException()
+public void Or_EmptyCondition_ThrowsArgumentException()
+public void Select_NoColumns_SelectsAll()
+public void Select_SpecificColumns_IncludesColumnsInQuery()
+public void Where_WithParameters_AddsParametersToQuery()
+public void And_ChainsConditionsCorrectly()
+public void FluentChaining_MultipleOperations_ProducesValidSql()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.DataOperations;
+using System;
+
+// Example 1: Validate constructor rejects null table names
+var act1 = () => new QueryBuilder(null!);
+if (act1.Should().Throw<ArgumentException>().GetAwaiter().GetResult() != null)
+{
+    Console.WriteLine("✓ Constructor correctly rejects null table names");
+}
+
+// Example 2: Validate constructor rejects empty table names
+var act2 = () => new QueryBuilder("");
+if (act2.Should().Throw<ArgumentException>().GetAwaiter().GetResult() != null)
+{
+    Console.WriteLine("✓ Constructor correctly rejects empty table names");
+}
+
+// Example 3: Validate constructor rejects whitespace-only table names
+var act3 = () => new QueryBuilder(" ");
+if (act3.Should().Throw<ArgumentException>().GetAwaiter().GetResult() != null)
+{
+    Console.WriteLine("✓ Constructor correctly rejects whitespace table names");
+}
+
+// Example 4: Build SELECT * query when no columns specified
+var builder1 = new QueryBuilder("Users");
+var sql1 = builder1.Build();
+Console.WriteLine($"Query with no columns: {sql1}");
+// Output: SELECT * FROM [Users]
+
+// Example 5: Build SELECT with specific columns
+var builder2 = new QueryBuilder("Users").Select("Id", "Name", "Email");
+var sql2 = builder2.Build();
+Console.WriteLine($"Query with specific columns: {sql2}");
+// Output: SELECT Id, Name, Email FROM [Users]
+
+// Example 6: Add WHERE clause with parameters
+var builder3 = new QueryBuilder("Users")
+    .Where("Status = @status", ("@status", "active"))
+    .And("Age > @age", ("@age", 18));
+var sql3 = builder3.Build();
+Console.WriteLine($"Query with parameters: {sql3}");
+// Output: SELECT * FROM [Users] WHERE Status = @status AND Age > @age
+
+// Example 7: Chain multiple operations fluently
+var builder4 = new QueryBuilder("Users")
+    .Select("Id", "Name")
+    .Where("Active = 1")
+    .OrderBy("Name")
+    .Limit(10);
+var sql4 = builder4.Build();
+Console.WriteLine($"Fluent chaining result: {sql4}");
+// Output: SELECT Id, Name FROM [Users] WHERE Active = 1 ORDER BY Name LIMIT 10
+
+// Example 8: Validate empty conditions throw exceptions
+var act8 = () => new QueryBuilder("Users").Where("");
+if (act8.Should().Throw<ArgumentException>().GetAwaiter().GetResult() != null)
+{
+    Console.WriteLine("✓ WHERE clause correctly rejects empty conditions");
+}
+
+// Example 9: Validate AND clause chains conditions correctly
+var builder5 = new QueryBuilder("Products")
+    .Where("Category = 'Electronics'")
+    .And("Price < @maxPrice", ("@maxPrice", 1000));
+var sql5 = builder5.Build();
+Console.WriteLine($"Chained conditions: {sql5}");
+// Output: SELECT * FROM [Products] WHERE Category = 'Electronics' AND Price < @maxPrice
+```
+
 ## TenantProvisionerTests
 
 The `TenantProvisionerTests` class provides comprehensive unit tests for the `TenantProvisioner` class, verifying that tenant provisioning operations work correctly. These tests cover validation of tenant databases, tenant cloning functionality, and tenant deprovisioning with proper error handling for invalid inputs.
