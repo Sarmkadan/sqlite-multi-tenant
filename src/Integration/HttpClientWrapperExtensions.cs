@@ -21,23 +21,25 @@ namespace SqliteMultiTenant.Integration
         }
 
         /// <summary>
-        /// Sends a GET request and deserialises the response as a read‑only list of <typeparamref name="T"/>.
+        /// Sends a GET request and deserialises the response as a read-only list of <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The element type of the expected collection.</typeparam>
         /// <param name="client">The <see cref="HttpClientWrapper"/> instance.</param>
         /// <param name="requestUri">The request URI.</param>
-        /// <returns>
-        /// An <see cref="IReadOnlyList{T}"/> containing the deserialized items, or <c>null</c>
-        /// if the underlying <see cref="HttpClientWrapper.GetAsync{T}"/> returns <c>null</c>.
-        /// </returns>
+        /// <returns>An <see cref="IReadOnlyList{T}"/> containing the deserialized items.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="client"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="requestUri"/> is <c>null</c> or empty.</exception>
-        public static async Task<IReadOnlyList<T>?> GetListAsync<T>(this HttpClientWrapper client, string requestUri)
+        /// <exception cref="HttpRequestException">Thrown when the HTTP request fails.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the response cannot be deserialized.</exception>
+        public static async Task<IReadOnlyList<T>> GetListAsync<T>(this HttpClientWrapper client, string requestUri)
             where T : class
         {
             ArgumentNullException.ThrowIfNull(client);
             ArgumentException.ThrowIfNullOrEmpty(requestUri);
-            return await client.GetAsync<IReadOnlyList<T>>(requestUri).ConfigureAwait(false);
+
+            var result = await client.GetAsync<IReadOnlyList<T>>(requestUri).ConfigureAwait(false);
+            return result ?? throw new InvalidOperationException(
+                "The HTTP request returned a null response that could not be deserialized.");
         }
 
         /// <summary>
@@ -48,6 +50,7 @@ namespace SqliteMultiTenant.Integration
         /// <returns><c>true</c> if the DELETE request succeeded; otherwise <c>false</c>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="client"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException">Thrown when <paramref name="requestUri"/> is <c>null</c> or empty.</exception>
+        /// <exception cref="HttpRequestException">Thrown when the HTTP request fails.</exception>
         public static async Task<bool> DeleteIfExistsAsync(this HttpClientWrapper client, string requestUri)
         {
             ArgumentNullException.ThrowIfNull(client);
