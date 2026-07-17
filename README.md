@@ -853,6 +853,61 @@ long unix = TimeUtilities.ToUnixTimestamp(today);
 DateTime fromUnix = TimeUtilities.FromUnixTimestamp(unix);
 ```
 
+## DateTimeExtensions
+ 
+`DateTimeExtensions` provides specialized extension methods for `DateTime` to handle common operations within backup, retention, and scheduling workflows. These methods ensure consistent UTC-based calculations and include utilities for formatting, expiration checks, and range normalizations.
+
+### Public Members
+
+```csharp
+public static bool IsExpired
+public static int GetAgeDays
+public static string ToIso8601String
+public static bool IsWithinRetentionWindow
+public static DateTime GetNextScheduledTime
+public static string ToHumanReadableDuration
+public static bool IsCreatedToday
+public static DateTime StartOfDayUtc
+public static DateTime EndOfDayUtc
+public static DateTime RoundDownToMinute
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+
+var now = DateTime.UtcNow;
+
+// Example 1: Expiration and retention checks
+var backupDate = now.AddDays(-35);
+bool isExpired = backupDate.IsExpired(); // Throws if in future
+int ageDays = backupDate.GetAgeDays();
+bool withinWindow = backupDate.IsWithinRetentionWindow(30);
+
+// Example 2: Scheduling
+DateTime baseTime = now.AddHours(-1);
+DateTime nextRun = baseTime.GetNextScheduledTime(15); // Next 15m interval
+
+// Example 3: Formatting and Range Normalization
+string isoString = now.ToIso8601String();
+DateTime start = now.StartOfDayUtc();
+DateTime end = now.EndOfDayUtc();
+DateTime rounded = now.RoundDownToMinute();
+
+// Example 4: Duration formatting (extension on TimeSpan)
+TimeSpan duration = TimeSpan.FromHours(2).Add(TimeSpan.FromMinutes(30));
+string humanDuration = duration.ToHumanReadableDuration(); // "2h 30m"
+
+Console.WriteLine($"Is expired: {isExpired}");
+Console.WriteLine($"Age in days: {ageDays}");
+Console.WriteLine($"Next scheduled: {nextRun}");
+Console.WriteLine($"Start of day: {start}");
+Console.WriteLine($"Rounded: {rounded}");
+Console.WriteLine($"Human duration: {humanDuration}");
+```
+
 ## OperationRetryPolicy
 
 `OperationRetryPolicy` provides a robust mechanism for executing operations with automatic retry logic. It supports configurable retry attempts, exponential backoff with jitter, and customizable logging. This is particularly useful for transient operations such as database connections, network calls, or file operations where temporary failures may resolve on subsequent attempts.
