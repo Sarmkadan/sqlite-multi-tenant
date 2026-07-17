@@ -98,6 +98,7 @@ class Program
     }
 }
 ```
+
 ## ConnectionPoolOptionsTests
 The `ConnectionPoolOptionsTests` class provides unit tests for the `ConnectionPoolOptions` class, verifying that connection pool configuration validation works correctly. These tests validate various scenarios including valid configurations, boundary conditions, and error handling for invalid inputs such as negative values, zero values, and invalid ranges.
 
@@ -191,5 +192,127 @@ class Program
             Console.WriteLine($"Correctly threw ArgumentOutOfRangeException: {ex.Message}");
         }
     }
+}
+```
+
+## MultiTenantOptionsValidationTests
+The `MultiTenantOptionsValidationTests` class provides comprehensive unit tests for validating the configuration options of the multi-tenant SQLite system. These tests verify that the `OptionsValidator.Validate` method correctly validates `MultiTenantOptions`, `BackupOptions`, and `SecurityOptions` classes, ensuring that all required properties contain valid values and that appropriate exceptions are thrown for invalid configurations.
+
+### Public Members
+
+```csharp
+public sealed class MultiTenantOptionsValidationTests
+public void Validate_MultiTenantOptions_ShouldNotThrowException_WithValidOptions()
+public void Validate_MultiTenantOptions_ShouldThrowArgumentException_WhenBasePathIsEmpty()
+public void Validate_MultiTenantOptions_ShouldThrowArgumentException_WhenMaxConnectionsPerTenantIsZeroOrLess()
+public void Validate_MultiTenantOptions_ShouldThrowArgumentException_WhenMaxBackupCountIsZeroOrLess()
+public void Validate_MultiTenantOptions_ShouldThrowArgumentException_WhenBackupRetentionIsZeroOrLess()
+public void Validate_BackupOptions_ShouldNotThrowException_WithValidOptions()
+public void Validate_BackupOptions_ShouldThrowArgumentException_WhenMaxConcurrentBackupsIsZeroOrLess()
+public void Validate_BackupOptions_ShouldThrowArgumentException_WhenBackupTimeoutSecondsIsZeroOrLess()
+public void Validate_SecurityOptions_ShouldNotThrowException_WithValidOptions()
+public void Validate_SecurityOptions_ShouldThrowArgumentException_WhenSessionTimeoutIsZeroOrLess()
+public void Validate_SecurityOptions_ShouldThrowArgumentException_WhenMaxFailedLoginAttemptsIsZeroOrLess()
+public void Validate_SecurityOptions_ShouldThrowArgumentException_WhenLockoutDurationIsZeroOrLess()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Configuration;
+using System;
+
+class Program
+{
+  static void Main(string[] args)
+  {
+    // Example 1: Create valid multi-tenant options
+    var validOptions = new MultiTenantOptions
+    {
+      BasePath = "./databases",
+      MaxConnectionsPerTenant = 5,
+      MaxBackupCount = 10,
+      BackupRetention = TimeSpan.FromDays(30)
+    };
+
+    // This should not throw
+    OptionsValidator.Validate(validOptions);
+    Console.WriteLine("Valid MultiTenantOptions passed validation");
+
+    // Example 2: Create valid backup options
+    var validBackupOptions = new BackupOptions
+    {
+      MaxConcurrentBackups = 2,
+      BackupTimeoutSeconds = 300
+    };
+
+    // This should not throw
+    OptionsValidator.Validate(validBackupOptions);
+    Console.WriteLine("Valid BackupOptions passed validation");
+
+    // Example 3: Create valid security options
+    var validSecurityOptions = new SecurityOptions
+    {
+      SessionTimeout = TimeSpan.FromHours(1),
+      MaxFailedLoginAttempts = 3,
+      LockoutDuration = TimeSpan.FromMinutes(15)
+    };
+
+    // This should not throw
+    OptionsValidator.Validate(validSecurityOptions);
+    Console.WriteLine("Valid SecurityOptions passed validation");
+
+    // Example 4: Test empty BasePath (should throw ArgumentException)
+    try
+    {
+      var invalidOptions = new MultiTenantOptions
+      {
+        BasePath = "",
+        MaxConnectionsPerTenant = 5,
+        MaxBackupCount = 10,
+        BackupRetention = TimeSpan.FromDays(30)
+      };
+      OptionsValidator.Validate(invalidOptions);
+      Console.WriteLine("ERROR: Should have thrown ArgumentException for empty BasePath");
+    }
+    catch (ArgumentException ex)
+    {
+      Console.WriteLine($"Correctly threw ArgumentException: {ex.Message}");
+    }
+
+    // Example 5: Test zero MaxConnectionsPerTenant (should throw ArgumentException)
+    try
+    {
+      var invalidOptions = new MultiTenantOptions
+      {
+        BasePath = "./databases",
+        MaxConnectionsPerTenant = 0,
+        MaxBackupCount = 10,
+        BackupRetention = TimeSpan.FromDays(30)
+      };
+      OptionsValidator.Validate(invalidOptions);
+      Console.WriteLine("ERROR: Should have thrown ArgumentException for zero MaxConnectionsPerTenant");
+    }
+    catch (ArgumentException ex)
+    {
+      Console.WriteLine($"Correctly threw ArgumentException: {ex.Message}");
+    }
+
+    // Example 6: Test zero MaxConcurrentBackups (should throw ArgumentException)
+    try
+    {
+      var invalidBackupOptions = new BackupOptions
+      {
+        MaxConcurrentBackups = 0,
+        BackupTimeoutSeconds = 300
+      };
+      OptionsValidator.Validate(invalidBackupOptions);
+      Console.WriteLine("ERROR: Should have thrown ArgumentException for zero MaxConcurrentBackups");
+    }
+    catch (ArgumentException ex)
+    {
+      Console.WriteLine($"Correctly threw ArgumentException: {ex.Message}");
+    }
+  }
 }
 ```
