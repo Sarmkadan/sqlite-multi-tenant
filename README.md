@@ -153,6 +153,114 @@ Console.WriteLine($"Query performance trend: {trendAnalysis.TrendDirection}");
 Console.WriteLine($"Current volatility: {trendAnalysis.Volatility:F4}");
 ```
 
+## PerformanceMonitor
+
+
+The `PerformanceMonitor` class provides comprehensive performance tracking and monitoring capabilities for multi-tenant SQLite systems. It tracks operation execution times, records metrics by tenant, identifies slow operations, and provides health summaries. This is essential for performance optimization, capacity planning, and troubleshooting performance issues in multi-tenant environments.
+
+
+### Public Members
+
+```csharp
+public sealed class PerformanceMonitor
+public PerformanceMonitor
+public PerformanceTracker StartOperation
+public void RecordMetric
+public OperationStatistics GetOperationStats
+public Dictionary<string, OperationStatistics> GetAllStatistics
+public Dictionary<string, List<PerformanceMetric>> GetTenantMetrics
+public List<PerformanceMetric> GetSlowOperations
+public SystemHealthSummary GetHealthSummary
+public void ClearMetrics
+
+public sealed class PerformanceTracker : IDisposable
+public PerformanceTracker
+public void Dispose
+public void RecordException
+
+public sealed class PerformanceMetric
+public string OperationName
+public long ElapsedMilliseconds
+public string TenantId
+public DateTime Timestamp
+public bool IsSuccess
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Monitoring;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<PerformanceMonitor>();
+
+// Register performance monitor
+services.AddSingleton<PerformanceMonitor>();
+var serviceProvider = services.BuildServiceProvider();
+var performanceMonitor = serviceProvider.GetRequiredService<PerformanceMonitor>();
+
+// Example 1: Track database operation performance
+var tracker = performanceMonitor.StartOperation("DatabaseQuery", "acme-corp");
+try
+{
+    // Simulate database operation
+    await Task.Delay(150);
+    tracker.RecordMetric(150, true);
+}
+catch (Exception ex)
+{
+    tracker.RecordException(ex);
+    throw;
+}
+
+// Example 2: Get statistics for a specific operation
+var operationStats = performanceMonitor.GetOperationStats("DatabaseQuery");
+Console.WriteLine($"DatabaseQuery - Total: {operationStats.TotalCalls}, " +
+                $"Average: {operationStats.AverageDuration}ms, " +
+                $"Slowest: {operationStats.MaxDuration}ms, " +
+                $"Success rate: {operationStats.SuccessRate:P}");
+
+// Example 3: Get all operation statistics
+var allStats = performanceMonitor.GetAllStatistics();
+foreach (var kvp in allStats)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value.TotalCalls} calls, " +
+                     $"Avg: {kvp.Value.AverageDuration}ms");
+}
+
+// Example 4: Get tenant-specific metrics
+var tenantMetrics = performanceMonitor.GetTenantMetrics("acme-corp");
+foreach (var metric in tenantMetrics)
+{
+    Console.WriteLine($"{metric.Timestamp:yyyy-MM-dd HH:mm:ss} - " +
+                     $"{metric.OperationName}: {metric.ElapsedMilliseconds}ms " +
+                     $"(Success: {metric.IsSuccess})");
+}
+
+// Example 5: Identify slow operations
+var slowOperations = performanceMonitor.GetSlowOperations();
+Console.WriteLine($"Found {slowOperations.Count} slow operations:");
+foreach (var slowOp in slowOperations.Take(5))
+{
+    Console.WriteLine($"  {slowOp.OperationName} took {slowOp.ElapsedMilliseconds}ms " +
+                     $"for tenant {slowOp.TenantId}");
+}
+
+// Example 6: Get system health summary
+var healthSummary = performanceMonitor.GetHealthSummary();
+Console.WriteLine($"System Health: {healthSummary.Status}");
+Console.WriteLine($"Total operations: {healthSummary.TotalOperations}");
+Console.WriteLine($"Average response time: {healthSummary.AverageResponseTime}ms");
+Console.WriteLine($"Success rate: {healthSummary.SuccessRate:P}");
+Console.WriteLine($"Slow operations (>500ms): {healthSummary.SlowOperationCount}");
+
+// Example 7: Clear metrics for a fresh start
+performanceMonitor.ClearMetrics();
+```
+
 ## ReportGenerator
 
 The `ReportGenerator` class provides a set of methods for generating comprehensive monitoring and diagnostic reports for multi-tenant SQLite systems. It creates health, performance, tenant usage, error, and capacity reports by aggregating data from system statistics and diagnostics, making it ideal for operational dashboards and troubleshooting scenarios.
