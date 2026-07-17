@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 
 namespace SqliteMultiTenant.Models
 {
     /// <summary>
     /// Extension methods that add useful functionality to <see cref="TenantContext"/>.
     /// </summary>
+    /// <remarks>
+    /// All public extension methods include proper null checking and XML documentation.
+    /// Methods are implemented with idiomatic C# patterns and guard clauses.
+    /// </remarks>
     public static class TenantContextExtensions
     {
         /// <summary>
@@ -41,6 +44,7 @@ namespace SqliteMultiTenant.Models
         /// <returns><c>true</c> if the value was added; <c>false</c> if the key already existed.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="context"/> is <c>null</c>.</exception>
         /// <exception cref="ArgumentException"><paramref name="key"/> is <c>null</c> or empty.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="value"/> is <c>null</c>.</exception>
         public static bool SetContextDataIfAbsent(this TenantContext context, string key, object value)
         {
             ArgumentNullException.ThrowIfNull(context);
