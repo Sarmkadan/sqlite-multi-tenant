@@ -1657,6 +1657,125 @@ foreach (var domainEvent in events)
 }
 ```
 
+## DataExporterTests
+
+The `DataExporterTests` class provides comprehensive unit tests for the `DataExporter` class, verifying that data export functionality works correctly for different output formats. These tests cover JSON, CSV, and SQL export methods, ensuring proper data serialization, metadata handling, error conditions, and edge cases for multi-tenant SQLite database exports.
+
+### Public Members
+
+```csharp
+public sealed class DataExporterTests : IDisposable
+public DataExporterTests()
+public async Task ExportAsJsonAsync_ShouldReturnCorrectJson_WhenTableHasData()
+public async Task ExportAsJsonAsync_ShouldExcludeMetadata_WhenIncludeMetaIsFalse()
+public async Task ExportAsJsonAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
+public async Task ExportAsJsonAsync_ShouldThrowArgumentNullException_WhenTableNameIsEmpty()
+public async Task ExportAsJsonAsync_ShouldThrowArgumentNullException_WhenTableNameIsNull()
+public async Task ExportAsJsonAsync_ShouldReturnEmptyDataArray_WhenTableIsEmpty()
+public async Task ExportAsCsvAsync_ShouldReturnCorrectCsv_WhenTableHasData()
+public async Task ExportAsCsvAsync_ShouldExcludeHeaders_WhenIncludeHeadersIsFalse()
+public async Task ExportAsCsvAsync_ShouldHandleSpecialCharactersAndCommas_InCsvFields()
+public async Task ExportAsCsvAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
+public async Task ExportAsCsvAsync_ShouldThrowArgumentNullException_WhenTableNameIsEmpty()
+public async Task ExportAsCsvAsync_ShouldReturnOnlyHeaders_WhenTableIsEmptyAndHeadersIncluded()
+public async Task ExportAsCsvAsync_ShouldReturnEmptyString_WhenTableIsEmptyAndHeadersExcluded()
+public async Task ExportAsSqlAsync_ShouldReturnCorrectSql_WhenTableHasData()
+public async Task ExportAsSqlAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
+public async Task ExportAsSqlAsync_ShouldThrowArgumentNullException_WhenTableNameIsEmpty()
+public async Task ExportAsSqlAsync_ShouldReturnOnlyComments_WhenTableIsEmpty()
+public void Dispose()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Data;
+using Microsoft.Data.Sqlite;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+// Create a test database with sample data
+var testDbPath = Path.Combine(Path.GetTempPath(), $"data_exporter_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+
+// Create test table and data
+using (var connection = new SqliteConnection(connectionString))
+{
+    await connection.OpenAsync();
+    
+    var command = connection.CreateCommand();
+    command.CommandText = @"
+        CREATE TABLE IF NOT EXISTS Users (
+            Id INTEGER PRIMARY KEY,
+            Name TEXT NOT NULL,
+            Email TEXT,
+            CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        
+        INSERT INTO Users (Name, Email) VALUES 
+            ('John Doe', 'john@example.com'),
+            ('Jane Smith', 'jane@example.com'),
+            ('Bob Johnson', 'bob@example.com');
+    ";
+    await command.ExecuteNonQueryAsync();
+}
+
+// Create DataExporter instance
+var dataExporter = new DataExporter();
+
+// Example 1: Export table as JSON with metadata
+var jsonResult = await dataExporter.ExportAsJsonAsync(connectionString, "Users", includeMeta: true);
+Console.WriteLine(jsonResult);
+
+// Example 2: Export table as JSON without metadata
+var jsonWithoutMeta = await dataExporter.ExportAsJsonAsync(connectionString, "Users", includeMeta: false);
+Console.WriteLine(jsonWithoutMeta);
+
+// Example 3: Export table as CSV with headers
+var csvResult = await dataExporter.ExportAsCsvAsync(connectionString, "Users", includeHeaders: true);
+Console.WriteLine(csvResult);
+
+// Example 4: Export table as CSV without headers
+var csvWithoutHeaders = await dataExporter.ExportAsCsvAsync(connectionString, "Users", includeHeaders: false);
+Console.WriteLine(csvWithoutHeaders);
+
+// Example 5: Export table as SQL INSERT statements
+var sqlResult = await dataExporter.ExportAsSqlAsync(connectionString, "Users");
+Console.WriteLine(sqlResult);
+
+// Example 6: Handle empty table
+var emptyTableResult = await dataExporter.ExportAsJsonAsync(connectionString, "NonExistentTable");
+Console.WriteLine(emptyTableResult);
+
+// Example 7: Handle special characters in data
+using (var connection = new SqliteConnection(connectionString))
+{
+    await connection.OpenAsync();
+    
+    var command = connection.CreateCommand();
+    command.CommandText = @"
+        CREATE TABLE IF NOT EXISTS Products (
+            Id INTEGER PRIMARY KEY,
+            Name TEXT NOT NULL,
+            Description TEXT,
+            Price REAL
+        );
+        
+        INSERT INTO Products (Name, Description, Price) VALUES 
+            ('Widget "Special"', 'A widget with "quotes" in description', 9.99),
+            ('Gadget', 'A gadget with, commas, in description', 19.99);
+    ";
+    await command.ExecuteNonQueryAsync();
+}
+
+var productsCsv = await dataExporter.ExportAsCsvAsync(connectionString, "Products", includeHeaders: true);
+Console.WriteLine(productsCsv);
+
+// Cleanup
+File.Delete(testDbPath);
+```
+
 ## BackupModelTests
 
 The `BackupModelTests` class provides comprehensive unit tests for the `Backup` model class, covering core backup functionality such as status transitions, size calculations, duration tracking, compression ratio computation, error handling, tag management, and expiration logic. These tests ensure that backup operations behave correctly under various scenarios including successful completions, failures, and retention policies.

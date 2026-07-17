@@ -1,2 +1,0 @@
-var backupRotationManager = new BackupRotationManager();
-BackupRotationManagerValidation.EnsureValid(backupRotationManager);
