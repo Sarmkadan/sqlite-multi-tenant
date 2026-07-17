@@ -807,8 +807,85 @@ string identifier = "acme_corp_db";
 bool isValidDbId = TenantNameValidator.IsValidDatabaseIdentifier(identifier);
 Console.WriteLine($"Is '{identifier}' a valid DB identifier? {isValidDbId}");
 ```
- 
-## IAuditLogger 
+
+## BackupModelTests
+
+The `BackupModelTests` class provides comprehensive unit tests for the `Backup` model class, covering core backup functionality such as status transitions, size calculations, duration tracking, compression ratio computation, error handling, tag management, and expiration logic. These tests ensure that backup operations behave correctly under various scenarios including successful completions, failures, and retention policies.
+
+### Public Members
+
+```csharp
+public sealed class BackupModelTests
+public void MarkAsCompleted_WithOriginalSizeSet_ComputesCompressionRatio()
+public void MarkAsFailed_WithErrorMessage_SetsFailedStatusAndPreservesMessage()
+public void AddTag_WithMultipleTagCalls_BuildsCommaDelimitedStringAndParsesBack()
+public void IsExpired_WhenExpirationDateIsInFuture_ReturnsFalse()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using FluentAssertions;
+using Xunit;
+
+// Example 1: Test compression ratio calculation
+var backup = new Backup
+{
+    BackupId = "bkp-2024-001",
+    DatabaseId = "db-acme-corp",
+    BackupPath = "/backups/acme-corp-2024-001.sqlite"
+};
+
+// Set original size and mark as completed with compressed size
+backup.OriginalSizeBytes = 5000; // 5KB original
+backup.MarkAsCompleted(sizeBytes: 2000, durationMs: 2500); // 2KB compressed
+
+// Verify compression ratio (60% reduction)
+Assert.Equal(BackupStatus.Completed, backup.Status);
+Assert.Equal(2000, backup.SizeBytes);
+Assert.Equal(60, backup.CompressionRatio); // (5000-2000)/5000 * 100 = 60%
+
+// Example 2: Test failure handling
+var failedBackup = new Backup
+{
+    BackupId = "bkp-fail-001",
+    DatabaseId = "db-test"
+};
+
+failedBackup.MarkAsFailed("Insufficient disk space");
+Assert.Equal(BackupStatus.Failed, failedBackup.Status);
+Assert.Equal("Insufficient disk space", failedBackup.ErrorMessage);
+
+// Example 3: Test tag management
+var taggedBackup = new Backup
+{
+    BackupId = "bkp-tags-001",
+    DatabaseId = "db-test"
+};
+
+taggedBackup.AddTag("daily");
+taggedBackup.AddTag("critical");
+taggedBackup.AddTag("2024-q1");
+
+Assert.Equal("daily,critical,2024-q1", taggedBackup.Tags);
+var tags = taggedBackup.GetTags();
+Assert.Equal(3, tags.Count);
+Assert.Contains("daily", tags);
+Assert.Contains("critical", tags);
+
+// Example 4: Test expiration logic
+var backupWithExpiry = new Backup
+{
+    BackupId = "bkp-expiry-001",
+    DatabaseId = "db-test"
+};
+
+backupWithExpiry.SetExpiration(DateTime.UtcNow.AddDays(30));
+Assert.False(backupWithExpiry.IsExpired);
+```
+
+## IAuditLogger## IAuditLogger 
 
 `IAuditLogger` provides a centralized, asynchronous audit logging facility for recording system‑wide actions such as user operations, configuration changes, and other critical events. It stores entries in memory, supports filtered queries, entry counting, retention‑based purging, and exposes basic statistics about the logged data.
 
