@@ -387,6 +387,132 @@ Console.WriteLine(reportGenerator.GenerateErrorReport());
 Console.WriteLine(reportGenerator.GenerateCapacityReport());
 ```
  
+## TenantValidator
+
+The `TenantValidator` class provides comprehensive validation for tenant-related operations in multi-tenant SQLite systems. It includes validation methods for tenant creation, updates, name uniqueness checks, connection strings, backup tags, migrations, and retention policies. This validator ensures data integrity and prevents common issues like SQL injection, invalid naming conventions, and configuration errors.
+
+### Public Members
+
+```csharp
+public sealed class TenantValidator
+public Dictionary<string, string> ValidateCreateRequest(TenantCreateRequest request)
+public Dictionary<string, string> ValidateUpdateRequest(TenantUpdateRequest request)
+public Dictionary<string, string> ValidateNameUniqueness(string tenantName, string? existingTenantId = null)
+
+public sealed class MigrationValidator
+public Dictionary<string, string> ValidateMigrationRequest(MigrationRequest request)
+public bool IsValidMigrationNaming(string migrationName)
+public bool ContainsDangerousPatterns(string input)
+
+public sealed class ConnectionStringValidator
+public Dictionary<string, string> ValidateSqliteConnectionString(string connectionString)
+
+public sealed class BackupValidator
+public Dictionary<string, string> ValidateBackupTag(string tag)
+public Dictionary<string, string> ValidateRetentionDays(int days)
+```
+
+### Usage Example
+
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Validate tenant creation request
+var validator = new TenantValidator();
+
+var createRequest = new TenantCreateRequest
+{
+    Name = "Acme Corporation",
+    ConnectionString = "Data Source=tenants/acme-corp/tenant.db;Version=3;Pooling=True;"
+};
+
+var createErrors = validator.ValidateCreateRequest(createRequest);
+if (createErrors.Count == 0)
+{
+    Console.WriteLine("Tenant creation request is valid!");
+}
+else
+{
+    Console.WriteLine("Validation errors:");
+    foreach (var error in createErrors)
+    {
+        Console.WriteLine($" - {error.Key}: {error.Value}");
+    }
+}
+
+// Example 2: Validate tenant update request
+var updateRequest = new TenantUpdateRequest
+{
+    Name = "Acme Corp Updated",
+    MaxDatabaseSize = 1024
+};
+
+var updateErrors = validator.ValidateUpdateRequest(updateRequest);
+Console.WriteLine(updateErrors.Count == 0 ? "Update is valid!" : "Update has errors");
+
+// Example 3: Validate tenant name uniqueness
+var nameErrors = validator.ValidateNameUniqueness("acme-corp", existingTenantId: null);
+if (nameErrors.Count == 0)
+{
+    Console.WriteLine("Tenant name is unique!");
+}
+
+// Example 4: Validate database migration
+var migrationValidator = new TenantValidator.MigrationValidator();
+var migrationRequest = new MigrationRequest
+{
+    Name = "AddUserTable",
+    Description = "Add users table for tenant management",
+    Script = "CREATE TABLE Users (Id TEXT PRIMARY KEY, Name TEXT)"
+};
+
+var migrationErrors = migrationValidator.ValidateMigrationRequest(migrationRequest);
+bool isNamingValid = migrationValidator.IsValidMigrationNaming("20240101_AddUserTable");
+bool hasDangerousPatterns = migrationValidator.ContainsDangerousPatterns("DROP TABLE Users");
+
+Console.WriteLine($"Migration valid: {migrationErrors.Count == 0}");
+Console.WriteLine($"Naming valid: {isNamingValid}");
+Console.WriteLine($"Has dangerous patterns: {hasDangerousPatterns}");
+
+// Example 5: Validate SQLite connection string
+var connectionStringValidator = new TenantValidator.ConnectionStringValidator();
+var connStringErrors = connectionStringValidator.ValidateSqliteConnectionString(
+    "Data Source=tenants/acme-corp/tenant.db;Version=3;Pooling=True;"
+);
+Console.WriteLine(connStringErrors.Count == 0 ? "Connection string is valid!" : "Invalid connection string");
+
+// Example 6: Validate backup tag and retention days
+var backupValidator = new TenantValidator.BackupValidator();
+var backupErrors = backupValidator.ValidateBackupTag("daily-backup-2024-01-01");
+var retentionErrors = backupValidator.ValidateRetentionDays(30);
+
+Console.WriteLine(backupErrors.Count == 0 ? "Backup tag is valid!" : "Invalid backup tag");
+Console.WriteLine(retentionErrors.Count == 0 ? "Retention days are valid!" : "Invalid retention days");
+
+public class TenantCreateRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string ConnectionString { get; set; } = string.Empty;
+    public int MaxDatabaseSize { get; set; } = 512;
+}
+
+public class TenantUpdateRequest
+{
+    public string? Name { get; set; }
+    public int? MaxDatabaseSize { get; set; }
+}
+
+public class MigrationRequest
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Script { get; set; } = string.Empty;
+}
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
