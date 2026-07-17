@@ -985,6 +985,64 @@ bool isValidDbId = TenantNameValidator.IsValidDatabaseIdentifier(identifier);
 Console.WriteLine($"Is '{identifier}' a valid DB identifier? {isValidDbId}");
 ```
 
+## DomainEventTests
+
+The `DomainEventTests` class provides comprehensive unit tests for domain event classes in the multi-tenant SQLite system. It verifies that all domain events initialize correctly and validates their basic structure, ensuring that event classes are properly defined and can be instantiated. This is essential for the event-driven architecture that tracks tenant lifecycle, backup operations, migrations, and system state changes.
+
+### Public Members
+
+```csharp
+public sealed class DomainEventTests
+public void TenantCreatedEvent_Initialization_HasCorrectName()
+public void BackupStartedEvent_Initialization_HasCorrectName()
+public void MigrationAppliedEvent_Initialization_HasCorrectName()
+public void TenantSuspendedEvent_Initialization_HasCorrectName()
+public void TenantUpdatedEvent_Initialization_HasCorrectName()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+using FluentAssertions;
+using Xunit;
+
+// Example 1: Test TenantCreatedEvent initialization
+var tenantCreatedEvent = new TenantCreatedEvent();
+tenantCreatedEvent.Should().NotBeNull();
+
+// Example 2: Test BackupStartedEvent initialization
+var backupStartedEvent = new BackupStartedEvent();
+backupStartedEvent.Should().NotBeNull();
+
+// Example 3: Test MigrationAppliedEvent initialization
+var migrationAppliedEvent = new MigrationAppliedEvent();
+migrationAppliedEvent.Should().NotBeNull();
+
+// Example 4: Test TenantSuspendedEvent initialization
+var tenantSuspendedEvent = new TenantSuspendedEvent();
+tenantSuspendedEvent.Should().NotBeNull();
+
+// Example 5: Test TenantUpdatedEvent initialization
+var tenantUpdatedEvent = new TenantUpdatedEvent();
+tenantUpdatedEvent.Should().NotBeNull();
+
+// Example 6: Verify all domain events can be created
+var events = new DomainEvent[]
+{
+    new TenantCreatedEvent(),
+    new BackupStartedEvent(),
+    new MigrationAppliedEvent(),
+    new TenantSuspendedEvent(),
+    new TenantUpdatedEvent()
+};
+
+foreach (var domainEvent in events)
+{
+    domainEvent.Should().NotBeNull("All domain events should be instantiable");
+}
+```
+
 ## BackupModelTests
 
 The `BackupModelTests` class provides comprehensive unit tests for the `Backup` model class, covering core backup functionality such as status transitions, size calculations, duration tracking, compression ratio computation, error handling, tag management, and expiration logic. These tests ensure that backup operations behave correctly under various scenarios including successful completions, failures, and retention policies.
