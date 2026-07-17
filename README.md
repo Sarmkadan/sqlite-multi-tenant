@@ -1017,6 +1017,126 @@ if (diagnosticsResult is OkObjectResult diagnosticsOkResult && diagnosticsOkResu
 }
 ```
 
+
+## GenericRepository
+
+The `GenericRepository<T>` class provides an abstract base implementation for common CRUD operations across all entity types in the multi-tenant SQLite system. It serves as the foundation for concrete repository implementations like `TenantRepository`, `BackupRepository`, and `MigrationRepository`, ensuring consistent data access patterns throughout the application.
+
+This generic repository supports both individual entity operations and bulk operations, with built-in pagination support through the `PaginatedResult<T>` class. All methods are designed for asynchronous execution to ensure non-blocking database operations in high-concurrency scenarios.
+
+### Public Members
+
+```csharp
+public abstract class GenericRepository<T> where T : class
+public GenericRepository(ILogger logger)
+public abstract Task<List<T>> GetAllAsync()
+public abstract Task<T?> GetByIdAsync(string id)
+public abstract Task<T> CreateAsync(T entity)
+public abstract Task<bool> UpdateAsync(T entity)
+public abstract Task<bool> DeleteAsync(string id)
+public abstract Task<List<T>> FindAsync(Func<T, bool> predicate)
+public abstract Task<int> GetCountAsync()
+public abstract Task<bool> ExistsAsync(string id)
+public abstract Task<int> DeleteAsync(Func<T, bool> predicate)
+public virtual async Task<PaginatedResult<T>> GetPagedAsync(int pageNumber, int pageSize)
+public virtual async Task<int> BulkCreateAsync(IEnumerable<T> entities)
+public virtual async Task<int> BulkUpdateAsync(IEnumerable<T> entities)
+public virtual async Task<int> BulkDeleteAsync(IEnumerable<string> ids)
+
+public sealed class PaginatedResult<T> where T : class
+public List<T> Items { get; set; }
+public int TotalCount { get; set; }
+public int PageNumber { get; set; }
+public int PageSize { get; set; }
+public int TotalPages { get; set; }
+public bool HasPreviousPage => PageNumber > 1
+public bool HasNextPage => PageNumber < TotalPages
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Create a logger for the repository
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<GenericRepository<Tenant>>();
+
+// Create a concrete repository implementation (e.g., TenantRepository)
+var tenantRepository = new TenantRepository(logger);
+
+// Example 1: Create a new tenant
+var newTenant = new Tenant { Id = "acme-corp", Name = "Acme Corporation", IsActive = true };
+var createdTenant = await tenantRepository.CreateAsync(newTenant);
+Console.WriteLine($"Created tenant: {createdTenant.Id}");
+
+// Example 2: Get a tenant by ID
+var tenant = await tenantRepository.GetByIdAsync("acme-corp");
+if (tenant != null)
+{
+    Console.WriteLine($"Found tenant: {tenant.Name}");
+}
+
+// Example 3: Get all tenants
+var allTenants = await tenantRepository.GetAllAsync();
+Console.WriteLine($"Total tenants: {allTenants.Count}");
+
+// Example 4: Update a tenant
+if (tenant != null)
+{
+    tenant.Name = "Acme Corporation Updated";
+    var updated = await tenantRepository.UpdateAsync(tenant);
+    Console.WriteLine($"Update successful: {updated}");
+}
+
+// Example 5: Delete a tenant
+var deleted = await tenantRepository.DeleteAsync("acme-corp");
+Console.WriteLine($"Delete successful: {deleted}");
+
+// Example 6: Check if tenant exists
+var exists = await tenantRepository.ExistsAsync("acme-corp");
+Console.WriteLine($"Tenant exists: {exists}");
+
+// Example 7: Find tenants matching a predicate
+var activeTenants = await tenantRepository.FindAsync(t => t.IsActive);
+Console.WriteLine($"Active tenants: {activeTenants.Count}");
+
+// Example 8: Get count of all tenants
+var tenantCount = await tenantRepository.GetCountAsync();
+Console.WriteLine($"Total tenant count: {tenantCount}");
+
+// Example 9: Get paginated results (page 1, 10 items per page)
+var pagedTenants = await tenantRepository.GetPagedAsync(1, 10);
+Console.WriteLine($"Page 1: {pagedTenants.Items.Count} tenants");
+Console.WriteLine($"Total pages: {pagedTenants.TotalPages}");
+Console.WriteLine($"Has next page: {pagedTenants.HasNextPage}");
+
+// Example 10: Bulk create multiple tenants
+var newTenants = new List<Tenant>
+{
+    new Tenant { Id = "tenant-1", Name = "Tenant 1", IsActive = true },
+    new Tenant { Id = "tenant-2", Name = "Tenant 2", IsActive = true },
+    new Tenant { Id = "tenant-3", Name = "Tenant 3", IsActive = true }
+};
+var bulkCreated = await tenantRepository.BulkCreateAsync(newTenants);
+Console.WriteLine($"Bulk created {bulkCreated} tenants");
+
+// Example 11: Bulk update multiple tenants
+var tenantsToUpdate = await tenantRepository.GetAllAsync();
+foreach (var t in tenantsToUpdate)
+{
+    t.IsActive = !t.IsActive;
+}
+var bulkUpdated = await tenantRepository.BulkUpdateAsync(tenantsToUpdate);
+Console.WriteLine($"Bulk updated {bulkUpdated} tenants");
+
+// Example 12: Bulk delete multiple tenants by IDs
+var tenantIdsToDelete = new List<string> { "tenant-1", "tenant-2", "tenant-3" };
+var bulkDeleted = await tenantRepository.BulkDeleteAsync(tenantIdsToDelete);
+Console.WriteLine($"Bulk deleted {bulkDeleted} tenants");
+```
 ## SettingsController
 
 The `SettingsController` provides a REST API for managing application settings in a multi-tenant environment. It supports retrieving, setting, removing, and batch-updating settings, with capabilities to check for setting existence and retrieve application information.
