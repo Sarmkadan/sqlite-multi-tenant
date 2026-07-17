@@ -530,6 +530,34 @@ var newMigration = new Migration { /* ... */ };
 await migrationRepository.AddAsync(newMigration);
 ```
 
+## TenantRepository
+
+The `TenantRepository` class provides a comprehensive implementation for managing tenant data, including CRUD operations, status-based filtering, and pagination support. It implements the `ITenantRepository` interface, ensuring a consistent and testable approach for tenant lifecycle and metadata management in a multi-tenant SQLite environment.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.DependencyInjection;
+
+// Assuming ITenantRepository is resolved via DI
+var tenantRepository = serviceProvider.GetRequiredService<ITenantRepository>();
+
+// Get a tenant by ID
+var tenant = await tenantRepository.GetByIdAsync("acme-corp");
+
+// Add a new tenant
+var newTenant = new Tenant { Id = "globex-corp", Name = "Globex Corporation", IsActive = true };
+await tenantRepository.AddAsync(newTenant);
+
+// Search for tenants
+var searchResults = await tenantRepository.SearchAsync("Corp");
+
+// Get paged list of tenants
+var pagedTenants = await tenantRepository.GetPagedAsync(1, 10);
+```
+
 ## BackupController
 
 The `BackupController` class provides REST API endpoints for comprehensive backup management and disaster recovery operations. It enables creating, verifying, restoring, and organizing backups for tenant databases, ensuring data protection compliance and enabling recovery from data loss scenarios. The controller integrates with the backup service to handle backup lifecycle operations while providing standardized API responses through the `ApiResponse<T>` wrapper.
