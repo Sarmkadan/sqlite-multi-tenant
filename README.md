@@ -1762,6 +1762,119 @@ public class Tenant
 }
 ```
 
+## IHealthCheckService
+
+The `IHealthCheckService` interface defines a standardized contract for performing health checks on multi-tenant SQLite systems. It provides methods to check system health, database connectivity, disk space availability, and retrieve detailed diagnostic information. This service is essential for monitoring system reliability, implementing health-based routing, and triggering automated recovery procedures when issues are detected.
+
+### Public Members
+
+```csharp
+public interface IHealthCheckService
+public Task<HealthCheckResponse> GetHealthStatusAsync()
+public Task<bool> IsDatabaseHealthyAsync()
+public Task<bool> IsDiskSpaceHealthyAsync()
+public Task<bool> IsSystemHealthyAsync()
+public async Task<string> GetDetailedStatusAsync()
+
+public sealed class HealthCheckService : IHealthCheckService
+public HealthCheckService(ILogger<HealthCheckService> logger, ISystemMonitor systemMonitor)
+public async Task<HealthCheckResponse> GetHealthStatusAsync()
+public Task<bool> IsDatabaseHealthyAsync()
+public Task<bool> IsDiskSpaceHealthyAsync()
+public Task<bool> IsSystemHealthyAsync()
+public async Task<string> GetDetailedStatusAsync()
+
+public sealed class DetailedHealthCheckService : HealthCheckService
+public DetailedHealthCheckService(ILogger<DetailedHealthCheckService> logger, ISystemMonitor systemMonitor)
+public Dictionary<string, object> GetDetailedDiagnostics()
+
+public sealed class HealthCheckResponse
+{
+    public bool IsHealthy { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime CheckedAt { get; set; }
+    public TimeSpan Uptime { get; set; }
+    public long DatabaseSizeBytes { get; set; }
+    public double FreeDiskSpacePercent { get; set; }
+    public List<HealthCheckIssue> Issues { get; set; } = new List<HealthCheckIssue>();
+}
+
+public sealed class HealthCheckIssue
+{
+    public string Component { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Severity { get; set; } = string.Empty;
+}
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Health;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<HealthCheckService>();
+
+// Register health check service
+services.AddSingleton<IHealthCheckService, HealthCheckService>();
+var serviceProvider = services.BuildServiceProvider();
+var healthCheckService = serviceProvider.GetRequiredService<IHealthCheckService>();
+
+// Example 1: Check basic health status
+var healthStatus = await healthCheckService.GetHealthStatusAsync();
+Console.WriteLine($"System health: {(healthStatus.IsHealthy ? "HEALTHY" : "UNHEALTHY")}");
+Console.WriteLine($"Status: {healthStatus.Status}");
+Console.WriteLine($"Uptime: {healthStatus.Uptime.TotalHours:F2} hours");
+
+// Example 2: Check specific components
+bool isDatabaseHealthy = await healthCheckService.IsDatabaseHealthyAsync();
+bool isDiskSpaceHealthy = await healthCheckService.IsDiskSpaceHealthyAsync();
+bool isSystemHealthy = await healthCheckService.IsSystemHealthyAsync();
+
+Console.WriteLine($"Database healthy: {isDatabaseHealthy}");
+Console.WriteLine($"Disk space healthy: {isDiskSpaceHealthy}");
+Console.WriteLine($"System healthy: {isSystemHealthy}");
+
+// Example 3: Get detailed status information
+string detailedStatus = await healthCheckService.GetDetailedStatusAsync();
+Console.WriteLine("\nDetailed Status:");
+Console.WriteLine(detailedStatus);
+
+// Example 4: Use DetailedHealthCheckService for comprehensive diagnostics
+services.AddSingleton<IHealthCheckService, DetailedHealthCheckService>();
+var detailedHealthService = serviceProvider.GetRequiredService<IHealthCheckService>() as DetailedHealthCheckService;
+
+if (detailedHealthService != null)
+{
+    var diagnostics = detailedHealthService.GetDetailedDiagnostics();
+    Console.WriteLine("\nDetailed Diagnostics:");
+    foreach (var kvp in diagnostics)
+    {
+        Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+    }
+}
+
+// Example 5: Monitor health in a loop with alerts
+while (true)
+{
+    var response = await healthCheckService.GetHealthStatusAsync();
+    
+    if (!response.IsHealthy)
+    {
+        Console.WriteLine($"[ALERT] Health check failed at {response.CheckedAt:yyyy-MM-dd HH:mm:ss}");
+        foreach (var issue in response.Issues)
+        {
+            Console.WriteLine($"  [{issue.Severity}] {issue.Component}: {issue.Description}");
+        }
+    }
+    
+    await Task.Delay(TimeSpan.FromMinutes(5));
+}
+```
+
 ## TenantContextHelper
 
 The `TenantContextHelper` class provides a centralized mechanism for managing tenant-specific context across asynchronous operations in a multi-tenant environment. It allows setting, retrieving, and validating the current tenant context, and facilitates scoping operations to a specific tenant using `AsyncLocal` storage. Additionally, it helps in enriching diagnostic information and metadata with tenant-specific identifiers, ensuring consistent traceability.
