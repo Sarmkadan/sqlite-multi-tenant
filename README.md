@@ -387,6 +387,64 @@ Console.WriteLine(reportGenerator.GenerateErrorReport());
 Console.WriteLine(reportGenerator.GenerateCapacityReport());
 ```
  
+## TenantNameValidator
+ 
+The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
+ 
+### Public Members
+ 
+```csharp
+public static ValidationResult ValidateTenantId(string tenantId)
+public static ValidationResult ValidateTenantName(string tenantName)
+public static string GenerateTenantId(string tenantName)
+public static bool IsValidDatabaseIdentifier(string identifier)
+ 
+public sealed class ValidationResult
+{
+    public bool IsValid { get; set; }
+    public string Error { get; set; }
+}
+```
+ 
+### Usage Example
+ 
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+ 
+// Example 1: Validate a tenant ID
+var idResult = TenantNameValidator.ValidateTenantId("acme-corp");
+if (idResult.IsValid)
+{
+    Console.WriteLine("Tenant ID is valid.");
+}
+else
+{
+    Console.WriteLine($"Invalid Tenant ID: {idResult.Error}");
+}
+ 
+// Example 2: Validate a tenant name
+var nameResult = TenantNameValidator.ValidateTenantName("Acme Corporation");
+if (nameResult.IsValid)
+{
+    Console.WriteLine("Tenant name is valid.");
+}
+else
+{
+    Console.WriteLine($"Invalid Tenant name: {nameResult.Error}");
+}
+ 
+// Example 3: Generate a tenant ID
+string tenantName = "Acme Corp";
+string generatedId = TenantNameValidator.GenerateTenantId(tenantName);
+Console.WriteLine($"Generated ID for '{tenantName}': {generatedId}");
+ 
+// Example 4: Check database identifier validity
+string identifier = "acme_corp_db";
+bool isValidDbId = TenantNameValidator.IsValidDatabaseIdentifier(identifier);
+Console.WriteLine($"Is '{identifier}' a valid DB identifier? {isValidDbId}");
+```
+ 
 ## IAuditLogger 
 
 `IAuditLogger` provides a centralized, asynchronous audit logging facility for recording system‑wide actions such as user operations, configuration changes, and other critical events. It stores entries in memory, supports filtered queries, entry counting, retention‑based purging, and exposes basic statistics about the logged data.
