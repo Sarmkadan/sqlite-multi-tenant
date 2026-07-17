@@ -2,15 +2,16 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace SqliteMultiTenant.Models;
 
 /// <summary>
-/// Provides System.Text.Json serialization extensions for TenantContext
+/// Provides System.Text.Json serialization extensions for <see cref="TenantContext"/> to convert between JSON and TenantContext objects.
 /// </summary>
 public static class TenantContextJsonExtensions
 {
@@ -84,8 +85,10 @@ public static class TenantContextJsonExtensions
 }
 
 /// <summary>
-/// Custom JSON converter for TenantContext that handles Dictionary&lt;string, object&gt; serialization
+/// Custom JSON converter for <see cref="TenantContext"/> that handles <see cref="Dictionary{string, object}"/> serialization.
+/// Handles conversion of dynamic context data with proper type mapping for JSON values.
 /// </summary>
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Used by JSON serializer")]
 internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
 {
     public override TenantContext Read(
@@ -93,6 +96,11 @@ internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
         Type typeToConvert,
         JsonSerializerOptions options)
     {
+        if (reader.TokenType == JsonTokenType.Null)
+        {
+            throw new JsonException("Cannot deserialize null TenantContext");
+        }
+
         using JsonDocument doc = JsonDocument.ParseValue(ref reader);
         var root = doc.RootElement;
 
@@ -119,7 +127,7 @@ internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
                 dict[prop.Name] = prop.Value.ValueKind switch
                 {
                     JsonValueKind.String => prop.Value.GetString()!,
-                    JsonValueKind.Number => prop.Value.GetInt32(),
+                    JsonValueKind.Number => prop.Value.GetInt64(),
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
                     JsonValueKind.Null => null!,
@@ -155,6 +163,7 @@ internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
         {
             writer.WriteString("userEmail", value.UserEmail);
         }
+
         writer.WriteString("establishedAt", value.EstablishedAt);
         writer.WriteString("createdAt", value.CreatedAt);
         if (!string.IsNullOrEmpty(value.RequestId))
@@ -169,11 +178,12 @@ internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
         {
             writer.WriteString("databasePath", value.DatabasePath);
         }
-        if (value.ContextData != null && value.ContextData.Count > 0)
+        if (value.ContextData is { Count: > 0 })
         {
             writer.WritePropertyName("contextData");
             JsonSerializer.Serialize(writer, value.ContextData, options);
         }
+
         writer.WriteBoolean("isValid", value.IsValid);
 
         writer.WriteEndObject();
