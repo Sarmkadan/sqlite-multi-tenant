@@ -1039,6 +1039,83 @@ catch (Exception ex)
 File.Delete(testDbPath);
 ```
 
+## SchemaManagerTests
+
+The `SchemaManagerTests` class provides comprehensive unit tests for the `SchemaManager` class, verifying that database schema operations work correctly. These tests cover constructor validation, table creation, column addition, table renaming, index creation, and proper error handling for invalid operations, ensuring the schema management system operates reliably for multi-tenant SQLite databases.
+
+### Public Members
+
+```csharp
+public sealed class SchemaManagerTests : IDisposable
+public SchemaManagerTests()
+public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenConnectionStringIsNull()
+public async Task InitializeSchemaAsync_CreatesTablesAndIndexes()
+public async Task InitializeSchemaAsync_ShouldNotRecreateExistingTablesAndIndexes()
+public async Task AddColumnAsync_AddsNewColumnToTable()
+public async Task AddColumnAsync_ReturnsFalse_WhenColumnAlreadyExists()
+public async Task AddColumnAsync_ThrowsExceptionAndLogs_WhenTableNameDoesNotExist()
+public async Task RenameTableAsync_RenamesTableSuccessfully()
+public async Task RenameTableAsync_ThrowsExceptionAndLogs_WhenOldTableDoesNotExist()
+public async Task CreateIndexAsync_CreatesNewIndex()
+public async Task CreateIndexAsync_ReturnsFalse_WhenIndexAlreadyExists()
+public async Task GetTablesAsync_ReturnsAllUserTables()
+public async Task GetTablesAsync_ReturnsEmptyList_WhenNoTablesExist()
+public void Dispose()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Database;  
+using Microsoft.Extensions.Logging;  
+using Microsoft.Extensions.Logging.Abstractions;  
+using System;  
+using System.Threading.Tasks;  
+
+// Create a test database and schema manager
+var testDbPath = Path.Combine(Path.GetTempPath(), $"schema_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+var logger = NullLogger<SchemaManager>.Instance;
+var schemaManager = new SchemaManager(connectionString, logger);
+
+// Example 1: Initialize schema with tables and indexes
+await schemaManager.InitializeSchemaAsync();
+Console.WriteLine("Schema initialized successfully");
+
+// Example 2: Add a new column to an existing table
+var columnAdded = await schemaManager.AddColumnAsync("Users", "Email", "TEXT");
+if (columnAdded)
+{
+    Console.WriteLine("Column 'Email' added to 'Users' table");
+}
+
+// Example 3: Rename a table
+var renameSuccess = await schemaManager.RenameTableAsync("Users", "UserAccounts");
+if (renameSuccess)
+{
+    Console.WriteLine("Table 'Users' renamed to 'UserAccounts'");
+}
+
+// Example 4: Create an index on a table
+var indexCreated = await schemaManager.CreateIndexAsync("UserAccounts", "IX_UserAccounts_Email", new[] { "Email" });
+if (indexCreated)
+{
+    Console.WriteLine("Index 'IX_UserAccounts_Email' created on 'UserAccounts.Email'");
+}
+
+// Example 5: Get all user tables
+var tables = await schemaManager.GetTablesAsync();
+Console.WriteLine($"Found {tables.Count} user tables:");
+foreach (var table in tables)
+{
+    Console.WriteLine($" - {table}");
+}
+
+// Cleanup
+File.Delete(testDbPath);
+```
+
 ## TenantServiceTests
 
 The `TenantServiceTests` class provides comprehensive unit tests for the `TenantService` class, verifying that tenant management operations work correctly. These tests cover validation scenarios, repository interactions, and exception handling for tenant lifecycle operations, ensuring the tenant service operates reliably and maintains data integrity.
