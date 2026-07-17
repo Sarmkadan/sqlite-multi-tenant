@@ -17,7 +17,7 @@ public static class MigrationExceptionValidation
     /// </summary>
     /// <param name="value">The exception to validate</param>
     /// <returns>An empty list if valid; otherwise, a list of human-readable problems</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this MigrationException? value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -65,17 +65,14 @@ public static class MigrationExceptionValidation
     /// </summary>
     /// <param name="value">The exception to check</param>
     /// <returns>True if valid; otherwise, false</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
-    public static bool IsValid(this MigrationException? value)
-    {
-        return value is not null && value.Validate().Count == 0;
-    }
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+    public static bool IsValid(this MigrationException? value) => value is not null && !value.Validate().Any();
 
     /// <summary>
     /// Ensures that a <see cref="MigrationException"/> instance is valid, throwing an <see cref="ArgumentException"/> if not
     /// </summary>
     /// <param name="value">The exception to validate</param>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is invalid, containing a list of problems</exception>
     public static void EnsureValid(this MigrationException? value)
     {
