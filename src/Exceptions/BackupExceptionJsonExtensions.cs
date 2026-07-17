@@ -40,7 +40,7 @@ public static class BackupExceptionJsonExtensions
     /// Deserializes a <see cref="BackupException"/> from a JSON string
     /// </summary>
     /// <param name="json">The JSON string to deserialize</param>
-    /// <returns>The deserialized exception, or null if the JSON is invalid</returns>
+    /// <returns>The deserialized exception if successful; otherwise, null</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null</exception>
     public static BackupException? FromJson(string json)
     {
@@ -81,10 +81,7 @@ public static class BackupExceptionJsonExtensions
 
     private static JsonSerializerOptions GetIndentedOptions()
     {
-        var options = new JsonSerializerOptions(_jsonOptions)
-        {
-            WriteIndented = true,
-        };
-        return options;
+        ArgumentNullException.ThrowIfNull(_jsonOptions);
+        return new JsonSerializerOptions(_jsonOptions) { WriteIndented = true };
     }
 }
