@@ -526,6 +526,114 @@ class Backup
     }
 }
 
+## OperationRetryPolicy
+
+`OperationRetryPolicy` provides a robust mechanism for executing operations with automatic retry logic. It supports configurable retry attempts, exponential backoff with jitter, and customizable logging. This is particularly useful for transient operations such as database connections, network calls, or file operations where temporary failures may resolve on subsequent attempts.
+
+### Public Members
+
+```csharp
+public sealed class OperationRetryPolicy
+public OperationRetryPolicy
+public async Task<T> ExecuteAsync<T>
+public async Task ExecuteAsync
+
+public sealed class RetryPolicyBuilder
+public RetryPolicyBuilder WithMaxRetries
+public RetryPolicyBuilder WithInitialDelay
+public RetryPolicyBuilder WithBackoffMultiplier
+public RetryPolicyBuilder WithLogger
+public OperationRetryPolicy Build
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        // Create a logger
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var logger = loggerFactory.CreateLogger<OperationRetryPolicy>();
+
+        // Example 1: Basic retry with default settings (3 retries, 100ms initial delay)
+        var retryPolicy = new OperationRetryPolicy();
+        
+        int attemptCount = 0;
+        var result = await retryPolicy.ExecuteAsync(async () =>
+        {
+            attemptCount++;
+            if (attemptCount < 3)
+            {
+                throw new InvalidOperationException("Temporary failure");
+            }
+            return "Success!";
+        });
+        
+        Console.WriteLine($"Operation succeeded after {attemptCount} attempts: {result}");
+
+        // Example 2: Configure retry policy with builder
+        var customPolicy = new RetryPolicyBuilder()
+            .WithMaxRetries(5)
+            .WithInitialDelay(TimeSpan.FromMilliseconds(200))
+            .WithBackoffMultiplier(2.0)
+            .WithLogger(logger)
+            .Build();
+        
+        // Execute a database operation with retry
+        var dbResult = await customPolicy.ExecuteAsync(async () =>
+        {
+            // Simulate a transient database error
+            if (DateTime.Now.Second % 3 == 0)
+            {
+                throw new TimeoutException("Database connection timeout");
+            }
+            return "Database operation completed";
+        });
+        
+        Console.WriteLine(dbResult);
+
+        // Example 3: Retry with specific return type
+        var intResult = await customPolicy.ExecuteAsync<int>(async () =>
+        {
+            // Simulate a transient failure
+            if (DateTime.Now.Millisecond % 5 == 0)
+            {
+                throw new TemporaryException("Network unavailable");
+            }
+            return 42;
+        });
+        
+        Console.WriteLine($"Result: {intResult}");
+
+        // Example 4: Retry with async operation
+        var fileResult = await customPolicy.ExecuteAsync(async () =>
+        {
+            // Simulate file operation that might fail temporarily
+            await Task.Delay(50);
+            if (DateTime.Now.Second % 2 == 0)
+            {
+                throw new IOException("File lock detected");
+            }
+            return "File processed successfully";
+        });
+        
+        Console.WriteLine(fileResult);
+    }
+}
+
+public class TemporaryException : Exception
+{
+    public TemporaryException(string message) : base(message) { }
+}
+```
+
 ## FileSystemExtensions
  
 `FileSystemExtensions` provides a collection of safe, utility‑style extension methods for common file‑system operations such as path validation, directory creation, size calculation, safe deletion, backup‑file naming, recursive file discovery, copying, and retrieving creation timestamps. All methods are designed to handle errors gracefully and return status values instead of throwing exceptions.
