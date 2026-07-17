@@ -11,6 +11,7 @@ using FluentAssertions;
 using SqliteMultiTenant.Api.Requests;
 using SqliteMultiTenant.Validation;
 
+// ReSharper disable once RedundantNameQualifier
 namespace SqliteMultiTenant.Tests
 {
     public static class TenantValidatorTestsExtensions
@@ -21,16 +22,11 @@ namespace SqliteMultiTenant.Tests
         /// <param name="name">The tenant name (3-255 characters).</param>
         /// <param name="email">The contact email address.</param>
         /// <returns>A valid <see cref="CreateTenantRequest"/> instance.</returns>
-        /// <exception cref="ArgumentException">Thrown when name or email is invalid.</exception>
+        /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or outside the 3-255 character range. <paramref name="email"/> is null or empty.</exception>
         public static CreateTenantRequest CreateValidCreateRequest(this TenantValidatorTests _, string name = "ValidTenantName", string email = "test@example.com")
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
             ArgumentException.ThrowIfNullOrEmpty(email, nameof(email));
-
-            if (name.Length is < 3 or > 255)
-            {
-                throw new ArgumentException("Tenant name must be between 3 and 255 characters", nameof(name));
-            }
 
             return new CreateTenantRequest
             {
@@ -45,16 +41,11 @@ namespace SqliteMultiTenant.Tests
         /// <param name="name">The tenant name (3-255 characters).</param>
         /// <param name="email">The contact email address.</param>
         /// <returns>A valid <see cref="UpdateTenantRequest"/> instance.</returns>
-        /// <exception cref="ArgumentException">Thrown when name or email is invalid.</exception>
+        /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or outside the 3-255 character range. <paramref name="email"/> is null or empty.</exception>
         public static UpdateTenantRequest CreateValidUpdateRequest(this TenantValidatorTests _, string name = "UpdatedTenantName", string email = "updated@example.com")
         {
             ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
             ArgumentException.ThrowIfNullOrEmpty(email, nameof(email));
-
-            if (name.Length is < 3 or > 255)
-            {
-                throw new ArgumentException("Tenant name must be between 3 and 255 characters", nameof(name));
-            }
 
             return new UpdateTenantRequest
             {
@@ -86,7 +77,7 @@ namespace SqliteMultiTenant.Tests
         /// Asserts that a validation result is empty (no errors).
         /// </summary>
         /// <param name="errors">The validation errors dictionary.</param>
-        /// <exception cref="ArgumentNullException">Thrown when errors is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="errors"/> is <see langword="null"/>.</exception>
         public static void ShouldBeEmpty(this IReadOnlyDictionary<string, string> errors)
         {
             ArgumentNullException.ThrowIfNull(errors);
