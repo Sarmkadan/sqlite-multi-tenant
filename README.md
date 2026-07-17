@@ -689,6 +689,40 @@ var similarity = StringUtilities.GetStringSimilarity("Hello", "World");
 Console.WriteLine(similarity);
 ```
 
+## TimeUtilities
+
+The `TimeUtilities` class provides a robust set of static methods for advanced datetime manipulation, date arithmetic, and time span formatting. It simplifies common operations such as rounding dates, calculating period ranges, handling business days, and converting between UTC and Unix timestamps.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+
+// 1. Formatting
+string span = TimeUtilities.FormatTimeSpan(TimeSpan.FromMinutes(90)); // "01:30:00"
+string relative = TimeUtilities.FormatRelativeTime(DateTime.UtcNow.AddMinutes(-5)); // e.g., "5 minutes ago"
+
+// 2. Date Arithmetic
+DateTime today = DateTime.UtcNow;
+DateTime startOfToday = TimeUtilities.GetStartOfDay(today);
+DateTime endOfMonth = TimeUtilities.GetEndOfMonth(today);
+DateTime rounded = TimeUtilities.RoundToNearest(today, TimeSpan.FromMinutes(15));
+
+// 3. Business Logic
+bool isLeap = TimeUtilities.IsLeapYear(2024); // True
+int daysInFeb = TimeUtilities.GetDaysInMonth(2024, 2); // 29
+DateTime nextBusinessDay = TimeUtilities.AddBusinessDays(today, 1);
+bool isWorking = TimeUtilities.IsBusinessHours(today);
+
+// 4. Period Ranges
+var (start, end) = TimeUtilities.GetPeriodRange(today, "month");
+
+// 5. Unix Timestamps
+long unix = TimeUtilities.ToUnixTimestamp(today);
+DateTime fromUnix = TimeUtilities.FromUnixTimestamp(unix);
+```
+
 ## OperationRetryPolicy
 
 `OperationRetryPolicy` provides a robust mechanism for executing operations with automatic retry logic. It supports configurable retry attempts, exponential backoff with jitter, and customizable logging. This is particularly useful for transient operations such as database connections, network calls, or file operations where temporary failures may resolve on subsequent attempts.
