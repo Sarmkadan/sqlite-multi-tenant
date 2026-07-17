@@ -339,6 +339,76 @@ using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
+## TenantNameValidatorTestsExtensions
+
+The `TenantNameValidatorTestsExtensions` class provides extension methods for testing tenant name validation logic. It includes methods to verify that tenant names are correctly converted to tenant IDs and to validate both valid and invalid tenant name scenarios.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Linq;
+
+// Example 1: Test that a valid tenant name generates the expected tenant ID
+"MyTenant".ShouldGenerateTenantId("mytenant");
+
+// Example 2: Verify that a tenant name is considered valid
+"valid-tenant-name".ShouldBeValidTenantId();
+
+// Example 3: Verify that an invalid tenant name produces the expected error
+"INVALID tenant!".ShouldBeInvalidTenantIdWithError("Tenant name contains invalid characters");
+
+// Example 4: Get all invalid tenant IDs with their expected errors
+var invalidTenantIds = TenantNameValidatorTestsExtensions.GetInvalidTenantIds();
+foreach (var (tenantId, expectedError) in invalidTenantIds)
+{
+    Console.WriteLine($"Tenant ID: {tenantId}, Expected Error: {expectedError}");
+}
+
+// Example 5: Get all valid tenant name mappings with their expected tenant IDs
+var validMappings = TenantNameValidatorTestsExtensions.GetValidTenantNameMappings();
+foreach (var (tenantName, expectedTenantId) in validMappings)
+{
+    Console.WriteLine($"Tenant Name: {tenantName} -> Tenant ID: {expectedTenantId}");
+}
+```
+
+## TenantNameValidatorTestsExtensions
+
+The `TenantNameValidatorTestsExtensions` class provides extension methods for testing tenant name validation logic. It includes methods to verify that tenant names are correctly converted to tenant IDs and to validate both valid and invalid tenant name scenarios.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Linq;
+
+// Example 1: Test that a valid tenant name generates the expected tenant ID
+"MyTenant".ShouldGenerateTenantId("mytenant");
+
+// Example 2: Verify that a tenant name is considered valid
+"valid-tenant-name".ShouldBeValidTenantId();
+
+// Example 3: Verify that an invalid tenant name produces the expected error
+"INVALID tenant!".ShouldBeInvalidTenantIdWithError("Tenant name contains invalid characters");
+
+// Example 4: Get all invalid tenant IDs with their expected errors
+var invalidTenantIds = TenantNameValidatorTestsExtensions.GetInvalidTenantIds();
+foreach (var (tenantId, expectedError) in invalidTenantIds)
+{
+    Console.WriteLine($"Tenant ID: {tenantId}, Expected Error: {expectedError}");
+}
+
+// Example 5: Get all valid tenant name mappings with their expected tenant IDs
+var validMappings = TenantNameValidatorTestsExtensions.GetValidTenantNameMappings();
+foreach (var (tenantName, expectedTenantId) in validMappings)
+{
+    Console.WriteLine($"Tenant Name: {tenantName} -> Tenant ID: {expectedTenantId}");
+}
+```
+
 // Example 1: Verify connection-per-tenant isolation
 public async Task TestConnectionPerTenantIsolation()
 {
