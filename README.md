@@ -86,3 +86,67 @@ Console.WriteLine("Connection released");
 var stats = await connectionManager.GetPoolStatistics();
 Console.WriteLine(stats != null ? "Pool statistics retrieved" : "Pool statistics retrieval failed");
 ```
+
+## HttpClientWrapperValidation
+
+`HttpClientWrapperValidation` is a static helper class that provides validation utilities for `HttpClientWrapper` instances and related HTTP request components such as URLs, bearer tokens, headers, payloads, and response types. It offers methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
+
+### Usage Example
+
+```csharp
+using System;
+using System.Collections.Generic;
+using SqliteMultiTenant.Integration;
+
+// Assume an existing HttpClientWrapper instance (from the library)
+HttpClientWrapper client = new HttpClientWrapper(/* constructor arguments */);
+
+// 1. Validate the wrapper instance and ensure it is correct
+IReadOnlyList<string> instanceProblems = HttpClientWrapperValidation.Validate(client);
+if (instanceProblems.Count > 0)
+{
+    Console.WriteLine("HttpClientWrapper has problems:");
+    foreach (var p in instanceProblems) Console.WriteLine($"- {p}");
+}
+else
+{
+    Console.WriteLine("HttpClientWrapper instance is valid.");
+}
+
+// Shortcut to just get a boolean result
+bool isValid = HttpClientWrapperValidation.IsValid(client);
+Console.WriteLine($"IsValid: {isValid}");
+
+// Throw an exception if the instance is not valid
+HttpClientWrapperValidation.EnsureValid(client);
+
+// 2. Validate a request URL
+var urlProblems = HttpClientWrapperValidation.ValidateUrl("https://api.example.com/v1/resource");
+Console.WriteLine(urlProblems.Count == 0 ? "URL is valid." : $"URL problems: {string.Join(", ", urlProblems)}");
+
+// 3. Validate a bearer token
+var tokenProblems = HttpClientWrapperValidation.ValidateBearerToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...");
+Console.WriteLine(tokenProblems.Count == 0 ? "Bearer token is valid." : $"Token problems: {string.Join(", ", tokenProblems)}");
+
+// 4. Validate a custom header
+var headerProblems = HttpClientWrapperValidation.ValidateHeader("X-Custom-Header", "HeaderValue");
+Console.WriteLine(headerProblems.Count == 0 ? "Header is valid." : $"Header problems: {string.Join(", ", headerProblems)}");
+
+// 5. Validate a payload object before serialization
+var payload = new { Id = 123, Name = "Sample" };
+var payloadProblems = HttpClientWrapperValidation.ValidatePayload(payload);
+Console.WriteLine(payloadProblems.Count == 0 ? "Payload is valid." : $"Payload problems: {string.Join(", ", payloadProblems)}");
+
+// 6. Validate a response type for deserialization
+public class ApiResponse
+{
+    public int Code { get; set; }
+    public string? Message { get; set; }
+
+    // Parameterless constructor required by the validator
+    public ApiResponse() { }
+}
+
+var responseTypeProblems = HttpClientWrapperValidation.ValidateResponseType<ApiResponse>();
+Console.WriteLine(responseTypeProblems.Count == 0 ? "Response type is valid." : $"Response type problems: {string.Join(", ", responseTypeProblems)}");
+```
