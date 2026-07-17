@@ -1407,6 +1407,82 @@ public class Tenant
 }
 ```
 
+## EnumExtensions
+
+The `EnumExtensions` class provides a comprehensive set of static utility methods for working with .NET enums. It simplifies common enum operations such as parsing enum values with safe fallback, retrieving enum attributes, checking for valid enum values, getting all enum values, and converting between enum values and their display names or descriptions. These methods are particularly useful for configuration parsing, data binding, and working with attribute-based metadata on enum values.
+
+### Public Members
+
+```csharp
+public static string GetDisplayName<T>(T value) where T : Enum
+public static T ParseSafe<T>(string value, T defaultValue = default) where T : Enum
+public static bool HasAttribute<T, TAttribute>(T value) where TAttribute : Attribute
+public static TAttribute GetAttribute<T, TAttribute>(T value) where TAttribute : Attribute
+public static IEnumerable<T> GetAllValues<T>() where T : Enum
+public static bool IsValidEnumValue<T>(T value) where T : Enum
+public static string GetDescription<T>(T value) where T : Enum
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+using System.ComponentModel;
+
+// Example 1: Parse enum values with safe fallback
+var logLevel = EnumExtensions.ParseSafe<LogLevel>("Warning", LogLevel.Info);
+Console.WriteLine($"Parsed log level: {logLevel}");
+
+// Example 2: Get all enum values
+var allLevels = EnumExtensions.GetAllValues<LogLevel>();
+Console.WriteLine("All log levels:");
+foreach (var level in allLevels)
+{
+    Console.WriteLine($" - {level}");
+}
+
+// Example 3: Check if a value is valid for an enum
+bool isValid = EnumExtensions.IsValidEnumValue(LogLevel.Debug);
+Console.WriteLine($"Is Debug valid? {isValid}");
+
+// Example 4: Get display name for an enum value
+string displayName = EnumExtensions.GetDisplayName(LogLevel.Error);
+Console.WriteLine($"Display name for Error: {displayName}");
+
+// Example 5: Work with enum attributes
+bool hasDescription = EnumExtensions.HasAttribute<LogLevel, DescriptionAttribute>(LogLevel.Warning);
+Console.WriteLine($"Has Description attribute: {hasDescription}");
+
+if (hasDescription)
+{
+    var descriptionAttr = EnumExtensions.GetAttribute<LogLevel, DescriptionAttribute>(LogLevel.Warning);
+    Console.WriteLine($"Warning description: {descriptionAttr?.Description}");
+}
+
+// Example 6: Get description from enum value
+string description = EnumExtensions.GetDescription(LogLevel.Info);
+Console.WriteLine($"Info description: {description}");
+
+public enum LogLevel
+{
+    [Description("Debug information")]
+    Debug,
+    
+    [Description("Informational messages")]
+    Info,
+    
+    [Description("Warning messages")]
+    Warning,
+    
+    [Description("Error messages")]
+    Error,
+    
+    [Description("Critical errors")]
+    Critical
+}
+```
+
 ## ValidationExtensions
 
 The `ValidationExtensions` class provides a set of extension methods for validating various types of user input and system configuration settings, such as emails, UUIDs, semantic versions, database names, and connection strings. These methods are designed to be used at system boundaries (e.g., in controllers or services) to enforce data integrity and prevent common security issues like SQL injection by validating input format and constraints before processing.
