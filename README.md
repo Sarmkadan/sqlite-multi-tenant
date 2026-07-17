@@ -1314,6 +1314,47 @@ public class TestDomainEvent : DomainEvent
 }
 ```
 
+## TenantNameValidatorTests
+
+The `TenantNameValidatorTests` class provides comprehensive unit tests for the `TenantNameValidator` tenant name validation and generation functionality. These tests verify that tenant IDs and names are properly validated according to system naming conventions, length restrictions, and security policies, ensuring robust tenant naming standards across the application.
+
+### Public Members
+
+```csharp
+public sealed class TenantNameValidatorTests
+public void ValidateTenantId_WithValidId_ReturnsValidResult()
+public void ValidateTenantId_BelowMinimumLength_ReturnsInvalidWithLengthError()
+public void ValidateTenantId_UsingReservedWord_ReturnsReservedError()
+public void GenerateTenantId_FromNameWithSpecialCharactersAndSpaces_ReturnsNormalizedSlug()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using Xunit;
+
+// Example 1: Test validation of a properly formatted tenant ID
+var validResult = TenantNameValidator.ValidateTenantId("my-tenant");
+Assert.True(validResult.IsValid);
+Assert.Null(validResult.Error);
+
+// Example 2: Test validation of a tenant ID below minimum length (3 characters)
+var shortIdResult = TenantNameValidator.ValidateTenantId("ab");
+Assert.False(shortIdResult.IsValid);
+Assert.Contains("3", shortIdResult.Error);
+
+// Example 3: Test validation of a tenant ID using a reserved word
+var reservedResult = TenantNameValidator.ValidateTenantId("admin");
+Assert.False(reservedResult.IsValid);
+Assert.Contains("reserved", reservedResult.Error);
+
+// Example 4: Test generation of a tenant ID from a name with special characters and spaces
+string tenantName = "Acme Corporation 2024!";
+string generatedId = TenantNameValidator.GenerateTenantId(tenantName);
+Assert.Equal("acme-corporation-2024", generatedId);
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
