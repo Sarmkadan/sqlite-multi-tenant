@@ -5,7 +5,11 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace SqliteMultiTenant.Validation;
@@ -13,6 +17,9 @@ namespace SqliteMultiTenant.Validation;
 /// <summary>
 /// Extension methods for <see cref="DataValidator"/> providing additional validation capabilities.
 /// </summary>
+/// <remarks>
+/// All extension methods follow a fluent interface pattern, returning the validator instance for method chaining.
+/// </remarks>
 public static class DataValidatorExtensions
 {
     /// <summary>
@@ -30,7 +37,9 @@ public static class DataValidatorExtensions
         ArgumentNullException.ThrowIfNull(errorMessage);
 
         if (string.IsNullOrWhiteSpace(value))
+        {
             validator.GetErrors().Add(new ValidationError(fieldName, errorMessage));
+        }
 
         return validator;
     }
@@ -51,9 +60,11 @@ public static class DataValidatorExtensions
         ArgumentOutOfRangeException.ThrowIfNegative(minLength);
 
         if (!string.IsNullOrWhiteSpace(value) && value.Length < minLength)
+        {
             validator.GetErrors().Add(new ValidationError(
                 fieldName,
                 $"{fieldName} must be at least {minLength} characters long"));
+        }
 
         return validator;
     }
@@ -79,9 +90,11 @@ public static class DataValidatorExtensions
         {
             var length = value.Length;
             if (length < minLength || length > maxLength)
+            {
                 validator.GetErrors().Add(new ValidationError(
                     fieldName,
                     $"{fieldName} must be between {minLength} and {maxLength} characters long"));
+            }
         }
 
         return validator;
@@ -108,7 +121,7 @@ public static class DataValidatorExtensions
 
         // Basic international phone number validation (E.164 format)
         // Pattern: + followed by 8-15 digits, optional spaces, dashes, or parentheses
-        var phonePattern = @"^\+[0-9]{8,15}([\s\-\(\)]?[0-9]{1,4})*$";
+        var phonePattern = @"^\+[0-9]{8,15}([\s\-\\(\)]?[0-9]{1,4})*$";
         if (!Regex.IsMatch(phoneNumber, phonePattern))
         {
             validator.GetErrors().Add(new ValidationError(
@@ -194,7 +207,15 @@ public static class DataValidatorExtensions
         }
 
         var parts = ipAddress.Split('.', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 4 || parts.Any(p => !int.TryParse(p, out var num) || num < 0 || num > 255))
+        if (parts.Length != 4)
+        {
+            validator.GetErrors().Add(new ValidationError(
+                fieldName,
+                $"{fieldName} must be a valid IPv4 address (e.g., 192.168.1.1)"));
+            return validator;
+        }
+
+        if (parts.Any(p => !int.TryParse(p, out var num) || num < 0 || num > 255))
         {
             validator.GetErrors().Add(new ValidationError(
                 fieldName,
@@ -219,7 +240,13 @@ public static class DataValidatorExtensions
         ArgumentNullException.ThrowIfNull(fieldName);
         ArgumentOutOfRangeException.ThrowIfNegative(expectedCount);
 
-        if (collection is null || collection.Count() != expectedCount)
+        if (collection is null)
+        {
+            validator.GetErrors().Add(new ValidationError(
+                fieldName,
+                $"{fieldName} is required"));
+        }
+        else if (collection.Count() != expectedCount)
         {
             validator.GetErrors().Add(new ValidationError(
                 fieldName,
@@ -368,18 +395,17 @@ public static class DataValidatorExtensions
     /// <summary>
     /// Gets the list of validation errors from the validator.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when the errors collection cannot be accessed.</exception>
     private static List<ValidationError> GetErrors(this DataValidator validator)
     {
-        // Use reflection to access the private _errors field
+        const string ErrorsFieldName = "_errors";
+
         var field = typeof(DataValidator).GetField(
-            "_errors",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            ErrorsFieldName,
+            BindingFlags.NonPublic | BindingFlags.Instance);
 
-        if (field?.GetValue(validator) is List<ValidationError> errors)
-        {
-            return errors;
-        }
-
-        throw new InvalidOperationException("Could not access validation errors collection");
+        return field?.GetValue(validator) as List<ValidationError>
+            ?? throw new InvalidOperationException(
+                $"Could not access validation errors collection '{ErrorsFieldName}'");
     }
 }
