@@ -12,7 +12,6 @@ namespace SqliteMultiTenant.Configuration
     /// <summary>
     /// Provides validation helpers for configuration options.
     /// </summary>
-    // Validation helpers for configuration options
     public static class OptionsValidator
     {
         /// <summary>
@@ -20,7 +19,7 @@ namespace SqliteMultiTenant.Configuration
         /// </summary>
         /// <param name="options">The options to validate.</param>
         /// <exception cref="ArgumentException">
-        /// Thrown when any required property is invalid.
+        /// Thrown when any required property of <paramref name="options"/> is invalid.
         /// </exception>
         public static void Validate(MultiTenantOptions options)
         {
@@ -40,9 +39,9 @@ namespace SqliteMultiTenant.Configuration
         /// <summary>
         /// Validates the specified <see cref="BackupOptions"/> instance.
         /// </summary>
-        /// <param name="options">The options to validate.</param>
+        /// <param name="options">The backup options to validate.</param>
         /// <exception cref="ArgumentException">
-        /// Thrown when any required property is invalid.
+        /// Thrown when any required property of <paramref name="options"/> is invalid.
         /// </exception>
         public static void Validate(BackupOptions options)
         {
@@ -56,9 +55,9 @@ namespace SqliteMultiTenant.Configuration
         /// <summary>
         /// Validates the specified <see cref="SecurityOptions"/> instance.
         /// </summary>
-        /// <param name="options">The options to validate.</param>
+        /// <param name="options">The security options to validate.</param>
         /// <exception cref="ArgumentException">
-        /// Thrown when any required property is invalid.
+        /// Thrown when any required property of <paramref name="options"/> is invalid.
         /// </exception>
         public static void Validate(SecurityOptions options)
         {
