@@ -5,7 +5,6 @@
 // =============================================================================
 
 using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -16,7 +15,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
     /// </summary>
     public static class DataRetentionPolicyJsonExtensions
     {
-        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false,
@@ -35,18 +34,16 @@ namespace SqliteMultiTenant.BackgroundWorkers
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            var options = indented
+            return JsonSerializer.Serialize(value, indented
                 ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
-                : _jsonOptions;
-
-            return JsonSerializer.Serialize(value, options);
+                : _jsonOptions);
         }
 
         /// <summary>
         /// Deserializes a <see cref="RetentionPolicyConfig"/> from JSON string.
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
-        /// <returns>The deserialized retention policy configuration, or null if JSON is empty.</returns>
+        /// <returns>The deserialized retention policy configuration.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
         /// <exception cref="JsonException">Thrown when JSON is invalid or cannot be deserialized.</exception>
         public static RetentionPolicyConfig? FromJson(string json)
@@ -90,11 +87,9 @@ namespace SqliteMultiTenant.BackgroundWorkers
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            var options = indented
+            return JsonSerializer.Serialize(value, indented
                 ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
-                : _jsonOptions;
-
-            return JsonSerializer.Serialize(value, options);
+                : _jsonOptions);
         }
 
         /// <summary>
@@ -145,11 +140,9 @@ namespace SqliteMultiTenant.BackgroundWorkers
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            var options = indented
+            return JsonSerializer.Serialize(value, indented
                 ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
-                : _jsonOptions;
-
-            return JsonSerializer.Serialize(value, options);
+                : _jsonOptions);
         }
 
         /// <summary>
@@ -200,11 +193,9 @@ namespace SqliteMultiTenant.BackgroundWorkers
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            var options = indented
+            return JsonSerializer.Serialize(value, indented
                 ? new JsonSerializerOptions(_jsonOptions) { WriteIndented = true }
-                : _jsonOptions;
-
-            return JsonSerializer.Serialize(value, options);
+                : _jsonOptions);
         }
 
         /// <summary>
