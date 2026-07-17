@@ -1730,6 +1730,76 @@ foreach (var domainEvent in events)
 }
 ```
 
+## CacheInvalidationServiceTests
+
+The `CacheInvalidationServiceTests` class provides comprehensive unit tests for the `CacheInvalidationService` class, verifying that cache invalidation operations work correctly for different cache keys and scenarios. These tests cover constructor validation, tenant-specific cache invalidation, backup cache invalidation, migration cache invalidation, and health check cache invalidation, ensuring the cache management system operates reliably for multi-tenant SQLite databases.
+
+### Public Members
+
+```csharp
+public sealed class CacheInvalidationServiceTests
+public CacheInvalidationServiceTests()
+public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenCacheServiceIsNull()
+public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+public void InvalidateTenant_ShouldCallRemoveForTenantAndAllTenantsKeys()
+public void InvalidateBackups_ShouldCallRemoveForBackupsForDatabaseKey()
+public void InvalidateMigrations_ShouldCallRemoveForPendingAndAppliedMigrationsKeys()
+public void InvalidateHealthCheck_ShouldCallRemoveForHealthCheckKey()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Caching;
+using SqliteMultiTenant.Services;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Xunit;
+using FluentAssertions;
+
+// Create mock dependencies
+var mockCacheService = Substitute.For<ICacheService>();
+var mockLogger = Substitute.For<ILogger<CacheInvalidationService>>();
+var cacheInvalidationService = new CacheInvalidationService(mockCacheService, mockLogger);
+
+// Example 1: Test constructor validation with null cache service
+this.Invoking(() => new CacheInvalidationService(null, mockLogger))
+    .Should().Throw<ArgumentNullException>()
+    .WithParameterName("cache");
+
+// Example 2: Test constructor validation with null logger
+this.Invoking(() => new CacheInvalidationService(mockCacheService, null))
+    .Should().Throw<ArgumentNullException>()
+    .WithParameterName("logger");
+
+// Example 3: Invalidate tenant cache
+var tenantId = "acme-corp";
+cacheInvalidationService.InvalidateTenant(tenantId);
+var tenantKey = CacheKeys.TenantKey(tenantId);
+var allTenantsKey = CacheKeys.AllTenantsKey();
+mockCacheService.Received(1).Remove(tenantKey);
+mockCacheService.Received(1).Remove(allTenantsKey);
+
+// Example 4: Invalidate backup cache for a specific database
+var databaseId = "db-acme-corp";
+cacheInvalidationService.InvalidateBackups(databaseId);
+var backupsKey = CacheKeys.BackupsForDatabase(databaseId);
+mockCacheService.Received(1).Remove(backupsKey);
+
+// Example 5: Invalidate migration cache for a specific database
+var migrationDatabaseId = "db-globex";
+cacheInvalidationService.InvalidateMigrations(migrationDatabaseId);
+var pendingMigrationsKey = CacheKeys.PendingMigrationsKey(migrationDatabaseId);
+var appliedMigrationsKey = CacheKeys.AppliedMigrationsKey(migrationDatabaseId);
+mockCacheService.Received(1).Remove(pendingMigrationsKey);
+mockCacheService.Received(1).Remove(appliedMigrationsKey);
+
+// Example 6: Invalidate health check cache
+cacheInvalidationService.InvalidateHealthCheck();
+var healthCheckKey = CacheKeys.HealthCheckKey();
+mockCacheService.Received(1).Remove(healthCheckKey);
+```
+
 ## DataExporterTests
 
 The `DataExporterTests` class provides comprehensive unit tests for the `DataExporter` class, verifying that data export functionality works correctly for different output formats. These tests cover JSON, CSV, and SQL export methods, ensuring proper data serialization, metadata handling, error conditions, and edge cases for multi-tenant SQLite database exports.
