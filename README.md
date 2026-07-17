@@ -671,3 +671,82 @@ var parsedCommand = new ParsedCommand
 IReadOnlyList<string> parsedProblems = parsedCommand.Validate();
 Console.WriteLine(parsedProblems.Count == 0 ? "ParsedCommand is valid." : $"ParsedCommand problems: {string.Join(", ", parsedProblems)}");
 ```
+
+## ConflictResolutionServiceValidation
+
+The `ConflictResolutionServiceValidation` class provides validation utilities for `ConflictResolutionService` instances and related conflict resolution data structures. It offers methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Operations;
+
+// Assume you have a ConflictResolutionService instance
+var conflictResolutionService = new ConflictResolutionService();
+
+// 1. Validate the service instance
+IReadOnlyList<string> serviceProblems = ConflictResolutionServiceValidation.Validate(conflictResolutionService);
+if (serviceProblems.Count > 0)
+{
+    Console.WriteLine("ConflictResolutionService has problems:");
+    foreach (var p in serviceProblems) Console.WriteLine($"- {p}");
+}
+else
+{
+    Console.WriteLine("ConflictResolutionService instance is valid.");
+}
+
+// Shortcut to just get a boolean result
+bool isValid = ConflictResolutionServiceValidation.IsValid(conflictResolutionService);
+Console.WriteLine($"IsValid: {isValid}");
+
+// Throw an exception if the service instance is not valid
+ConflictResolutionServiceValidation.EnsureValid(conflictResolutionService);
+
+// 2. Validate a ConflictDetectionResult instance
+var detectionResult = new ConflictDetectionResult
+{
+    Conflicts = new List<DataConflict>
+    {
+        new DataConflict
+        {
+            Field = "Email",
+            ConflictType = ConflictType.Conflict,
+            LocalValue = "local@example.com",
+            RemoteValue = "remote@example.com"
+        }
+    }
+};
+
+IReadOnlyList<string> detectionProblems = ConflictResolutionServiceValidation.Validate(detectionResult);
+Console.WriteLine(detectionProblems.Count == 0 
+    ? "ConflictDetectionResult is valid." 
+    : $"ConflictDetectionResult problems: {string.Join(", ", detectionProblems)}");
+
+// 3. Validate all conflicts in a detection result
+IReadOnlyList<string> conflictProblems = ConflictResolutionServiceValidation.ValidateConflicts(detectionResult);
+Console.WriteLine(conflictProblems.Count == 0 
+    ? "All conflicts are valid." 
+    : $"Conflict problems: {string.Join(", ", conflictProblems)}");
+
+// 4. Validate a ConflictResolutionResult instance
+var resolutionResult = new ConflictResolutionResult
+{
+    IsSuccessful = true,
+    ResolvedValues = new Dictionary<string, object>
+    {
+        ["Email"] = "local@example.com"
+    }
+};
+
+IReadOnlyList<string> resolutionProblems = ConflictResolutionServiceValidation.Validate(resolutionResult);
+Console.WriteLine(resolutionProblems.Count == 0 
+    ? "ConflictResolutionResult is valid." 
+    : $"ConflictResolutionResult problems: {string.Join(", ", resolutionProblems)}");
+
+// 5. Validate all resolved values in a resolution result
+IReadOnlyList<string> resolvedValueProblems = ConflictResolutionServiceValidation.ValidateResolvedValues(resolutionResult);
+Console.WriteLine(resolvedValueProblems.Count == 0 
+    ? "All resolved values are valid." 
+    : $"Resolved value problems: {string.Join(", ", resolvedValueProblems)}");
+```
