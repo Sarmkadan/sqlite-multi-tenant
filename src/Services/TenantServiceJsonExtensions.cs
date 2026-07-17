@@ -36,6 +36,7 @@ public static class TenantServiceJsonExtensions
     /// <returns>The deserialized tenant service instance, or null if the JSON is null or empty.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
     /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
     public static TenantService? FromJson(string json)
     {
         ArgumentNullException.ThrowIfNull(json);
@@ -54,6 +55,8 @@ public static class TenantServiceJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized tenant service instance if successful.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is empty or whitespace.</exception>
     public static bool TryFromJson(string json, out TenantService? value)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
@@ -71,11 +74,5 @@ public static class TenantServiceJsonExtensions
     }
 
     private static JsonSerializerOptions GetIndentedOptions()
-    {
-        var options = new JsonSerializerOptions(_jsonOptions)
-        {
-            WriteIndented = true,
-        };
-        return options;
-    }
+        => new(_jsonOptions) { WriteIndented = true };
 }
