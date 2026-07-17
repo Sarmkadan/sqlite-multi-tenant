@@ -1342,6 +1342,109 @@ Task.WaitAll(tasks.ToArray());
 Console.WriteLine("Concurrent metadata operations completed successfully");
 ```
 
+## ConfigurationManagerTests
+
+The `ConfigurationManagerTests` class provides comprehensive unit tests for the `ConfigurationManager` class, verifying that configuration management operations work correctly. These tests cover constructor validation scenarios, configuration section retrieval, tenant-specific settings resolution, and options management functionality, ensuring the configuration system operates reliably for multi-tenant SQLite systems.
+
+### Public Members
+
+```csharp
+public sealed class ConfigurationManagerTests : IDisposable
+public ConfigurationManagerTests()
+public void Dispose()
+public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenConfigurationIsNull()
+public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenOptionsIsNull()
+public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsZero()
+public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsNegative()
+public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsNull()
+public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsEmpty()
+public void ConfigurationManager_Constructor_ThrowsDirectoryNotFoundException_WhenBasePathDoesNotExist()
+public void ConfigurationManager_Constructor_LogsSuccess_WhenOptionsAreValid()
+public void GetSection_ReturnsCorrectConfigurationSection()
+public void GetTenantSetting_ReturnsTenantSpecificSetting_WhenAvailable()
+public void GetTenantSetting_ReturnsGlobalSetting_WhenTenantSpecificNotAvailable()
+public void GetTenantSetting_ReturnsNull_WhenNeitherTenantSpecificNorGlobalSettingAvailable()
+public void GetMultiTenantOptions_ReturnsConfiguredOptions
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Configuration;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using FluentAssertions;
+using NSubstitute;
+using Xunit;
+
+// Create mock dependencies
+var mockConfiguration = Substitute.For<IConfiguration>();
+var mockLogger = Substitute.For<ILogger<ConfigurationManager>>();
+
+// Create a temporary directory for testing
+var tempBasePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+Directory.CreateDirectory(tempBasePath);
+
+// Example 1: Create ConfigurationManager with valid options
+var options = new MultiTenantOptions
+{
+    BasePath = tempBasePath,
+    DefaultMaxConnections = 10
+};
+
+var configurationManager = new ConfigurationManager(mockConfiguration, mockLogger, Options.Create(options));
+
+// Example 2: Test constructor validation with null configuration
+this.Invoking(() => new ConfigurationManager(null, mockLogger, Options.Create(options)))
+    .Should().Throw<ArgumentNullException>();
+
+// Example 3: Test constructor validation with null logger  
+this.Invoking(() => new ConfigurationManager(mockConfiguration, null, Options.Create(options)))
+    .Should().Throw<ArgumentNullException>();
+
+// Example 4: Test constructor validation with invalid max connections (zero)
+var invalidOptions = new MultiTenantOptions { BasePath = tempBasePath, DefaultMaxConnections = 0 };
+this.Invoking(() => new ConfigurationManager(mockConfiguration, mockLogger, Options.Create(invalidOptions)))
+    .Should().Throw<ArgumentOutOfRangeException>();
+
+// Example 5: Test constructor validation with null base path
+var nullPathOptions = new MultiTenantOptions { BasePath = null, DefaultMaxConnections = 10 };
+this.Invoking(() => new ConfigurationManager(mockConfiguration, mockLogger, Options.Create(nullPathOptions)))
+    .Should().Throw<ArgumentException>();
+
+// Example 6: Test constructor validation with non-existent base path
+var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "nonexistent");
+var nonExistentPathOptions = new MultiTenantOptions { BasePath = nonExistentPath, DefaultMaxConnections = 10 };
+this.Invoking(() => new ConfigurationManager(mockConfiguration, mockLogger, Options.Create(nonExistentPathOptions)))
+    .Should().Throw<DirectoryNotFoundException>();
+
+// Example 7: Test configuration section retrieval
+var section = mockConfiguration.GetSection("TestSection");
+var retrievedSection = configurationManager.GetSection("TestSection");
+retrievedSection.Should().Be(section);
+
+// Example 8: Test tenant-specific settings retrieval
+mockConfiguration["Tenants:tenant123:Settings:DatabasePath"].Returns("/tenants/tenant123/db");
+var tenantSetting = configurationManager.GetTenantSetting("tenant123", "DatabasePath");
+tenantSetting.Should().Be("/tenants/tenant123/db");
+
+// Example 9: Test global settings fallback
+mockConfiguration["Tenants:tenant123:Settings:MaxConnections"].Returns(null as string);
+mockConfiguration["GlobalSettings:MaxConnections"].Returns("20");
+var globalSetting = configurationManager.GetTenantSetting("tenant123", "MaxConnections");
+globalSetting.Should().Be("20");
+
+// Example 10: Test options retrieval
+var retrievedOptions = configurationManager.GetMultiTenantOptions();
+retrievedOptions.Should().Be(options);
+retrievedOptions.DefaultMaxConnections.Should().Be(10);
+
+// Cleanup
+Directory.Delete(tempBasePath, true);
+```
+
 ## MigrationServiceTests
 
 The `MigrationServiceTests` class provides comprehensive unit tests for the `MigrationService` class, verifying that migration management operations work correctly. These tests cover creating migrations, retrieving migrations by ID, marking migrations as completed or failed, and proper error handling for invalid inputs, ensuring the migration service operates reliably for database schema management in multi-tenant SQLite systems.
