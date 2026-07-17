@@ -526,6 +526,97 @@ class Backup
     }
 }
 
+## StringUtilities
+
+The `StringUtilities` class provides a collection of extension methods for common string operations such as hashing, truncation, case conversion, sanitization, and validation.
+
+### Public Members
+
+```csharp
+public static string ComputeSha256Hash
+public static string ComputeMd5Hash
+public static string TruncateWithEllipsis
+public static string ToTitleCase
+public static string ToSnakeCase
+public static string ToCamelCase
+public static string RemoveWhitespace
+public static string SanitizeForFilePath
+public static string SanitizeForHtml
+public static bool IsValidEmail
+public static bool IsValidUrl
+public static bool IsValidGuid
+public static string GenerateRandomString
+public static string Repeat
+public static IEnumerable<string> SplitPreservingQuotes
+public static double GetStringSimilarity
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+
+// Example 1: Compute SHA256 hash of a string
+var hash = StringUtilities.ComputeSha256Hash("Hello, World!");
+Console.WriteLine(hash);
+
+// Example 2: Truncate a string with ellipsis
+var truncated = StringUtilities.TruncateWithEllipsis("This is a very long string", 10);
+Console.WriteLine(truncated);
+
+// Example 3: Convert to title case
+var titleCase = StringUtilities.ToTitleCase("hello world");
+Console.WriteLine(titleCase);
+
+// Example 4: Convert to snake_case
+var snakeCase = StringUtilities.ToSnakeCase("HelloWorld");
+Console.WriteLine(snakeCase);
+
+// Example 5: Convert to camelCase
+var camelCase = StringUtilities.ToCamelCase("hello_world");
+Console.WriteLine(camelCase);
+
+// Example 6: Remove whitespace from a string
+var noWhitespace = StringUtilities.RemoveWhitespace("   Hello   World  ");
+Console.WriteLine(noWhitespace);
+
+// Example 7: Sanitize a string for file path
+var sanitizedPath = StringUtilities.SanitizeForFilePath("Hello World!");
+Console.WriteLine(sanitizedPath);
+
+// Example 8: Sanitize a string for HTML output
+var sanitizedHtml = StringUtilities.SanitizeForHtml("<script>alert('XSS')</script>");
+Console.WriteLine(sanitizedHtml);
+
+// Example 9: Validate an email address
+var isValidEmail = StringUtilities.IsValidEmail("user@example.com");
+Console.WriteLine(isValidEmail);
+
+// Example 10: Validate a URL
+var isValidUrl = StringUtilities.IsValidUrl("https://example.com");
+Console.WriteLine(isValidUrl);
+
+// Example 11: Validate a GUID
+var isValidGuid = StringUtilities.IsValidGuid("01234567-89ab-cdef-0123-456789abcdef");
+Console.WriteLine(isValidGuid);
+
+// Example 12: Generate a random string
+var randomString = StringUtilities.GenerateRandomString(10);
+Console.WriteLine(randomString);
+
+// Example 13: Repeat a string
+var repeatedString = StringUtilities.Repeat("Hello", 3);
+Console.WriteLine(repeatedString);
+
+// Example 14: Split a string while preserving quotes
+var splitString = StringUtilities.SplitPreservingQuotes("Hello, 'World'!");
+Console.WriteLine(string.Join(" ", splitString));
+
+// Example 15: Get the similarity ratio between two strings
+var similarity = StringUtilities.GetStringSimilarity("Hello", "World");
+Console.WriteLine(similarity);
+```
+
 ## OperationRetryPolicy
 
 `OperationRetryPolicy` provides a robust mechanism for executing operations with automatic retry logic. It supports configurable retry attempts, exponential backoff with jitter, and customizable logging. This is particularly useful for transient operations such as database connections, network calls, or file operations where temporary failures may resolve on subsequent attempts.
