@@ -506,6 +506,30 @@ if (historyResponse.IsSuccess)
 }
 ```
 
+## MigrationRepository
+
+The `MigrationRepository` provides an interface for interacting with the migration records in the database. It allows for querying, adding, updating, and deleting migration entries, facilitating the management of database schema versions.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+
+// Assuming IMigrationRepository is resolved via DI
+var migrationRepository = serviceProvider.GetRequiredService<IMigrationRepository>();
+
+// Get all pending migrations
+var pendingMigrations = await migrationRepository.GetPendingMigrationsAsync();
+
+// Check if a specific migration exists
+bool exists = await migrationRepository.ExistsAsync("migration-id-123");
+
+// Add a new migration
+var newMigration = new Migration { /* ... */ };
+await migrationRepository.AddAsync(newMigration);
+```
+
 ## BackupController
 
 The `BackupController` class provides REST API endpoints for comprehensive backup management and disaster recovery operations. It enables creating, verifying, restoring, and organizing backups for tenant databases, ensuring data protection compliance and enabling recovery from data loss scenarios. The controller integrates with the backup service to handle backup lifecycle operations while providing standardized API responses through the `ApiResponse<T>` wrapper.
