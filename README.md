@@ -2114,6 +2114,86 @@ Console.WriteLine(productsCsv);
 File.Delete(testDbPath);
 ```
 
+## CacheServiceTests
+
+The `CacheServiceTests` class provides comprehensive unit tests for the `CacheService` class, verifying that caching functionality works correctly for multi-tenant SQLite operations. These tests cover constructor validation, cache operations (get/set/remove), pattern-based cache clearing, and proper error handling for invalid inputs, ensuring the cache service operates reliably for performance optimization and data consistency.
+
+### Public Members
+
+```csharp
+public sealed class CacheServiceTests
+public CacheServiceTests()
+public void CacheService_Constructor_ThrowsArgumentNullException_WhenMemoryCacheIsNull
+public void CacheService_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull
+public void Get_ExistingKey_ReturnsValue
+public void Get_NonExistingKey_ReturnsDefault
+public void Get_NullKey_ReturnsDefault
+public void Get_EmptyKey_ReturnsDefault
+public void Set_ValueWithDefaultExpiration_AddsToCache
+public void Set_ValueWithCustomExpiration_AddsToCache
+public void Set_NullKey_DoesNothing
+public void Set_EmptyKey_DoesNothing
+public void Set_NullValue_DoesNothing
+public void Remove_ExistingKey_RemovesFromCache
+public void Remove_NonExistingKey_DoesNotThrow
+public void Remove_NullKey_DoesNothing
+public void Remove_EmptyKey_DoesNothing
+public void RemoveByPattern_RemovesMatchingKeys
+public void RemoveByPattern_NoMatchingKeys_DoesNothing
+public void RemoveByPattern_NullPattern_DoesNothing
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Caching;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+
+// Create cache service with real dependencies
+var memoryCache = new MemoryCache(new MemoryCacheOptions());
+var logger = NullLogger<CacheService>.Instance;
+var cacheService = new CacheService(memoryCache, logger);
+
+// Example 1: Set and get cache values with default expiration (1 hour)
+cacheService.Set("tenant:acme-corp:users", new { Count = 42, LastUpdated = DateTime.UtcNow });
+var cachedData = cacheService.Get<object>("tenant:acme-corp:users");
+Console.WriteLine(cachedData != null ? "Cache hit!" : "Cache miss");
+
+// Example 2: Set cache values with custom expiration
+cacheService.Set("temp:config", "temporary-config-value", TimeSpan.FromMinutes(5));
+
+// Example 3: Remove specific cache entry
+cacheService.Remove("temp:config");
+
+// Example 4: Remove cache entries by pattern (e.g., all tenant-specific cache keys)
+cacheService.Set("tenant:globex:users", new { Count = 25 });
+cacheService.Set("tenant:globex:products", new { Count = 150 });
+cacheService.Set("system:config", "global-config");
+
+// Remove all tenant-specific cache entries
+cacheService.RemoveByPattern("tenant:*");
+
+// Verify only tenant entries were removed
+var globexUsers = cacheService.Get<object>("tenant:globex:users");
+var globexProducts = cacheService.Get<object>("tenant:globex:products");
+var systemConfig = cacheService.Get<object>("system:config");
+
+Console.WriteLine(globexUsers == null ? "Tenant users cache cleared" : "Tenant users still cached");
+Console.WriteLine(globexProducts == null ? "Tenant products cache cleared" : "Tenant products still cached");
+Console.WriteLine(systemConfig != null ? "System config preserved" : "System config removed");
+
+// Example 5: Handle null and empty keys gracefully
+cacheService.Set(null, "value"); // Does nothing
+cacheService.Set("", "value"); // Does nothing
+cacheService.Get<object>(null); // Returns null
+cacheService.Get<object>(""); // Returns null
+cacheService.Remove(null); // Does nothing
+cacheService.Remove(""); // Does nothing
+```
+
 ## BackupModelTests
 
 The `BackupModelTests` class provides comprehensive unit tests for the `Backup` model class, covering core backup functionality such as status transitions, size calculations, duration tracking, compression ratio computation, error handling, tag management, and expiration logic. These tests ensure that backup operations behave correctly under various scenarios including successful completions, failures, and retention policies.
