@@ -1223,10 +1223,54 @@ class Program
         bool copied = candidatePath.SafeCopyFile(copyDest, overwrite: true);
         Console.WriteLine($"File copied: {copied}");
 
-        // 9. Get creation time of the copied file
-        DateTime createdUtc = copyDest.GetFileCreationTimeUtc();
-        Console.WriteLine($"Copy created (UTC): {createdUtc:u}");
-    }
+        
+## JsonHelper
+
+The `JsonHelper` static class provides a centralized, robust set of methods for JSON serialization, deserialization, and manipulation within multi-tenant SQLite systems. It ensures consistent JSON handling with camelCase naming policies, enum support, and error handling, making it ideal for processing configurations, API payloads, and tenant-specific data structures.
+
+### Public Members
+
+```csharp
+public static string Serialize<T>(T obj, bool indented = true)
+public static T Deserialize<T>(string json)
+public static dynamic DeserializeDynamic(string json)
+public static string MergeJson(string json1, string json2)
+public static T GetProperty<T>(string json, string propertyPath)
+public static bool IsValidJson(string json)
+public static T DeepClone<T>(T obj)
+public static string PrettyPrint(string json)
+public static string Minify(string json)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+
+// Example 1: Serialize and Deserialize
+var config = new TenantConfig { Name = "Acme Corp", MaxDatabaseSize = 100 };
+string json = JsonHelper.Serialize(config);
+var deserialized = JsonHelper.Deserialize<TenantConfig>(json);
+Console.WriteLine($"Deserialized Name: {deserialized.Name}");
+
+// Example 2: Accessing JSON properties and dynamic data
+string rawJson = "{\"settings\": {\"theme\": \"dark\"}}";
+string theme = JsonHelper.GetProperty<string>(rawJson, "settings.theme");
+Console.WriteLine($"Theme: {theme}");
+
+// Example 3: Merging and formatting
+string json1 = "{\"name\": \"Acme\"}";
+string json2 = "{\"version\": \"1.0\"}";
+string merged = JsonHelper.MergeJson(json1, json2);
+string minified = JsonHelper.Minify(merged);
+Console.WriteLine($"Minified JSON: {minified}");
+
+public class TenantConfig
+{
+    public string Name { get; set; } = string.Empty;
+    public int MaxDatabaseSize { get; set; }
 }
 ```
+
 ```
