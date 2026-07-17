@@ -1,0 +1,10 @@
+var backupRotationManager = new BackupRotationManager();
+var validationErrors = BackupRotationManagerValidation.Validate(backupRotationManager);
+if (validationErrors.Any())
+{
+    Console.WriteLine("Validation errors:");
+    foreach (var error in validationErrors)
+    {
+        Console.WriteLine(error);
+    }
+}
