@@ -35,7 +35,7 @@ public static class DataConsistencyCheckerTestsExtensions
     /// Creates an in-memory SQLite connection for testing database integrity checks.
     /// </summary>
     /// <param name="test">The test instance to extend.</param>
-    /// <param name="open">Whether to open the connection immediately. Defaults to true.</param>
+    /// <param name="open">Whether to open the connection immediately. Defaults to <see langword="true"/>.</param>
     /// <returns>A new SQLiteConnection configured for in-memory testing.</returns>
     /// <exception cref="ArgumentNullException">Thrown if test is null.</exception>
     public static SQLiteConnection CreateMemoryConnection(
@@ -57,7 +57,7 @@ public static class DataConsistencyCheckerTestsExtensions
     /// Creates a connection string for a temporary file-based SQLite database.
     /// </summary>
     /// <param name="test">The test instance to extend.</param>
-    /// <param name="dbName">Optional database name. If null, a GUID-based name will be generated.</param>
+    /// <param name="dbName">Optional database name. If <see langword="null"/>, a GUID-based name will be generated.</param>
     /// <returns>A connection string for a temporary SQLite database file.</returns>
     /// <exception cref="ArgumentNullException">Thrown if test is null.</exception>
     public static string CreateTempConnectionString(
@@ -75,7 +75,7 @@ public static class DataConsistencyCheckerTestsExtensions
     /// </summary>
     /// <param name="test">The test instance to extend.</param>
     /// <param name="result">The consistency check result to verify.</param>
-    /// <returns>True if the database is healthy; otherwise false.</returns>
+    /// <returns><see langword="true"/> if the database is healthy (all checks passed); otherwise <see langword="false"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown if test or result is null.</exception>
     public static bool ShouldBeHealthy(
         this DataConsistencyCheckerTests test,
