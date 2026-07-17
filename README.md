@@ -503,6 +503,131 @@ if (tagResponse.IsSuccess)
 }
 ```
 
+## DatabaseController
+
+The `DatabaseController` class provides REST API endpoints for database-specific operations including statistics, maintenance, integrity checks, schema inspection, and exports. It serves as a centralized controller for managing all database-level operations across tenant databases, providing insights into database health and enabling administrative tasks.
+
+### Public Members
+
+```csharp
+public sealed class DatabaseController : ControllerBase
+public DatabaseController(ILogger<DatabaseController> logger)
+public IActionResult GetDatabaseStats(string databaseId)
+public async Task<IActionResult> OptimizeDatabase(string databaseId)
+public async Task<IActionResult> CheckIntegrity(string databaseId)
+public IActionResult GetSchema(string databaseId)
+public async Task<IActionResult> ExportDatabase(string databaseId, string format = "json")
+
+public sealed class DatabaseStats
+    public string DatabaseId { get; set; }
+    public long FileSizeBytes { get; set; }
+    public int TableCount { get; set; }
+    public int IndexCount { get; set; }
+    public DateTime LastVacuumTime { get; set; }
+    public bool IsCorrupted { get; set; }
+    public DateTime Timestamp { get; set; }
+
+public sealed class OptimizationResult
+    public string DatabaseId { get; set; }
+    public long DurationMs { get; set; }
+    public string Message { get; set; }
+    public DateTime Timestamp { get; set; }
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Controllers;
+using SqliteMultiTenant.Api.Responses;
+using Microsoft.Extensions.Logging;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DatabaseController>();
+
+// Create the controller instance
+var databaseController = new DatabaseController(logger);
+
+// Example 1: Get database statistics
+var statsResponse = databaseController.GetDatabaseStats("acme-corp");
+
+if (statsResponse is OkObjectResult okResult && okResult.Value is ApiResponse<DatabaseStats> statsApiResponse)
+{
+    var stats = statsApiResponse.Data;
+    Console.WriteLine($"Database: {stats?.DatabaseId}");
+    Console.WriteLine($"Size: {stats?.FileSizeBytes:N0} bytes");
+    Console.WriteLine($"Tables: {stats?.TableCount}");
+    Console.WriteLine($"Indexes: {stats?.IndexCount}");
+    Console.WriteLine($"Last VACUUM: {stats?.LastVacuumTime:yyyy-MM-dd HH:mm:ss}");
+    Console.WriteLine($"Corrupted: {stats?.IsCorrupted}");
+}
+
+// Example 2: Optimize database performance
+var optimizeResponse = await databaseController.OptimizeDatabase("acme-corp");
+
+if (optimizeResponse is OkObjectResult optimizeOkResult && optimizeOkResult.Value is ApiResponse<OptimizationResult> optimizeApiResponse)
+{
+    var result = optimizeApiResponse.Data;
+    Console.WriteLine($"Optimization completed for: {result?.DatabaseId}");
+    Console.WriteLine($"Duration: {result?.DurationMs}ms");
+    Console.WriteLine($"Message: {result?.Message}");
+}
+
+// Example 3: Check database integrity
+var integrityResponse = await databaseController.CheckIntegrity("acme-corp");
+
+if (integrityResponse is OkObjectResult integrityOkResult && integrityOkResult.Value is ApiResponse<IntegrityCheckResult> integrityApiResponse)
+{
+    var result = integrityApiResponse.Data;
+    Console.WriteLine($"Integrity check for: {result?.DatabaseId}");
+    Console.WriteLine($"Valid: {result?.IsValid}");
+    Console.WriteLine($"Errors: {result?.ErrorCount}");
+    
+    if (!result?.IsValid ?? false)
+    {
+        Console.WriteLine("Integrity issues found:");
+        foreach (var error in result?.Errors ?? new List<string>())
+        {
+            Console.WriteLine($"  - {error}");
+        }
+    }
+}
+
+// Example 4: Get database schema
+var schemaResponse = databaseController.GetSchema("acme-corp");
+
+if (schemaResponse is OkObjectResult schemaOkResult && schemaOkResult.Value is ApiResponse<DatabaseSchema> schemaApiResponse)
+{
+    var schema = schemaApiResponse.Data;
+    Console.WriteLine($"Schema for: {schema?.DatabaseId}");
+    Console.WriteLine($"Tables: {schema?.Tables.Count}");
+    
+    foreach (var table in schema?.Tables ?? new List<TableSchema>())
+    {
+        Console.WriteLine($"\nTable: {table.TableName} ({table.RowCount} rows)");
+        Console.WriteLine("Columns:");
+        foreach (var column in table.Columns)
+        {
+            Console.WriteLine($"  - {column.ColumnName} ({column.DataType})" + 
+                           (column.IsPrimaryKey ? " [PK]" : "") +
+                           (column.IsNullable ? " [NULL]" : ""));
+        }
+    }
+}
+
+// Example 5: Export database
+var exportResponse = await databaseController.ExportDatabase("acme-corp", "json");
+
+if (exportResponse is OkObjectResult exportOkResult && exportOkResult.Value is ApiResponse<ExportResult> exportApiResponse)
+{
+    var result = exportApiResponse.Data;
+    Console.WriteLine($"Export initiated for: {result?.DatabaseId}");
+    Console.WriteLine($"Format: {result?.Format}");
+    Console.WriteLine($"Download URL: {result?.DownloadUrl}");
+    Console.WriteLine($"Expires at: {result?.ExpiresAt:yyyy-MM-dd HH:mm:ss}");
+}
+```
+
 ## AdminController
 
 The `AdminController` class provides administrative endpoints for system-level operations, health monitoring, and diagnostics. It serves as the central hub for system administrators to monitor system health, retrieve performance metrics, clear caches, and access diagnostic information. All endpoints are protected and require administrative privileges.
