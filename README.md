@@ -396,6 +396,113 @@ if (suspendResponse.IsSuccess)
 }
 ```
 
+## AdminController
+
+The `AdminController` class provides administrative endpoints for system-level operations, health monitoring, and diagnostics. It serves as the central hub for system administrators to monitor system health, retrieve performance metrics, clear caches, and access diagnostic information. All endpoints are protected and require administrative privileges.
+
+### Public Members
+
+```csharp
+public sealed class AdminController : ControllerBase
+public AdminController(HealthCheckService healthCheckService, MetricsService metricsService, ILogger<AdminController> logger)
+public async Task<IActionResult> GetHealthAsync()
+public IActionResult GetMetrics()
+public IActionResult GetMetricsDashboard()
+public IActionResult ClearCache()
+public IActionResult ForceGarbageCollection()
+public IActionResult GetDiagnostics()
+
+public sealed class HealthCheckResponse
+public bool IsHealthy { get; set; }
+public string Status { get; set; }
+public DateTime Timestamp { get; set; }
+public string Version { get; set; }
+
+public sealed class SystemMetrics
+public DateTime Timestamp { get; set; }
+public long ProcessMemoryMb { get; set; }
+public int ThreadCount { get; set; }
+public int ActiveConnections { get; set; }
+public long RequestsProcessed { get; set; }
+public double AverageResponseTimeMs { get; set; }
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Controllers;
+using SqliteMultiTenant.Health;
+using SqliteMultiTenant.Monitoring;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<AdminController>();
+
+// Create services (would normally be injected)
+var healthCheckService = new HealthCheckService(/* dependencies */);
+var metricsService = new MetricsService(/* dependencies */);
+
+// Create the controller instance
+var adminController = new AdminController(healthCheckService, metricsService, logger);
+
+// Example 1: Check system health
+var healthResult = await adminController.GetHealthAsync();
+if (healthResult is OkObjectResult okResult && okResult.Value is ApiResponse<HealthCheckResponse> healthResponse)
+{
+    Console.WriteLine($"System healthy: {healthResponse.Data?.IsHealthy}");
+    Console.WriteLine($"Status: {healthResponse.Data?.Status}");
+    Console.WriteLine($"Version: {healthResponse.Data?.Version}");
+}
+
+// Example 2: Get system metrics
+var metricsResult = adminController.GetMetrics();
+if (metricsResult is OkObjectResult metricsOkResult && metricsOkResult.Value is ApiResponse<SystemMetrics> metricsResponse)
+{
+    var metrics = metricsResponse.Data;
+    Console.WriteLine($"Memory usage: {metrics?.ProcessMemoryMb} MB");
+    Console.WriteLine($"Thread count: {metrics?.ThreadCount}");
+    Console.WriteLine($"Requests processed: {metrics?.RequestsProcessed}");
+    Console.WriteLine($"Average response time: {metrics?.AverageResponseTimeMs} ms");
+}
+
+// Example 3: Get metrics dashboard
+var dashboardResult = adminController.GetMetricsDashboard();
+if (dashboardResult is OkObjectResult dashboardOkResult && dashboardOkResult.Value is ApiResponse<MetricsSnapshot> dashboardResponse)
+{
+    var snapshot = dashboardResponse.Data;
+    Console.WriteLine($"Total requests: {snapshot?.TotalRequests}");
+    Console.WriteLine($"Error rate: {snapshot?.ErrorRate:P}");
+}
+
+// Example 4: Clear system cache
+var clearResult = adminController.ClearCache();
+if (clearResult is OkObjectResult clearOkResult && clearOkResult.Value is ApiResponse<CacheClearResult> clearResponse)
+{
+    Console.WriteLine($"Cache cleared: {clearResponse.Data?.Message}");
+    Console.WriteLine($"Memory freed: {clearResponse.Data?.MemoryFreedBytes} bytes");
+}
+
+// Example 5: Force garbage collection
+var gcResult = adminController.ForceGarbageCollection();
+if (gcResult is OkObjectResult gcOkResult && gcOkResult.Value is ApiResponse<object> gcResponse)
+{
+    Console.WriteLine("Garbage collection completed successfully");
+}
+
+// Example 6: Get system diagnostics
+var diagnosticsResult = adminController.GetDiagnostics();
+if (diagnosticsResult is OkObjectResult diagnosticsOkResult && diagnosticsOkResult.Value is ApiResponse<DiagnosticsInfo> diagnosticsResponse)
+{
+    var diagnostics = diagnosticsResponse.Data;
+    Console.WriteLine($".NET version: {diagnostics?.DotNetVersion}");
+    Console.WriteLine($"OS: {diagnostics?.OSVersion}");
+    Console.WriteLine($"Processor count: {diagnostics?.ProcessorCount}");
+    Console.WriteLine($"Uptime: {diagnostics?.Uptime.TotalHours:F2} hours");
+}
+```
+
 ## CreateTenantRequest
 
 The `CreateTenantRequest` class represents the data transfer object used to create a new tenant in the multi-tenant SQLite system. It contains the essential tenant information required for provisioning: name, description, and contact email address. This request is validated in the controller to ensure all required fields are provided before tenant creation proceeds.
