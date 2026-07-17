@@ -845,6 +845,48 @@ if (diagnosticsResult is OkObjectResult diagnosticsOkResult && diagnosticsOkResu
 }
 ```
 
+## SettingsController
+
+The `SettingsController` provides a REST API for managing application settings in a multi-tenant environment. It supports retrieving, setting, removing, and batch-updating settings, with capabilities to check for setting existence and retrieve application information.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Controllers;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+
+// Setup
+var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<SettingsController>();
+var controller = new SettingsController();
+
+// 1. Get all settings
+var allSettings = controller.GetAllSettings();
+
+// 2. Get a single setting
+var setting = controller.GetSetting("Theme");
+
+// 3. Set/Update a setting
+var setRequest = new SettingsController.SetSettingRequest { Value = "Dark" };
+var setResult = controller.SetSetting("Theme", setRequest);
+
+// 4. Batch update settings
+var batchList = new List<SettingsController.SettingValue> {
+    new SettingsController.SettingValue { Key = "Theme", Value = "Light", Type = "string" }
+};
+var batchResult = controller.UpdateBatchSettings(batchList);
+
+// 5. Remove a setting
+var removeResult = controller.RemoveSetting("Theme");
+
+// 6. Check a setting
+var exists = controller.CheckSetting("Theme");
+
+// 7. Get App Info
+var appInfo = controller.GetAppInfo();
+```
+
 ## CreateTenantRequest
 
 The `CreateTenantRequest` class represents the data transfer object used to create a new tenant in the multi-tenant SQLite system. It contains the essential tenant information required for provisioning: name, description, and contact email address. This request is validated in the controller to ensure all required fields are provided before tenant creation proceeds.
