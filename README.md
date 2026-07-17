@@ -396,6 +396,116 @@ if (suspendResponse.IsSuccess)
 }
 ```
 
+## MigrationController
+
+The `MigrationController` class provides REST API endpoints for database migration management, enabling schema evolution, version control, and rollback capabilities across tenant databases. It handles the creation of new migrations, tracking of migration history, application of pending migrations, and rollback of the most recent migration when safe to do so. The controller ensures schema consistency and provides audit trails for all migration operations.
+
+### Public Members
+
+```csharp
+public sealed class MigrationController
+public MigrationController(IMigrationService migrationService, ILogger<MigrationController> logger)
+public async Task<ApiResponse<MigrationResponse>> CreateMigrationAsync(CreateMigrationRequest request)
+public async Task<ApiResponse<IEnumerable<MigrationResponse>>> GetPendingMigrationsAsync(string databaseId)
+public async Task<ApiResponse<MigrationBatchResponse>> ApplyMigrationsAsync(string databaseId, string appliedBy)
+public async Task<ApiResponse<MigrationResponse>> RollbackLastMigrationAsync(string databaseId, string rollbackBy)
+public async Task<ApiResponse<MigrationHistoryResponse>> GetMigrationHistoryAsync(string databaseId)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Api.Controllers;
+using SqliteMultiTenant.Api.Requests;
+using SqliteMultiTenant.Api.Responses;
+using SqliteMultiTenant.Services;
+using Microsoft.Extensions.Logging;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<MigrationController>();
+
+// Create migration service (would normally be injected)
+var migrationService = new MigrationService(/* dependencies */);
+
+// Create the controller instance
+var migrationController = new MigrationController(migrationService, logger);
+
+// Example 1: Create a new migration with up/down scripts
+var createRequest = new CreateMigrationRequest
+{
+    DatabaseId = "acme-corp",
+    Version = "1.2.3",
+    Name = "AddTenantsTable",
+    UpScript = @"
+        CREATE TABLE IF NOT EXISTS Tenants (
+            Id TEXT PRIMARY KEY,
+            Name TEXT NOT NULL,
+            CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            IsActive BOOLEAN NOT NULL DEFAULT 1
+        );",
+    DownScript = @"
+        DROP TABLE IF EXISTS Tenants;
+    "
+};
+
+var createResponse = await migrationController.CreateMigrationAsync(createRequest);
+
+if (createResponse.IsSuccess)
+{
+    Console.WriteLine($"Migration created: {createResponse.Data?.MigrationId}");
+    Console.WriteLine($"Version: {createResponse.Data?.Version}");
+    Console.WriteLine($"Status: {createResponse.Data?.Status}");
+}
+
+// Example 2: Get pending migrations for a database
+var pendingMigrations = await migrationController.GetPendingMigrationsAsync("acme-corp");
+
+if (pendingMigrations.IsSuccess)
+{
+    Console.WriteLine($"Found {pendingMigrations.Data?.Count()} pending migrations");
+    foreach (var migration in pendingMigrations.Data ?? Enumerable.Empty<MigrationResponse>())
+    {
+        Console.WriteLine($" - {migration.Version}: {migration.Name} ({migration.Status})");
+    }
+}
+
+// Example 3: Apply pending migrations
+var applyResponse = await migrationController.ApplyMigrationsAsync(
+    databaseId: "acme-corp",
+    appliedBy: "migration-admin@acme-corp.com"
+);
+
+if (applyResponse.IsSuccess)
+{
+    Console.WriteLine($"Applied {applyResponse.Data?.SuccessfulCount} migrations");
+    Console.WriteLine($"Total migrations: {applyResponse.Data?.TotalMigrations}");
+}
+
+// Example 4: Rollback the last migration (if rollbackable)
+var rollbackResponse = await migrationController.RollbackLastMigrationAsync(
+    databaseId: "acme-corp",
+    rollbackBy: "admin@acme-corp.com"
+);
+
+if (rollbackResponse.IsSuccess)
+{
+    Console.WriteLine($"Rolled back migration: {rollbackResponse.Data?.Version}");
+}
+
+// Example 5: Get complete migration history for audit purposes
+var historyResponse = await migrationController.GetMigrationHistoryAsync("acme-corp");
+
+if (historyResponse.IsSuccess)
+{
+    var history = historyResponse.Data;
+    Console.WriteLine($"Database: {history?.DatabaseId}");
+    Console.WriteLine($"Pending migrations: {history?.PendingCount}");
+    Console.WriteLine($"Applied migrations: {history?.AppliedCount}");
+    Console.WriteLine($"Last migration: {history?.LastMigrationDate:yyyy-MM-dd HH:mm:ss}");
+}
+```
+
 ## BackupController
 
 The `BackupController` class provides REST API endpoints for comprehensive backup management and disaster recovery operations. It enables creating, verifying, restoring, and organizing backups for tenant databases, ensuring data protection compliance and enabling recovery from data loss scenarios. The controller integrates with the backup service to handle backup lifecycle operations while providing standardized API responses through the `ApiResponse<T>` wrapper.
