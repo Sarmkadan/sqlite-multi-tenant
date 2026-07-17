@@ -315,4 +315,123 @@ class Program
     }
   }
 }
+
+## TenantSettingsEdgeCaseTests
+The `TenantSettingsEdgeCaseTests` class provides comprehensive unit tests for the `TenantSettings` model, focusing on edge cases around type conversion, validation boundaries, and error handling. These tests cover validation scenarios for empty IDs, boundary conditions for string lengths, proper error handling for type conversions, and activation state changes, ensuring the tenant settings system operates reliably in multi-tenant SQLite environments.
+
+### Public Members
+
+```csharp
+public sealed class TenantSettingsEdgeCaseTests
+public void Validate_EmptySettingId_ReturnsError()
+public void Validate_EmptyTenantId_ReturnsError()
+public void Validate_SettingKeyExceedsMaxLength_ReturnsError()
+public void Validate_SettingKeyExactly256Chars_IsValid()
+public void GetValue_ValidIntString_ReturnsInt()
+public void GetValue_InvalidConversion_ThrowsInvalidOperationException()
+public void GetValue_EmptyString_ToInt_ThrowsInvalidOperationException()
+public void GetValue_BoolConversion_Works()
+public void SetValue_SetsDataTypeToTypeName()
+public void UpdateValue_UpdatesTimestampAndModifiedBy()
+public void UpdateValue_NullModifiedBy_SetsToNull()
+public void SetActive_ToFalse_DeactivatesSetting()
+public void SetActive_ToTrue_ActivatesSetting()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Example 1: Create valid tenant settings
+        var settings = new TenantSettings
+        {
+            SettingId = "setting-123",
+            TenantId = "tenant-456",
+            SettingKey = "max-connections",
+            SettingValue = "10"
+        };
+
+        // Validate the settings
+        var isValid = settings.Validate(out var errors);
+        Console.WriteLine(isValid ? "Settings are valid" : "Settings are invalid");
+
+        // Example 2: Test empty SettingId (should return false)
+        var emptyIdSettings = new TenantSettings
+        {
+            SettingId = "",
+            TenantId = "tenant-456",
+            SettingKey = "key",
+            SettingValue = "value"
+        };
+        
+        var isValid2 = emptyIdSettings.Validate(out var errors2);
+        Console.WriteLine(!isValid2 && errors2.Any(e => e.Contains("SettingId")) 
+            ? "Correctly detected empty SettingId" 
+            : "ERROR: Should have detected empty SettingId");
+
+        // Example 3: Test boundary for SettingKey length (exactly 256 chars is valid)
+        var maxLengthKey = new string('k', 256);
+        var boundarySettings = new TenantSettings
+        {
+            SettingId = "s1",
+            TenantId = "t1",
+            SettingKey = maxLengthKey,
+            SettingValue = "value"
+        };
+        
+        var isValid3 = boundarySettings.Validate(out var errors3);
+        Console.WriteLine(isValid3 ? "256 char SettingKey is valid" : "ERROR: 256 char SettingKey should be valid");
+
+        // Example 4: Test type conversion with GetValue<int>
+        var intSettings = new TenantSettings { SettingValue = "42" };
+        var intValue = intSettings.GetValue<int>();
+        Console.WriteLine(intValue == 42 ? "Int conversion successful" : "ERROR: Int conversion failed");
+
+        // Example 5: Test boolean conversion
+        var boolSettings = new TenantSettings { SettingValue = "True" };
+        var boolValue = boolSettings.GetValue<bool>();
+        Console.WriteLine(boolValue ? "Bool conversion successful" : "ERROR: Bool conversion failed");
+
+        // Example 6: Test SetValue which sets DataType and LastModifiedBy
+        var setValueSettings = new TenantSettings();
+        setValueSettings.SetValue(123, "admin");
+        Console.WriteLine(setValueSettings.DataType == "Int32" && setValueSettings.LastModifiedBy == "admin"
+            ? "SetValue works correctly" 
+            : "ERROR: SetValue failed");
+
+        // Example 7: Test UpdateValue which updates timestamp and modified by
+        var updateSettings = new TenantSettings();
+        updateSettings.UpdateValue("new-value", "user1");
+        Console.WriteLine(updateSettings.SettingValue == "new-value" && updateSettings.LastModifiedBy == "user1"
+            ? "UpdateValue works correctly" 
+            : "ERROR: UpdateValue failed");
+
+        // Example 8: Test UpdateValue with null ModifiedBy
+        var nullModifiedBySettings = new TenantSettings { LastModifiedBy = "previous" };
+        nullModifiedBySettings.UpdateValue("val");
+        Console.WriteLine(nullModifiedBySettings.LastModifiedBy == null
+            ? "UpdateValue with null ModifiedBy works correctly" 
+            : "ERROR: UpdateValue with null ModifiedBy failed");
+
+        // Example 9: Test SetActive to deactivate
+        var inactiveSettings = new TenantSettings { IsActive = true };
+        inactiveSettings.SetActive(false);
+        Console.WriteLine(!inactiveSettings.IsActive
+            ? "SetActive(false) works correctly" 
+            : "ERROR: SetActive(false) failed");
+
+        // Example 10: Test SetActive to activate
+        var activeSettings = new TenantSettings { IsActive = false };
+        activeSettings.SetActive(true);
+        Console.WriteLine(activeSettings.IsActive
+            ? "SetActive(true) works correctly" 
+            : "ERROR: SetActive(true) failed");
+    }
+}
 ```
