@@ -1225,6 +1225,123 @@ emptyEmailErrors.Should().ContainSingle()
     .And.ContainValue("Contact email is required");
 ```
 
+## TenantEdgeCaseTests
+
+The `TenantEdgeCaseTests` class provides comprehensive edge-case and boundary-value tests for the `Tenant` model validation, state transitions, and metadata operations. It covers null inputs, boundary values, concurrent metadata access, and validation scenarios to ensure robust tenant management in multi-tenant SQLite systems.
+
+### Public Members
+
+```csharp
+public sealed class TenantEdgeCaseTests
+public void Validate_NullTenantId_ReturnsError()
+public void Validate_EmptyTenantId_ReturnsError()
+public void Validate_WhitespaceTenantId_ReturnsError()
+public void Validate_TenantIdExceedsMaxLength_ReturnsError()
+public void Validate_TenantIdExactlyMaxLength_IsValid()
+public void Validate_NameExceedsMaxLength_ReturnsError()
+public void Validate_ZeroMaxConnections_ReturnsError()
+public void Validate_NegativeMaxConnections_ReturnsError()
+public void Validate_CreatedAtAfterUpdatedAt_ReturnsError()
+public void Validate_MultipleErrors_ReturnsAllErrors()
+public void MarkAsAccessed_SetsLastAccessedAtToUtcNow()
+public void Deactivate_SetsStatusToInactive()
+public void Activate_AfterDeactivate_SetsStatusToActive()
+public void SetMetadata_WhenMetadataIsNull_InitializesAndSetsValue()
+public void SetMetadata_OverwritesExistingKey()
+public void GetMetadata_NonexistentKey_ReturnsNull()
+public void GetMetadata_WhenMetadataIsNull_ReturnsNull()
+public void SetMetadata_ConcurrentAccess_DoesNotThrow()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Constants;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Validate tenant with null TenantId (should fail)
+var invalidTenant1 = new Tenant
+{
+    TenantId = null,
+    Name = "Valid Tenant",
+    MaxConnections = 10
+};
+
+if (!invalidTenant1.Validate(out var errors1))
+{
+    Console.WriteLine("Validation errors for null TenantId:");
+    foreach (var error in errors1)
+    {
+        Console.WriteLine($" - {error}");
+    }
+}
+
+// Example 2: Validate tenant with empty TenantId (should fail)
+var invalidTenant2 = new Tenant
+{
+    TenantId = "",
+    Name = "Valid Tenant",
+    MaxConnections = 10
+};
+
+if (!invalidTenant2.Validate(out var errors2))
+{
+    Console.WriteLine("Validation errors for empty TenantId:");
+    foreach (var error in errors2)
+    {
+        Console.WriteLine($" - {error}");
+    }
+}
+
+// Example 3: Validate tenant with exactly maximum length TenantId (should pass)
+var validTenant = new Tenant
+{
+    TenantId = new string('x', TenantConstants.MaxTenantIdLength),
+    Name = "Valid Tenant",
+    MaxConnections = 10
+};
+
+if (validTenant.Validate(out var errors3))
+{
+    Console.WriteLine("Tenant with maximum length TenantId is valid!");
+}
+
+// Example 4: Mark tenant as accessed to update timestamps
+var tenant = new Tenant { TenantId = "acme-corp", Name = "Acme Corporation" };
+tenant.MarkAsAccessed();
+Console.WriteLine($"Last accessed: {tenant.LastAccessedAt}");
+
+// Example 5: Deactivate and reactivate tenant
+var activeTenant = new Tenant { TenantId = "globex", Name = "Globex Corp", Status = TenantStatus.Active };
+activeTenant.Deactivate();
+Console.WriteLine($"Status after deactivation: {activeTenant.Status}");
+
+activeTenant.Activate();
+Console.WriteLine($"Status after activation: {activeTenant.Status}");
+
+// Example 6: Set and get metadata with null initialization
+var metadataTenant = new Tenant { TenantId = "initech", Name = "Initech" };
+metadataTenant.SetMetadata("environment", "production");
+metadataTenant.SetMetadata("region", "us-west");
+
+var env = metadataTenant.GetMetadata("environment");
+var region = metadataTenant.GetMetadata("region");
+Console.WriteLine($"Environment: {env}, Region: {region}");
+
+// Example 7: Handle concurrent metadata access
+var concurrentTenant = new Tenant { TenantId = "concurrent-test", Name = "Concurrent Test" };
+var tasks = new List<Task>();
+for (int i = 0; i < 10; i++)
+{
+    int index = i;
+    tasks.Add(Task.Run(() => concurrentTenant.SetMetadata($"key_{index}", $"value_{index}")));
+}
+Task.WaitAll(tasks.ToArray());
+Console.WriteLine("Concurrent metadata operations completed successfully");
+```
+
 ## MigrationServiceTests
 
 The `MigrationServiceTests` class provides comprehensive unit tests for the `MigrationService` class, verifying that migration management operations work correctly. These tests cover creating migrations, retrieving migrations by ID, marking migrations as completed or failed, and proper error handling for invalid inputs, ensuring the migration service operates reliably for database schema management in multi-tenant SQLite systems.
