@@ -1039,6 +1039,75 @@ catch (Exception ex)
 File.Delete(testDbPath);
 ```
 
+## TenantServiceTests
+
+The `TenantServiceTests` class provides comprehensive unit tests for the `TenantService` class, verifying that tenant management operations work correctly. These tests cover validation scenarios, repository interactions, and exception handling for tenant lifecycle operations, ensuring the tenant service operates reliably and maintains data integrity.
+
+### Public Members
+
+```csharp
+public sealed class TenantServiceTests
+public TenantServiceTests()
+public async Task GetTenantAsync_WithBlankId_ThrowsArgumentException()
+public async Task GetTenantAsync_WhenTenantFound_InvokesRepositoryUpdateAndReturnsResult()
+public async Task CreateTenantAsync_WhenNameAlreadyExists_ThrowsInvalidOperationException()
+public async Task DeleteTenantAsync_WhenTenantNotFound_ThrowsTenantNotFoundException()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Xunit;
+using FluentAssertions;
+
+// Create mock dependencies
+var mockRepository = Substitute.For<ITenantRepository>();
+var mockLogger = Substitute.For<ILogger<TenantService>>();
+var tenantService = new TenantService(mockRepository, mockLogger);
+
+// Example 1: Test that blank tenant ID throws ArgumentException
+Func<Task> act = async () => await tenantService.GetTenantAsync(" ");
+await act.Should().ThrowAsync<ArgumentException>();
+
+// Example 2: Test repository interaction when tenant is found
+var existingTenant = new Tenant { TenantId = "acme-corp", Name = "Acme Corporation", MaxConnections = 10 };
+mockRepository
+    .GetByIdAsync("acme-corp", Arg.Any<CancellationToken>())
+    .Returns(Task.FromResult<Tenant?>(existingTenant));
+mockRepository
+    .UpdateAsync(Arg.Any<Tenant>(), Arg.Any<CancellationToken>())
+    .Returns(Task.CompletedTask);
+
+var result = await tenantService.GetTenantAsync("acme-corp");
+result.Should().NotBeNull();
+result!.TenantId.Should().Be("acme-corp");
+// Retrieving a tenant must persist the access timestamp
+await mockRepository.Received(1).UpdateAsync(Arg.Any<Tenant>(), Arg.Any<CancellationToken>());
+
+// Example 3: Test that duplicate tenant name throws InvalidOperationException
+var existingNameTenant = new Tenant { TenantId = "existing-1", Name = "Acme Corp", MaxConnections = 10 };
+mockRepository
+    .GetByNameAsync("Acme Corp", Arg.Any<CancellationToken>())
+    .Returns(Task.FromResult<Tenant?>(existingNameTenant));
+
+Func<Task> createDuplicateAct = async () => await tenantService.CreateTenantAsync("Acme Corp");
+await createDuplicateAct.Should().ThrowAsync<InvalidOperationException>()
+    .WithMessage("*already exists*");
+
+// Example 4: Test that deleting non-existent tenant throws TenantNotFoundException
+mockRepository
+    .GetByIdAsync("ghost-tenant", Arg.Any<CancellationToken>())
+    .Returns(Task.FromResult<Tenant?>(null));
+
+Func<Task> deleteGhostAct = async () => await tenantService.DeleteTenantAsync("ghost-tenant");
+await deleteGhostAct.Should().ThrowAsync<TenantNotFoundException>();
+```
+
 ## HealthCheckServiceTests
 
 The `HealthCheckServiceTests` class provides comprehensive unit tests for the `HealthCheckService` class, verifying that health check operations work correctly. These tests cover database connectivity checks, disk space monitoring, and proper error handling for invalid configurations, ensuring the health monitoring system operates reliably.
