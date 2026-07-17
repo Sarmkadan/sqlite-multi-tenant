@@ -20,7 +20,11 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests
 {
-    public sealed class BackupServiceTests {
+    /// <summary>
+/// Contains unit tests for the <see cref="BackupService"/> class.
+/// Tests various scenarios for backup operations including creation, retrieval, and status updates.
+/// </summary>
+public sealed class BackupServiceTests {
         private readonly IBackupRepository _mockBackupRepository;
         private readonly ILogger<BackupService> _mockLogger;
         private readonly BackupService _backupService;
@@ -33,6 +37,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.GetBackupAsync"/> returns a backup when it exists in the repository.
+        /// Verifies that the service correctly retrieves and returns backup data.
+        /// </summary>
         public async Task GetBackupAsync_ShouldReturnBackup_WhenBackupExists()
         {
             // Arrange
@@ -49,6 +57,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.GetBackupAsync"/> returns null when the backup does not exist.
+        /// Verifies proper null handling for non-existent backup IDs.
+        /// </summary>
         public async Task GetBackupAsync_ShouldReturnNull_WhenBackupDoesNotExist()
         {
             // Arrange
@@ -64,6 +76,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.GetBackupAsync"/> throws an <see cref="ArgumentException"/> when the backup ID is empty.
+        /// Verifies parameter validation for empty backup IDs.
+        /// </summary>
         public async Task GetBackupAsync_ShouldThrowArgumentException_WhenBackupIdIsEmpty()
         {
             // Arrange
@@ -78,6 +94,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.CreateBackupAsync"/> creates a new backup record.
+        /// Verifies that the service creates a backup with correct default values and returns the created backup.
+        /// </summary>
         public async Task CreateBackupAsync_ShouldCreateNewBackup()
         {
             // Arrange
@@ -101,6 +121,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.CreateBackupAsync"/> throws an <see cref="ArgumentException"/> when the database ID is empty.
+        /// Verifies parameter validation for empty database IDs.
+        /// </summary>
         public async Task CreateBackupAsync_ShouldThrowArgumentException_WhenDatabaseIdIsEmpty()
         {
             // Arrange
@@ -116,6 +140,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.MarkBackupAsCompletedAsync"/> updates the backup status to completed.
+        /// Verifies that the service updates the backup status, size, and duration when marking as completed.
+        /// </summary>
         public async Task MarkBackupAsCompletedAsync_ShouldUpdateBackupStatus()
         {
             // Arrange
@@ -136,6 +164,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.MarkBackupAsCompletedAsync"/> throws a <see cref="BackupException"/> when the backup is not found.
+        /// Verifies proper error handling when attempting to mark a non-existent backup as completed.
+        /// </summary>
         public async Task MarkBackupAsCompletedAsync_ShouldThrowBackupException_WhenBackupNotFound()
         {
             // Arrange
@@ -153,6 +185,10 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
+        /// <summary>
+        /// Tests that <see cref="BackupService.MarkBackupAsFailedAsync"/> updates the backup status to failed and sets the error message.
+        /// Verifies that the service updates the backup status and error message when marking as failed.
+        /// </summary>
         public async Task MarkBackupAsFailedAsync_ShouldUpdateBackupStatusAndMessage()
         {
             // Arrange
