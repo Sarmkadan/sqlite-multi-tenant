@@ -1315,6 +1315,98 @@ class Program
 }
 
         
+## ReflectionExtensions
+
+The `ReflectionExtensions` class provides a comprehensive set of static utility methods for working with .NET reflection. It simplifies common reflection operations such as inspecting and manipulating object properties, checking type characteristics, creating instances, copying properties between objects, and working with collections. These methods are particularly useful for data mapping, serialization, dynamic object manipulation, and framework-level utilities where reflection is commonly used.
+
+### Public Members
+
+```csharp
+public static PropertyInfo[] GetPublicProperties<T>()
+public static object GetPropertyValue<T>(T obj, string propertyName)
+public static bool SetPropertyValue<T>(T obj, string propertyName, object value)
+public static bool IsCollection<T>(T obj)
+public static Type GetCollectionElementType<T>(T obj)
+public static bool IsNullable<T>(T obj)
+public static Type GetUnderlyingType<T>(T obj)
+public static bool IsScalarType<T>(T obj)
+public static MethodInfo[] GetMethodsByName<T>(string methodName)
+public static object CreateInstance<T>()
+public static bool HasAttribute<T>(this MemberInfo member)
+public static T GetAttribute<T>(this MemberInfo member) where T : Attribute
+public static void CopyPropertiesTo<TSource, TTarget>(TSource source, TTarget target) where TTarget : class, new()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+
+// Example 1: Get public properties of a type
+var properties = ReflectionExtensions.GetPublicProperties<Tenant>();
+Console.WriteLine($"Tenant has {properties.Length} public properties:");
+foreach (var prop in properties)
+{
+    Console.WriteLine($" - {prop.Name} ({prop.PropertyType.Name})");
+}
+
+// Example 2: Get and set property values dynamically
+var tenant = new Tenant { Id = "acme-corp", Name = "Acme Corporation" };
+var idValue = ReflectionExtensions.GetPropertyValue(tenant, "Id");
+Console.WriteLine($"Tenant ID: {idValue}");
+
+bool setSuccess = ReflectionExtensions.SetPropertyValue(tenant, "Name", "Acme Corp Updated");
+Console.WriteLine($"Set property success: {setSuccess}");
+Console.WriteLine($"Updated tenant name: {tenant.Name}");
+
+// Example 3: Check type characteristics
+var tenantList = new List<Tenant>();
+bool isCollection = ReflectionExtensions.IsCollection(tenantList);
+Console.WriteLine($"Is tenantList a collection? {isCollection}");
+
+Type elementType = ReflectionExtensions.GetCollectionElementType(tenantList);
+Console.WriteLine($"Collection element type: {elementType.Name}");
+
+// Example 4: Type checking utilities
+bool isNullable = ReflectionExtensions.IsNullable(tenant.Id);
+Console.WriteLine($"Is string nullable? {isNullable}");
+
+bool isScalar = ReflectionExtensions.IsScalarType(tenant.Id);
+Console.WriteLine($"Is string a scalar type? {isScalar}");
+
+// Example 5: Find methods by name
+var methods = ReflectionExtensions.GetMethodsByName<Tenant>("ToString");
+Console.WriteLine($"Found {methods.Length} ToString methods");
+
+// Example 6: Create instances dynamically
+var newTenant = (Tenant)ReflectionExtensions.CreateInstance<Tenant>();
+Console.WriteLine($"Created new tenant with ID: {newTenant.Id}");
+
+// Example 7: Check for attributes
+var hasSerializable = typeof(Tenant).HasAttribute<SerializableAttribute>();
+Console.WriteLine($"Tenant has Serializable attribute: {hasSerializable}");
+
+// Example 8: Get attributes
+var obsoleteAttr = typeof(Tenant).GetAttribute<ObsoleteAttribute>();
+Console.WriteLine($"Tenant has Obsolete attribute: {obsoleteAttr != null}");
+
+// Example 9: Copy properties between objects
+var sourceTenant = new Tenant { Id = "globex", Name = "Globex Inc", CreatedDate = DateTime.UtcNow };
+var targetTenant = new Tenant();
+ReflectionExtensions.CopyPropertiesTo(sourceTenant, targetTenant);
+Console.WriteLine($"Copied properties: {targetTenant.Name} (ID: {targetTenant.Id})");
+
+public class Tenant
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; }
+}
+```
+
 ## ValidationExtensions
 
 The `ValidationExtensions` class provides a set of extension methods for validating various types of user input and system configuration settings, such as emails, UUIDs, semantic versions, database names, and connection strings. These methods are designed to be used at system boundaries (e.g., in controllers or services) to enforce data integrity and prevent common security issues like SQL injection by validating input format and constraints before processing.
