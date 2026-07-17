@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace SqliteMultiTenant.BackgroundWorkers;
 
@@ -31,14 +30,7 @@ public static class DatabaseMaintenanceWorkerValidation
 
         var problems = new List<string>();
 
-        // Validate EnableVacuum
-        // No specific validation needed - boolean is always valid
-
-        // Validate EnableAnalyze
-        // No specific validation needed - boolean is always valid
-
-        // Validate EnableReindex
-        // No specific validation needed - boolean is always valid
+        // Boolean configuration flags are always valid - no specific validation needed
 
         // Validate IntervalHours
         if (value.IntervalHours <= 0)
@@ -70,7 +62,7 @@ public static class DatabaseMaintenanceWorkerValidation
             problems.Add($"DegreeOfParallelism {value.DegreeOfParallelism} exceeds reasonable maximum based on {Environment.ProcessorCount} logical processors.");
         }
 
-        return problems;
+        return problems.AsReadOnly();
     }
 
     /// <summary>
@@ -81,7 +73,7 @@ public static class DatabaseMaintenanceWorkerValidation
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static bool IsValid(this DatabaseMaintenanceOptions? value)
     {
-        return value?.Validate().Count == 0;
+        return value is not null && value.Validate().Count == 0;
     }
 
     /// <summary>
