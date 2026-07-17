@@ -2248,6 +2248,102 @@ string original = "hello";
 string reversed = original.Reverse();
 Console.WriteLine(reversed); // Outputs: olleh
 
+## ConnectionPoolManagerIntegrationTests
+
+The `ConnectionPoolManagerIntegrationTests` class provides comprehensive integration tests for the `ConnectionPoolManager` class, verifying that connection pool operations work correctly against a real SQLite database. These tests cover connection acquisition and release, pool sizing behavior, tenant isolation, error handling for invalid inputs, and proper cleanup, ensuring the connection pooling system operates reliably for multi-tenant SQLite environments.
+
+### Public Members
+
+```csharp
+public sealed class ConnectionPoolManagerIntegrationTests : IAsyncDisposable
+public ConnectionPoolManagerIntegrationTests()
+public async Task AcquireAsync_ShouldReturnOpenConnection()
+public async Task AcquireAsync_ShouldReuseConnection_WhenAvailable()
+public async Task AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull()
+public async Task ReleaseAsync_ShouldReturnConnectionToPool()
+public async Task EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections()
+public async Task GetStatistics_ShouldReturnCorrectStats()
+public async Task AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted()
+public async Task AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty()
+public async Task AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty()
+public async Task PruneIdle_ShouldDisposeIdleConnections()
+public async ValueTask DisposeAsync()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Database;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Threading.Tasks;
+
+// Create a test database and connection pool manager
+var testDbPath = Path.Combine(Path.GetTempPath(), $"pool_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+var logger = NullLogger<ConnectionPoolManager>.Instance;
+var poolManager = new ConnectionPoolManager(logger);
+
+// Example 1: Acquire and use a connection for a tenant
+var tenantId = "acme-corp";
+var connection = await poolManager.AcquireAsync(tenantId, connectionString);
+
+// Use the connection (simulated)
+Console.WriteLine($"Acquired connection for tenant: {tenantId}");
+
+// Example 2: Release the connection back to the pool
+await poolManager.ReleaseAsync(tenantId, connection);
+Console.WriteLine("Connection released back to pool");
+
+// Example 3: Get pool statistics for monitoring
+var stats = await poolManager.GetStatisticsAsync();
+Console.WriteLine($"Pool stats - Total: {stats.Total}, Available: {stats.Available}, Waiting: {stats.Waiting}");
+
+// Example 4: Test connection reuse when available
+var connection2 = await poolManager.AcquireAsync(tenantId, connectionString);
+Console.WriteLine("Second connection acquired (should reuse from pool)");
+await poolManager.ReleaseAsync(tenantId, connection2);
+
+// Example 5: Test pool exhaustion behavior
+var connections = new System.Collections.Generic.List<System.Data.Common.DbConnection>();
+try
+{
+    // Fill the pool
+    for (int i = 0; i < 10; i++)
+    {
+        var conn = await poolManager.AcquireAsync($"{tenantId}-{i}", connectionString);
+        connections.Add(conn);
+    }
+    
+    // Try to acquire one more (should throw timeout)
+    var timeoutTask = poolManager.AcquireAsync("exhausted-tenant", connectionString);
+    if (await Task.WhenAny(timeoutTask, Task.Delay(1000)) == timeoutTask)
+    {
+        Console.WriteLine("Pool exhaustion correctly threw timeout exception");
+    }
+}
+finally
+{
+    // Cleanup
+    foreach (var conn in connections)
+    {
+        await poolManager.ReleaseAsync(conn.ConnectionString?.Split('=')[1]?.Split('-')[0] ?? "unknown", conn);
+    }
+}
+
+// Example 6: Test tenant eviction
+var tenantToEvict = "evict-me";
+await poolManager.EvictTenantAsync(tenantToEvict);
+Console.WriteLine($"Tenant pool evicted: {tenantToEvict}");
+
+// Example 7: Test idle connection pruning
+var prunedCount = await poolManager.PruneIdleAsync(TimeSpan.FromSeconds(30));
+Console.WriteLine($"Pruned {prunedCount} idle connections");
+
+// Cleanup
+File.Delete(testDbPath);
+
 public enum TenantStatus { Inactive, Active, Suspended }
 ```
  
