@@ -1322,14 +1322,51 @@ using (tenantHelper.CreateScope("acme-corp", "user-123"))
     }
 } // Scope automatically clears when disposed
 
-// Example 2: Enriching error messages with tenant context
-try
-{
-    throw new Exception("Operation failed");
-}
-catch (Exception ex)
-{
-    string enrichedError = tenantHelper.EnrichErrorWithContext(ex.Message);
-    Console.WriteLine(enrichedError); // Outputs: "Operation failed [TenantId: acme-corp]"
-}
+## RequestCorrelationIdGenerator
+ 
+The `RequestCorrelationIdGenerator` class is a utility for managing correlation IDs in asynchronous operations, enabling end-to-end request tracing. It provides static methods to generate, set, retrieve, and scope correlation IDs within the current execution context, ensuring that operations spanning across multiple services or asynchronous boundaries remain identifiable and traceable.
+ 
+### Public Members
+ 
+```csharp
+public sealed class RequestCorrelationIdGenerator
+public static string GenerateCorrelationId
+public static void SetCorrelationId
+public static string GetCorrelationId
+public static bool HasCorrelationId
+public static List<string> GetCorrelationChain
+public static void ClearCorrelationId
+public static IDisposable CreateScope
+public CorrelationIdScope
+public void Dispose
 ```
+ 
+### Usage Example
+ 
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+ 
+// Example 1: Generate and set a correlation ID
+string id = RequestCorrelationIdGenerator.GenerateCorrelationId();
+RequestCorrelationIdGenerator.SetCorrelationId(id);
+Console.WriteLine($"Current Correlation ID: {RequestCorrelationIdGenerator.GetCorrelationId()}");
+ 
+// Example 2: Use in a scoped operation
+using (RequestCorrelationIdGenerator.CreateScope("tenant123"))
+{
+    Console.WriteLine($"Scoped Correlation ID: {RequestCorrelationIdGenerator.GetCorrelationId()}");
+    // Perform traced operations...
+}
+ 
+// Example 3: Verify state and chain
+if (RequestCorrelationIdGenerator.HasCorrelationId())
+{
+    var chain = RequestCorrelationIdGenerator.GetCorrelationChain();
+    Console.WriteLine($"Correlation chain length: {chain.Count}");
+}
+ 
+// Clear the correlation ID
+RequestCorrelationIdGenerator.ClearCorrelationId();
+```
+
