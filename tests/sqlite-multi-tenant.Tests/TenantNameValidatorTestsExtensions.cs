@@ -9,7 +9,6 @@ using FluentAssertions;
 using SqliteMultiTenant.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace SqliteMultiTenant.Tests;
 
@@ -17,6 +16,11 @@ namespace SqliteMultiTenant.Tests;
 /// Extension methods for <see cref="TenantNameValidatorTests"/> that provide fluent assertions
 /// and additional test utilities for tenant name validation scenarios.
 /// </summary>
+/// <remarks>
+/// All extension methods validate their input parameters and throw appropriate exceptions
+/// for null or invalid arguments. Methods are designed to work with the test infrastructure
+/// and provide clean, idiomatic C# patterns.
+/// </remarks>
 public static class TenantNameValidatorTestsExtensions
 {
     /// <summary>
@@ -73,6 +77,7 @@ public static class TenantNameValidatorTestsExtensions
     /// </summary>
     /// <param name="test">The test instance.</param>
     /// <returns>An enumerable of invalid tenant ID test cases.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="test"/> is null.</exception>
     public static IEnumerable<(string TenantId, string ExpectedError)> GetInvalidTenantIds(this TenantNameValidatorTests test)
     {
         yield return ("ab", "3"); // Below minimum length
@@ -88,6 +93,7 @@ public static class TenantNameValidatorTestsExtensions
     /// </summary>
     /// <param name="test">The test instance.</param>
     /// <returns>An enumerable of valid tenant name mappings.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="test"/> is null.</exception>
     public static IEnumerable<(string TenantName, string ExpectedTenantId)> GetValidTenantNameMappings(this TenantNameValidatorTests test)
     {
         yield return ("acme-corp", "acme-corp");
