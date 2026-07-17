@@ -322,6 +322,116 @@ string jsonWithSnakeCase = originalValue.ToJsonWithSnakeCase();
 Console.WriteLine($"JSON with SnakeCase: {jsonWithSnakeCase}");
 ```
 
+## TenantIsolationEnforcementTests
+
+The `TenantIsolationEnforcementTests` class contains end-to-end tests that verify tenant data isolation guarantees in a multi-tenant SQLite environment. It exercises two isolation strategies:
+- **Connection-per-tenant**: Each tenant uses its own physical SQLite file, providing complete file-level isolation.
+- **Shared-schema**: All tenants share a single SQLite file with a `TenantId` discriminator column that scopes every query.
+
+These tests ensure that a tenant can never read, update, or delete another tenant's rows, even when using deliberately hostile queries.
+
+### Usage Example
+
+```csharp
+using System;
+using System.Data.SQLite;
+using System.IO;
+using System.Threading.Tasks;
+using Xunit;
+
+// Example 1: Verify connection-per-tenant isolation
+public async Task TestConnectionPerTenantIsolation()
+{
+    // Create separate database files for each tenant
+    var pathA = Path.Combine(Path.GetTempPath(), $"tenant_a_{Guid.NewGuid():N}.db");
+    var pathB = Path.Combine(Path.GetTempPath(), $"tenant_b_{Guid.NewGuid():N}.db");
+    
+    // Create documents table in each tenant's database
+    await CreateDocumentsTableAsync(Conn(pathA));
+    await CreateDocumentsTableAsync(Conn(pathB));
+    
+    // Insert tenant-specific data
+    await InsertDocumentAsync(Conn(pathA), 1, "tenant-a", "A-invoice.pdf");
+    await InsertDocumentAsync(Conn(pathB), 1, "tenant-b", "B-invoice.pdf");
+    
+    // Tenant A can only see its own data
+    var tenantAData = await ReadTitlesForTenantAsync(Conn(pathA), "tenant-a");
+    Assert.Contains("A-invoice.pdf", tenantAData);
+    Assert.DoesNotContain("B-invoice.pdf", tenantAData);
+    
+    // Tenant B can only see its own data
+    var tenantBData = await ReadTitlesForTenantAsync(Conn(pathB), "tenant-b");
+    Assert.Contains("B-invoice.pdf", tenantBData);
+    Assert.DoesNotContain("A-invoice.pdf", tenantBData);
+}
+
+// Example 2: Verify shared-schema isolation
+public async Task TestSharedSchemaIsolation()
+{
+    var sharedPath = Path.Combine(Path.GetTempPath(), $"shared_{Guid.NewGuid():N}.db");
+    await CreateDocumentsTableAsync(Conn(sharedPath));
+    
+    // Insert data for multiple tenants in the same database
+    await InsertDocumentAsync(Conn(sharedPath), 1, "tenant-1", "Document 1");
+    await InsertDocumentAsync(Conn(sharedPath), 2, "tenant-2", "Document 2");
+    
+    // Each tenant only sees its own rows when querying with TenantId filter
+    var tenant1Data = await ReadTitlesForTenantAsync(Conn(sharedPath), "tenant-1");
+    Assert.Contains("Document 1", tenant1Data);
+    Assert.DoesNotContain("Document 2", tenant1Data);
+    
+    var tenant2Data = await ReadTitlesForTenantAsync(Conn(sharedPath), "tenant-2");
+    Assert.Contains("Document 2", tenant2Data);
+    Assert.DoesNotContain("Document 1", tenant2Data);
+}
+
+// Helper methods
+private static string Conn(string path) => $"Data Source={path};Version=3;";
+
+private static async Task CreateDocumentsTableAsync(string connectionString)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = @"
+        CREATE TABLE IF NOT EXISTS Documents (
+            Id INTEGER PRIMARY KEY,
+            TenantId TEXT NOT NULL,
+            Title TEXT NOT NULL
+        );";
+    await cmd.ExecuteNonQueryAsync();
+}
+
+private static async Task InsertDocumentAsync(string connectionString, int id, string tenantId, string title)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "INSERT INTO Documents (Id, TenantId, Title) VALUES (@id, @tid, @title)";
+    cmd.Parameters.AddWithValue("@id", id);
+    cmd.Parameters.AddWithValue("@tid", tenantId);
+    cmd.Parameters.AddWithValue("@title", title);
+    await cmd.ExecuteNonQueryAsync();
+}
+
+private static async Task System.Collections.Generic.List<string> ReadTitlesForTenantAsync(string connectionString, string tenantId)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "SELECT Title FROM Documents WHERE TenantId = @tid ORDER BY Id";
+    cmd.Parameters.AddWithValue("@tid", tenantId);
+    
+    var titles = new System.Collections.Generic.List<string>();
+    using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        titles.Add(reader.GetString(0));
+    }
+    return titles;
+}
+```
+
 ## DataValidatorExtensions
 
 The `DataValidatorExtensions` class provides a comprehensive set of extension methods for validating various data types and collections. It includes validation methods for strings, collections, and common data formats like phone numbers, dates, times, IP addresses, and credit cards. These validators help ensure data integrity by checking length constraints, format validity, and value ranges.
