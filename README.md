@@ -1223,6 +1223,97 @@ class Program
         bool copied = candidatePath.SafeCopyFile(copyDest, overwrite: true);
         Console.WriteLine($"File copied: {copied}");
 
+
+## DatabaseUtilities
+
+The `DatabaseUtilities` class provides a comprehensive set of static methods for database administration, maintenance, and introspection in SQLite multi-tenant systems. It includes utilities for database sizing and formatting, configuration optimization, database compaction, query performance analysis, and schema introspection (checking for table/column existence and retrieving column metadata). These methods are essential for database maintenance tasks, monitoring, and automated administration workflows.
+
+### Public Members
+
+```csharp
+public static async Task ConfigureOptimalSettingsAsync()
+public static long GetDatabaseSize(string databasePath)
+public static string GetDatabaseSizeFormatted(string databasePath)
+public static async Task CompactDatabaseAsync(string databasePath)
+public static async Task AnalyzeQueryPerformanceAsync(string databasePath)
+public static async Task<DatabaseStatistics> GetDatabaseStatisticsAsync(string databasePath)
+public static async Task<bool> TableExistsAsync(string databasePath, string tableName)
+public static async Task<bool> ColumnExistsAsync(string databasePath, string tableName, string columnName)
+public static async Task<List<ColumnInfo>> GetTableColumnsAsync(string databasePath, string tableName)
+
+public sealed class DatabaseStatistics
+{
+    public long TableCount { get; set; }
+    public long IndexCount { get; set; }
+    public long PageCount { get; set; }
+    public long PageSize { get; set; }
+    public long EstimatedSize { get; set; }
+}
+
+public sealed class ColumnInfo
+{
+    public string Name { get; set; }
+    public string Type { get; set; }
+    public bool NotNull { get; set; }
+    public string DefaultValue { get; set; }
+}
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        string databasePath = "/var/data/tenants/acme-corp/tenant.db";
+        
+        // Example 1: Get database size and statistics
+        long sizeBytes = DatabaseUtilities.GetDatabaseSize(databasePath);
+        string formattedSize = DatabaseUtilities.GetDatabaseSizeFormatted(databasePath);
+        
+        Console.WriteLine($"Database size: {formattedSize}");
+        
+        var stats = await DatabaseUtilities.GetDatabaseStatisticsAsync(databasePath);
+        Console.WriteLine($"Tables: {stats.TableCount}, Indexes: {stats.IndexCount}");
+        Console.WriteLine($"Estimated size: {stats.EstimatedSize:N0} bytes");
+        
+        // Example 2: Configure optimal database settings
+        await DatabaseUtilities.ConfigureOptimalSettingsAsync();
+        Console.WriteLine("Database settings optimized");
+        
+        // Example 3: Compact database to reclaim space
+        await DatabaseUtilities.CompactDatabaseAsync(databasePath);
+        Console.WriteLine("Database compacted successfully");
+        
+        // Example 4: Analyze query performance
+        await DatabaseUtilities.AnalyzeQueryPerformanceAsync(databasePath);
+        Console.WriteLine("Query performance analysis completed");
+        
+        // Example 5: Check if table exists
+        bool usersTableExists = await DatabaseUtilities.TableExistsAsync(databasePath, "Users");
+        Console.WriteLine($"Users table exists: {usersTableExists}");
+        
+        // Example 6: Check if column exists
+        bool emailColumnExists = await DatabaseUtilities.ColumnExistsAsync(databasePath, "Users", "Email");
+        Console.WriteLine($"Email column exists: {emailColumnExists}");
+        
+        // Example 7: Get table column information
+        var columns = await DatabaseUtilities.GetTableColumnsAsync(databasePath, "Users");
+        Console.WriteLine($"Columns in Users table:");
+        foreach (var column in columns)
+        {
+            Console.WriteLine($"  - {column.Name} ({column.Type})" + 
+                           $"{(column.NotNull ? " NOT NULL" : "")}" +
+                           $"{(column.DefaultValue != null ? $" DEFAULT {column.DefaultValue}" : "")}");
+        }
+    }
+}
+
         
 ## ValidationExtensions
 
