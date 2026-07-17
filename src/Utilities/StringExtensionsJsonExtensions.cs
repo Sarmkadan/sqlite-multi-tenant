@@ -2,76 +2,73 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using System.Text.Json;
 
 namespace SqliteMultiTenant.Utilities;
 
 /// <summary>
-/// Provides System.Text.Json serialization/deserialization helpers for the <see cref="StringExtensions"/> type.
-/// Enables round-trip serialization of type information for reflection and serialization scenarios.
+/// Provides System.Text.Json serialization/deserialization helpers for string values.
+/// All methods preserve culture-invariant behavior and handle null/empty inputs gracefully.
 /// </summary>
 public static class StringExtensionsJsonExtensions
 {
+    // Cached options: camelCase naming, no indentation by default.
     private static readonly JsonSerializerOptions _options = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        // Do not write indented by default; indentation can be overridden per call.
         WriteIndented = false
     };
 
     /// <summary>
-    /// Serializes the <see cref="StringExtensions"/> type to a JSON string representation.
+    /// Serializes a string value to JSON.
     /// </summary>
-    /// <param name="_">Dummy parameter for API consistency (StringExtensions is a static class).</param>
-    /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
-    /// <returns>A JSON string representation of the StringExtensions type metadata.</returns>
-    public static string ToJson(object? _ = null, bool indented = false)
+    /// <param name="value">The string value to serialize.</param>
+    /// <param name="indented">If true, the output JSON will be indented.</param>
+    /// <returns>A JSON string representing the string value, or null if the input is null.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
+    public static string? ToJson(this string? value, bool indented = false)
     {
+        if (value is null)
+        {
+            return null;
+        }
+
         var options = new JsonSerializerOptions(_options)
         {
             WriteIndented = indented
         };
 
-        return JsonSerializer.Serialize(typeof(StringExtensions), options);
+        return JsonSerializer.Serialize(value, options);
     }
 
     /// <summary>
-    /// Deserializes a JSON string to retrieve the <see cref="StringExtensions"/> type.
+    /// Deserializes a JSON string into a string value.
     /// </summary>
-    /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The <see cref="Type"/> object representing StringExtensions if successful; otherwise null.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
-    /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
-    public static Type? FromJson(string json)
+    /// <param name="json">The JSON string containing the string value.</param>
+    /// <returns>The deserialized string value, or null if the JSON is empty or represents null.</returns>
+    /// <exception cref="ArgumentException">Thrown if json is null or whitespace.</exception>
+    public static string? FromJson(string json)
     {
-        ArgumentException.ThrowIfNullOrEmpty(json);
+        ArgumentException.ThrowIfNullOrWhiteSpace(json);
 
-        var type = JsonSerializer.Deserialize<Type>(json, _options);
-        return type?.FullName == typeof(StringExtensions).FullName ? type : null;
+        return JsonSerializer.Deserialize<string>(json, _options);
     }
 
     /// <summary>
-    /// Attempts to deserialize a JSON string to retrieve the <see cref="StringExtensions"/> type.
+    /// Attempts to deserialize a JSON string into a string value.
     /// </summary>
-    /// <param name="json">The JSON string to deserialize.</param>
-    /// <param name="value">Receives the StringExtensions type if successful, or null if deserialization fails.</param>
-    /// <returns>True if deserialization succeeds and represents the StringExtensions type; otherwise false.</returns>
-    public static bool TryFromJson(string json, out Type? value)
+    /// <param name="json">The JSON string containing the string value.</param>
+    /// <param name="value">When this method returns, contains the deserialized value if the operation succeeded; otherwise, null.</param>
+    /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    public static bool TryFromJson(string json, out string? value)
     {
-        ArgumentException.ThrowIfNullOrEmpty(json);
-
         try
         {
-            var type = JsonSerializer.Deserialize<Type>(json, _options);
-            if (type?.FullName == typeof(StringExtensions).FullName)
-            {
-                value = type;
-                return true;
-            }
-
-            value = null;
-            return false;
+            value = FromJson(json);
+            return true;
         }
         catch (JsonException)
         {
