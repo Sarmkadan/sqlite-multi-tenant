@@ -322,3 +322,75 @@ string jsonWithSnakeCase = originalValue.ToJsonWithSnakeCase();
 Console.WriteLine($"JSON with SnakeCase: {jsonWithSnakeCase}");
 ```
 
+## DataValidatorExtensions
+
+The `DataValidatorExtensions` class provides a comprehensive set of extension methods for validating various data types and collections. It includes validation methods for strings, collections, and common data formats like phone numbers, dates, times, IP addresses, and credit cards. These validators help ensure data integrity by checking length constraints, format validity, and value ranges.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Validate string requirements
+var userName = "john_doe";
+var nameValidation = userName.RequireString("username", minLength: 3, maxLength: 50);
+if (nameValidation.IsValid)
+{
+    Console.WriteLine("Username is valid.");
+}
+else
+{
+    Console.WriteLine($"Username validation failed: {string.Join(", ", nameValidation.Errors)}");
+}
+
+// Example 2: Validate string length constraints
+var password = "SecurePass123!";
+var passwordValidation = password.RequireMinLength("password", 8);
+if (!passwordValidation.IsValid)
+{
+    Console.WriteLine("Password must be at least 8 characters long.");
+}
+
+// Example 3: Validate collection count
+var tags = new List<string> { "tag1", "tag2", "tag3" };
+var tagsValidation = tags.RequireCollectionCount("tags", minCount: 1, maxCount: 10);
+if (tagsValidation.IsValid)
+{
+    Console.WriteLine($"Tags collection is valid with {tags.Count} items.");
+}
+
+// Example 4: Validate date and time
+var birthDate = new DateTime(1990, 5, 15);
+var dateValidation = birthDate.RequireValidDate("birthDate");
+if (dateValidation.IsValid)
+{
+    Console.WriteLine($"Birth date is valid: {birthDate:yyyy-MM-dd}");
+}
+
+// Example 5: Validate IP address
+var ipAddress = "192.168.1.1";
+var ipValidation = ipAddress.RequireValidIPv4("ipAddress");
+if (ipValidation.IsValid)
+{
+    Console.WriteLine("IP address is valid.");
+}
+
+// Example 6: Validate with custom error handling
+var email = "user@example.com";
+var emailValidation = email.RequireString("email", minLength: 5, maxLength: 100);
+if (!emailValidation.IsValid)
+{
+    throw new ArgumentException($"Invalid email: {string.Join(", ", emailValidation.Errors)}");
+}
+
+// Example 7: Validate collection item count constraints
+var items = new List<int> { 1, 2, 3, 4, 5 };
+var itemsValidation = items.RequireGreaterThan("items", 0).RequireLessThan("items", 100);
+if (itemsValidation.IsValid)
+{
+    Console.WriteLine("Items collection has valid count.");
+}
+```
+
