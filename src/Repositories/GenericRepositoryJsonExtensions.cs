@@ -20,11 +20,15 @@ public static class GenericRepositoryJsonExtensions
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
         PropertyNameCaseInsensitive = true,
+        // Use invariant culture for JSON serialization to ensure consistent formatting
+        // across different system locales
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Default,
     };
 
     /// <summary>
     /// Serializes the repository instance to a JSON string.
     /// </summary>
+    /// <typeparam name="T">The entity type contained in the repository.</typeparam>
     /// <param name="value">The repository instance to serialize. Cannot be null.</param>
     /// <param name="indented">Whether to format the JSON with indentation for readability. Defaults to false.</param>
     /// <returns>A JSON string representation of the repository.</returns>
@@ -45,7 +49,7 @@ public static class GenericRepositoryJsonExtensions
     /// </summary>
     /// <typeparam name="T">The entity type of the repository.</typeparam>
     /// <param name="json">The JSON string to deserialize. Cannot be null or empty.</param>
-    /// <returns>A deserialized repository instance, or null if the JSON is empty.</returns>
+    /// <returns>A deserialized repository instance, or null if deserialization fails.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
     /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
     public static GenericRepository<T>? FromJson<T>(string json) where T : class
