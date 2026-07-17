@@ -221,6 +221,115 @@ else
 }
 ```
 
+## MigrationExtensions
+
+The `MigrationExtensions` class provides extension methods for the `Migration` class that simplify working with migration data in multi-tenant SQLite environments. These methods offer convenient ways to query migration states, calculate durations, analyze statistics, and format data for display or logging purposes.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+using System.Linq;
+
+// Assume you have a list of migrations from your database context
+var migrations = new List<Migration>
+{
+    new Migration
+    {
+        Id = Guid.NewGuid(),
+        Name = "Create Users Table",
+        Description = "Initial migration creating users table",
+        Status = MigrationStatus.Completed,
+        ExecutionOrder = 1,
+        CreatedAt = DateTime.UtcNow.AddDays(-7),
+        ExecutedAt = DateTime.UtcNow.AddDays(-6),
+        ExecutionTimeMs = 1500,
+        DatabaseId = "main"
+    },
+    new Migration
+    {
+        Id = Guid.NewGuid(),
+        Name = "Add Indexes",
+        Description = "Add indexes for performance optimization",
+        Status = MigrationStatus.Completed,
+        ExecutionOrder = 2,
+        CreatedAt = DateTime.UtcNow.AddDays(-5),
+        ExecutedAt = DateTime.UtcNow.AddDays(-4),
+        ExecutionTimeMs = 850,
+        DatabaseId = "main"
+    },
+    new Migration
+    {
+        Id = Guid.NewGuid(),
+        Name = "Create Audit Log",
+        Description = "Add audit logging functionality",
+        Status = MigrationStatus.Pending,
+        ExecutionOrder = 3,
+        CreatedAt = DateTime.UtcNow.AddDays(-3),
+        DatabaseId = "main"
+    }
+};
+
+// Example 1: Check if a migration is in terminal state
+var completedMigration = migrations.First(m => m.Status == MigrationStatus.Completed);
+bool isTerminal = completedMigration.IsTerminal();
+Console.WriteLine($"Is terminal: {isTerminal}"); // Output: Is terminal: True
+
+// Example 2: Get migration age in days
+var migration = migrations.First();
+double ageInDays = migration.GetAgeInDays();
+Console.WriteLine($"Migration age: {ageInDays:F2} days");
+
+// Example 3: Get formatted execution duration
+string duration = migration.GetExecutionDuration();
+Console.WriteLine($"Execution duration: {duration}"); // Output: Execution duration: 1.5s
+
+// Example 4: Get status display with formatting
+string statusDisplay = migration.GetStatusDisplay();
+Console.WriteLine($"Status: {statusDisplay}"); // Output: Status: [COMPLETED]
+
+// Example 5: Get statistics for all migrations
+var statusCounts = migrations.GetStatusCounts();
+foreach (var kvp in statusCounts)
+{
+    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
+}
+// Output:
+// Completed: 2
+// Pending: 1
+
+// Example 6: Get pending migrations ordered by execution
+var pendingMigrations = migrations.GetPendingMigrations();
+foreach (var pending in pendingMigrations)
+{
+    Console.WriteLine($"Pending: {pending.Name}");
+}
+
+// Example 7: Get total execution time across all completed migrations
+long totalTimeMs = migrations.GetTotalExecutionTimeMs();
+Console.WriteLine($"Total execution time: {totalTimeMs}ms"); // Output: Total execution time: 2350ms
+
+// Example 8: Get average execution time for completed migrations
+double avgTimeMs = migrations.GetAverageExecutionTimeMs();
+Console.WriteLine($"Average execution time: {avgTimeMs:F0}ms"); // Output: Average execution time: 1175ms
+
+// Example 9: Get rollbackable migrations (newest first)
+var rollbackable = migrations.GetRollbackableMigrations();
+foreach (var rollback in rollbackable)
+{
+    Console.WriteLine($"Rollbackable: {rollback.Name}");
+}
+
+// Example 10: Get database name
+string dbName = migration.GetDatabaseName();
+Console.WriteLine($"Database: {dbName}"); // Output: Database: main
+
+// Example 11: Get formatted creation timestamp
+string createdAt = migration.GetFormattedCreatedAt();
+Console.WriteLine($"Created at: {createdAt}");
+```
+
 ## CommandParserValidation
 
 `CommandParserValidation` is a static helper class that provides validation utilities for `CommandParser`, `CommandHandler`, `Subcommand`, and `ParsedCommand` instances. It validates command structure, required arguments, and data integrity, offering methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
