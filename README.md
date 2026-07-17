@@ -254,6 +254,7 @@ if (result is OkObjectResult filteredResult && filteredResult.Value is ApiRespon
 result = controller.GetSettingAs<DateTime>("last_backup", (value, type) => DateTime.Parse(value));
 ```
 
+
 ## ReportGeneratorJsonExtensions
 
 The `ReportGeneratorJsonExtensions` class provides convenient extension methods for serializing and deserializing report-related data structures using `System.Text.Json`. It simplifies converting monitoring objects like health summaries, operation statistics, and performance metrics to and from JSON strings, ensuring consistent configuration and error handling.
@@ -285,3 +286,39 @@ else
     Console.WriteLine("Failed to deserialize performance metrics.");
 }
 ```
+
+## StringUtilitiesJsonExtensions
+
+The `StringUtilitiesJsonExtensions` class provides convenient extension methods for serializing and deserializing string data using `System.Text.Json`. It includes specialized utilities to handle JSON serialization with additional metadata like SHA256 hashes or snake_case conversions, as well as safe deserialization methods.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+
+string originalValue = "Hello World";
+
+// 1. Serialize to JSON
+string json = originalValue.ToJson();
+Console.WriteLine($"JSON: {json}");
+
+// 2. Deserialize from JSON
+string? deserializedValue = json.FromJson();
+Console.WriteLine($"Deserialized: {deserializedValue}");
+
+// 3. Try deserialize with error handling
+if (json.TryFromJson(out string? value))
+{
+    Console.WriteLine($"Successfully deserialized: {value}");
+}
+
+// 4. Serialize with SHA256 hash
+string jsonWithHash = originalValue.ToJsonWithHash();
+Console.WriteLine($"JSON with Hash: {jsonWithHash}");
+
+// 5. Serialize with snake_case conversion
+string jsonWithSnakeCase = originalValue.ToJsonWithSnakeCase();
+Console.WriteLine($"JSON with SnakeCase: {jsonWithSnakeCase}");
+```
+
