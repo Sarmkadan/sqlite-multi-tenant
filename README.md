@@ -2248,6 +2248,72 @@ using (var operation = new OperationContext(logger, "FullTenantSetup"))
     // Operation completion is automatically logged on Dispose
 }
 ```
+
+## IDistributedCache
+
+The `IDistributedCache` interface provides a standardized mechanism for caching data across application boundaries in a distributed environment. It supports both synchronous and asynchronous operations for storing, retrieving, and removing cached data, with configurable expiration policies and statistics tracking. The `DistributedCacheService` implementation provides a production-ready cache with features like pattern-based removal, statistics collection, and automatic cleanup of expired entries.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Caching;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
+
+// Create a logger factory
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<DistributedCacheService>();
+
+// Create the distributed cache service
+var cache = new DistributedCacheService(logger);
+
+// Example 1: Store and retrieve a simple value
+await cache.SetAsync("user:123:profile", "John Doe");
+var profile = await cache.GetAsync<string>("user:123:profile");
+Console.WriteLine(profile); // Output: John Doe
+
+// Example 2: Store complex data with expiration
+var userData = new { Id = 123, Name = "John Doe", Email = "john@example.com" };
+await cache.SetAsync("user:123:data", userData, TimeSpan.FromMinutes(30));
+
+// Example 3: Remove a specific cache entry
+var removed = await cache.RemoveAsync("user:123:profile");
+Console.WriteLine(removed); // Output: True
+
+// Example 4: Remove multiple entries by pattern
+// Removes all keys matching "user:*:profile"
+await cache.RemoveByPatternAsync("user:*:profile");
+
+// Example 5: Clear all cache entries
+await cache.ClearAsync();
+
+// Example 6: Get cache statistics
+await cache.SetAsync("counter:requests", "42");
+await cache.SetAsync("counter:users", "100");
+
+var stats = await cache.GetStatisticsAsync();
+Console.WriteLine($"Items in cache: {stats.ItemCount}");
+Console.WriteLine($"Total size: {stats.TotalSizeBytes} bytes");
+Console.WriteLine($"Hits: {stats.Hits}");
+
+// Example 7: Work with CacheEntry metadata
+var entry = new CacheEntry { Value = "test-value", ExpiresAt = DateTime.UtcNow.AddHours(1) };
+await cache.SetAsync("metadata:test", entry);
+
+var retrievedEntry = await cache.GetAsync<CacheEntry>("metadata:test");
+if (retrievedEntry != null)
+{
+    Console.WriteLine($"Created at: {retrievedEntry.CreatedAt}");
+    Console.WriteLine($"Last accessed: {retrievedEntry.LastAccessedAt}");
+    Console.WriteLine($"Access count: {retrievedEntry.AccessCount}");
+    Console.WriteLine($"Size: {retrievedEntry.Size} bytes");
+}
+
+// Example 8: Automatic cleanup of expired entries
+await cache.CleanupExpiredAsync();
+```
+
 ## IRequestResponseLogger
 
 The `IRequestResponseLogger` interface provides a mechanism for logging HTTP request and response details for debugging, monitoring, and analytics purposes. It captures comprehensive information including headers, body content, query parameters, IP addresses, status codes, and timing metrics. The implementation includes sampling to manage log volume and thread-safe operations for concurrent access.
