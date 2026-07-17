@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace SqliteMultiTenant.Operations
 {
@@ -15,7 +14,7 @@ namespace SqliteMultiTenant.Operations
         /// <param name="value">The service instance to validate.</param>
         /// <returns>A list of human-readable validation problems; empty if valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
-        public static IReadOnlyList<string> Validate(this ConflictResolutionService value)
+        public static List<string> Validate(this ConflictResolutionService value)
         {
             ArgumentNullException.ThrowIfNull(value);
 
@@ -24,7 +23,7 @@ namespace SqliteMultiTenant.Operations
             // ConflictResolutionService itself has no validation constraints
             // The validation is based on the results it produces
 
-            return errors.AsReadOnly();
+            return errors;
         }
 
         /// <summary>
@@ -36,7 +35,6 @@ namespace SqliteMultiTenant.Operations
         public static bool IsValid(this ConflictResolutionService value)
         {
             ArgumentNullException.ThrowIfNull(value);
-
             return Validate(value).Count == 0;
         }
 
@@ -54,7 +52,8 @@ namespace SqliteMultiTenant.Operations
             if (errors.Count > 0)
             {
                 throw new ArgumentException(
-                    $"ConflictResolutionService is not valid. Problems:\n{string.Join("\n", errors)}");
+                    $"ConflictResolutionService is not valid. Problems:\n{string.Join("\n", errors)}",
+                    nameof(value));
             }
         }
 
@@ -64,7 +63,7 @@ namespace SqliteMultiTenant.Operations
         /// <param name="result">The detection result to validate.</param>
         /// <returns>A list of human-readable validation problems; empty if valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> is null.</exception>
-        public static IReadOnlyList<string> Validate(this ConflictDetectionResult result)
+        public static List<string> Validate(this ConflictDetectionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);
 
@@ -75,7 +74,7 @@ namespace SqliteMultiTenant.Operations
                 errors.Add("ConflictDetectionResult.Conflicts cannot be null.");
             }
 
-            return errors.AsReadOnly();
+            return errors;
         }
 
         /// <summary>
@@ -84,7 +83,7 @@ namespace SqliteMultiTenant.Operations
         /// <param name="conflict">The conflict to validate.</param>
         /// <returns>A list of human-readable validation problems; empty if valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="conflict"/> is null.</exception>
-        public static IReadOnlyList<string> Validate(this DataConflict conflict)
+        public static List<string> Validate(this DataConflict conflict)
         {
             ArgumentNullException.ThrowIfNull(conflict);
 
@@ -102,7 +101,7 @@ namespace SqliteMultiTenant.Operations
 
             // LocalValue and RemoteValue can be null depending on conflict type
 
-            return errors.AsReadOnly();
+            return errors;
         }
 
         /// <summary>
@@ -111,7 +110,7 @@ namespace SqliteMultiTenant.Operations
         /// <param name="result">The resolution result to validate.</param>
         /// <returns>A list of human-readable validation problems; empty if valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> is null.</exception>
-        public static IReadOnlyList<string> Validate(this ConflictResolutionResult result)
+        public static List<string> Validate(this ConflictResolutionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);
 
@@ -132,7 +131,7 @@ namespace SqliteMultiTenant.Operations
                 errors.Add("ConflictResolutionResult.Error must be provided when IsSuccessful is false.");
             }
 
-            return errors.AsReadOnly();
+            return errors;
         }
 
         /// <summary>
@@ -141,7 +140,7 @@ namespace SqliteMultiTenant.Operations
         /// <param name="result">The detection result containing conflicts to validate.</param>
         /// <returns>A list of human-readable validation problems; empty if all conflicts are valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> is null.</exception>
-        public static IReadOnlyList<string> ValidateConflicts(this ConflictDetectionResult result)
+        public static List<string> ValidateConflicts(this ConflictDetectionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);
 
@@ -152,6 +151,12 @@ namespace SqliteMultiTenant.Operations
                 for (int i = 0; i < result.Conflicts.Count; i++)
                 {
                     var conflict = result.Conflicts[i];
+                    if (conflict is null)
+                    {
+                        errors.Add($"ConflictDetectionResult.Conflicts[{i}] cannot be null.");
+                        continue;
+                    }
+
                     var conflictErrors = Validate(conflict);
                     if (conflictErrors.Count > 0)
                     {
@@ -160,7 +165,7 @@ namespace SqliteMultiTenant.Operations
                 }
             }
 
-            return errors.AsReadOnly();
+            return errors;
         }
 
         /// <summary>
@@ -169,7 +174,7 @@ namespace SqliteMultiTenant.Operations
         /// <param name="result">The resolution result containing resolved values to validate.</param>
         /// <returns>A list of human-readable validation problems; empty if all resolved values are valid.</returns>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="result"/> is null.</exception>
-        public static IReadOnlyList<string> ValidateResolvedValues(this ConflictResolutionResult result)
+        public static List<string> ValidateResolvedValues(this ConflictResolutionResult result)
         {
             ArgumentNullException.ThrowIfNull(result);
 
@@ -181,12 +186,12 @@ namespace SqliteMultiTenant.Operations
                 {
                     if (string.IsNullOrEmpty(kvp.Key))
                     {
-                        errors.Add($"ConflictResolutionResult.ResolvedValues contains entry with null or empty key at index {kvp.Key}.");
+                        errors.Add("ConflictResolutionResult.ResolvedValues contains entry with null or empty key.");
                     }
                 }
             }
 
-            return errors.AsReadOnly();
+            return errors;
         }
     }
 }
