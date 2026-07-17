@@ -98,3 +98,98 @@ class Program
     }
 }
 ```
+## ConnectionPoolOptionsTests
+The `ConnectionPoolOptionsTests` class provides unit tests for the `ConnectionPoolOptions` class, verifying that connection pool configuration validation works correctly. These tests validate various scenarios including valid configurations, boundary conditions, and error handling for invalid inputs such as negative values, zero values, and invalid ranges.
+
+### Public Members
+
+```csharp
+public sealed class ConnectionPoolOptionsTests
+public void Validate_WithValidOptions_DoesNotThrow()
+public void Validate_WithMinPoolSizeZero_DoesNotThrow()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenMinPoolSizeIsNegative()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenMaxPoolSizeIsZero()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenMaxPoolSizeIsNegative()
+public void Validate_ThrowsArgumentException_WhenMinPoolSizeExceedsMaxPoolSize()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenIdleTimeoutIsZero()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenAcquireTimeoutIsZero()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenMaxConnectionLifetimeIsZero()
+public void Validate_ThrowsArgumentOutOfRangeException_WhenPruneIntervalIsZero()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Database;
+using System;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Example 1: Create valid connection pool options
+        var validOptions = new ConnectionPoolOptions
+        {
+            MinPoolSize = 1,
+            MaxPoolSize = 10,
+            IdleTimeout = TimeSpan.FromMinutes(5),
+            AcquireTimeout = TimeSpan.FromSeconds(30),
+            MaxConnectionLifetime = TimeSpan.FromHours(1),
+            PruneInterval = TimeSpan.FromSeconds(60)
+        };
+        
+        // This should not throw
+        validOptions.Validate();
+        Console.WriteLine("Valid options passed validation");
+        
+        // Example 2: Test with MinPoolSize = 0 (valid)
+        var zeroMinOptions = new ConnectionPoolOptions
+        {
+            MinPoolSize = 0,
+            MaxPoolSize = 1,
+            IdleTimeout = TimeSpan.FromMinutes(1),
+            AcquireTimeout = TimeSpan.FromSeconds(1),
+            MaxConnectionLifetime = TimeSpan.FromHours(1),
+            PruneInterval = TimeSpan.FromSeconds(1)
+        };
+        zeroMinOptions.Validate();
+        Console.WriteLine("Zero MinPoolSize passed validation");
+        
+        // Example 3: Test with negative MinPoolSize (should throw)
+        try
+        {
+            var negativeMinOptions = new ConnectionPoolOptions { MinPoolSize = -1 };
+            negativeMinOptions.Validate();
+            Console.WriteLine("ERROR: Should have thrown ArgumentOutOfRangeException");
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            Console.WriteLine($"Correctly threw ArgumentOutOfRangeException: {ex.Message}");
+        }
+        
+        // Example 4: Test with MinPoolSize > MaxPoolSize (should throw)
+        try
+        {
+            var invalidRangeOptions = new ConnectionPoolOptions { MinPoolSize = 10, MaxPoolSize = 5 };
+            invalidRangeOptions.Validate();
+            Console.WriteLine("ERROR: Should have thrown ArgumentException");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Correctly threw ArgumentException: {ex.Message}");
+        }
+        
+        // Example 5: Test with zero IdleTimeout (should throw)
+        try
+        {
+            var zeroIdleOptions = new ConnectionPoolOptions { IdleTimeout = TimeSpan.Zero };
+            zeroIdleOptions.Validate();
+            Console.WriteLine("ERROR: Should have thrown ArgumentOutOfRangeException");
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            Console.WriteLine($"Correctly threw ArgumentOutOfRangeException: {ex.Message}");
+        }
+    }
+}
+```
