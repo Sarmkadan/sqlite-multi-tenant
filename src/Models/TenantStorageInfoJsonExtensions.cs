@@ -35,7 +35,6 @@ public static class TenantStorageInfoJsonExtensions
     public static string ToJson(this TenantStorageInfo value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
-
         return JsonSerializer.Serialize(value, indented ? _jsonOptionsIndented : _jsonOptions);
     }
 
@@ -44,6 +43,7 @@ public static class TenantStorageInfoJsonExtensions
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized tenant storage information, or <see langword="null"/> if the JSON is empty or whitespace.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is <see langword="null"/> or empty.</exception>
     /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
     public static TenantStorageInfo? FromJson(string json)
     {
@@ -58,18 +58,18 @@ public static class TenantStorageInfoJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized tenant storage information if successful.</param>
     /// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
-    public static bool TryFromJson(string json, out TenantStorageInfo? value)
+    public static bool TryFromJson(string json, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out TenantStorageInfo value)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
 
         try
         {
-            value = JsonSerializer.Deserialize<TenantStorageInfo>(json, _jsonOptions);
+            value = JsonSerializer.Deserialize<TenantStorageInfo>(json, _jsonOptions)!;
             return true;
         }
         catch (JsonException)
         {
-            value = default;
+            value = null!;
             return false;
         }
     }
