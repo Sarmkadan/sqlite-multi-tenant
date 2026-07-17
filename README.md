@@ -387,23 +387,23 @@ Console.WriteLine(reportGenerator.GenerateErrorReport());
 Console.WriteLine(reportGenerator.GenerateCapacityReport());
 ```
  
-## IAuditLogger
- 
+## IAuditLogger 
+
 `IAuditLogger` provides a centralized, asynchronous audit logging facility for recording system‑wide actions such as user operations, configuration changes, and other critical events. It stores entries in memory, supports filtered queries, entry counting, retention‑based purging, and exposes basic statistics about the logged data.
- 
+
 ### Usage Example
- 
+
 ```csharp
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Monitoring;
- 
+
 // Create a logger (e.g., console logger)
 var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
 var logger = loggerFactory.CreateLogger<AuditLogger>();
- 
+
 // Instantiate the audit logger
 var auditLogger = new AuditLogger(logger);
- 
+
 // Log an audit entry
 await auditLogger.LogAsync(new AuditLogEntry
 {
@@ -415,35 +415,72 @@ await auditLogger.LogAsync(new AuditLogEntry
     Action = AuditAction.Read,
     IpAddress = "192.168.1.10"
 });
- 
+
 // Retrieve recent login entries (limit to 5)
 var recentLogins = await auditLogger.GetEntriesAsync(new AuditLogFilter
 {
     EventType = "UserLogin",
     Limit = 5
 });
- 
+
 // Count entries for a specific actor
 int loginCount = await auditLogger.GetEntryCountAsync(new AuditLogFilter
 {
     Actor = "john.doe"
 });
 Console.WriteLine($"Login events for john.doe: {loginCount}");
- 
+
 // Purge entries older than 30 days
 await auditLogger.PurgeOldEntriesAsync(TimeSpan.FromDays(30));
- 
+
 // Get audit log statistics
 var stats = await auditLogger.GetStatisticsAsync();
 Console.WriteLine($"Total audit entries: {stats.TotalEntries}");
 Console.WriteLine($"Unique actors: {stats.UniqueActors}");
 Console.WriteLine($"Unique event types: {stats.UniqueEventTypes}");
 ```
- 
+
+## PathUtilities
+
+The `PathUtilities` class provides robust, cross-platform file system and path manipulation utilities. It includes methods for safely combining and normalizing paths, managing directories (creating, deleting, checking size), performing recursive file operations, and handling file system cleanup tasks securely.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+using System.IO;
+
+// 1. Safely combine paths (prevents traversal)
+string basePath = "/app/data";
+string relativePath = "tenants/acme-corp/db.sqlite";
+string safePath = PathUtilities.SafeCombinePath(basePath, relativePath);
+Console.WriteLine($"Safe path: {safePath}");
+
+// 2. Create directory securely
+string tenantDir = Path.Combine(basePath, "tenants/acme-corp");
+bool created = PathUtilities.SafeCreateDirectory(tenantDir);
+
+// 3. Get and format directory size
+long size = PathUtilities.GetDirectorySizeBytes(tenantDir);
+Console.WriteLine($"Directory size: {PathUtilities.FormatBytes(size)}");
+
+// 4. Recursive file discovery
+var files = PathUtilities.GetFilesRecursive(tenantDir, "*.sqlite");
+
+// 5. Cleanup old files
+int deletedCount = PathUtilities.CleanupOldFiles(tenantDir, TimeSpan.FromDays(30));
+Console.WriteLine($"Cleaned up {deletedCount} old files.");
+
+// 6. Path manipulation
+string normalized = PathUtilities.NormalizePath("some\\path/to/file.db");
+string ext = PathUtilities.GetExtensionWithoutDot("file.db");
+bool isEmpty = PathUtilities.IsDirectoryEmpty(tenantDir);
+```
+
 ## StringExtensions
- 
+
 `StringExtensions` provides a set of extension methods for string manipulation, focused on validation, transformation, and sanitization for database and tenant-specific contexts. These methods are designed to handle null or empty inputs gracefully, ensuring safe operations for identifiers, file paths, and JSON content.
- 
 ### Public Members
  
 ```csharp
