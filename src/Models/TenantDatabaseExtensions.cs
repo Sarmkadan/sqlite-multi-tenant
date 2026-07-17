@@ -5,21 +5,24 @@ namespace SqliteMultiTenant.Models;
 /// </summary>
 public static class TenantDatabaseExtensions
 {
+    private const long BytesPerKilobyte = 1024;
+    private const long BytesPerMegabyte = BytesPerKilobyte * 1024;
+    private const long BytesPerGigabyte = BytesPerMegabyte * 1024;
+    private static readonly TimeSpan BackupThreshold = TimeSpan.FromDays(7);
+
     /// <summary>
     /// Determines whether the tenant database requires attention.
     /// A database requires attention if it has no backups or if its last backup is older than 7 days.
     /// </summary>
     /// <param name="database">The tenant database.</param>
-    /// <returns><c>true</c> if the database requires attention; otherwise, <c>false</c>.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="database"/> is <c>null</c>.</exception>
+    /// <returns><see langword="true"/> if the database requires attention; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="database"/> is <c>null</c>.</exception>
     public static bool RequiresAttention(this TenantDatabase database)
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        if (database.LastBackupAt == null) return true;
-
-        var sevenDaysAgo = DateTime.UtcNow - TimeSpan.FromDays(7);
-        return database.LastBackupAt.Value < sevenDaysAgo;
+        return database.LastBackupAt is null
+            || database.LastBackupAt.Value < DateTime.UtcNow - BackupThreshold;
     }
 
     /// <summary>
@@ -27,15 +30,17 @@ public static class TenantDatabaseExtensions
     /// </summary>
     /// <param name="database">The tenant database.</param>
     /// <returns>The database size as a string (e.g., "1 KB", "2 MB", "3 GB").</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="database"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="database"/> is <c>null</c>.</exception>
     public static string GetSizeString(this TenantDatabase database)
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        var sizeBytes = database.SizeBytes;
-        if (sizeBytes < 1024) return $"{sizeBytes} B";
-        if (sizeBytes < 1024 * 1024) return $"{sizeBytes / 1024.0:F2} KB";
-        if (sizeBytes < 1024 * 1024 * 1024) return $"{sizeBytes / (1024.0 * 1024):F2} MB";
-        return $"{sizeBytes / (1024.0 * 1024 * 1024):F2} GB";
+        return database.SizeBytes switch
+        {
+            < BytesPerKilobyte => $"{database.SizeBytes} B",
+            < BytesPerMegabyte => $"{database.SizeBytes / (double)BytesPerKilobyte:F2} KB",
+            < BytesPerGigabyte => $"{database.SizeBytes / (double)BytesPerMegabyte:F2} MB",
+            _ => $"{database.SizeBytes / (double)BytesPerGigabyte:F2} GB"
+        };
     }
 }
