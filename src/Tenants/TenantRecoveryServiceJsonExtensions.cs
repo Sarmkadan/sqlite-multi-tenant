@@ -28,7 +28,7 @@ namespace SqliteMultiTenant.Tenants
         /// <param name="value">The service instance to serialize.</param>
         /// <param name="indented">Whether to format the JSON with indentation.</param>
         /// <returns>A JSON string representation of the service.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
         public static string ToJson(this TenantRecoveryService value, bool indented = false)
         {
             ArgumentNullException.ThrowIfNull(value);
@@ -44,8 +44,8 @@ namespace SqliteMultiTenant.Tenants
         /// Deserializes a JSON string to a <see cref="TenantRecoveryService"/> instance.
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
-        /// <returns>The deserialized service instance, or null if deserialization fails.</returns>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
+        /// <returns>The deserialized service instance, or <see langword="null"/> if deserialization fails.</returns>
+        /// <exception cref="ArgumentException"><paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         public static TenantRecoveryService? FromJson(string json)
         {
             ArgumentException.ThrowIfNullOrEmpty(json);
@@ -65,8 +65,8 @@ namespace SqliteMultiTenant.Tenants
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
         /// <param name="value">Receives the deserialized service instance if successful.</param>
-        /// <returns>True if deserialization succeeded; otherwise, false.</returns>
-        /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
+        /// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentException"><paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         public static bool TryFromJson(string json, out TenantRecoveryService? value)
         {
             ArgumentException.ThrowIfNullOrEmpty(json);
