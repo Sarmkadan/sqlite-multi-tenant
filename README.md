@@ -498,6 +498,99 @@ Console.WriteLine($"Unique actors: {stats.UniqueActors}");
 Console.WriteLine($"Unique event types: {stats.UniqueEventTypes}");
 ```
 
+## IOutputFormatter
+
+The `IOutputFormatter` interface defines a standardized contract for formatting objects into different output formats such as JSON, CSV, and XML. It enables consistent serialization for API responses, file exports, and CLI output, supporting multiple content types and providing a pluggable architecture for adding new formatters. This is particularly useful for multi-tenant systems where different output formats may be required for different clients or integration scenarios.
+
+### Public Members
+
+```csharp
+public interface IOutputFormatter
+public string Format<T>(T data)
+public string ContentType { get; }
+
+public sealed class JsonFormatter : IOutputFormatter
+public string Format<T>(T data)
+public string ContentType => "application/json"
+
+public sealed class CsvFormatter : IOutputFormatter
+public string Format<T>(T data)
+public string ContentType => "text/csv"
+
+public sealed class XmlFormatter : IOutputFormatter
+public string Format<T>(T data)
+public string ContentType => "application/xml"
+
+public sealed class FormatterFactory
+public FormatterFactory()
+public IOutputFormatter GetFormatter(string type)
+public IOutputFormatter GetFormatterByContentType(string contentType)
+
+public sealed class OutputFormatter
+public OutputFormatter()
+public OutputFormatter(FormatterFactory formatterFactory)
+public string FormatObject(object data, string format)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Formatters;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Use JSON formatter directly
+var jsonFormatter = new JsonFormatter();
+var tenant = new Tenant { Id = "acme-corp", Name = "Acme Corporation", CreatedDate = DateTime.UtcNow };
+string jsonOutput = jsonFormatter.Format(tenant);
+Console.WriteLine(jsonOutput);
+
+// Example 2: Use CSV formatter for tabular data
+var csvFormatter = new CsvFormatter();
+var tenants = new List<Tenant>
+{
+    new Tenant { Id = "acme-corp", Name = "Acme Corporation", CreatedDate = DateTime.UtcNow },
+    new Tenant { Id = "globex", Name = "Globex Inc", CreatedDate = DateTime.UtcNow.AddDays(-1) },
+    new Tenant { Id = "initech", Name = "Initech", CreatedDate = DateTime.UtcNow.AddDays(-2) }
+};
+string csvOutput = csvFormatter.Format(tenants);
+Console.WriteLine(csvOutput);
+
+// Example 3: Use XML formatter for structured data
+var xmlFormatter = new XmlFormatter();
+string xmlOutput = xmlFormatter.Format(tenant);
+Console.WriteLine(xmlOutput);
+
+// Example 4: Use FormatterFactory to get appropriate formatter
+var factory = new FormatterFactory();
+var jsonFormatterFromFactory = factory.GetFormatter("json");
+var csvFormatterFromFactory = factory.GetFormatter("csv");
+var xmlFormatterFromFactory = factory.GetFormatter("xml");
+
+// Example 5: Use OutputFormatter for flexible formatting
+var outputFormatter = new OutputFormatter();
+string textOutput = outputFormatter.FormatObject(tenant, "text");
+string jsonOutput2 = outputFormatter.FormatObject(tenant, "json");
+string csvOutput2 = outputFormatter.FormatObject(tenants, "csv");
+string xmlOutput2 = outputFormatter.FormatObject(tenant, "xml");
+
+Console.WriteLine("Text format:");
+Console.WriteLine(textOutput);
+Console.WriteLine("\nJSON format:");
+Console.WriteLine(jsonOutput2);
+Console.WriteLine("\nCSV format:");
+Console.WriteLine(csvOutput2);
+Console.WriteLine("\nXML format:");
+Console.WriteLine(xmlOutput2);
+
+public class Tenant
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; }
+}
+```
+
 ## PathUtilities
 
 The `PathUtilities` class provides robust, cross-platform file system and path manipulation utilities. It includes methods for safely combining and normalizing paths, managing directories (creating, deleting, checking size), performing recursive file operations, and handling file system cleanup tasks securely.
