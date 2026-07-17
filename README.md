@@ -914,6 +914,76 @@ if (exportResponse is OkObjectResult exportOkResult && exportOkResult.Value is A
 
 The `AdminController` class provides administrative endpoints for system-level operations, health monitoring, and diagnostics. It serves as the central hub for system administrators to monitor system health, retrieve performance metrics, clear caches, and access diagnostic information. All endpoints are protected and require administrative privileges.
 
+## IMetricsService
+
+The `IMetricsService` interface provides a standardized contract for collecting and retrieving application performance metrics. It tracks HTTP request counts, response times, error rates, backup operations, migration operations, and application errors. This service is essential for monitoring system health, performance optimization, and alerting.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Monitoring;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup dependency injection
+var services = new ServiceCollection();
+services.AddLogging(builder => builder.AddConsole());
+
+// Register metrics service
+services.AddSingleton<IMetricsService, MetricsService>();
+
+var serviceProvider = services.BuildServiceProvider();
+var metricsService = serviceProvider.GetRequiredService<IMetricsService>();
+
+// Example 1: Record HTTP request metrics
+metricsService.RecordRequest("/api/tenants", 150, 200); // Path, durationMs, statusCode
+metricsService.RecordRequest("/api/tenants/123", 85, 404); // 404 error
+metricsService.RecordRequest("/api/backups", 250, 201);
+
+// Example 2: Record backup operation metrics
+metricsService.RecordBackup(sizeBytes: 15728640, durationMs: 1250, success: true); // 15MB backup
+metricsService.RecordBackup(sizeBytes: 20971520, durationMs: 1800, success: false); // Failed backup
+
+// Example 3: Record migration operation metrics
+metricsService.RecordMigration(version: "1.2.3", durationMs: 3200, success: true);
+metricsService.RecordMigration(version: "1.2.4", durationMs: 4500, success: false);
+
+// Example 4: Record application errors
+metricsService.RecordError(errorType: "DatabaseConnection", message: "Connection timeout to primary database");
+metricsService.RecordError(errorType: "Validation", message: "Invalid tenant ID format: abc123");
+
+// Example 5: Get current metrics snapshot
+var snapshot = metricsService.GetSnapshot();
+
+Console.WriteLine($"Total requests: {snapshot.TotalRequests}");
+Console.WriteLine($"Total errors: {snapshot.TotalErrors}");
+Console.WriteLine($"Error rate: {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * 100 : 0):F2}%");
+Console.WriteLine($"Average response time: {snapshot.AverageResponseTimeMs:F2}ms");
+Console.WriteLine($"Total backup bytes: {snapshot.TotalBackupBytes:N0}");
+Console.WriteLine($"Total backups: {snapshot.TotalBackups}, Failed: {snapshot.FailedBackups}");
+Console.WriteLine($"Total migrations: {snapshot.TotalMigrations}, Failed: {snapshot.FailedMigrations}");
+
+// Example 6: Get endpoint-specific metrics
+foreach (var endpointMetric in snapshot.EndpointMetrics)
+{
+    Console.WriteLine($"\nEndpoint: {endpointMetric.Key}");
+    Console.WriteLine($"  Requests: {endpointMetric.Value.RequestCount}");
+    Console.WriteLine($"  Success: {endpointMetric.Value.SuccessCount}");
+    Console.WriteLine($"  Errors: {endpointMetric.Value.ErrorCount}");
+    Console.WriteLine($"  Avg response: {endpointMetric.Value.AverageResponseTimeMs:F2}ms");
+    Console.WriteLine($"  Max response: {endpointMetric.Value.MaxResponseTimeMs}ms");
+    Console.WriteLine($"  Min response: {endpointMetric.Value.MinResponseTimeMs}ms");
+}
+
+// Example 7: Get error type counts
+foreach (var errorCount in snapshot.ErrorCounts)
+{
+    Console.WriteLine($"{errorCount.Key}: {errorCount.Value} occurrences");
+}
+```
+
+## AdminController
+
 ### Public Members
 
 ```csharp
