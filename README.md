@@ -379,3 +379,63 @@ Console.WriteLine($"Total audit entries: {stats.TotalEntries}");
 Console.WriteLine($"Unique actors: {stats.UniqueActors}");
 Console.WriteLine($"Unique event types: {stats.UniqueEventTypes}");
 ```
+ 
+## FileSystemExtensions
+ 
+`FileSystemExtensions` provides a collection of safe, utility‑style extension methods for common file‑system operations such as path validation, directory creation, size calculation, safe deletion, backup‑file naming, recursive file discovery, copying, and retrieving creation timestamps. All methods are designed to handle errors gracefully and return status values instead of throwing exceptions.
+ 
+### Usage Example
+ 
+```csharp
+using System;
+using System.Collections.Generic;
+using SqliteMultiTenant.Utilities;
+
+class Program
+{
+    static void Main()
+    {
+        string basePath = "/var/data/tenants";
+        string tenantId = "acme-corp";
+
+        // 1. Validate a file path
+        string candidatePath = $"{basePath}/{tenantId}/db.sqlite";
+        bool isSafe = candidatePath.IsSafeFilePath(basePath);
+        Console.WriteLine($"Path safe: {isSafe}");
+
+        // 2. Ensure the tenant directory exists
+        string tenantDir = $"{basePath}/{tenantId}";
+        tenantDir.EnsureDirectoryExists();
+
+        // 3. Get file size (0 if missing)
+        long size = candidatePath.GetFileSizeBytes();
+        Console.WriteLine($"File size: {size} bytes");
+
+        // 4. Safely delete a temporary file
+        string tempFile = $"{tenantDir}/temp.tmp";
+        tempFile.SafeDelete();
+
+        // 5. Generate a backup file name
+        string backupName = tenantId.GenerateBackupFileName();
+        Console.WriteLine($"Backup file: {backupName}");
+
+        // 6. List all .db files under the base path
+        List<string> dbFiles = basePath.GetFilesWithExtension(".db");
+        Console.WriteLine($".db files found: {dbFiles.Count}");
+
+        // 7. Calculate total size of the tenant directory
+        long dirSize = tenantDir.GetDirectorySizeBytes();
+        Console.WriteLine($"Directory size: {dirSize} bytes");
+
+        // 8. Copy a file safely
+        string copyDest = $"{tenantDir}/copy.sqlite";
+        bool copied = candidatePath.SafeCopyFile(copyDest, overwrite: true);
+        Console.WriteLine($"File copied: {copied}");
+
+        // 9. Get creation time of the copied file
+        DateTime createdUtc = copyDest.GetFileCreationTimeUtc();
+        Console.WriteLine($"Copy created (UTC): {createdUtc:u}");
+    }
+}
+```
+```
