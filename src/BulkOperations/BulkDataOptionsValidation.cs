@@ -4,6 +4,8 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.IO;
+
 namespace SqliteMultiTenant.BulkOperations;
 
 /// <summary>
@@ -43,14 +45,18 @@ public static class BulkDataOptionsValidation
             problems.Add($"{nameof(BulkDataOptions.OperationTimeout)} must be positive, but was {value.OperationTimeout}.");
         }
 
-        if (string.IsNullOrWhiteSpace(value.DefaultExportDirectory))
+        ArgumentException.ThrowIfNullOrWhiteSpace(value.DefaultExportDirectory, nameof(value.DefaultExportDirectory));
+
+        if (!Path.IsPathRooted(value.DefaultExportDirectory) && !value.DefaultExportDirectory.StartsWith("./", StringComparison.Ordinal) && !value.DefaultExportDirectory.StartsWith(".\\", StringComparison.Ordinal) && !value.DefaultExportDirectory.StartsWith("/", StringComparison.Ordinal))
         {
-            problems.Add($"{nameof(BulkDataOptions.DefaultExportDirectory)} cannot be null or whitespace.");
+            problems.Add($"{nameof(BulkDataOptions.DefaultExportDirectory)} must be an absolute path or start with './' or '/', but was '{value.DefaultExportDirectory}'.");
         }
 
-        if (string.IsNullOrWhiteSpace(value.BaseDatabasePath))
+        ArgumentException.ThrowIfNullOrWhiteSpace(value.BaseDatabasePath, nameof(value.BaseDatabasePath));
+
+        if (!Path.IsPathRooted(value.BaseDatabasePath) && !value.BaseDatabasePath.StartsWith("./", StringComparison.Ordinal) && !value.BaseDatabasePath.StartsWith(".\\", StringComparison.Ordinal) && !value.BaseDatabasePath.StartsWith("/", StringComparison.Ordinal))
         {
-            problems.Add($"{nameof(BulkDataOptions.BaseDatabasePath)} cannot be null or whitespace.");
+            problems.Add($"{nameof(BulkDataOptions.BaseDatabasePath)} must be an absolute path or start with './' or '/', but was '{value.BaseDatabasePath}'.");
         }
 
         return problems.AsReadOnly();
@@ -61,10 +67,7 @@ public static class BulkDataOptionsValidation
     /// </summary>
     /// <param name="value">The options to check.</param>
     /// <returns><see langword="true"/> if the instance is valid; otherwise, <see langword="false"/>.</returns>
-    public static bool IsValid(this BulkDataOptions value)
-    {
-        return value.Validate().Count == 0;
-    }
+    public static bool IsValid(this BulkDataOptions value) => value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="BulkDataOptions"/> instance is valid.
@@ -82,7 +85,6 @@ public static class BulkDataOptionsValidation
             return;
         }
 
-        throw new ArgumentException(
-            $"BulkDataOptions is invalid. Problems: {string.Join(" ", problems)}");
+        throw new ArgumentException($"BulkDataOptions is invalid. Problems: {string.Join(" ", problems)}");
     }
 }
