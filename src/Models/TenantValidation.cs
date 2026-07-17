@@ -17,9 +17,9 @@ public static class TenantValidation
     /// <summary>
     /// Validates a Tenant instance and returns a list of validation errors
     /// </summary>
-    /// <param name="value">The tenant to validate</param>
-    /// <returns>Read-only list of validation error messages (empty if valid)</returns>
-    /// <exception cref="ArgumentNullException">Thrown if value is null</exception>
+    /// <param name="value">The tenant to validate.</param>
+    /// <returns>Read-only list of validation error messages (empty if valid).</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this Tenant value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -89,13 +89,14 @@ public static class TenantValidation
         {
             if (string.IsNullOrWhiteSpace(value.ContactEmail))
             {
-                errors.Add("ContactEmail must be a valid email address or null");
+                errors.Add("ContactEmail must be a valid email address");
             }
             else if (value.ContactEmail.Length > 254)
             {
                 errors.Add("ContactEmail exceeds maximum length of 254 characters");
             }
-            else if (!System.Text.RegularExpressions.Regex.IsMatch(value.ContactEmail,
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(
+                value.ContactEmail,
                 @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             {
@@ -104,16 +105,13 @@ public static class TenantValidation
         }
 
         // Validate DatabasePath if provided
-        if (value.DatabasePath is not null)
+        if (value.DatabasePath is not null && string.IsNullOrWhiteSpace(value.DatabasePath))
         {
-            if (string.IsNullOrWhiteSpace(value.DatabasePath))
-            {
-                errors.Add("DatabasePath must be a valid path or null");
-            }
-            else if (value.DatabasePath.Length > TenantConstants.MaxDatabasePathLength)
-            {
-                errors.Add($"DatabasePath exceeds maximum length of {TenantConstants.MaxDatabasePathLength} characters");
-            }
+            errors.Add("DatabasePath must be a valid path");
+        }
+        else if (value.DatabasePath?.Length > TenantConstants.MaxDatabasePathLength)
+        {
+            errors.Add($"DatabasePath exceeds maximum length of {TenantConstants.MaxDatabasePathLength} characters");
         }
 
         // Validate IsDataIsolated
@@ -155,33 +153,21 @@ public static class TenantValidation
             }
         }
 
-        // Validate Databases collection
-        if (value.Databases is null)
+        // Validate Databases collection using pattern matching
+        errors.AddRange(value.Databases switch
         {
-            errors.Add("Databases collection cannot be null");
-        }
-        else
-        {
-            // Individual database validation is handled by TenantDatabase.Validate
-            if (value.Databases.Any(db => db is null))
-            {
-                errors.Add("Databases collection contains null entries");
-            }
-        }
+            null => ["Databases collection cannot be null"],
+            _ when value.Databases.Any(db => db is null) => ["Databases collection contains null entries"],
+            _ => []
+        });
 
-        // Validate Settings collection
-        if (value.Settings is null)
+        // Validate Settings collection using pattern matching
+        errors.AddRange(value.Settings switch
         {
-            errors.Add("Settings collection cannot be null");
-        }
-        else
-        {
-            // Individual settings validation is handled by TenantSettings.Validate
-            if (value.Settings.Any(s => s is null))
-            {
-                errors.Add("Settings collection contains null entries");
-            }
-        }
+            null => ["Settings collection cannot be null"],
+            _ when value.Settings.Any(s => s is null) => ["Settings collection contains null entries"],
+            _ => []
+        });
 
         return errors.AsReadOnly();
     }
@@ -189,19 +175,16 @@ public static class TenantValidation
     /// <summary>
     /// Checks if a Tenant instance is valid
     /// </summary>
-    /// <param name="value">The tenant to check</param>
+    /// <param name="value">The tenant to validate</param>
     /// <returns>True if valid, false otherwise</returns>
-    public static bool IsValid(this Tenant value)
-    {
-        return Validate(value).Count == 0;
-    }
+    public static bool IsValid(this Tenant value) => Validate(value).Count == 0;
 
     /// <summary>
-    /// Ensures a Tenant instance is valid, throwing an exception if not
+    /// Ensures a Tenant instance is valid, throwing an exception if not.
     /// </summary>
-    /// <param name="value">The tenant to validate</param>
-    /// <exception cref="ArgumentNullException">Thrown if value is null</exception>
-    /// <exception cref="ArgumentException">Thrown if value is invalid with validation errors</exception>
+    /// <param name="value">The tenant to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is invalid with validation errors.</exception>
     public static void EnsureValid(this Tenant value)
     {
         ArgumentNullException.ThrowIfNull(value);
