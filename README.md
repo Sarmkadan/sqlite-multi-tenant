@@ -1039,6 +1039,57 @@ catch (Exception ex)
 File.Delete(testDbPath);
 ```
 
+## HealthCheckServiceTests
+
+The `HealthCheckServiceTests` class provides comprehensive unit tests for the `HealthCheckService` class, verifying that health check operations work correctly. These tests cover database connectivity checks, disk space monitoring, and proper error handling for invalid configurations, ensuring the health monitoring system operates reliably.
+
+### Public Members
+
+```csharp
+public sealed class HealthCheckServiceTests
+public HealthCheckServiceTests()
+public async Task GetHealthStatusAsync_ShouldReturnResponse()
+public async Task IsDatabaseHealthyAsync_ShouldReturnBoolean()
+public async Task IsDiskSpaceHealthyAsync_WithDefaultRequirement_ShouldReturnBoolean()
+public async Task IsDiskSpaceHealthyAsync_WithHighRequirement_ShouldHandleProperly()
+public void Service_Initialization_WithNullLogger_ShouldThrowArgumentNullException
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Health;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Xunit;
+
+// Create mock logger
+var mockLogger = Substitute.For<ILogger<HealthCheckService>>();
+
+// Instantiate the service under test
+var healthCheckService = new HealthCheckService(mockLogger);
+
+// Example 1: Test health status response
+var healthResponse = await healthCheckService.GetHealthStatusAsync();
+Assert.NotNull(healthResponse);
+
+// Example 2: Check database health
+bool isDatabaseHealthy = await healthCheckService.IsDatabaseHealthyAsync();
+Console.WriteLine($"Database health: {(isDatabaseHealthy ? "Healthy" : "Unhealthy")}");
+
+// Example 3: Check disk space with default requirements (1GB minimum)
+bool isDiskHealthyDefault = await healthCheckService.IsDiskSpaceHealthyAsync();
+Console.WriteLine($"Disk space healthy (default): {isDiskHealthyDefault}");
+
+// Example 4: Check disk space with custom requirement (5GB minimum)
+bool isDiskHealthy5GB = await healthCheckService.IsDiskSpaceHealthyAsync(5L * 1024 * 1024 * 1024);
+Console.WriteLine($"Disk space healthy (5GB): {isDiskHealthy5GB}");
+
+// Example 5: Test constructor validation
+var action = () => new HealthCheckService(null!);
+Assert.Throws<ArgumentNullException>(action);
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
