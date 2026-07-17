@@ -1225,6 +1225,84 @@ emptyEmailErrors.Should().ContainSingle()
     .And.ContainValue("Contact email is required");
 ```
 
+## MigrationServiceTests
+
+The `MigrationServiceTests` class provides comprehensive unit tests for the `MigrationService` class, verifying that migration management operations work correctly. These tests cover creating migrations, retrieving migrations by ID, marking migrations as completed or failed, and proper error handling for invalid inputs, ensuring the migration service operates reliably for database schema management in multi-tenant SQLite systems.
+
+### Public Members
+
+```csharp
+public sealed class MigrationServiceTests
+public MigrationServiceTests()
+public async Task GetMigrationAsync_ShouldReturnMigration_WhenMigrationExists()
+public async Task GetMigrationAsync_ShouldReturnNull_WhenMigrationDoesNotExist()
+public async Task GetMigrationAsync_ShouldThrowArgumentException_WhenMigrationIdIsEmpty()
+public async Task CreateMigrationAsync_ShouldCreateNewMigration()
+public async Task CreateMigrationAsync_ShouldThrowMigrationException_WhenMigrationVersionAlreadyExists()
+public async Task MarkMigrationAsCompletedAsync_ShouldUpdateMigrationStatus()
+public async Task MarkMigrationAsCompletedAsync_ShouldThrowMigrationException_WhenMigrationNotFound()
+public async Task MarkMigrationAsFailedAsync_ShouldUpdateMigrationStatusAndMessage()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Xunit;
+using FluentAssertions;
+
+// Create mock dependencies
+var mockMigrationRepository = Substitute.For<IMigrationRepository>();
+var mockLogger = Substitute.For<ILogger<MigrationService>>();
+var migrationService = new MigrationService(mockMigrationRepository, mockLogger);
+
+// Example 1: Create a new database migration
+var newMigration = await migrationService.CreateMigrationAsync(
+    databaseId: "acme-corp",
+    version: "1.0.0",
+    name: "InitializeUsersTable",
+    upScript: "CREATE TABLE Users (Id TEXT PRIMARY KEY, Name TEXT, Email TEXT)"
+);
+Console.WriteLine($"Created migration: {newMigration.MigrationId} (v{newMigration.Version}) - {newMigration.Status}");
+
+// Example 2: Get an existing migration by ID
+var migration = await migrationService.GetMigrationAsync(newMigration.MigrationId);
+if (migration != null)
+{
+    Console.WriteLine($"Found migration: {migration.Name} (status: {migration.Status})");
+}
+
+// Example 3: Mark migration as completed after successful execution
+if (migration != null)
+{
+    await migrationService.MarkMigrationAsCompletedAsync(migration.MigrationId, executionTimeMs: 250);
+    Console.WriteLine("Migration marked as completed successfully");
+}
+
+// Example 4: Mark migration as failed with error message
+if (migration != null)
+{
+    await migrationService.MarkMigrationAsFailedAsync(migration.MigrationId, "Syntax error in SQL script");
+    Console.WriteLine("Migration marked as failed with error message");
+}
+
+// Example 5: Handle empty migration ID (should throw)
+Func<Task> emptyIdAction = async () => await migrationService.GetMigrationAsync("");
+await emptyIdAction.Should().ThrowAsync<ArgumentException>();
+
+// Example 6: Handle non-existent migration (should return null)
+var nonExistentMigration = await migrationService.GetMigrationAsync("non-existent-id");
+nonExistentMigration.Should().BeNull();
+
+// Example 7: Handle non-existent migration for completion (should throw)
+Func<Task> notFoundAction = async () => await migrationService.MarkMigrationAsCompletedAsync("ghost-migration-id", 100);
+await notFoundAction.Should().ThrowAsync<MigrationException>();
+```
+
 ## TenantServiceTests
 
 The `TenantServiceTests` class provides comprehensive unit tests for the `TenantService` class, verifying that tenant management operations work correctly. These tests cover validation scenarios, repository interactions, and exception handling for tenant lifecycle operations, ensuring the tenant service operates reliably and maintains data integrity.
