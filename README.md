@@ -380,6 +380,152 @@ Console.WriteLine($"Unique actors: {stats.UniqueActors}");
 Console.WriteLine($"Unique event types: {stats.UniqueEventTypes}");
 ```
  
+## CollectionExtensions
+
+`CollectionExtensions` provides a collection of extension methods for common collection operations such as safe element access, filtering, batching, and functional-style transformations. These methods avoid LINQ performance pitfalls while providing more readable alternatives for common scenarios.
+
+### Public Members
+
+```csharp
+public static T SafeGet<T>
+public static T SafeFirst<T>
+public static T SafeLast<T>
+public static List<List<T>> ChunkBy<T>
+public static IEnumerable<T> WhereNotNull<T>
+public static void ForEach<T>
+public static void ForEachWithIndex<T>
+public static IEnumerable<T> DistinctBy<T, TKey>
+public static bool HasElements<T>
+public static List<T> Shuffle<T>
+public static Dictionary<DateTime, List<T>> GroupByDate<T>
+public static List<T> ToListSafe<T>
+public static bool HasDuplicates<T>
+public static IEnumerable<T> IntersectBy<T, TKey>
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class Program
+{
+    static void Main()
+    {
+        // Sample data
+        var tenants = new List<Tenant>
+        {
+            new Tenant("acme-corp", "Acme Corp", DateTime.Now.AddDays(-5)),
+            new Tenant("globex", "Globex Inc", DateTime.Now.AddDays(-3)),
+            new Tenant("initech", "Initech", DateTime.Now.AddDays(-10)),
+            new Tenant("umbrella", "Umbrella Corp", DateTime.Now.AddDays(-1))
+        };
+
+        // 1. Safe element access with default value
+        var firstTenant = tenants.SafeGet(0, new Tenant("default", "Default Tenant", DateTime.MinValue));
+        Console.WriteLine($"First tenant: {firstTenant.Name}");
+
+        // 2. Safely get first/last elements
+        var firstSafe = tenants.SafeFirst();
+        var lastSafe = tenants.SafeLast();
+        Console.WriteLine($"First: {firstSafe?.Name}, Last: {lastSafe?.Name}");
+
+        // 3. Chunk collection for batch processing
+        var tenantChunks = tenants.ChunkBy(2);
+        Console.WriteLine($"Created {tenantChunks.Count} chunks");
+        foreach (var chunk in tenantChunks)
+        {
+            Console.WriteLine($"Chunk has {chunk.Count} tenants");
+        }
+
+        // 4. Filter out null elements
+        var tenantsWithNulls = new List<Tenant?> { tenants[0], null, tenants[1], null, tenants[2] };
+        var validTenants = tenantsWithNulls.WhereNotNull();
+        Console.WriteLine($"Filtered out {tenantsWithNulls.Count - validTenants.Count()} nulls");
+
+        // 5. Execute action for each element
+        tenants.ForEach(t => Console.WriteLine($"Processing: {t.Name}"));
+
+        // 6. Execute action with index
+        tenants.ForEachWithIndex((tenant, index) => 
+            Console.WriteLine($"Tenant {index}: {tenant.Name}"));
+
+        // 7. Get distinct elements by key
+        var tenantsWithDuplicates = new List<Tenant>
+        {
+            new Tenant("acme-corp", "Acme Corp", DateTime.Now),
+            new Tenant("acme-corp", "Acme Corp Duplicate", DateTime.Now),
+            new Tenant("globex", "Globex Inc", DateTime.Now)
+        };
+        var uniqueTenants = tenantsWithDuplicates.DistinctBy(t => t.Id);
+        Console.WriteLine($"Unique tenants: {uniqueTenants.Count()}");
+
+        // 8. Check if collection has elements
+        bool hasTenants = tenants.HasElements();
+        Console.WriteLine($"Has tenants: {hasTenants}");
+
+        // 9. Shuffle collection randomly
+        var shuffledTenants = tenants.Shuffle();
+        Console.WriteLine($"Shuffled first tenant: {shuffledTenants[0].Name}");
+
+        // 10. Group items by date
+        var backupDates = new List<Backup>
+        {
+            new Backup("acme-corp", DateTime.Now.Date),
+            new Backup("globex", DateTime.Now.Date.AddDays(-1)),
+            new Backup("acme-corp", DateTime.Now.Date.AddDays(-1))
+        };
+        var backupsByDate = backupDates.GroupByDate(b => b.Date);
+        foreach (var kvp in backupsByDate)
+        {
+            Console.WriteLine($"Date {kvp.Key:yyyy-MM-dd}: {kvp.Value.Count} backups");
+        }
+
+        // 11. Safely convert to list
+        IEnumerable<Tenant>? nullTenants = null;
+        var safeList = nullTenants.ToListSafe();
+        Console.WriteLine($"Safe list count: {safeList.Count}");
+
+        // 12. Check for duplicates
+        bool hasDuplicates = tenantsWithDuplicates.HasDuplicates();
+        Console.WriteLine($"Has duplicates: {hasDuplicates}");
+
+        // 13. Intersect collections by key
+        var activeTenantIds = new List<string> { "acme-corp", "globex" };
+        var activeTenants = tenants.IntersectBy(activeTenantIds, t => t.Id);
+        Console.WriteLine($"Active tenants: {activeTenants.Count()}");
+    }
+}
+
+class Tenant
+{
+    public string Id { get; }
+    public string Name { get; }
+    public DateTime CreatedDate { get; }
+
+    public Tenant(string id, string name, DateTime createdDate)
+    {
+        Id = id;
+        Name = name;
+        CreatedDate = createdDate;
+    }
+}
+
+class Backup
+{
+    public string TenantId { get; }
+    public DateTime Date { get; }
+
+    public Backup(string tenantId, DateTime date)
+    {
+        TenantId = tenantId;
+        Date = date;
+    }
+}
+
 ## FileSystemExtensions
  
 `FileSystemExtensions` provides a collection of safe, utility‑style extension methods for common file‑system operations such as path validation, directory creation, size calculation, safe deletion, backup‑file naming, recursive file discovery, copying, and retrieving creation timestamps. All methods are designed to handle errors gracefully and return status values instead of throwing exceptions.
