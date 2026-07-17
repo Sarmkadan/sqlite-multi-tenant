@@ -15,6 +15,7 @@ public static class CommandParserValidation
 {
     /// <summary>
     /// Validates a <see cref="CommandParser"/> instance and returns a list of human-readable validation problems.
+    /// Validates that the command parser has been properly initialized with registered commands.
     /// </summary>
     /// <param name="value">The command parser to validate</param>
     /// <returns>An enumerable of validation problems, or empty if valid</returns>
@@ -25,6 +26,28 @@ public static class CommandParserValidation
 
         var problems = new List<string>();
 
+        var commandsField = typeof(CommandParser).GetField("_commands", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        if (commandsField?.GetValue(value) is Dictionary<string, CommandHandler> commands)
+        {
+            if (commands.Count == 0)
+            {
+                problems.Add("CommandParser has no registered commands");
+            }
+
+            foreach (var command in commands.Values)
+            {
+                var commandProblems = Validate(command);
+                if (commandProblems.Count > 0)
+                {
+                    problems.AddRange(commandProblems.Select(p => $"Command '{command.Name}' - {p}"));
+                }
+            }
+        }
+        else
+        {
+            problems.Add("CommandParser._commands field is null or inaccessible");
+        }
+
         return problems.AsReadOnly();
     }
 
@@ -33,10 +56,7 @@ public static class CommandParserValidation
     /// </summary>
     /// <param name="value">The command parser to check</param>
     /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/></returns>
-    public static bool IsValid(this CommandParser value)
-    {
-        return Validate(value).Count == 0;
-    }
+    public static bool IsValid(this CommandParser value) => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="CommandParser"/> is valid, throwing an <see cref="ArgumentException"/> if it is not.
@@ -51,8 +71,8 @@ public static class CommandParserValidation
         var problems = Validate(value);
         if (problems.Count > 0)
         {
-            throw new ArgumentException(
-                $"CommandParser validation failed:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", problems)}");
+            var errorMessage = string.Join($"{Environment.NewLine}- ", problems);
+            throw new ArgumentException($"CommandParser validation failed:{Environment.NewLine}- {errorMessage}");
         }
     }
 
@@ -96,10 +116,7 @@ public static class CommandParserValidation
     /// </summary>
     /// <param name="value">The command handler to check</param>
     /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/></returns>
-    public static bool IsValid(this CommandHandler value)
-    {
-        return Validate(value).Count == 0;
-    }
+    public static bool IsValid(this CommandHandler value) => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="CommandHandler"/> is valid, throwing an <see cref="ArgumentException"/> if it is not.
@@ -114,8 +131,8 @@ public static class CommandParserValidation
         var problems = Validate(value);
         if (problems.Count > 0)
         {
-            throw new ArgumentException(
-                $"CommandHandler validation failed:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", problems)}");
+            var errorMessage = string.Join($"{Environment.NewLine}- ", problems);
+            throw new ArgumentException($"CommandHandler validation failed:{Environment.NewLine}- {errorMessage}");
         }
     }
 
@@ -169,10 +186,7 @@ public static class CommandParserValidation
     /// </summary>
     /// <param name="value">The subcommand to check</param>
     /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/></returns>
-    public static bool IsValid(this Subcommand value)
-    {
-        return Validate(value).Count == 0;
-    }
+    public static bool IsValid(this Subcommand value) => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="Subcommand"/> is valid, throwing an <see cref="ArgumentException"/> if it is not.
@@ -187,8 +201,8 @@ public static class CommandParserValidation
         var problems = Validate(value);
         if (problems.Count > 0)
         {
-            throw new ArgumentException(
-                $"Subcommand validation failed:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", problems)}");
+            var errorMessage = string.Join($"{Environment.NewLine}- ", problems);
+            throw new ArgumentException($"Subcommand validation failed:{Environment.NewLine}- {errorMessage}");
         }
     }
 
@@ -256,10 +270,7 @@ public static class CommandParserValidation
     /// </summary>
     /// <param name="value">The parsed command to check</param>
     /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/></returns>
-    public static bool IsValid(this ParsedCommand value)
-    {
-        return Validate(value).Count == 0;
-    }
+    public static bool IsValid(this ParsedCommand value) => Validate(value).Count == 0;
 
     /// <summary>
     /// Ensures that the specified <see cref="ParsedCommand"/> is valid, throwing an <see cref="ArgumentException"/> if it is not.
@@ -274,9 +285,8 @@ public static class CommandParserValidation
         var problems = Validate(value);
         if (problems.Count > 0)
         {
-            throw new ArgumentException(
-                $"ParsedCommand validation failed:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", problems)}");
+            var errorMessage = string.Join($"{Environment.NewLine}- ", problems);
+            throw new ArgumentException($"ParsedCommand validation failed:{Environment.NewLine}- {errorMessage}");
         }
     }
 }
-
