@@ -26,11 +26,8 @@ public static class DateTimeExtensionsJsonExtensions
     /// <param name="value">The DateTime value to serialize.</param>
     /// <param name="indented">If true, the output JSON will be indented.</param>
     /// <returns>A JSON string representing the DateTime value.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if value is null.</exception>
     public static string ToJson(this DateTime value, bool indented = false)
     {
-        ArgumentNullException.ThrowIfNull(value);
-
         // Clone the cached options to avoid mutating the static instance.
         var options = new JsonSerializerOptions(_options)
         {
@@ -45,8 +42,9 @@ public static class DateTimeExtensionsJsonExtensions
     /// The JSON is expected to contain an ISO 8601 formatted DateTime string.
     /// </summary>
     /// <param name="json">The JSON string containing the DateTime value.</param>
-    /// <returns>The deserialized DateTime value, or null if the JSON is empty.</returns>
-    /// <exception cref="ArgumentException">Thrown if json is null or whitespace.</exception>
+    /// <returns>The deserialized DateTime value, or null if the JSON is empty or invalid.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="json"/> is null or whitespace.</exception>
+    /// <exception cref="JsonException">Thrown if the JSON cannot be deserialized as a DateTime.</exception>
     public static DateTime? FromJson(string json)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
@@ -61,6 +59,7 @@ public static class DateTimeExtensionsJsonExtensions
     /// <param name="json">The JSON string containing the DateTime value.</param>
     /// <param name="value">When this method returns, contains the deserialized value if the operation succeeded; otherwise, null.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="json"/> is null or whitespace.</exception>
     public static bool TryFromJson(string json, out DateTime? value)
     {
         try
