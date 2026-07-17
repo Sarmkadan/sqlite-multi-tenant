@@ -1159,6 +1159,72 @@ var action = () => new HealthCheckService(null!);
 Assert.Throws<ArgumentNullException>(action);
 ```
 
+## EventBusImplTests
+
+The `EventBusImplTests` class provides comprehensive unit tests for the `EventBusImpl` class, verifying that the event bus implementation correctly handles event publishing, subscription management, and event history tracking. These tests cover basic event operations, history management, and proper cleanup, ensuring the event-driven architecture operates reliably for multi-tenant systems.
+
+### Public Members
+
+```csharp
+public sealed class EventBusImplTests
+public EventBusImplTests()
+public void GetEventHistory_Initially_ShouldBeEmpty()
+public void ClearHistory_WhenHasEvents_ShouldClearList()
+public void Dispose_WhenCalled_DoesNotThrow()
+public void GetEventHistory_WithNegativeTake_ShouldHandleGracefully()
+public void EventBus_Initialization_PropertiesAreSet()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Xunit;
+
+// Create mock logger
+var mockLogger = Substitute.For<ILogger<EventBusImpl>>();
+
+// Instantiate the event bus under test
+var eventBus = new EventBusImpl(mockLogger);
+
+// Example 1: Verify event bus initialization
+Assert.NotNull(eventBus);
+Assert.Equal(0, eventBus.GetEventHistory().Count);
+
+// Example 2: Publish an event and verify it's tracked
+var testEvent = new TestDomainEvent();
+eventBus.Publish(testEvent);
+var history = eventBus.GetEventHistory();
+Assert.Single(history);
+Assert.Equal("TestDomainEvent", history[0].EventType);
+
+// Example 3: Clear event history
+Assert.Equal(1, eventBus.GetEventHistory().Count);
+eventBus.ClearHistory();
+Assert.Empty(eventBus.GetEventHistory());
+
+// Example 4: Handle negative take gracefully
+var result = eventBus.GetEventHistory(-5);
+Assert.Empty(result);
+
+// Example 5: Dispose without throwing
+eventBus.Dispose();
+
+// Example 6: Create event bus with custom capacity
+var capacity = 100;
+var largeCapacityBus = new EventBusImpl(mockLogger, capacity);
+Assert.Equal(capacity, largeCapacityBus.GetEventHistory().Capacity);
+
+public class TestDomainEvent : DomainEvent
+{
+    public TestDomainEvent() : base("TestDomainEvent")
+    {
+    }
+}
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
