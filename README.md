@@ -2496,6 +2496,96 @@ while (true)
 
 The `TenantContextHelper` class provides a centralized mechanism for managing tenant-specific context across asynchronous operations in a multi-tenant environment. It allows setting, retrieving, and validating the current tenant context, and facilitates scoping operations to a specific tenant using `AsyncLocal` storage. Additionally, it helps in enriching diagnostic information and metadata with tenant-specific identifiers, ensuring consistent traceability.
 
+## QueryBuilderTests
+
+The `QueryBuilderTests` class provides comprehensive unit tests for the `QueryBuilder`, `InsertBuilder`, and `UpdateBuilder` classes. These tests verify that query builders correctly construct SQL queries and handle parameters for SELECT, INSERT, and UPDATE operations, ensuring data integrity and preventing SQL injection through parameterized queries.
+
+### Public Members
+
+```csharp
+public sealed class QueryBuilderTests
+public void Build_EmptyQuery_ReturnsValidString()
+public void ApplyParameters_WithNullCommand_ThrowsArgumentNullException()
+public void Build_WithSelectAndFrom_ReturnsCorrectQuery()
+public void ApplyParameters_WithValidCommand_DoesNotThrow()
+public void QueryBuilder_Instance_ShouldBeCreatedSuccessfully()
+public void QueryBuilder_Constructor_ThrowsArgumentException_WhenTableNameIsEmpty()
+public void Select_SingleColumn_BuildsCorrectQuery()
+public void Select_MultipleColumns_BuildsCorrectQuery()
+public void Select_NoColumns_DefaultsToSelectAll()
+public void Where_SingleCondition_BuildsCorrectQuery()
+public void Where_MultipleConditionsWithAnd_BuildsCorrectQuery()
+public void Where_MultipleConditionsWithOr_BuildsCorrectQuery()
+public void Where_WithParameters_AppliesParametersCorrectly()
+public void InnerJoin_BuildsCorrectQuery()
+public void LeftJoin_BuildsCorrectQuery()
+public void OrderBy_SingleColumn_BuildsCorrectQuery()
+public void OrderBy_MultipleColumns_BuildsCorrectQuery()
+public void Limit_BuildsCorrectQuery()
+public void Offset_BuildsCorrectQuery()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.DataOperations;
+using System.Data.SQLite;
+
+// Example 1: Build a simple SELECT query
+var selectQuery = new QueryBuilder("Users")
+    .Select("Id", "Name", "Email")
+    .Where("IsActive = @active", ("active", true))
+    .OrderBy("Name")
+    .Limit(10)
+    .Build();
+
+Console.WriteLine(selectQuery);
+// Output: SELECT [Id], [Name], [Email] FROM [Users] WHERE (IsActive = @active) ORDER BY [Name] ASC LIMIT 10
+
+// Example 2: Build a query with JOINs
+var joinQuery = new QueryBuilder("Orders")
+    .Select("o.Id", "c.Name", "o.Amount", "o.OrderDate")
+    .InnerJoin("Customers c", "o.CustomerId = c.Id")
+    .Where("o.Amount > @minAmount", ("minAmount", 100))
+    .And("o.OrderDate > @startDate", ("startDate", "2024-01-01"))
+    .OrderBy("o.OrderDate", "DESC")
+    .Limit(20)
+    .Offset(10)
+    .Build();
+
+Console.WriteLine(joinQuery);
+// Output: SELECT [o.Id], [c.Name], [o.Amount], [o.OrderDate] FROM [Orders] INNER JOIN Customers c ON o.CustomerId = c.Id WHERE (o.Amount > @minAmount) AND (o.OrderDate > @startDate) ORDER BY [o.OrderDate] DESC LIMIT 20 OFFSET 10
+
+// Example 3: Build an INSERT query with parameters
+var insertBuilder = new InsertBuilder("Users")
+    .Value("Name", "John Doe")
+    .Value("Email", "john@example.com")
+    .Value("Age", 30);
+
+var (insertQuery, parameters) = insertBuilder.Build();
+Console.WriteLine(insertQuery);
+// Output: INSERT INTO [Users] ([Name], [Email], [Age]) VALUES (@Name, @Email, @Age)
+
+// Example 4: Build an UPDATE query with parameters
+var updateBuilder = new UpdateBuilder("Users")
+    .Set("Name", "Jane Smith")
+    .Set("Email", "jane@example.com")
+    .Where("Id = @id", ("id", 123));
+
+var (updateQuery, updateParameters) = updateBuilder.Build();
+Console.WriteLine(updateQuery);
+// Output: UPDATE [Users] SET [Name] = @Name, [Email] = @Email WHERE Id = @id
+
+// Example 5: Apply parameters to SQLiteCommand for execution
+var command = new SQLiteCommand("SELECT * FROM Users WHERE IsActive = @active AND Age > @minAge");
+var queryBuilder = new QueryBuilder("Users")
+    .Where("IsActive = @active", ("active", true))
+    .And("Age > @minAge", ("minAge", 18));
+
+queryBuilder.ApplyParameters(command);
+// command.Parameters now contains @active and @minAge with their respective values
+```
+
 ### Public Members
 
 ```csharp
