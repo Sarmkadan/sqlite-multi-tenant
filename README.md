@@ -330,6 +330,137 @@ string createdAt = migration.GetFormattedCreatedAt();
 Console.WriteLine($"Created at: {createdAt}");
 ```
 
+## DataRetentionPolicyJsonExtensions
+
+The `DataRetentionPolicyJsonExtensions` class provides extension methods for serializing and deserializing data retention policy types to and from JSON format. It simplifies working with retention policies, rules, and results by offering fluent-style APIs for JSON conversion with camelCase naming, null value handling, and comprehensive error handling.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BackgroundWorkers;
+using System;
+
+// Example 1: Create and serialize a RetentionPolicyConfig
+var policyConfig = new RetentionPolicyConfig
+{
+    PolicyName = "UserDataRetention",
+    Description = "Retention policy for user data",
+    IsEnabled = true,
+    CreatedAt = DateTime.UtcNow,
+    Rules = new List<RetentionRule>
+    {
+        new RetentionRule
+        {
+            RuleName = "DeleteInactiveUsers",
+            Description = "Delete users inactive for more than 365 days",
+            DaysThreshold = 365,
+            Action = RetentionAction.Delete,
+            TargetType = RetentionTarget.User
+        },
+        new RetentionRule
+        {
+            RuleName = "ArchiveOldLogs",
+            Description = "Archive logs older than 90 days",
+            DaysThreshold = 90,
+            Action = RetentionAction.Archive,
+            TargetType = RetentionTarget.Log
+        }
+    }
+};
+
+// Serialize to JSON string
+string json = policyConfig.ToJson();
+Console.WriteLine(json);
+
+// Serialize with indentation for readability
+string prettyJson = policyConfig.ToJson(indented: true);
+Console.WriteLine(prettyJson);
+
+// Example 2: Deserialize from JSON string
+string jsonInput = @"{
+    \"policyName\": \"UserDataRetention\",
+    \"description\": \"Retention policy for user data\",
+    \"isEnabled\": true,
+    \"createdAt\": \"2024-07-19T10:30:00\",
+    \"rules\": [
+        {
+            \"ruleName\": \"DeleteInactiveUsers\",
+            \"description\": \"Delete users inactive for more than 365 days\",
+            \"daysThreshold\": 365,
+            \"action\": \"delete\",
+            \"targetType\": \"user\"
+        }
+    ]
+}";
+
+var deserializedConfig = DataRetentionPolicyJsonExtensions.FromJson(jsonInput);
+Console.WriteLine(deserializedConfig?.PolicyName);
+
+// Example 3: Try to deserialize with error handling
+if (DataRetentionPolicyJsonExtensions.TryFromJson(jsonInput, out var result))
+{
+    Console.WriteLine("Deserialization succeeded!");
+}
+else
+{
+    Console.WriteLine("Deserialization failed!");
+}
+
+// Example 4: Serialize and deserialize a RetentionRule
+var retentionRule = new RetentionRule
+{
+    RuleName = "CleanupTempFiles",
+    Description = "Remove temporary files older than 30 days",
+    DaysThreshold = 30,
+    Action = RetentionAction.Delete,
+    TargetType = RetentionTarget.File
+};
+
+string ruleJson = retentionRule.ToJson();
+Console.WriteLine(ruleJson);
+
+var deserializedRule = DataRetentionPolicyJsonExtensions.FromJsonToRule(ruleJson);
+Console.WriteLine(deserializedRule?.RuleName);
+
+// Example 5: Serialize and deserialize a RetentionResult
+var retentionResult = new RetentionResult
+{
+    ExecutionId = Guid.NewGuid(),
+    PolicyName = "UserDataRetention",
+    ExecutedAt = DateTime.UtcNow,
+    ProcessedItems = 42,
+    DeletedItems = 15,
+    ArchivedItems = 27,
+    Status = RetentionStatus.Completed
+};
+
+string resultJson = retentionResult.ToJson();
+Console.WriteLine(resultJson);
+
+var deserializedResult = DataRetentionPolicyJsonExtensions.FromJsonToResult(resultJson);
+Console.WriteLine(deserializedResult?.ProcessedItems);
+
+// Example 6: Serialize and deserialize a RuleExecutionResult
+var executionResult = new RuleExecutionResult
+{
+    ExecutionId = Guid.NewGuid(),
+    RuleName = "DeleteInactiveUsers",
+    StartedAt = DateTime.UtcNow.AddMinutes(-5),
+    CompletedAt = DateTime.UtcNow,
+    ItemsProcessed = 100,
+    ItemsDeleted = 45,
+    SuccessCount = 45,
+    ErrorCount = 0,
+    Status = ExecutionStatus.Success
+};
+
+string executionJson = executionResult.ToJson();
+Console.WriteLine(executionJson);
+
+var deserializedExecution = DataRetentionPolicyJsonExtensions.FromJsonToExecutionResult(executionJson);
+Console.WriteLine(deserializedExecution?.ItemsProcessed);
+```
+
 ## CommandParserValidation
 
 `CommandParserValidation` is a static helper class that provides validation utilities for `CommandParser`, `CommandHandler`, `Subcommand`, and `ParsedCommand` instances. It validates command structure, required arguments, and data integrity, offering methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
