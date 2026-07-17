@@ -150,3 +150,81 @@ public class ApiResponse
 var responseTypeProblems = HttpClientWrapperValidation.ValidateResponseType<ApiResponse>();
 Console.WriteLine(responseTypeProblems.Count == 0 ? "Response type is valid." : $"Response type problems: {string.Join(", ", responseTypeProblems)}");
 ```
+
+## CommandParserValidation
+
+`CommandParserValidation` is a static helper class that provides validation utilities for `CommandParser`, `CommandHandler`, `Subcommand`, and `ParsedCommand` instances. It validates command structure, required arguments, and data integrity, offering methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
+
+### Usage Example
+
+```csharp
+using System;
+using System.Collections.Generic;
+using SqliteMultiTenant.Cli;
+
+// Assume you have a CommandParser instance with registered commands
+var commandParser = new CommandParser();
+
+// Register some commands
+commandParser.RegisterCommand("tenant", "Manage tenants", new CommandHandler
+{
+    Name = "tenant",
+    Description = "Manage tenants",
+    Subcommands = new List<Subcommand>
+    {
+        new Subcommand
+        {
+            Name = "list",
+            Description = "List all tenants",
+            RequiredArgs = new[] { "--format" }
+        },
+        new Subcommand
+        {
+            Name = "create",
+            Description = "Create a new tenant",
+            RequiredArgs = new[] { "--name", "--id" }
+        }
+    }
+});
+
+// 1. Validate the command parser instance
+IReadOnlyList<string> parserProblems = commandParser.Validate();
+if (parserProblems.Count > 0)
+{
+    Console.WriteLine("CommandParser has problems:");
+    foreach (var p in parserProblems) Console.WriteLine($"- {p}");
+}
+else
+{
+    Console.WriteLine("CommandParser instance is valid.");
+}
+
+// Shortcut to just get a boolean result
+bool isValid = commandParser.IsValid();
+Console.WriteLine($"IsValid: {isValid}");
+
+// Throw an exception if the command parser is not valid
+CommandParserValidation.EnsureValid(commandParser);
+
+// 2. Validate a CommandHandler instance
+var tenantHandler = commandParser.GetCommandHandler("tenant");
+IReadOnlyList<string> handlerProblems = tenantHandler.Validate();
+Console.WriteLine(handlerProblems.Count == 0 ? "CommandHandler is valid." : $"CommandHandler problems: {string.Join(", ", handlerProblems)}");
+
+// 3. Validate a Subcommand instance
+var listSubcommand = tenantHandler.Subcommands.First(s => s.Name == "list");
+IReadOnlyList<string> subcommandProblems = listSubcommand.Validate();
+Console.WriteLine(subcommandProblems.Count == 0 ? "Subcommand is valid." : $"Subcommand problems: {string.Join(", ", subcommandProblems)}");
+
+// 4. Validate a ParsedCommand instance
+var parsedCommand = new ParsedCommand
+{
+    Success = true,
+    MainCommand = "tenant",
+    Subcommand = "list",
+    Arguments = new[] { "--format", "json" },
+    Description = "List all tenants in JSON format"
+};
+IReadOnlyList<string> parsedProblems = parsedCommand.Validate();
+Console.WriteLine(parsedProblems.Count == 0 ? "ParsedCommand is valid." : $"ParsedCommand problems: {string.Join(", ", parsedProblems)}");
+```
