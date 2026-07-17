@@ -41,7 +41,9 @@ public static class ReflectionExtensionsJsonExtensions
 
     /// <summary>
     /// Deserializes a JSON string into a Type.
-    /// Note: Type deserialization from JSON is limited; this returns null if deserialization fails.
+    /// Note: Type deserialization from JSON is inherently limited as Type objects cannot be reliably
+    /// serialized to JSON and deserialized back. This method uses Type.GetType to attempt
+    /// deserialization from the assembly-qualified name format.
     /// </summary>
     /// <param name="json">The JSON string containing the type data.</param>
     /// <returns>The deserialized Type, or null if the JSON is empty or deserialization fails.</returns>
@@ -50,9 +52,14 @@ public static class ReflectionExtensionsJsonExtensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(json);
 
-        // Type deserialization from JSON requires special handling; this is a best-effort approach
-        // In practice, Type objects cannot be reliably deserialized from JSON
-        return null;
+        try
+        {
+            return Type.GetType(json, throwOnError: false);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -61,8 +68,11 @@ public static class ReflectionExtensionsJsonExtensions
     /// <param name="json">The JSON string containing the type data.</param>
     /// <param name="value">When this method returns, contains the deserialized Type if the operation succeeded; otherwise, null.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <exception cref="ArgumentException">Thrown if json is null or whitespace.</exception>
     public static bool TryFromJson(string json, out Type? value)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+
         try
         {
             value = FromJson(json);
