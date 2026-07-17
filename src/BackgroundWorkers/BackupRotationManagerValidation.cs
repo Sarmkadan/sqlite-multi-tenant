@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace SqliteMultiTenant.BackgroundWorkers
@@ -13,6 +14,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
     /// <summary>
     /// Provides validation helpers for <see cref="BackupRotationManager"/> and related types.
     /// </summary>
+    [SuppressMessage("Microsoft.Performance", "CA1810:InitializeReferenceTypeStaticFieldsInline", Justification = "Static constructor for type initialization")]
     public static class BackupRotationManagerValidation
     {
         /// <summary>
@@ -285,28 +287,28 @@ namespace SqliteMultiTenant.BackgroundWorkers
         /// </summary>
         /// <param name="value">The policy to check.</param>
         /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValid(this BackupRotationPolicy? value) => value.Validate().Count == 0;
+        public static bool IsValid(this BackupRotationPolicy? value) => value?.Validate().Count == 0;
 
         /// <summary>
         /// Determines whether the specified <see cref="BackupRotationResult"/> is valid.
         /// </summary>
         /// <param name="value">The result to check.</param>
         /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValid(this BackupRotationResult? value) => value.Validate().Count == 0;
+        public static bool IsValid(this BackupRotationResult? value) => value?.Validate().Count == 0;
 
         /// <summary>
         /// Determines whether the specified <see cref="BackupVerificationResult"/> is valid.
         /// </summary>
         /// <param name="value">The result to check.</param>
         /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValid(this BackupVerificationResult? value) => value.Validate().Count == 0;
+        public static bool IsValid(this BackupVerificationResult? value) => value?.Validate().Count == 0;
 
         /// <summary>
         /// Determines whether the specified <see cref="BackupStatistics"/> is valid.
         /// </summary>
         /// <param name="value">The statistics to check.</param>
         /// <returns><see langword="true"/> if valid; otherwise, <see langword="false"/>.</returns>
-        public static bool IsValid(this BackupStatistics? value) => value.Validate().Count == 0;
+        public static bool IsValid(this BackupStatistics? value) => value?.Validate().Count == 0;
 
         /// <summary>
         /// Ensures that the specified <see cref="BackupRotationPolicy"/> is valid, throwing an <see cref="ArgumentException"/> if it is not.
@@ -320,7 +322,8 @@ namespace SqliteMultiTenant.BackgroundWorkers
             if (errors.Count > 0)
             {
                 throw new ArgumentException(
-                    $"BackupRotationPolicy is invalid:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", errors)}");
+                    $"BackupRotationPolicy is invalid:{Environment.NewLine}- {
+                    string.Join($"{Environment.NewLine}- ", errors)}");
             }
         }
 
@@ -336,7 +339,8 @@ namespace SqliteMultiTenant.BackgroundWorkers
             if (errors.Count > 0)
             {
                 throw new ArgumentException(
-                    $"BackupRotationResult is invalid:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", errors)}");
+                    $"BackupRotationResult is invalid:{Environment.NewLine}- {
+                    string.Join($"{Environment.NewLine}- ", errors)}");
             }
         }
 
@@ -352,7 +356,8 @@ namespace SqliteMultiTenant.BackgroundWorkers
             if (errors.Count > 0)
             {
                 throw new ArgumentException(
-                    $"BackupVerificationResult is invalid:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", errors)}");
+                    $"BackupVerificationResult is invalid:{Environment.NewLine}- {
+                    string.Join($"{Environment.NewLine}- ", errors)}");
             }
         }
 
@@ -368,7 +373,8 @@ namespace SqliteMultiTenant.BackgroundWorkers
             if (errors.Count > 0)
             {
                 throw new ArgumentException(
-                    $"BackupStatistics is invalid:{Environment.NewLine}- {string.Join($"{Environment.NewLine}- ", errors)}");
+                    $"BackupStatistics is invalid:{Environment.NewLine}- {
+                    string.Join($"{Environment.NewLine}- ", errors)}");
             }
         }
 
@@ -379,7 +385,12 @@ namespace SqliteMultiTenant.BackgroundWorkers
         /// <returns>A formatted string.</returns>
         private static string FormatBytes(long bytes)
         {
-            string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB" };
+            if (bytes < 0)
+            {
+                return "0 B";
+            }
+
+            ReadOnlySpan<string> suffixes = ["B", "KB", "MB", "GB", "TB", "PB"];
             int counter = 0;
             double number = bytes;
 
@@ -389,7 +400,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
                 counter++;
             }
 
-            return string.Format(CultureInfo.InvariantCulture, "{0:0.##} {1}", number, suffixes[counter]);
+            return $"{number:0.##} {suffixes[counter]}";
         }
     }
 }
