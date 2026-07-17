@@ -836,6 +836,97 @@ Console.WriteLine($"Total backups for acme-corp-db: {backupCount}");
 File.Delete(testDbPath);
 ```
 
+## TenantServiceIntegrationTests
+
+The `TenantServiceIntegrationTests` class provides comprehensive integration tests for the `TenantService` class, verifying that all tenant management operations work correctly against a real SQLite database. These tests cover CRUD operations, query methods for retrieving tenants, and ensure data integrity throughout the tenant lifecycle management system.
+
+### Public Members
+
+```csharp
+public sealed class TenantServiceIntegrationTests : IDisposable
+public TenantServiceIntegrationTests()
+public async Task GetAllTenantsAsync_ShouldReturnAllSeededTenants()
+public async Task GetTenantAsync_ShouldReturnCorrectTenant()
+public async Task GetTenantAsync_ShouldReturnNullForNonExistingTenant()
+public async Task CreateTenantAsync_ShouldAddTenantToDatabase()
+public async Task UpdateTenantAsync_ShouldUpdateTenantInDatabase()
+public async Task DeleteTenantAsync_ShouldRemoveTenantFromDatabase()
+public async Task CreateTenantAsync_ShouldThrowExceptionIfTenantNameAlreadyExists()
+public void Dispose()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Threading.Tasks;
+
+// Create a test database and service
+var testDbPath = Path.Combine(Path.GetTempPath(), $"tenant_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+var tenantService = new TenantService(connectionString, NullLogger<TenantService>.Instance);
+
+// Example 1: Create a new tenant
+var newTenant = new Tenant
+{
+    Id = "acme-corp",
+    Name = "Acme Corporation",
+    ConnectionString = "Data Source=tenants/acme-corp/tenant.db;Version=3;Pooling=True;"
+};
+
+var createdTenant = await tenantService.CreateTenantAsync(newTenant);
+Console.WriteLine($"Created tenant: {createdTenant.Name} (ID: {createdTenant.Id})");
+
+// Example 2: Get all tenants
+var allTenants = await tenantService.GetAllTenantsAsync();
+Console.WriteLine($"Total tenants: {allTenants.Count}");
+
+// Example 3: Get a specific tenant
+var tenant = await tenantService.GetTenantAsync("acme-corp");
+if (tenant != null)
+{
+    Console.WriteLine($"Found tenant: {tenant.Name}");
+}
+
+// Example 4: Update a tenant
+if (tenant != null)
+{
+    tenant.Name = "Acme Corp Updated";
+    var updatedTenant = await tenantService.UpdateTenantAsync(tenant);
+    Console.WriteLine($"Updated tenant name to: {updatedTenant.Name}");
+}
+
+// Example 5: Delete a tenant
+if (tenant != null)
+{
+    await tenantService.DeleteTenantAsync("acme-corp");
+    Console.WriteLine("Tenant deleted successfully");
+}
+
+// Example 6: Try to create a tenant with duplicate name (should throw)
+try
+{
+    var duplicateTenant = new Tenant
+    {
+        Id = "acme-corp-2",
+        Name = "Acme Corporation", // Same name as existing tenant
+        ConnectionString = "Data Source=tenants/acme-corp-2/tenant.db;Version=3;"
+    };
+    await tenantService.CreateTenantAsync(duplicateTenant);
+    Console.WriteLine("ERROR: Should have thrown exception for duplicate name");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Correctly threw exception: {ex.Message}");
+}
+
+// Cleanup
+File.Delete(testDbPath);
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
