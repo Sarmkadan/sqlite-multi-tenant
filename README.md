@@ -151,6 +151,76 @@ var responseTypeProblems = HttpClientWrapperValidation.ValidateResponseType<ApiR
 Console.WriteLine(responseTypeProblems.Count == 0 ? "Response type is valid." : $"Response type problems: {string.Join(", ", responseTypeProblems)}");
 ```
 
+## TenantContextJsonExtensions
+
+The `TenantContextJsonExtensions` class provides extension methods for serializing and deserializing `TenantContext` objects to and from JSON format. It simplifies working with tenant context data in multi-tenant applications by providing fluent-style APIs for JSON conversion with support for camelCase naming and null value handling.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Create a TenantContext instance
+var tenantContext = new TenantContext
+{
+    TenantId = "tenant-123",
+    TenantName = "Acme Corporation",
+    UserId = "user-456",
+    UserEmail = "john.doe@acme.com",
+    EstablishedAt = DateTime.UtcNow.AddYears(-5),
+    CreatedAt = DateTime.UtcNow,
+    RequestId = "req-789",
+    ConnectionId = "conn-abc",
+    DatabasePath = "/data/tenant-123.db",
+    IsValid = true,
+    ContextData = new Dictionary<string, object>
+    {
+        { "subscriptionTier", "premium" },
+        { "maxConnections", 100 },
+        { "featuresEnabled", new[] { "multi-db", "backup", "analytics" } }
+    }
+};
+
+// Serialize to JSON string
+string json = tenantContext.ToJson();
+Console.WriteLine(json);
+
+// Serialize with indentation for readability
+string prettyJson = tenantContext.ToJson(indented: true);
+Console.WriteLine(prettyJson);
+
+// Deserialize from JSON string
+string jsonInput = @"{
+    \"tenantId\": \"tenant-123\",
+    \"tenantName\": \"Acme Corporation\",
+    \"userId\": \"user-456\",
+    \"userEmail\": \"john.doe@acme.com\",
+    \"establishedAt\": \"2021-01-15T00:00:00\",
+    \"createdAt\": \"2024-07-19T10:30:00\",
+    \"requestId\": \"req-789\",
+    \"connectionId\": \"conn-abc\",
+    \"databasePath\": \"/data/tenant-123.db\",
+    \"isValid\": true,
+    \"contextData\": {
+        \"subscriptionTier\": \"premium\",
+        \"maxConnections\": 100
+    }
+}";
+var deserializedContext = TenantContextJsonExtensions.FromJson(jsonInput);
+Console.WriteLine(deserializedContext?.TenantName);
+
+// Try to deserialize with error handling
+if (TenantContextJsonExtensions.TryFromJson(jsonInput, out var result))
+{
+    Console.WriteLine("Deserialization succeeded!");
+}
+else
+{
+    Console.WriteLine("Deserialization failed!");
+}
+```
+
 ## CommandParserValidation
 
 `CommandParserValidation` is a static helper class that provides validation utilities for `CommandParser`, `CommandHandler`, `Subcommand`, and `ParsedCommand` instances. It validates command structure, required arguments, and data integrity, offering methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
