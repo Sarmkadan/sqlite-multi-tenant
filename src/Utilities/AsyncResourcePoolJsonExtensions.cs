@@ -42,9 +42,12 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         /// <typeparam name="T">The type of resource managed by the pool.</typeparam>
         /// <param name="json">The JSON representation of the pool.</param>
-        /// <returns>The deserialized <see cref="AsyncResourcePool{T}"/> instance, or null if the JSON is empty.</returns>
+        /// <returns>The deserialized <see cref="AsyncResourcePool{T}"/> instance, or null if the JSON is empty or whitespace.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
         public static AsyncResourcePool<T>? FromJson<T>(string json) where T : class
         {
+            ArgumentNullException.ThrowIfNull(json);
+
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 
