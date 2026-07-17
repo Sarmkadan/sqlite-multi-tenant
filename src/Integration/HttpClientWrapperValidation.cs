@@ -4,8 +4,9 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace SqliteMultiTenant.Integration;
 
@@ -20,6 +21,7 @@ public static class HttpClientWrapperValidation
     /// </summary>
     /// <param name="value">The instance to validate.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
     public static IReadOnlyList<string> Validate(this HttpClientWrapper? value)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -37,8 +39,10 @@ public static class HttpClientWrapperValidation
     /// </summary>
     /// <param name="value">The instance to check.</param>
     /// <returns>True if valid; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
     public static bool IsValid(this HttpClientWrapper? value)
     {
+        ArgumentNullException.ThrowIfNull(value);
         return Validate(value).Count == 0;
     }
 
@@ -65,6 +69,8 @@ public static class HttpClientWrapperValidation
     /// </summary>
     /// <param name="url">The URL to validate.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="url"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="url"/> is null or empty.</exception>
     public static IReadOnlyList<string> ValidateUrl(string? url)
     {
         ArgumentException.ThrowIfNullOrEmpty(url, nameof(url));
@@ -81,8 +87,7 @@ public static class HttpClientWrapperValidation
         {
             problems.Add("URL must be a valid HTTP or HTTPS URI.");
         }
-
-        if (uri?.AbsolutePath == "/" || uri?.AbsolutePath == "")
+        else if (uri?.AbsolutePath == "/" || uri?.AbsolutePath == "")
         {
             problems.Add("URL path cannot be root only.");
         }
@@ -95,6 +100,8 @@ public static class HttpClientWrapperValidation
     /// </summary>
     /// <param name="token">The bearer token to validate.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="token"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="token"/> is null or empty.</exception>
     public static IReadOnlyList<string> ValidateBearerToken(string? token)
     {
         ArgumentException.ThrowIfNullOrEmpty(token, nameof(token));
@@ -105,17 +112,18 @@ public static class HttpClientWrapperValidation
         {
             problems.Add("Bearer token cannot be whitespace.");
         }
-
-        if (token.Length < 10)
+        else if (token.Length < 10)
         {
             problems.Add("Bearer token must be at least 10 characters long.");
         }
-
-        // Basic check for JWT-like tokens (3 segments separated by dots)
-        var segments = token.Split('.', StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length != 3)
+        else
         {
-            problems.Add("Bearer token does not appear to be a valid JWT format (expected 3 segments separated by dots).");
+            // Basic check for JWT-like tokens (3 segments separated by dots)
+            var segments = token.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length != 3)
+            {
+                problems.Add("Bearer token does not appear to be a valid JWT format (expected 3 segments separated by dots).");
+            }
         }
 
         return problems.AsReadOnly();
@@ -127,15 +135,15 @@ public static class HttpClientWrapperValidation
     /// <param name="name">The header name.</param>
     /// <param name="value">The header value.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="name"/> is null.</exception>
     public static IReadOnlyList<string> ValidateHeader(string? name, string? value)
     {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentException.ThrowIfNullOrEmpty(value, nameof(value));
+
         var problems = new List<string>();
 
-        if (string.IsNullOrEmpty(name))
-        {
-            problems.Add("Header name cannot be null or empty.");
-        }
-        else if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(name))
         {
             problems.Add("Header name cannot be whitespace.");
         }
@@ -144,11 +152,7 @@ public static class HttpClientWrapperValidation
             problems.Add("Header name cannot contain whitespace characters.");
         }
 
-        if (string.IsNullOrEmpty(value))
-        {
-            problems.Add("Header value cannot be null or empty.");
-        }
-        else if (string.IsNullOrWhiteSpace(value))
+        if (string.IsNullOrWhiteSpace(value))
         {
             problems.Add("Header value cannot be whitespace.");
         }
@@ -183,27 +187,16 @@ public static class HttpClientWrapperValidation
         var problems = new List<string>();
 
         var type = typeof(T);
-        if (type == typeof(string))
+        return type switch
         {
-            // String is acceptable for raw responses
-            return problems.AsReadOnly();
-        }
-
-        if (!type.IsClass || type == typeof(object))
-        {
-            problems.Add("Response type must be a reference type (class), not a value type or object.");
-        }
-
-        if (type.IsAbstract)
-        {
-            problems.Add("Response type cannot be abstract.");
-        }
-
-        if (type.GetConstructor(Type.EmptyTypes) is null)
-        {
-            problems.Add("Response type must have a parameterless constructor.");
-        }
-
-        return problems.AsReadOnly();
+            { } when type == typeof(string) => problems.AsReadOnly(),
+            _ when !type.IsClass || type == typeof(object) =>
+                problems.Append("Response type must be a reference type (class), not a value type or object.").ToList().AsReadOnly(),
+            _ when type.IsAbstract =>
+                problems.Append("Response type cannot be abstract.").ToList().AsReadOnly(),
+            _ when type.GetConstructor(Type.EmptyTypes) is null =>
+                problems.Append("Response type must have a parameterless constructor.").ToList().AsReadOnly(),
+            _ => problems.AsReadOnly()
+        };
     }
 }
