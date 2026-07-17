@@ -1678,6 +1678,90 @@ public class TenantConfig
 ```
 
 ```
+## JsonExportFormatter
+
+The `JsonExportFormatter` class provides a robust utility for serializing objects to JSON and deserializing JSON back into objects with configurable serialization options. It supports camelCase naming policies, null value handling, enum conversion, and custom JSON formatting through different serialization profiles. This formatter is particularly useful for API responses, configuration serialization, and data export scenarios in multi-tenant systems.
+
+### Public Members
+
+```csharp
+public sealed class JsonExportFormatter
+public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint = true)
+public string Format<T>(T? data) where T : class
+public T? Parse<T>(string json) where T : class
+public string FormatWithOptions<T>(T? data, JsonSerializerOptions options) where T : class
+public static JsonSerializerOptions GetMinimalOptions()
+public static JsonSerializerOptions GetVerboseOptions()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Formatters;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Text.Json;
+
+// Setup dependency injection
+var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+var logger = loggerFactory.CreateLogger<JsonExportFormatter>();
+
+// Create formatter with default settings (pretty-printed JSON)
+var formatter = new JsonExportFormatter(logger);
+
+// Example 1: Format an object to JSON
+var tenant = new Tenant
+{
+    Id = "acme-corp",
+    Name = "Acme Corporation",
+    CreatedDate = DateTime.UtcNow,
+    IsActive = true,
+    MaxConnections = 100
+};
+
+string jsonOutput = formatter.Format(tenant);
+Console.WriteLine(jsonOutput);
+
+// Example 2: Parse JSON back to an object
+string jsonInput = "{\"id\":\"globex\",\"name\":\"Globex Inc\",\"createdDate\":\"2024-01-01T00:00:00\",\"isActive\":true,\"maxConnections\":50}";
+var parsedTenant = formatter.Parse<Tenant>(jsonInput);
+Console.WriteLine($"Parsed tenant: {parsedTenant?.Name} (ID: {parsedTenant?.Id})");
+
+// Example 3: Format with minimal options (compact JSON)
+var minimalOptions = JsonExportFormatter.GetMinimalOptions();
+string compactJson = formatter.FormatWithOptions(tenant, minimalOptions);
+Console.WriteLine(compactJson);
+
+// Example 4: Format with verbose options (include all properties including nulls)
+var verboseOptions = JsonExportFormatter.GetVerboseOptions();
+string verboseJson = formatter.FormatWithOptions(tenant, verboseOptions);
+Console.WriteLine(verboseJson);
+
+// Example 5: Handle null values gracefully
+string nullJson = formatter.Format<Tenant>(null);
+Console.WriteLine(nullJson); // Outputs: null
+
+// Example 6: Format collections
+var tenants = new List<Tenant>
+{
+    new Tenant { Id = "acme-corp", Name = "Acme Corporation", CreatedDate = DateTime.UtcNow, IsActive = true },
+    new Tenant { Id = "globex", Name = "Globex Inc", CreatedDate = DateTime.UtcNow.AddDays(-1), IsActive = false },
+    new Tenant { Id = "initech", Name = "Initech", CreatedDate = DateTime.UtcNow.AddDays(-2), IsActive = true }
+};
+
+string collectionJson = formatter.Format(tenants);
+Console.WriteLine(collectionJson);
+
+public class Tenant
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; }
+    public bool IsActive { get; set; }
+    public int? MaxConnections { get; set; }
+}
+```
+
 ## TenantContextHelper
 
 The `TenantContextHelper` class provides a centralized mechanism for managing tenant-specific context across asynchronous operations in a multi-tenant environment. It allows setting, retrieving, and validating the current tenant context, and facilitates scoping operations to a specific tenant using `AsyncLocal` storage. Additionally, it helps in enriching diagnostic information and metadata with tenant-specific identifiers, ensuring consistent traceability.
