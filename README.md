@@ -1,4 +1,3 @@
-
 ## DataConsistencyCheckerTests
 
 The `DataConsistencyCheckerTests` class provides comprehensive unit tests for the `DataConsistencyChecker` class, verifying that database integrity checking operations work correctly. These tests cover validation scenarios, error handling for invalid inputs, and proper error handling for database connectivity issues, ensuring the data consistency checker operates reliably for multi-tenant SQLite systems.
@@ -74,4 +73,28 @@ using var testConnection = new SQLiteConnection("Data Source=:memory:");
 await testConnection.OpenAsync();
 var corruptionResult = await consistencyChecker.CheckDatabaseIntegrityAsync(testConnection);
 Console.WriteLine(corruptionResult != null ? "Corruption check completed" : "Corruption check failed");
+
+## TenantRepositoryIntegrationTests
+The `TenantRepositoryIntegrationTests` class provides integration tests for the `TenantRepository` class, verifying that CRUD operations work correctly. These tests cover retrieving all tenants, getting a tenant by ID, adding a new tenant, updating an existing tenant, and deleting a tenant. 
+
+### Usage Example
+```csharp
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Tests;
+using System;
+
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        var tests = new TenantRepositoryIntegrationTests();
+        await tests.GetAllAsync_ShouldReturnAllTenants();
+        await tests.GetByIdAsync_ShouldReturnCorrectTenant_WhenTenantExists();
+        await tests.GetByIdAsync_ShouldReturnNull_WhenTenantDoesNotExist();
+        await tests.AddAsync_ShouldAddTenantToDatabase();
+        await tests.UpdateAsync_ShouldUpdateTenantInDatabase();
+        await tests.DeleteAsync_ShouldRemoveTenantFromDatabase();
+        tests.Dispose();
+    }
+}
 ```
