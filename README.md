@@ -513,6 +513,111 @@ public class MigrationRequest
 }
 ```
 
+## ValidationRuleBuilder
+
+The `ValidationRuleBuilder<T>` class provides a fluent interface for constructing validation rules for tenant and entity properties. It allows chaining multiple validation rules (required, string length, email format, range checks, regex patterns, custom validators) and produces a comprehensive validation result with all errors. This builder pattern is particularly useful for validating tenant configurations, user inputs, and entity properties in a type-safe and readable way.
+
+### Public Members
+
+```csharp
+public sealed class ValidationRuleBuilder<T>
+public ValidationRuleBuilder
+public ValidationRuleBuilder<T> Required
+public ValidationRuleBuilder<T> StringLength
+public ValidationRuleBuilder<T> Email
+public ValidationRuleBuilder<T> Range
+public ValidationRuleBuilder<T> Pattern
+public ValidationRuleBuilder<T> Custom
+public ValidationRuleBuilder<T> MustMatch
+public RuleValidationResult Validate
+public string FieldName
+public Func<object, bool> Predicate
+public string ErrorMessage
+
+public sealed class RuleValidationResult
+public bool IsValid
+public List<RuleValidationError> Errors
+
+public sealed class RuleValidationError
+public string FieldName
+public string Message
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Collections.Generic;
+
+// Example 1: Validate a tenant configuration
+var validator = new ValidationRuleBuilder<TenantConfig>();
+
+var config = new TenantConfig
+{
+    Name = "Acme Corporation",
+    MaxConnections = 100,
+    ConnectionString = "Data Source=tenants/acme-corp.db;Version=3;"
+};
+
+// Build validation rules
+var result = validator
+    .Field(c => c.Name)
+    .Required("Tenant name is required")
+    .StringLength(2, 50, "Name must be between 2 and 50 characters")
+    .Email("Invalid email format")
+    .Validate(config.Name);
+
+if (!result.IsValid)
+{
+    Console.WriteLine("Name validation errors:");
+    foreach (var error in result.Errors)
+    {
+        Console.WriteLine($" - {error.FieldName}: {error.Message}");
+    }
+}
+
+// Example 2: Validate multiple fields with a single builder
+var tenantValidator = new ValidationRuleBuilder<TenantConfig>()
+    .Field(c => c.Name)
+    .Required("Name is required")
+    .StringLength(2, 50, "Name must be 2-50 chars")
+    
+    .Field(c => c.MaxConnections)
+    .Required("Max connections is required")
+    .Range(1, 1000, "Max connections must be between 1 and 1000");
+
+var configResult = tenantValidator.Validate(config);
+Console.WriteLine(configResult.IsValid ? "Configuration is valid!" : "Configuration has errors");
+
+// Example 3: Validate connection string format
+var connectionStringValidator = new ValidationRuleBuilder<TenantConfig>()
+    .Field(c => c.ConnectionString)
+    .Required("Connection string is required")
+    .Pattern("^Data Source=.+\\.db;Version=\\[23\];", "Invalid SQLite connection string format");
+
+var connResult = connectionStringValidator.Validate(config);
+Console.WriteLine(connResult.IsValid ? "Connection string format is valid!" : "Invalid connection string");
+
+// Example 4: Custom validation with predicate
+var customValidator = new ValidationRuleBuilder<TenantConfig>()
+    .Field(c => c.Name)
+    .Required("Name is required")
+    .Custom("Name cannot contain special characters", 
+        name => !name.Any(ch => !char.IsLetterOrDigit(ch) && ch != ' ' && ch != '-'),
+        "Name contains invalid characters");
+
+var customResult = customValidator.Validate(config);
+Console.WriteLine(customResult.IsValid ? "Name validation passed!" : "Name validation failed");
+
+public class TenantConfig
+{
+    public string Name { get; set; } = string.Empty;
+    public int MaxConnections { get; set; }
+    public string ConnectionString { get; set; } = string.Empty;
+}
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
