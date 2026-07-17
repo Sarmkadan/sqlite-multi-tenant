@@ -461,6 +461,139 @@ var deserializedExecution = DataRetentionPolicyJsonExtensions.FromJsonToExecutio
 Console.WriteLine(deserializedExecution?.ItemsProcessed);
 ```
 
+## BackupRotationManagerValidation
+
+The `BackupRotationManagerValidation` class provides validation utilities for backup rotation management in multi-tenant SQLite environments. It offers extension methods to validate `BackupRotationPolicy`, `BackupRotationResult`, `BackupVerificationResult`, and `BackupStatistics` instances, ensuring data integrity and configuration correctness for backup rotation operations.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.BackgroundWorkers;
+using System;
+
+// Example 1: Validate a BackupRotationPolicy configuration
+var backupPolicy = new BackupRotationPolicy
+{
+    MaxBackupAge = TimeSpan.FromDays(30),
+    MaxBackupCount = 10,
+    MaxDiskUsage = 50L * 1024 * 1024 * 1024 // 50 GB
+};
+
+// Validate the policy and check for errors
+IReadOnlyList<string> policyErrors = backupPolicy.Validate();
+if (policyErrors.Count > 0)
+{
+    Console.WriteLine("BackupRotationPolicy has validation errors:");
+    foreach (var error in policyErrors)
+    {
+        Console.WriteLine($"- {error}");
+    }
+}
+else
+{
+    Console.WriteLine("BackupRotationPolicy is valid.");
+}
+
+// Shortcut to check validity only
+bool isPolicyValid = backupPolicy.IsValid();
+Console.WriteLine($"IsValid: {isPolicyValid}");
+
+// Throw an exception if the policy is invalid
+BackupRotationPolicyValidation.EnsureValid(backupPolicy);
+
+// Example 2: Validate a BackupRotationResult from a rotation operation
+var rotationResult = new BackupRotationResult
+{
+    TotalBackups = 15,
+    RemainingBackups = 10,
+    DeletedByAge = 3,
+    DeletedByCount = 2,
+    ExecutedAt = DateTime.UtcNow,
+    IsSuccessful = true
+};
+
+IReadOnlyList<string> resultErrors = rotationResult.Validate();
+if (resultErrors.Count > 0)
+{
+    Console.WriteLine("BackupRotationResult has validation errors:");
+    foreach (var error in resultErrors)
+    {
+        Console.WriteLine($"- {error}");
+    }
+}
+else
+{
+    Console.WriteLine("BackupRotationResult is valid.");
+}
+
+// Example 3: Validate a BackupVerificationResult after backup verification
+var verificationResult = new BackupVerificationResult
+{
+    FilePath = "/backups/tenant-123/backup-20240719.db",
+    FileName = "backup-20240719.db",
+    FileSize = 2500000,
+    FileSizeBytes = 2500000,
+    CreatedAt = DateTime.UtcNow.AddHours(-2),
+    LastModified = DateTime.UtcNow.AddMinutes(-30),
+    IsValid = true,
+    IsReadable = true
+};
+
+IReadOnlyList<string> verificationErrors = verificationResult.Validate();
+if (verificationErrors.Count > 0)
+{
+    Console.WriteLine("BackupVerificationResult has validation errors:");
+    foreach (var error in verificationErrors)
+    {
+        Console.WriteLine($"- {error}");
+    }
+}
+else
+{
+    Console.WriteLine("BackupVerificationResult is valid.");
+}
+
+// Example 4: Validate BackupStatistics for backup storage analysis
+var backupStats = new BackupStatistics
+{
+    TotalBackups = 25,
+    TotalDiskUsage = 120L * 1024 * 1024 * 1024, // 120 GB
+    AverageBackupSize = 4.8 * 1024 * 1024 * 1024, // 4.8 GB
+    OldestBackup = DateTime.UtcNow.AddDays(-45),
+    NewestBackup = DateTime.UtcNow.AddHours(-2)
+};
+
+IReadOnlyList<string> statsErrors = backupStats.Validate();
+if (statsErrors.Count > 0)
+{
+    Console.WriteLine("BackupStatistics has validation errors:");
+    foreach (var error in statsErrors)
+    {
+        Console.WriteLine($"- {error}");
+    }
+}
+else
+{
+    Console.WriteLine("BackupStatistics is valid.");
+}
+
+// Example 5: Using validation in a backup rotation workflow
+try
+{
+    // Perform backup rotation operations
+    var rotationResult = PerformBackupRotation();
+    
+    // Validate the result before proceeding
+    BackupRotationResultValidation.EnsureValid(rotationResult);
+    
+    Console.WriteLine($"Backup rotation completed successfully. {rotationResult.RemainingBackups} backups remaining.");
+}
+catch (ArgumentException ex)
+{
+    Console.WriteLine($"Backup rotation failed validation: {ex.Message}");
+}
+```
+
 ## CommandParserValidation
 
 `CommandParserValidation` is a static helper class that provides validation utilities for `CommandParser`, `CommandHandler`, `Subcommand`, and `ParsedCommand` instances. It validates command structure, required arguments, and data integrity, offering methods to retrieve validation problems, check validity, and enforce correctness by throwing exceptions when validation fails.
