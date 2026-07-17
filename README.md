@@ -1434,6 +1434,79 @@ snapshot.Waiting.Should().Be(0, "Default waiting count should be 0");
 snapshot.PrunedTotal.Should().Be(0, "Default pruned total should be 0");
 ```
 
+## BackupServiceTests
+
+The `BackupServiceTests` class provides comprehensive unit tests for the `BackupService` class, verifying that backup operations work correctly. These tests cover creating backups, retrieving backups, marking backups as completed or failed, and proper error handling for invalid inputs, ensuring the backup service operates reliably for multi-tenant SQLite systems.
+
+### Public Members
+
+```csharp
+public sealed class BackupServiceTests
+public BackupServiceTests()
+public async Task GetBackupAsync_ShouldReturnBackup_WhenBackupExists()
+public async Task GetBackupAsync_ShouldReturnNull_WhenBackupDoesNotExist()
+public async Task GetBackupAsync_ShouldThrowArgumentException_WhenBackupIdIsEmpty()
+public async Task CreateBackupAsync_ShouldCreateNewBackup()
+public async Task CreateBackupAsync_ShouldThrowArgumentException_WhenDatabaseIdIsEmpty()
+public async Task MarkBackupAsCompletedAsync_ShouldUpdateBackupStatus()
+public async Task MarkBackupAsCompletedAsync_ShouldThrowBackupException_WhenBackupNotFound()
+public async Task MarkBackupAsFailedAsync_ShouldUpdateBackupStatusAndMessage()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Xunit;
+using FluentAssertions;
+
+// Create mock dependencies
+var mockRepository = Substitute.For<IBackupRepository>();
+var mockLogger = Substitute.For<ILogger<BackupService>>();
+var backupService = new BackupService(mockRepository, mockLogger);
+
+// Example 1: Create a new backup
+var newBackup = await backupService.CreateBackupAsync("acme-corp-db", BackupType.Full, "admin");
+Console.WriteLine($"Created backup: {newBackup.BackupId} for database {newBackup.DatabaseId}");
+
+// Example 2: Get an existing backup
+var existingBackup = await backupService.GetBackupAsync(newBackup.BackupId);
+if (existingBackup != null)
+{
+    Console.WriteLine($"Found backup: {existingBackup.BackupId} (status: {existingBackup.Status})");
+}
+
+// Example 3: Mark backup as completed
+if (existingBackup != null)
+{
+    await backupService.MarkBackupAsCompletedAsync(existingBackup.BackupId, 1024000, 2500);
+    Console.WriteLine("Backup marked as completed successfully");
+}
+
+// Example 4: Mark backup as failed
+if (existingBackup != null)
+{
+    await backupService.MarkBackupAsFailedAsync(existingBackup.BackupId, "Insufficient disk space");
+    Console.WriteLine("Backup marked as failed with error message");
+}
+
+// Example 5: Handle empty backup ID (should throw)
+Func<Task> emptyIdAction = async () => await backupService.GetBackupAsync("");
+await emptyIdAction.Should().ThrowAsync<ArgumentException>();
+
+// Example 6: Handle non-existent backup (should return null)
+var nonExistentBackup = await backupService.GetBackupAsync("non-existent-id");
+nonExistentBackup.Should().BeNull();
+
+// Example 7: Handle non-existent backup for completion (should throw)
+Func<Task> notFoundAction = async () => await backupService.MarkBackupAsCompletedAsync("ghost-backup-id", 1024, 100);
+await notFoundAction.Should().ThrowAsync<BackupException>();
+```
+
 ## EventBusImplTests
 
 The `EventBusImplTests` class provides comprehensive unit tests for the `EventBusImpl` class, verifying that the event bus implementation correctly handles event publishing, subscription management, and event history tracking. These tests cover basic event operations, history management, and proper cleanup, ensuring the event-driven architecture operates reliably for multi-tenant systems.
