@@ -2678,3 +2678,102 @@ if (RequestCorrelationIdGenerator.HasCorrelationId())
 RequestCorrelationIdGenerator.ClearCorrelationId();
 ```
 
+## TenantProvisionerTests
+
+The `TenantProvisionerTests` class provides comprehensive unit tests for the `TenantProvisioner` class, verifying that tenant provisioning operations work correctly. These tests cover validation of tenant databases, tenant cloning functionality, and tenant deprovisioning with proper error handling for invalid inputs.
+
+### Public Members
+
+```csharp
+public sealed class TenantProvisionerTests : IDisposable
+public TenantProvisionerTests()
+public void Dispose()
+public async Task ValidateTenantDatabaseAsync_WithNullTenantId_ThrowsArgumentNullException()
+public async Task ValidateTenantDatabaseAsync_WithEmptyTenantId_ThrowsArgumentException()
+public async Task CloneTenantAsync_WithInvalidSource_ThrowsArgumentException()
+public async Task CloneTenantAsync_WithInvalidTarget_ThrowsArgumentException()
+public async Task DeprovisionTenantAsync_WithInvalidId_ThrowsArgumentException()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tenants;
+using SqliteMultiTenant.Database;
+using SqliteMultiTenant.Repositories;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
+// Setup dependency injection and mocks
+var mockLogger = Substitute.For<ILogger<TenantProvisioner>>();
+var basePath = Path.Combine(Path.GetTempPath(), $"tenant_provisioner_example_{Guid.NewGuid():N}");
+Directory.CreateDirectory(basePath);
+
+var tenantRepository = Substitute.For<ITenantRepository>();
+var schemaManager = new SchemaManager(Substitute.For<ILogger<SchemaManager>>(), "Data Source=:memory:;Version=3;");
+
+// Create the provisioner instance
+var provisioner = new TenantProvisioner(tenantRepository, schemaManager, mockLogger, basePath);
+
+// Example 1: Validate tenant database with null tenant ID (should throw)
+try
+{
+    await provisioner.ValidateTenantDatabaseAsync(null!);
+    Console.WriteLine("ERROR: Should have thrown ArgumentNullException");
+}
+catch (ArgumentNullException)
+{
+    Console.WriteLine("Correctly threw ArgumentNullException for null tenant ID");
+}
+
+// Example 2: Validate tenant database with empty tenant ID (should throw)
+try
+{
+    await provisioner.ValidateTenantDatabaseAsync(string.Empty);
+    Console.WriteLine("ERROR: Should have thrown ArgumentException");
+}
+catch (ArgumentException)
+{
+    Console.WriteLine("Correctly threw ArgumentException for empty tenant ID");
+}
+
+// Example 3: Clone tenant with invalid source (should throw)
+try
+{
+    await provisioner.CloneTenantAsync(string.Empty, "target-tenant");
+    Console.WriteLine("ERROR: Should have thrown ArgumentException");
+}
+catch (ArgumentException)
+{
+    Console.WriteLine("Correctly threw ArgumentException for invalid source tenant ID");
+}
+
+// Example 4: Clone tenant with invalid target (should throw)
+try
+{
+    await provisioner.CloneTenantAsync("source-tenant", string.Empty);
+    Console.WriteLine("ERROR: Should have thrown ArgumentException");
+}
+catch (ArgumentException)
+{
+    Console.WriteLine("Correctly threw ArgumentException for invalid target tenant ID");
+}
+
+// Example 5: Deprovision tenant with invalid ID (should throw)
+try
+{
+    await provisioner.DeprovisionTenantAsync(string.Empty);
+    Console.WriteLine("ERROR: Should have thrown ArgumentException");
+}
+catch (ArgumentException)
+{
+    Console.WriteLine("Correctly threw ArgumentException for invalid tenant ID");
+}
+
+// Cleanup
+Directory.Delete(basePath, true);
+```
+
