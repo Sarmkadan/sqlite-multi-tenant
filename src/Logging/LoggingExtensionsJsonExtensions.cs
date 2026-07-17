@@ -47,7 +47,9 @@ public static class LoggingExtensionsJsonExtensions
     /// <typeparam name="T">The type to deserialize to.</typeparam>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>A deserialized logging context object, or null if deserialization fails.</returns>
-    /// <exception cref="JsonException">Thrown when the JSON is invalid.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="json"/> is empty or whitespace.</exception>
+    /// <exception cref="JsonException">The JSON is invalid or cannot be deserialized to type <typeparamref name="T"/>.</exception>
     public static T? FromJson<T>(string json)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
@@ -62,6 +64,8 @@ public static class LoggingExtensionsJsonExtensions
     /// <param name="json">The JSON string to deserialize.</param>
     /// <param name="value">Receives the deserialized instance if successful.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="json"/> is null.</exception>
+    /// <exception cref="ArgumentException"><paramref name="json"/> is empty or whitespace.</exception>
     public static bool TryFromJson<T>(string json, out T? value)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
