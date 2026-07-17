@@ -4174,5 +4174,119 @@ catch (ArgumentException)
 
 // Cleanup
 Directory.Delete(basePath, true);
+
+## GenericRepositoryTests
+
+The `GenericRepositoryTests` class provides comprehensive integration tests for generic repository implementations, verifying that all standard CRUD operations work correctly against a real SQLite database. These tests cover basic entity operations, query methods for filtering and finding entities, count operations, and ensure data integrity throughout the repository lifecycle management system.
+
+### Public Members
+
+```csharp
+public sealed class GenericRepositoryTests : IDisposable
+public GenericRepositoryTests()
+public List<TestEntity> Items { get; }
+
+public TestGenericRepository() : base
+
+public override Task<List<TestEntity>> GetAllAsync()
+public override Task<TestEntity?> GetByIdAsync(string id)
+public override Task<TestEntity> CreateAsync(TestEntity entity)
+public override Task<bool> UpdateAsync(TestEntity entity)
+public override Task<bool> DeleteAsync(string id)
+public override Task<List<TestEntity>> FindAsync(Expression<Func<TestEntity, bool>> predicate)
+public override Task<int> GetCountAsync()
+public override Task<bool> ExistsAsync(string id)
+public override Task<int> DeleteAsync(Expression<Func<TestEntity, bool>> predicate)
+public Task<int> SaveChangesAsync()
+public Task BeginTransactionAsync()
+public Task CommitAsync()
+public Task RollbackAsync()
+public void Dispose()
+
+public GenericRepositoryTests()
+public void Items_Initially_ShouldNotBeNull()
+public async Task SaveChangesAsync_ShouldReturnZeroWhenEmpty()
 ```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+// Create a test database and repository
+var testDbPath = Path.Combine(Path.GetTempPath(), $"generic_repo_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+var testRepository = new TestGenericRepository(connectionString, NullLogger<TestGenericRepository>.Instance);
+
+// Example 1: Add new entities
+var entity1 = new TestEntity { Id = "ent-001", Name = "Entity One", Value = 100 };
+var entity2 = new TestEntity { Id = "ent-002", Name = "Entity Two", Value = 200 };
+
+var created1 = await testRepository.CreateAsync(entity1);
+var created2 = await testRepository.CreateAsync(entity2);
+Console.WriteLine($"Created entities: {created1.Id}, {created2.Id}");
+
+// Example 2: Get all entities
+var allEntities = await testRepository.GetAllAsync();
+Console.WriteLine($"Total entities: {allEntities.Count}");
+
+// Example 3: Get entity by ID
+var foundEntity = await testRepository.GetByIdAsync("ent-001");
+if (foundEntity != null)
+{
+    Console.WriteLine($"Found entity: {foundEntity.Name} (Value: {foundEntity.Value})");
+}
+
+// Example 4: Update an entity
+if (foundEntity != null)
+{
+    foundEntity.Value = 150;
+    var updated = await testRepository.UpdateAsync(foundEntity);
+    Console.WriteLine($"Update successful: {updated}");
+}
+
+// Example 5: Find entities with predicate
+var filteredEntities = await testRepository.FindAsync(e => e.Value > 125);
+Console.WriteLine($"Entities with value > 125: {filteredEntities.Count}");
+
+// Example 6: Get entity count
+var entityCount = await testRepository.GetCountAsync();
+Console.WriteLine($"Total entity count: {entityCount}");
+
+// Example 7: Check if entity exists
+var exists = await testRepository.ExistsAsync("ent-002");
+Console.WriteLine($"Entity ent-002 exists: {exists}");
+
+// Example 8: Delete an entity
+var deleteSuccess = await testRepository.DeleteAsync("ent-001");
+Console.WriteLine($"Delete successful: {deleteSuccess}");
+
+// Example 9: Use transactions for atomic operations
+await testRepository.BeginTransactionAsync();
+try
+{
+    var entity3 = new TestEntity { Id = "ent-003", Name = "Entity Three", Value = 300 };
+    await testRepository.CreateAsync(entity3);
+    await testRepository.CommitAsync();
+    Console.WriteLine("Transaction committed successfully");
+}
+catch
+{
+    await testRepository.RollbackAsync();
+    Console.WriteLine("Transaction rolled back due to error");
+}
+
+// Example 10: Save changes explicitly
+var saveCount = await testRepository.SaveChangesAsync();
+Console.WriteLine($"Save changes affected {saveCount} rows");
+
+// Cleanup
+File.Delete(testDbPath);
+```
+
 
