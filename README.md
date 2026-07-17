@@ -530,6 +530,126 @@ var newMigration = new Migration { /* ... */ };
 await migrationRepository.AddAsync(newMigration);
 ```
 
+## BackupRepository
+
+The `BackupRepository` class provides a comprehensive implementation for managing backup records in the multi-tenant SQLite system. It implements the `IBackupRepository` interface and handles all CRUD operations, status filtering, and pagination for backup metadata. The repository manages backup records with detailed information including backup type, status, size metrics, encryption status, verification status, and expiration dates.
+
+### Public Members
+
+```csharp
+public sealed class BackupRepository : IBackupRepository
+public BackupRepository(string connectionString, ILogger<BackupRepository> logger)
+public async Task<List<Backup>> GetAllAsync(CancellationToken cancellationToken = default)
+public async Task<Backup?> GetByIdAsync(string backupId, CancellationToken cancellationToken = default)
+public async Task<List<Backup>> GetByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default)
+public async Task<List<Backup>> GetCompletedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
+public async Task<List<Backup>> GetVerifiedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
+public async Task<List<Backup>> GetFailedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
+public async Task<Backup?> GetLatestBackupAsync(string databaseId, CancellationToken cancellationToken = default)
+public async Task<Backup> AddAsync(Backup backup, CancellationToken cancellationToken = default)
+public async Task UpdateAsync(Backup backup, CancellationToken cancellationToken = default)
+public async Task DeleteAsync(string backupId, CancellationToken cancellationToken = default)
+public async Task<bool> ExistsAsync(string backupId, CancellationToken cancellationToken = default)
+public async Task<int> GetCountByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default)
+public async Task<List<Backup>> GetExpiredBackupsAsync(CancellationToken cancellationToken = default)
+public async Task<List<Backup>> GetPagedAsync(string databaseId, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
+
+// Setup dependency injection
+var services = new ServiceCollection();
+services.AddLogging(builder => builder.AddConsole());
+var serviceProvider = services.BuildServiceProvider();
+var logger = serviceProvider.GetRequiredService<ILogger<BackupRepository>>();
+
+// Create connection string for backup repository
+var backupConnectionString = "Data Source=backup-repository.db;Version=3;";
+
+// Create the backup repository instance
+var backupRepository = new BackupRepository(backupConnectionString, logger);
+
+// Example 1: Create a new backup record
+var newBackup = new Backup
+{
+    BackupId = Guid.NewGuid().ToString(),
+    DatabaseId = "acme-corp",
+    BackupPath = "/backups/acme-corp-2024-07-16-14-30-00.db",
+    BackupType = BackupType.Full,
+    Status = BackupStatus.Completed,
+    CreatedAt = DateTime.UtcNow,
+    CompletedAt = DateTime.UtcNow,
+    SizeBytes = 10485760, // 10 MB
+    OriginalSizeBytes = 15728640, // 15 MB
+    CompressionRatio = 33,
+    CreatedBy = "backup-service@acme-corp.com",
+    IsEncrypted = false,
+    IsVerified = true,
+    ExpiresAt = DateTime.UtcNow.AddDays(30),
+    Tags = "daily,production"
+};
+
+var createdBackup = await backupRepository.AddAsync(newBackup);
+Console.WriteLine($"Created backup: {createdBackup.BackupId}");
+
+// Example 2: Get all backups for a database
+var allBackups = await backupRepository.GetByDatabaseAsync("acme-corp");
+Console.WriteLine($"Found {allBackups.Count} backups for acme-corp");
+
+// Example 3: Get completed backups only
+var completedBackups = await backupRepository.GetCompletedBackupsAsync("acme-corp");
+Console.WriteLine($"Completed backups: {completedBackups.Count}");
+
+// Example 4: Get verified backups
+var verifiedBackups = await backupRepository.GetVerifiedBackupsAsync("acme-corp");
+Console.WriteLine($"Verified backups: {verifiedBackups.Count}");
+
+// Example 5: Get failed backups
+var failedBackups = await backupRepository.GetFailedBackupsAsync("acme-corp");
+Console.WriteLine($"Failed backups: {failedBackups.Count}");
+
+// Example 6: Get latest backup
+var latestBackup = await backupRepository.GetLatestBackupAsync("acme-corp");
+if (latestBackup != null)
+{
+    Console.WriteLine($"Latest backup created at: {latestBackup.CreatedAt}");
+}
+
+// Example 7: Get backup by ID
+var specificBackup = await backupRepository.GetByIdAsync(latestBackup.BackupId);
+Console.WriteLine($"Backup type: {specificBackup.BackupType}");
+
+// Example 8: Update backup status
+specificBackup.Status = BackupStatus.Archived;
+await backupRepository.UpdateAsync(specificBackup);
+
+// Example 9: Get paged backups (page 1, 10 items per page)
+var pagedBackups = await backupRepository.GetPagedAsync("acme-corp", 1, 10);
+Console.WriteLine($"Page 1: {pagedBackups.Count} backups");
+
+// Example 10: Get backup count for a database
+var backupCount = await backupRepository.GetCountByDatabaseAsync("acme-corp");
+Console.WriteLine($"Total backups for acme-corp: {backupCount}");
+
+// Example 11: Check if backup exists
+bool exists = await backupRepository.ExistsAsync(latestBackup.BackupId);
+Console.WriteLine($"Backup exists: {exists}");
+
+// Example 12: Get expired backups (for cleanup operations)
+var expiredBackups = await backupRepository.GetExpiredBackupsAsync();
+Console.WriteLine($"Expired backups ready for cleanup: {expiredBackups.Count}");
+
+// Example 13: Delete a backup record
+await backupRepository.DeleteAsync(specificBackup.BackupId);
+Console.WriteLine("Backup deleted successfully");
+```
+
 ## TenantRepository
 
 The `TenantRepository` class provides a comprehensive implementation for managing tenant data, including CRUD operations, status-based filtering, and pagination support. It implements the `ITenantRepository` interface, ensuring a consistent and testable approach for tenant lifecycle and metadata management in a multi-tenant SQLite environment.
