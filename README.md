@@ -1224,6 +1224,58 @@ class Program
         Console.WriteLine($"File copied: {copied}");
 
         
+## ValidationExtensions
+
+The `ValidationExtensions` class provides a set of extension methods for validating various types of user input and system configuration settings, such as emails, UUIDs, semantic versions, database names, and connection strings. These methods are designed to be used at system boundaries (e.g., in controllers or services) to enforce data integrity and prevent common security issues like SQL injection by validating input format and constraints before processing.
+
+### Public Members
+
+```csharp
+public static bool IsValidEmail(this string email)
+public static bool IsValidUuid(this string uuid)
+public static bool IsValidSemanticVersion(this string version)
+public static bool IsValidDatabaseName(this string name)
+public static bool IsValidTenantName(this string name)
+public static bool IsValidRelativePath(this string path)
+public static bool IsValidSqlScript(this string script)
+public static bool IsValidPort(this int port)
+public static bool IsValidConnectionString(this string connectionString)
+public static bool IsValidBackupTag(this string tag)
+public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection)
+public static bool IsValidRetentionDays(this int days)
+public static bool IsValidConnectionTimeout(this int timeoutSeconds)
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+
+// Example 1: Validating strings
+string email = "test@example.com";
+bool isEmailValid = email.IsValidEmail();
+Console.WriteLine($"Email valid: {isEmailValid}");
+
+string dbName = "tenant_db";
+bool isDbNameValid = dbName.IsValidDatabaseName();
+Console.WriteLine($"Database name valid: {isDbNameValid}");
+
+// Example 2: Validating integers
+int port = 5432;
+bool isPortValid = port.IsValidPort();
+Console.WriteLine($"Port valid: {isPortValid}");
+
+int retentionDays = 30;
+bool isRetentionValid = retentionDays.IsValidRetentionDays();
+Console.WriteLine($"Retention days valid: {isRetentionValid}");
+
+// Example 3: Validating collections
+var tenants = new List<string> { "acme-corp", "globex" };
+bool isNullOrEmpty = tenants.IsNullOrEmpty();
+Console.WriteLine($"Collection null or empty: {isNullOrEmpty}");
+```
+
 ## JsonHelper
 
 The `JsonHelper` static class provides a centralized, robust set of methods for JSON serialization, deserialization, and manipulation within multi-tenant SQLite systems. It ensures consistent JSON handling with camelCase naming policies, enum support, and error handling, making it ideal for processing configurations, API payloads, and tenant-specific data structures.
