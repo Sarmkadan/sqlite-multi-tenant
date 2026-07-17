@@ -16,7 +16,7 @@ namespace SqliteMultiTenant.Configuration;
 /// </summary>
 public static class ServiceConfigurationJsonExtensions
 {
-    private static readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
@@ -31,6 +31,7 @@ public static class ServiceConfigurationJsonExtensions
     /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
     /// <returns>A JSON string representation of the configuration.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="JsonException">Thrown when serialization fails.</exception>
     public static string ToJson(this AppConfiguration value, bool indented = false)
     {
         ArgumentNullException.ThrowIfNull(value);
@@ -49,8 +50,9 @@ public static class ServiceConfigurationJsonExtensions
     /// Deserializes a JSON string to an <see cref="AppConfiguration"/> instance.
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
-    /// <returns>The deserialized configuration, or null if the JSON is invalid.</returns>
+    /// <returns>The deserialized configuration, or null if the JSON is invalid or deserialization fails.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
+    /// <exception cref="JsonException">Thrown when the JSON is invalid and deserialization fails.</exception>
     public static AppConfiguration? FromJson(string json)
     {
         ArgumentException.ThrowIfNullOrEmpty(json);
