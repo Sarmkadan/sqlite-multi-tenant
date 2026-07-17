@@ -29,7 +29,7 @@ namespace SqliteMultiTenant.DataOperations
         /// <param name="value">The data exporter instance to serialize.</param>
         /// <param name="indented">Whether to format the JSON with indentation for readability.</param>
         /// <returns>A JSON string representation of the data exporter.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is <see langword="null"/>.</exception>
         public static string ToJson(this DataExporter value, bool indented = false)
         {
             ArgumentNullException.ThrowIfNull(value);
@@ -45,7 +45,8 @@ namespace SqliteMultiTenant.DataOperations
         /// Deserializes a JSON string to a <see cref="DataExporter"/> instance.
         /// </summary>
         /// <param name="json">The JSON string to deserialize.</param>
-        /// <returns>A deserialized <see cref="DataExporter"/> instance, or null if the JSON is empty or whitespace.</returns>
+        /// <returns>A deserialized <see cref="DataExporter"/> instance, or <see langword="null"/> if the JSON is empty or whitespace.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
         public static DataExporter? FromJson(string json)
         {
@@ -65,6 +66,7 @@ namespace SqliteMultiTenant.DataOperations
         /// <param name="json">The JSON string to deserialize.</param>
         /// <param name="value">Receives the deserialized instance if successful.</param>
         /// <returns>True if deserialization succeeded; otherwise, false.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         public static bool TryFromJson(string json, out DataExporter? value)
         {
             ArgumentException.ThrowIfNullOrEmpty(json);
