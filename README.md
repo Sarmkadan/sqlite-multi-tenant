@@ -750,6 +750,92 @@ public class Product
 }
 ```
 
+## BackupRepositoryIntegrationTests
+
+The `BackupRepositoryIntegrationTests` class provides comprehensive integration tests for the `BackupRepository` class, verifying that all database operations work correctly against a real SQLite database. These tests cover CRUD operations, query methods for filtering backups by various criteria, and ensure data integrity throughout the backup lifecycle management system.
+
+### Public Members
+
+```csharp
+public sealed class BackupRepositoryIntegrationTests : IDisposable
+public BackupRepositoryIntegrationTests()
+public async Task GetAllAsync_ShouldReturnAllBackups()
+public async Task GetByIdAsync_ShouldReturnCorrectBackup_WhenBackupExists()
+public async Task GetByIdAsync_ShouldReturnNull_WhenBackupDoesNotExist()
+public async Task AddAsync_ShouldAddBackupToDatabase()
+public async Task UpdateAsync_ShouldUpdateBackupInDatabase()
+public async Task DeleteAsync_ShouldRemoveBackupFromDatabase()
+public async Task GetByDatabaseAsync_ShouldReturnBackupsForGivenDatabase()
+public async Task GetCompletedBackupsAsync_ShouldReturnOnlyCompletedBackups()
+public async Task GetLatestBackupAsync_ShouldReturnLatestBackupForDatabase()
+public async Task GetExpiredBackupsAsync_ShouldReturnBackupsPastExpirationDate()
+public async Task GetCountByDatabaseAsync_ShouldReturnCorrectCount()
+public void Dispose()
+```
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Models;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+using System.Threading.Tasks;
+
+// Create a test database and repository
+var testDbPath = Path.Combine(Path.GetTempPath(), $"backup_tests_{Guid.NewGuid():N}.db");
+var connectionString = $"Data Source={testDbPath};Version=3;";
+var backupRepository = new BackupRepository(connectionString, NullLogger<BackupRepository>.Instance);
+
+// Example 1: Add a new backup
+var newBackup = new Backup
+{
+    BackupId = "bkp-2024-001",
+    DatabaseId = "acme-corp-db",
+    BackupPath = "/backups/acme-corp-2024-001.bak",
+    CreatedAt = DateTime.UtcNow,
+    Status = BackupStatus.Pending
+};
+
+var addedBackup = await backupRepository.AddAsync(newBackup);
+Console.WriteLine($"Added backup: {addedBackup.BackupId}");
+
+// Example 2: Get all backups for a specific database
+var acmeBackups = await backupRepository.GetByDatabaseAsync("acme-corp-db");
+Console.WriteLine($"Found {acmeBackups.Count} backups for acme-corp-db");
+
+// Example 3: Get only completed backups
+var completedBackups = await backupRepository.GetCompletedBackupsAsync("acme-corp-db");
+Console.WriteLine($"Completed backups: {completedBackups.Count}");
+
+// Example 4: Get the latest backup for a database
+var latestBackup = await backupRepository.GetLatestBackupAsync("acme-corp-db");
+if (latestBackup != null)
+{
+    Console.WriteLine($"Latest backup: {latestBackup.BackupId} (created: {latestBackup.CreatedAt})");
+}
+
+// Example 5: Get expired backups for cleanup
+var expiredBackups = await backupRepository.GetExpiredBackupsAsync();
+Console.WriteLine($"Expired backups to clean up: {expiredBackups.Count}");
+
+// Example 6: Update backup status
+if (latestBackup != null)
+{
+    latestBackup.Status = BackupStatus.Completed;
+    latestBackup.MarkAsCompleted(sizeBytes: 1024000, durationMs: 1250);
+    await backupRepository.UpdateAsync(latestBackup);
+    Console.WriteLine($"Updated backup {latestBackup.BackupId} to completed");
+}
+
+// Example 7: Get backup count for monitoring
+var backupCount = await backupRepository.GetCountByDatabaseAsync("acme-corp-db");
+Console.WriteLine($"Total backups for acme-corp-db: {backupCount}");
+
+// Cleanup
+File.Delete(testDbPath);
+```
+
 ## TenantNameValidator
  
 The `TenantNameValidator` class provides static methods for validating tenant IDs and names, ensuring they comply with system naming conventions, length restrictions, and security policies to prevent issues like SQL injection. It also includes utility methods for generating valid tenant IDs from tenant names and validating database identifiers, offering a robust way to enforce tenant naming standards across the application.
