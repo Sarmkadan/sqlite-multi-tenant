@@ -40,9 +40,7 @@ public static class ErrorHandlingMiddlewareValidation
     /// <param name="value">The middleware instance to check.</param>
     /// <returns>True if valid; otherwise, false.</returns>
     public static bool IsValid(this ErrorHandlingMiddleware value)
-    {
-        return value.Validate().Count == 0;
-    }
+ => value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures the <see cref="ErrorHandlingMiddleware"/> instance is valid.
@@ -88,7 +86,7 @@ public static class ErrorHandlingMiddlewareValidation
             problems.Add("Result.IsSuccess is true but ErrorMessage is not null");
         }
 
-        if (value.IsSuccess && EqualityComparer<T>.Default.Equals(value.Value, default!))
+        if (value.IsSuccess && EqualityComparer<T>.Default.Equals(value.Value, default(T)))
         {
             problems.Add("Result.IsSuccess is true but Value is default/null for reference types or zero for value types");
         }
@@ -103,9 +101,7 @@ public static class ErrorHandlingMiddlewareValidation
     /// <param name="value">The result instance to validate.</param>
     /// <returns>True if valid; otherwise, false.</returns>
     public static bool IsValid<T>(this Result<T> value)
-    {
-        return value.Validate().Count == 0;
-    }
+ => value.Validate().Count == 0;
 
     /// <summary>
     /// Ensures the <see cref="Result{T}"/> instance is valid.
