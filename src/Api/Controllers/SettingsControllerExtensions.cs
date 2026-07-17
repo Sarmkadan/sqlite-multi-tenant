@@ -18,8 +18,8 @@ public static class SettingsControllerExtensions
     /// <typeparam name="T">The expected type of the setting value.</typeparam>
     /// <param name="controller">The settings controller instance.</param>
     /// <param name="key">The setting key.</param>
-    /// <returns>The setting value cast to type T, or default(T) if not found.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> or <paramref name="key"/> is null.</exception>
+    /// <returns>An <see cref="IActionResult"/> containing the setting value as type T, or default(T) if not found.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="key"/> is null.</exception>
     public static IActionResult GetSettingAs<T>(this SettingsController controller, string key)
     {
         ArgumentNullException.ThrowIfNull(controller);
@@ -47,8 +47,8 @@ public static class SettingsControllerExtensions
     /// <param name="controller">The settings controller instance.</param>
     /// <param name="key">The setting key.</param>
     /// <param name="value">The setting value.</param>
-    /// <returns>The created setting value.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> or <paramref name="key"/> is null.</exception>
+    /// <returns>An <see cref="IActionResult"/> representing the operation result.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="key"/> is null.</exception>
     public static IActionResult SetSetting<T>(this SettingsController controller, string key, T value)
     {
         ArgumentNullException.ThrowIfNull(controller);
@@ -64,8 +64,8 @@ public static class SettingsControllerExtensions
     /// <typeparam name="T">The type of values in the dictionary.</typeparam>
     /// <param name="controller">The settings controller instance.</param>
     /// <param name="settings">Dictionary of setting keys to values.</param>
-    /// <returns>Batch update result with success/failure information.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> or <paramref name="settings"/> is null.</exception>
+    /// <returns>An <see cref="IActionResult"/> representing the batch update result.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="settings"/> is null.</exception>
     public static IActionResult UpdateBatchSettings<T>(this SettingsController controller, Dictionary<string, T> settings)
     {
         ArgumentNullException.ThrowIfNull(controller);
@@ -80,8 +80,8 @@ public static class SettingsControllerExtensions
     /// </summary>
     /// <param name="controller">The settings controller instance.</param>
     /// <param name="key">The setting key to check.</param>
-    /// <returns>True if the setting exists, false otherwise.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> or <paramref name="key"/> is null.</exception>
+    /// <returns>An <see cref="IActionResult"/> containing true if the setting exists, false otherwise.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="key"/> is null.</exception>
     public static IActionResult SettingExists(this SettingsController controller, string key)
     {
         ArgumentNullException.ThrowIfNull(controller);
@@ -102,8 +102,8 @@ public static class SettingsControllerExtensions
     /// </summary>
     /// <param name="controller">The settings controller instance.</param>
     /// <param name="predicate">Filter predicate to apply to settings.</param>
-    /// <returns>Filtered collection of settings matching the predicate.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> or <paramref name="predicate"/> is null.</exception>
+    /// <returns>An <see cref="IActionResult"/> containing the filtered collection of settings matching the predicate.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="predicate"/> is null.</exception>
     public static IActionResult GetSettingsWhere(this SettingsController controller, Func<SettingValue, bool> predicate)
     {
         ArgumentNullException.ThrowIfNull(controller);
@@ -143,8 +143,8 @@ public static class SettingsControllerExtensions
     /// <param name="controller">The settings controller instance.</param>
     /// <param name="key">The setting key.</param>
     /// <param name="parser">Optional custom parser function.</param>
-    /// <returns>Parsed value or default if parsing fails.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="controller"/> or <paramref name="key"/> is null.</exception>
+    /// <returns>An <see cref="IActionResult"/> containing the parsed value or default if parsing fails.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="key"/> is null.</exception>
     public static IActionResult GetSettingAs<T>(
         this SettingsController controller,
         string key,
@@ -171,9 +171,9 @@ public static class SettingsControllerExtensions
                         parsedValue = (T)Convert.ChangeType(stringValue, typeof(T), CultureInfo.InvariantCulture);
                     }
 
-                    return controller.Ok(ApiResponse<T>.Success(parsedValue!));
+                    return controller.Ok(ApiResponse<T>.Success(parsedValue));
                 }
-                catch
+                catch (Exception ex) when (ex is FormatException or OverflowException or InvalidCastException)
                 {
                     return controller.Ok(ApiResponse<T>.Success(default));
                 }
