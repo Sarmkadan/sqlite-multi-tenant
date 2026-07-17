@@ -22,6 +22,11 @@ namespace SqliteMultiTenant.Database
         private readonly ILogger<SchemaManager> _logger;
         private readonly string _connectionString;
 
+    /// <summary>
+    /// Gets the connection string used by this <see cref="SchemaManager"/> instance.
+    /// </summary>
+    public string ConnectionString => _connectionString;
+
         /// <summary>
         /// Initializes a new instance of <see cref="SchemaManager"/>.
         /// </summary>

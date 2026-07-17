@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace SqliteMultiTenant.Database
 {
@@ -27,8 +26,11 @@ namespace SqliteMultiTenant.Database
 
             var problems = new List<string>();
 
-            // SchemaManager doesn't have any state to validate beyond constructor parameters
-            // which are validated at construction time
+            // Validate connection string is not empty or whitespace
+            if (string.IsNullOrWhiteSpace(value.ConnectionString))
+            {
+                problems.Add("Connection string cannot be null, empty, or whitespace.");
+            }
 
             return problems.AsReadOnly();
         }
@@ -38,10 +40,7 @@ namespace SqliteMultiTenant.Database
         /// </summary>
         /// <param name="value">The <see cref="SchemaManager"/> instance to check.</param>
         /// <returns><c>true</c> if the instance is valid; otherwise, <c>false</c>.</returns>
-        public static bool IsValid(this SchemaManager value)
-        {
-            return value.Validate().Count == 0;
-        }
+        public static bool IsValid(this SchemaManager value) => value?.Validate().Count == 0;
 
         /// <summary>
         /// Ensures that the specified <see cref="SchemaManager"/> instance is valid.
