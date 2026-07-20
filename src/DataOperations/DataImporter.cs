@@ -368,5 +368,49 @@ private string[] ParseCsvLine(string line, string delimiter)
             fields.Add(current.ToString().Trim('"'));
             return fields.ToArray();
         }
+
+        /// <summary>
+        /// Imports CSV data into a specified table for a tenant with transaction support and validation.
+        /// </summary>
+        /// <param name="tenantId">The tenant identifier.</param>
+        /// <param name="tableName">Name of the table where data will be imported.</param>
+        /// <param name="csvText">CSV string containing the data to import.</param>
+        /// <returns>Number of rows successfully imported.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="tenantId"/> is less than or equal to 0.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="tableName"/> or <paramref name="csvText"/> is null.</exception>
+        /// <exception cref="Exception">Thrown when CSV parsing fails or database operation encounters an error.</exception>
+        public async Task<int> ImportFromCsvAsync(string tenantId, string tableName, string csvText)
+        {
+            if (string.IsNullOrEmpty(tenantId))
+                throw new ArgumentNullException(nameof(tenantId));
+
+            if (tenantId.All(char.IsDigit) == false)
+                throw new ArgumentException("TenantId must be numeric", nameof(tenantId));
+
+            if (int.TryParse(tenantId, out var tenantIdInt) == false || tenantIdInt <= 0)
+                throw new ArgumentOutOfRangeException(nameof(tenantId), "TenantId must be a positive integer");
+
+            if (string.IsNullOrEmpty(tableName))
+                throw new ArgumentNullException(nameof(tableName));
+
+            if (string.IsNullOrEmpty(csvText))
+                throw new ArgumentNullException(nameof(csvText));
+
+            // Construct tenant database path (databases/{tenantId}_*.db)
+            var tenantDbPath = Path.Combine("databases", $"{tenantId}_primary.db");
+
+            // Get connection for the specified tenant
+            await using var connection = new SQLiteConnection(
+                new SQLiteConnectionStringBuilder
+                {
+                    DataSource = tenantDbPath,
+                    Pooling = false
+                }.ToString());
+
+            await connection.OpenAsync();
+
+            // Use existing CSV import logic with default parameters
+            return await ImportFromCsvAsync(connection, tableName, csvText, hasHeaders: true, delimiter: ",", truncateTable: false);
+        }
     }
 }
