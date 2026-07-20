@@ -26,4 +26,6 @@ public static class TenantConstants
 
     public const string TenantIdClaimType = "tenant_id";
     public const string TenantNameClaimType = "tenant_name";
+
+    public const string ReadOnlyMetadataKey = "readOnly";
 }
