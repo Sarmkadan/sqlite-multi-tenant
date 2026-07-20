@@ -155,6 +155,21 @@ public sealed class MigrationRolledBackEvent : DomainEvent {
 }
 
 /// <summary>
+/// Event raised when a tenant is cloned from another tenant.
+/// Triggers downstream actions (audit logging, notifications).
+/// </summary>
+public sealed class TenantClonedEvent : DomainEvent
+{
+    public string SourceTenantId { get; set; }
+    public string TargetTenantId { get; set; }
+    public string DatabasePath { get; set; }
+
+    public TenantClonedEvent() : base(nameof(TenantClonedEvent))
+    {
+    }
+}
+
+/// <summary>
 /// Event raised when health check fails.
 /// Enables alerting and incident response.
 /// </summary>

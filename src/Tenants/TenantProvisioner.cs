@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Database;
+using SqliteMultiTenant.Events;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;
 using SqliteMultiTenant.Security;
@@ -22,21 +23,25 @@ namespace SqliteMultiTenant.Tenants
     /// Creates isolated SQLite databases for each tenant with schema initialization,
     /// supports cloning for replication, and manages deprovisioning with cleanup.
     /// </summary>
-    public sealed class TenantProvisioner {
+    public sealed class TenantProvisioner
+    {
         private readonly ITenantRepository _tenantRepository;
         private readonly SchemaManager _schemaManager;
         private readonly ILogger<TenantProvisioner> _logger;
         private readonly ILoggerFactory _loggerFactory;
         private readonly string _basePath;
+        private readonly IEventBus _eventBus;
 
         public TenantProvisioner(ITenantRepository tenantRepository, SchemaManager schemaManager,
-            ILogger<TenantProvisioner> logger, string basePath, ILoggerFactory? loggerFactory = null)
+            ILogger<TenantProvisioner> logger, string basePath, ILoggerFactory? loggerFactory = null,
+            IEventBus? eventBus = null)
         {
             _tenantRepository = tenantRepository ?? throw new ArgumentNullException(nameof(tenantRepository));
             _schemaManager = schemaManager ?? throw new ArgumentNullException(nameof(schemaManager));
             _loggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
         }
 
         /// <summary>
@@ -105,7 +110,8 @@ namespace SqliteMultiTenant.Tenants
         }
 
         /// <summary>
-        /// Clones an existing tenant database by copying the SQLite file to a new tenant directory.
+        /// Clones an existing tenant database by copying schema and data from the source database.
+        /// Uses SQLite ATTACH and INSERT SELECT to copy all schema objects and data.
         /// Useful for backup, testing, or replication scenarios.
         /// </summary>
         /// <param name="sourceTenantId">ID of the tenant to clone from.</param>
@@ -132,10 +138,92 @@ namespace SqliteMultiTenant.Tenants
                 var sourceDbPath = sourceTenant.DatabasePath;
                 var targetDbPath = Path.Combine(targetDir, $"{targetTenantId}.db");
 
-                // Copy database file
-                File.Copy(sourceDbPath, targetDbPath, overwrite: true);
+                // Create empty target database
+                using (var connection = new SQLiteConnection($"Data Source={targetDbPath};Version=3;"))
+                {
+                    await connection.OpenAsync();
+                    await connection.CloseAsync();
+                }
 
-                _logger.LogInformation("Tenant cloned from {SourceId} to {TargetId}",
+                // Copy schema and data using ATTACH and INSERT SELECT
+                var targetConnStr = $"Data Source={targetDbPath};Version=3;";
+                var sourceConnStr = $"Data Source={sourceDbPath};Version=3;";
+
+                await using (var targetConn = new SQLiteConnection(targetConnStr))
+                await using (var sourceConn = new SQLiteConnection(sourceConnStr))
+                {
+                    await targetConn.OpenAsync();
+                    await sourceConn.OpenAsync();
+
+                    // Attach source database
+                    using (var attachCmd = new SQLiteCommand("ATTACH DATABASE @source AS source_db", targetConn))
+                    {
+                        attachCmd.Parameters.AddWithValue("@source", sourceDbPath);
+                        await attachCmd.ExecuteNonQueryAsync();
+                    }
+
+                    // Get list of all tables from source (excluding sqlite_sequence)
+                    var tables = new List<string>();
+                    using (var getTablesCmd = new SQLiteCommand(
+                               "SELECT name FROM source_db.sqlite_master WHERE type='table' AND name != 'sqlite_sequence' ORDER BY name",
+                               sourceConn))
+                    using (var reader = await getTablesCmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                            tables.Add(reader.GetString(0));
+                    }
+
+                    // Copy each table's schema and data
+                    foreach (var table in tables)
+                    {
+                        // Copy table schema
+                        using (var schemaCmd = new SQLiteCommand(
+                                   $"CREATE TABLE [{table}] AS SELECT * FROM source_db.[{table}] WHERE 1=0",
+                                   targetConn))
+                        {
+                            await schemaCmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Copy table data
+                        using (var dataCmd = new SQLiteCommand(
+                                   $"INSERT INTO [{table}] SELECT * FROM source_db.[{table}]",
+                                   targetConn))
+                        {
+                            await dataCmd.ExecuteNonQueryAsync();
+                        }
+                    }
+
+                    // Detach source database
+                    using (var detachCmd = new SQLiteCommand("DETACH DATABASE source_db", targetConn))
+                    {
+                        await detachCmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                // Create tenant record
+                var targetTenant = new Tenant
+                {
+                    TenantId = targetTenantId,
+                    Name = $"Clone of {sourceTenant.Name}",
+                    Status = TenantStatus.Active,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    DatabasePath = targetDbPath
+                };
+
+                await _tenantRepository.AddAsync(targetTenant);
+
+                // Emit domain event
+                var clonedEvent = new TenantClonedEvent
+                {
+                    SourceTenantId = sourceTenantId,
+                    TargetTenantId = targetTenantId,
+                    DatabasePath = targetDbPath,
+                    TenantId = targetTenantId
+                };
+                await _eventBus.PublishAsync(clonedEvent);
+
+                _logger.LogInformation("Tenant cloned from {SourceId} to {TargetId} using ATTACH+INSERT SELECT",
                     sourceTenantId, targetTenantId);
 
                 return targetDbPath;
@@ -232,8 +320,8 @@ namespace SqliteMultiTenant.Tenants
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = @"
-                            SELECT COUNT(*) FROM sqlite_master
-                            WHERE type='table' AND name IN ('Tenants', 'AuditLog')";
+SELECT COUNT(*) FROM sqlite_master 
+WHERE type='table' AND name IN ('Tenants', 'AuditLog')";
 
                         var count = (long)await command.ExecuteScalarAsync();
                         return count == 2;
@@ -259,7 +347,7 @@ namespace SqliteMultiTenant.Tenants
         /// <param name="tenantId">Unique identifier for the new tenant.</param>
         /// <param name="tenantName">Display name for the tenant.</param>
         /// <param name="encryptionKey">
-        /// SQLCipher passphrase used to encrypt the database file.  Must not be null or empty.
+        /// SQLCipher passphrase used to encrypt the database file. Must not be null or empty.
         /// </param>
         /// <param name="settings">Optional tenant-specific configuration settings.</param>
         /// <returns>The newly created <see cref="Tenant"/> entity with <c>IsEncrypted = true</c>.</returns>
