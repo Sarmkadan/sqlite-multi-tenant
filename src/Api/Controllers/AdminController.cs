@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using SqliteMultiTenant.Api.Responses;
 using SqliteMultiTenant.Health;
 using SqliteMultiTenant.Monitoring;
+using SqliteMultiTenant.Tenants;
 
 namespace SqliteMultiTenant.Api.Controllers;
 
@@ -21,15 +22,18 @@ namespace SqliteMultiTenant.Api.Controllers;
 public sealed class AdminController : ControllerBase {
     private readonly HealthCheckService _healthCheckService;
     private readonly MetricsService _metricsService;
+    private readonly TenantQuotaEnforcer _tenantQuotaEnforcer;
     private readonly ILogger<AdminController> _logger;
 
     public AdminController(
         HealthCheckService healthCheckService,
         MetricsService metricsService,
+        TenantQuotaEnforcer tenantQuotaEnforcer,
         ILogger<AdminController> logger)
     {
         _healthCheckService = healthCheckService;
         _metricsService = metricsService;
+        _tenantQuotaEnforcer = tenantQuotaEnforcer;
         _logger = logger;
     }
 
@@ -109,6 +113,7 @@ public sealed class AdminController : ControllerBase {
         {
             _logger.LogInformation("Metrics dashboard requested");
             var snapshot = _metricsService.GetSnapshot();
+
             return Ok(ApiResponse<MetricsSnapshot>.Success(snapshot));
         }
         catch (Exception ex)
@@ -207,10 +212,56 @@ public sealed class AdminController : ControllerBase {
         }
     }
 
+    /// <summary>
+    /// Retrieves a comprehensive quota report for all tenants.
+    /// Aggregates per-tenant storage usage and quota information.
+    /// </summary>
+    [HttpGet("quotas")]
+    [ProducesResponseType(typeof(ApiResponse<TenantQuotaSummaryReport>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetTenantQuotaReportAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Tenant quota report requested");
+
+            var allTenants = await _tenantQuotaEnforcer.ScanAllAsync(cancellationToken);
+
+            var totalUsedBytes = allTenants.Sum(r => r.CurrentSizeBytes);
+            var totalQuotaBytes = allTenants.Where(r => r.QuotaBytes.HasValue).Sum(r => r.QuotaBytes!.Value);
+            var overallUsagePercent = totalQuotaBytes > 0
+                ? Math.Round((double)totalUsedBytes / totalQuotaBytes * 100, 2)
+                : 0;
+
+            var summary = new TenantQuotaSummaryReport
+            {
+                TotalUsedBytes = totalUsedBytes,
+                TotalQuotaBytes = totalQuotaBytes,
+                OverallUsagePercent = overallUsagePercent,
+                TotalTenants = allTenants.Count,
+                TenantsOverQuota = allTenants.Count(r => r.IsOverQuota),
+                TenantsNearQuota = allTenants.Count(r => r.IsNearQuota),
+                TenantReports = allTenants.Select(r => new TenantQuotaReport
+                {
+                    TenantId = r.TenantId,
+                    UsedBytes = r.CurrentSizeBytes,
+                    QuotaBytes = r.QuotaBytes,
+                    UsagePercent = r.UsagePercent
+                }).ToList()
+            };
+
+            return Ok(ApiResponse<TenantQuotaSummaryReport>.Success(summary));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Tenant quota report error");
+            return StatusCode(500, ApiResponse<object>.Error("Failed to retrieve tenant quota report"));
+        }
+    }
+
     private string GetVersion()
     {
         return System.Reflection.Assembly.GetExecutingAssembly()?
-            .GetName().Version?.ToString() ?? "Unknown";
+        .GetName().Version?.ToString() ?? "Unknown";
     }
 }
 

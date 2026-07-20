@@ -174,3 +174,30 @@ public sealed class ErrorResponse {
     public Dictionary<string, string>? Details { get; set; }
     public string? TraceId { get; set; }
 }
+
+/// <summary>
+/// Response DTO for tenant quota information.
+/// Includes tenant id, used bytes, quota bytes, and usage percentage.
+/// </summary>
+public sealed class TenantQuotaReport
+{
+    public string TenantId { get; set; } = string.Empty;
+    public long UsedBytes { get; set; }
+    public long? QuotaBytes { get; set; }
+    public double UsagePercent { get; set; }
+}
+
+/// <summary>
+/// Response DTO for aggregated tenant quota report.
+/// Includes summary statistics and individual tenant reports.
+/// </summary>
+public sealed class TenantQuotaSummaryReport
+{
+    public long TotalUsedBytes { get; set; }
+    public long TotalQuotaBytes { get; set; }
+    public double OverallUsagePercent { get; set; }
+    public int TotalTenants { get; set; }
+    public int TenantsOverQuota { get; set; }
+    public int TenantsNearQuota { get; set; }
+    public List<TenantQuotaReport> TenantReports { get; set; } = new();
+}
