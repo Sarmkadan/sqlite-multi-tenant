@@ -189,6 +189,7 @@ public sealed class AuditLogEntry {
     public AuditAction Action { get; set; }
     public Dictionary<string, object> Changes { get; set; } = new();
     public string IpAddress { get; set; } = string.Empty;
+	public string TenantId { get; set; } = string.Empty;
 }
 
 public enum AuditAction
