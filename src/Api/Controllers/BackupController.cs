@@ -6,6 +6,7 @@
 
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Api.Responses;
+using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Services;
 
 namespace SqliteMultiTenant.Api.Controllers;
@@ -144,6 +145,37 @@ public sealed class BackupController {
         {
             _logger.LogError("Error verifying backup: {Message}", ex.Message);
             return ApiResponse<object>.InternalServerError(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Verifies backup file integrity by running PRAGMA integrity_check on the backup file.
+    /// Opens the backup file read-only and performs SQLite integrity verification.
+    /// Returns detailed verification results including integrity check status.
+    /// </summary>
+    public async Task<ApiResponse<BackupVerificationResult>> VerifyBackupIntegrityAsync(string backupId, string verifiedBy)
+    {
+        _logger.LogInformation("Verifying backup integrity: {BackupId} by {VerifiedBy}", backupId, verifiedBy);
+
+        try
+        {
+            var result = await _backupService.VerifyBackupAsync(backupId, verifiedBy);
+
+            if (result.IsValid)
+            {
+                _logger.LogInformation("Backup integrity verified: {BackupId}", backupId);
+                return ApiResponse<BackupVerificationResult>.Success(result, "Backup integrity verified successfully");
+            }
+            else
+            {
+                _logger.LogWarning("Backup integrity verification failed: {BackupId} - {Error}", backupId, result.ErrorMessage ?? "Unknown error");
+                return ApiResponse<BackupVerificationResult>.BadRequest(result.ErrorMessage ?? "Backup integrity check failed");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error verifying backup integrity: {Message}", ex.Message);
+            return ApiResponse<BackupVerificationResult>.InternalServerError(ex.Message);
         }
     }
 

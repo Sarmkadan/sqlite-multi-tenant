@@ -171,7 +171,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
-    public async Task VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default)
+    public async Task<BackupVerificationResult> VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
@@ -179,20 +179,69 @@ public sealed class BackupService : IBackupService {
         if (string.IsNullOrWhiteSpace(verifiedBy))
             throw new ArgumentException("VerifiedBy cannot be empty", nameof(verifiedBy));
 
+        Backup? backup = null;
         try
         {
-            var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
+            backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
                 throw BackupException.NotFound(backupId);
 
+            if (string.IsNullOrWhiteSpace(backup.BackupPath) || !File.Exists(backup.BackupPath))
+            {
+                return BackupVerificationResult.Failed($"Backup file not found at path: {backup.BackupPath}");
+            }
+
+            // Open backup file read-only
+            var connectionString = $"Data Source={backup.BackupPath};Mode=ReadOnly;Cache=Shared;FailIfMissing=True";
+
+            await using var connection = new SQLiteConnection(connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            // Get file info
+            var fileInfo = new FileInfo(backup.BackupPath);
+            var fileSize = fileInfo.Length;
+
+            // Get database page size and page count
+            using var command = new SQLiteCommand("PRAGMA page_size;", connection);
+            var pageSizeResult = await command.ExecuteScalarAsync(cancellationToken);
+            int pageSize = pageSizeResult != null ? Convert.ToInt32(pageSizeResult) : 4096;
+
+            command.CommandText = "PRAGMA page_count;";
+            var pageCountResult = await command.ExecuteScalarAsync(cancellationToken);
+            int pageCount = pageCountResult != null ? Convert.ToInt32(pageCountResult) : 0;
+
+            // Run integrity check
+            command.CommandText = "PRAGMA integrity_check;";
+            var integrityResult = await command.ExecuteScalarAsync(cancellationToken);
+            string integrityCheckResult = integrityResult?.ToString() ?? "ok";
+
+            var verificationResult = integrityCheckResult.Equals("ok", StringComparison.OrdinalIgnoreCase)
+                ? BackupVerificationResult.Success(integrityCheckResult, fileSize, pageCount, pageSize)
+                : BackupVerificationResult.Failed($"Integrity check failed: {integrityResult}");
+
+            // Mark backup as verified in database
             backup.MarkAsVerified(verifiedBy);
+            backup.Status = BackupStatus.Verified;
             await _repository.UpdateAsync(backup, cancellationToken);
-            _logger.LogInformation("Backup verified: {BackupId}", backupId);
+
+            _logger.LogInformation("Backup verified: {BackupId} - Valid: {IsValid}", backupId, verificationResult.IsValid);
+
+            return verificationResult;
+        }
+        catch (SQLiteException ex)
+        {
+            _logger.LogError("SQLite error verifying backup {BackupId}: {Message}", backupId, ex.Message);
+            return BackupVerificationResult.Failed($"SQLite error: {ex.Message}");
+        }
+        catch (FileNotFoundException ex)
+        {
+            _logger.LogError("Backup file not found {BackupPath}: {Message}", backup?.BackupPath ?? "unknown", ex.Message);
+            return BackupVerificationResult.Failed($"File not found: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error verifying backup: {Message}", ex.Message);
-            throw;
+            _logger.LogError("Error verifying backup {BackupId}: {Message}", backupId, ex.Message);
+            return BackupVerificationResult.Failed($"Verification error: {ex.Message}");
         }
     }
 

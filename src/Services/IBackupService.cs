@@ -75,12 +75,13 @@ public interface IBackupService
     Task MarkBackupAsFailedAsync(string backupId, string errorMessage, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Verifies the integrity of a backup.
+    /// Verifies the integrity of a backup by opening the backup file and running PRAGMA integrity_check.
     /// </summary>
     /// <param name="backupId">The backup ID.</param>
     /// <param name="verifiedBy">The user or process verifying the backup.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default);
+    /// <returns>Verification result containing integrity check status and details.</returns>
+    Task<BackupVerificationResult> VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets an expiration date for a backup.
