@@ -152,7 +152,7 @@ public sealed class WebhookService {
                 if (!string.IsNullOrEmpty(subscription.Secret))
                 {
                     var signature = GenerateHmacSignature(json, subscription.Secret);
-                    content.Headers.Add("X-Webhook-Signature", signature);
+                    content.Headers.Add("X-Signature", signature);
                 }
 
                 var response = await _httpClient.PostAsync(subscription.WebhookUrl, content);
@@ -200,6 +200,30 @@ public sealed class WebhookService {
         {
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
             return Convert.ToHexString(hash);
+        }
+    }
+
+    /// <summary>
+    /// Verifies an HMAC-SHA256 signature for a payload using a secret key.
+    /// </summary>
+    /// <param name="payload">The payload to verify.</param>
+    /// <param name="signature">The signature to verify against.</param>
+    /// <param name="secret">The secret key used for signing.</param>
+    /// <returns>True if the signature is valid; otherwise, false.</returns>
+    public static bool VerifySignature(string payload, string signature, string secret)
+    {
+        if (string.IsNullOrEmpty(payload))
+            throw new ArgumentException("Payload cannot be null or empty.", nameof(payload));
+        if (string.IsNullOrEmpty(signature))
+            throw new ArgumentException("Signature cannot be null or empty.", nameof(signature));
+        if (string.IsNullOrEmpty(secret))
+            throw new ArgumentException("Secret cannot be null or empty.", nameof(secret));
+
+        using (var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(secret)))
+        {
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
+            var computedSignature = Convert.ToHexString(hash);
+            return string.Equals(computedSignature, signature, StringComparison.OrdinalIgnoreCase);
         }
     }
 

@@ -45,6 +45,23 @@ public sealed class WebhookDelivery {
     public Dictionary<string, string> Headers { get; set; } = new();
     public int RetryCount { get; set; } = 0;
     public int MaxRetries { get; set; } = 3;
+
+    /// <summary>
+    /// Verifies the HMAC-SHA256 signature of the webhook payload.
+    /// </summary>
+    /// <param name="secret">The secret key used to sign the payload.</param>
+    /// <returns>True if the signature is valid; otherwise, false.</returns>
+    public bool VerifySignature(string secret)
+    {
+        if (string.IsNullOrEmpty(secret))
+            throw new ArgumentException("Secret cannot be null or empty.", nameof(secret));
+
+        if (!Headers.TryGetValue("X-Signature", out var signature) || string.IsNullOrEmpty(signature))
+            return false;
+
+        var payload = JsonSerializer.Serialize(Event);
+        return WebhookService.VerifySignature(payload, signature, secret);
+    }
 }
 
 /// <summary>
