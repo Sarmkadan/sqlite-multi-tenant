@@ -17,6 +17,7 @@ public sealed class CommandExecutor
     private readonly Services.IBackupService _backupService;
     private readonly Services.IMigrationService _migrationService;
     private readonly Health.HealthCheckService _healthService;
+    private readonly Database.ConnectionManager _connectionManager;
     private readonly ILogger<CommandExecutor> _logger;
     private readonly Formatters.OutputFormatter _formatter;
 
@@ -25,6 +26,7 @@ public sealed class CommandExecutor
         Services.IBackupService backupService,
         Services.IMigrationService migrationService,
         Health.HealthCheckService healthService,
+        Database.ConnectionManager connectionManager,
         ILogger<CommandExecutor> logger,
         Formatters.OutputFormatter formatter)
     {
@@ -32,6 +34,7 @@ public sealed class CommandExecutor
         _backupService = backupService;
         _migrationService = migrationService;
         _healthService = healthService;
+        _connectionManager = connectionManager;
         _logger = logger;
         _formatter = formatter;
     }
@@ -77,6 +80,7 @@ public sealed class CommandExecutor
             "backup" => await ExecuteBackupCommandAsync(subCmd, args, cancellationToken),
             "migration" => await ExecuteMigrationCommandAsync(subCmd, args, cancellationToken),
             "health" => await ExecuteHealthCommandAsync(subCmd, args, cancellationToken),
+            "explain" => await ExecuteExplainCommandAsync(subCmd, args, cancellationToken),
             _ => new CommandResult { Success = false, Message = $"Unknown command: {mainCmd}" }
         };
     }
@@ -384,6 +388,94 @@ public sealed class CommandExecutor
         cancellationToken.ThrowIfCancellationRequested();
 
         return new CommandResult { Success = true, Message = "System is operational" };
+    }
+
+    private async Task<CommandResult> ExecuteExplainCommandAsync(string subCmd, List<string> args, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return subCmd switch
+            {
+                "query" => await HandleExplainQueryAsync(args, cancellationToken),
+                _ => new CommandResult { Success = false, Message = $"Unknown explain subcommand: {subCmd}" }
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Explain command error: {Message}", ex.Message);
+            return new CommandResult { Success = false, Message = $"Error executing explain command: {ex.Message}" };
+        }
+    }
+
+    private async Task<CommandResult> HandleExplainQueryAsync(List<string> args, CancellationToken cancellationToken = default)
+    {
+        if (args.Count == 0)
+        {
+            return new CommandResult { Success = false, Message = "Missing required argument: sqlQuery" };
+        }
+
+        string sqlQuery = string.Join(" ", args);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        // Get the tenant ID from environment or use a default approach
+        // For CLI explain command, we'll need to get a tenant first
+        // Let's try to get a sample tenant or use the first available
+        var tenants = await _tenantService.GetAllTenantsAsync(cancellationToken);
+
+        if (tenants.Count == 0)
+        {
+            return new CommandResult { Success = false, Message = "No tenants available. Create a tenant first." };
+        }
+
+        // Use the first tenant for the explain query
+        var tenant = tenants[0];
+        var connectionString = $"Data Source={tenant.DatabasePath};";
+
+        await using (var connection = await _connectionManager.GetConnectionAsync(tenant.TenantId, connectionString, cancellationToken))
+        await using (var command = connection.CreateCommand())
+        {
+            // Prefix with EXPLAIN QUERY PLAN
+            string explainSql = $"EXPLAIN QUERY PLAN {sqlQuery}";
+            command.CommandText = explainSql;
+
+            await connection.OpenAsync(cancellationToken);
+
+            using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+            {
+                var output = new System.Text.StringBuilder();
+                output.AppendLine("Query Plan:");
+                output.AppendLine("===========");
+
+                int rowCount = 0;
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    rowCount++;
+                    output.AppendLine($"Plan Row {rowCount}:");
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        string fieldName = reader.GetName(i);
+                        string fieldValue = reader.IsDBNull(i) ? "NULL" : reader.GetString(i);
+                        output.AppendLine($"  {fieldName}: {fieldValue}");
+                    }
+                    output.AppendLine();
+                }
+
+                if (rowCount == 0)
+                {
+                    output.AppendLine("No query plan returned.");
+                }
+                else
+                {
+                    output.AppendLine($"Total plan rows: {rowCount}");
+                }
+
+                return new CommandResult
+                {
+                    Success = true,
+                    Message = output.ToString()
+                };
+            }
+        }
     }
 }
 

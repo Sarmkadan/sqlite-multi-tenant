@@ -75,6 +75,16 @@ public sealed class CommandParser {
                 new Subcommand { Name = "status", Description = "Get overall status", RequiredArgs = [] }
             }
         };
+
+    _commands["explain"] = new CommandHandler
+    {
+        Name = "explain",
+        Description = "Explain SQL query execution plan",
+        Subcommands = new[]
+        {
+            new Subcommand { Name = "query", Description = "Explain a SQL query", RequiredArgs = new[] { "sqlQuery" } }
+        }
+    };
     }
 
     /// <summary>
