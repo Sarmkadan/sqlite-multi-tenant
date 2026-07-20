@@ -138,6 +138,9 @@ public static class DependencyInjectionSetup
             services.AddSingleton<DatabaseMaintenanceWorker>();
         services.AddHostedService<DatabaseMaintenanceWorker>(sp => sp.GetRequiredService<DatabaseMaintenanceWorker>());
 
+        // Register tenant size report service
+        services.AddTenantSizeReportService();
+
         return services;
     }
 
