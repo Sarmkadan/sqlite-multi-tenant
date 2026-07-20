@@ -2,10 +2,12 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =====================================================================
 
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Services;
 using System.Diagnostics;
 
 namespace SqliteMultiTenant.BackgroundWorkers;
@@ -17,13 +19,16 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// </summary>
 public sealed class DatabaseMaintenanceWorker : BackgroundService {
     private readonly ILogger<DatabaseMaintenanceWorker> _logger;
+    private readonly ITenantDatabaseMaintenanceService _maintenanceService;
     private readonly TimeSpan _interval;
 
     public DatabaseMaintenanceWorker(
         ILogger<DatabaseMaintenanceWorker> logger,
+        ITenantDatabaseMaintenanceService maintenanceService,
         TimeSpan? interval = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _maintenanceService = maintenanceService ?? throw new ArgumentNullException(nameof(maintenanceService));
         _interval = interval ?? TimeSpan.FromHours(24); // Default: daily
     }
 
@@ -39,7 +44,13 @@ public sealed class DatabaseMaintenanceWorker : BackgroundService {
         {
             try
             {
-                await ExecuteMaintenanceAsync(stoppingToken);
+                var maintenanceResults = await ExecuteMaintenanceAsync(stoppingToken);
+
+                // Log summary of maintenance operations
+                var successfulOperations = maintenanceResults.Count(r => r.IsSuccess);
+                var failedOperations = maintenanceResults.Count(r => !r.IsSuccess);
+                _logger.LogInformation("Database maintenance completed: {Successful} successful, {Failed} failed out of {Total} operations",
+                    successfulOperations, failedOperations, maintenanceResults.Count);
 
                 // Wait for configured interval before next maintenance
                 await Task.Delay(_interval, stoppingToken);
@@ -59,66 +70,56 @@ public sealed class DatabaseMaintenanceWorker : BackgroundService {
     }
 
     /// <summary>
-    /// Performs database maintenance operations.
-    /// 1. VACUUM: Reclaims space from deleted rows
-    /// 2. ANALYZE: Updates query planner statistics
-    /// 3. REINDEX: Rebuilds indexes for performance
+    /// Performs database maintenance operations on all tenant databases.
+    /// Executes VACUUM to reclaim space, ANALYZE to update statistics, and PRAGMA optimize for performance tuning.
     /// </summary>
-    private async Task ExecuteMaintenanceAsync(CancellationToken cancellationToken)
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of maintenance results for all tenants.</returns>
+    private async Task<List<TenantMaintenanceResult>> ExecuteMaintenanceAsync(CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
         _logger.LogInformation("Starting database maintenance");
 
+        var results = new List<TenantMaintenanceResult>();
+
         try
         {
-            // In production, enumerate all tenant databases and perform maintenance
-            // For each database:
-            //   1. Execute VACUUM to reclaim space
-            //   2. Execute ANALYZE to update statistics
-            //   3. Log duration and size change
+            // Execute full maintenance on all tenant databases
+            // This performs VACUUM + ANALYZE + PRAGMA optimize
+            results = (await _maintenanceService.PerformFullMaintenanceOnAllAsync(cancellationToken)).ToList();
 
-            var vacuumTime = Stopwatch.StartNew();
-            _logger.LogInformation("Executing VACUUM on databases");
-            // await VacuumAllDatabasesAsync(cancellationToken);
-            vacuumTime.Stop();
-            _logger.LogInformation("VACUUM completed in {ms}ms", vacuumTime.ElapsedMilliseconds);
+            // Log detailed results
+            foreach (var result in results.Where(r => r.IsSuccess))
+            {
+                _logger.LogInformation("{Operation}", result.OperationSummary);
+            }
 
-            var analyzeTime = Stopwatch.StartNew();
-            _logger.LogInformation("Executing ANALYZE on databases");
-            // await AnalyzeAllDatabasesAsync(cancellationToken);
-            analyzeTime.Stop();
-            _logger.LogInformation("ANALYZE completed in {ms}ms", analyzeTime.ElapsedMilliseconds);
+            foreach (var result in results.Where(r => !r.IsSuccess))
+            {
+                _logger.LogWarning("Failed: {Operation} - {Error}", result.Operation, result.Error);
+            }
 
             stopwatch.Stop();
-            _logger.LogInformation("Database maintenance completed in {ms}ms", stopwatch.ElapsedMilliseconds);
+            _logger.LogInformation("Database maintenance completed in {ms}ms for {count} tenants",
+                stopwatch.ElapsedMilliseconds, results.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during database maintenance");
+            // Return partial results if available
+            if (results.Count == 0)
+            {
+                results.Add(new TenantMaintenanceResult
+                {
+                    Operation = "Database Maintenance",
+                    StartedAt = DateTime.UtcNow,
+                    Error = ex.Message,
+                    CompletedAt = DateTime.UtcNow
+                });
+            }
         }
-    }
 
-    /// <summary>
-    /// Virtual methods for maintenance operations that would be implemented
-    /// with actual database access in production code.
-    /// </summary>
-    private Task VacuumAllDatabasesAsync(CancellationToken cancellationToken)
-    {
-        // Implementation would:
-        // 1. Enumerate all tenant databases
-        // 2. Execute VACUUM command on each
-        // 3. Log space reclaimed
-        // 4. Handle individual database errors gracefully
-        return Task.CompletedTask;
-    }
-
-    private Task AnalyzeAllDatabasesAsync(CancellationToken cancellationToken)
-    {
-        // Implementation would:
-        // 1. Enumerate all tenant databases
-        // 2. Execute ANALYZE command on each
-        // 3. Log statistics update completion
-        return Task.CompletedTask;
+        return results;
     }
 }
 

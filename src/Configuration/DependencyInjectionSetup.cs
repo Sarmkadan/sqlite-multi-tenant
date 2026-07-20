@@ -9,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using SqliteMultiTenant.Api.Controllers;
 using SqliteMultiTenant.BackgroundWorkers;
 using SqliteMultiTenant.Caching;
+using SqliteMultiTenant.Services;
 using SqliteMultiTenant.Events;
 using SqliteMultiTenant.Formatters;
 using SqliteMultiTenant.Health;
@@ -132,8 +133,9 @@ public static class DependencyInjectionSetup
         services.AddSingleton<BackupCleanupService>();
         services.AddHostedService<BackupCleanupService>(sp => sp.GetRequiredService<BackupCleanupService>());
 
-        // Register database maintenance
-        services.AddSingleton<DatabaseMaintenanceWorker>();
+        // Register database maintenance worker and service
+        services.AddTenantDatabaseMaintenanceService();
+            services.AddSingleton<DatabaseMaintenanceWorker>();
         services.AddHostedService<DatabaseMaintenanceWorker>(sp => sp.GetRequiredService<DatabaseMaintenanceWorker>());
 
         return services;
