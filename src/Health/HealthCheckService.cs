@@ -22,6 +22,19 @@ public interface IHealthCheckService
     Task<bool> IsDiskSpaceHealthyAsync(long minimumFreeBytesRequired = 1_000_000_000); // 1GB default
     Task<bool> IsSystemHealthyAsync();
     Task<string> GetDetailedStatusAsync();
+
+    /// <summary>
+    /// Liveness check - process-level health indicator.
+    /// Always cheap and fast, never touches external dependencies.
+    /// Used by load balancers and orchestrators to determine if the process is running.
+    /// </summary>
+    Task<HealthStatusResult> CheckLivenessAsync();
+
+    /// <summary>
+    /// Readiness check - tenant database connectivity and responsiveness.
+    /// Tests tenant database connectivity and ensures the service is ready to accept traffic.
+    /// </summary>
+    Task<HealthStatusResult> CheckReadinessAsync();
 }
 
 /// <summary>
@@ -190,6 +203,147 @@ public class HealthCheckService : IHealthCheckService {
         var response = await GetHealthStatusAsync();
         return response.Status;
     }
+
+    /// <summary>
+    /// Liveness check - process-level health indicator.
+    /// Always cheap and fast, never touches external dependencies.
+    /// Used by load balancers and orchestrators to determine if the process is running.
+    /// </summary>
+    public async Task<HealthStatusResult> CheckLivenessAsync()
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = new HealthStatusResult
+        {
+            Status = "healthy",
+            IsHealthy = true,
+            CheckedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            // Check process is still running
+            var process = Process.GetCurrentProcess();
+            if (process.HasExited)
+            {
+                result.Status = "unhealthy";
+                result.IsHealthy = false;
+                result.Checks["process"] = new ComponentHealth
+                {
+                    Status = "unhealthy",
+                    Message = "Process has exited"
+                };
+            }
+            else
+            {
+                result.Checks["process"] = new ComponentHealth
+                {
+                    Status = "healthy",
+                    Message = "Process is running",
+                    ResponseTimeMs = stopwatch.ElapsedMilliseconds
+                };
+            }
+
+            // Check basic memory availability (always cheap)
+            var memoryHealthy = IsMemoryHealthy();
+            result.Checks["memory"] = new ComponentHealth
+            {
+                Status = memoryHealthy ? "healthy" : "unhealthy",
+                Message = memoryHealthy ? "Memory usage within bounds" : "High memory usage detected",
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+
+            // Overall liveness: process running + basic memory check
+            var allHealthy = result.Checks.Values.All(c => c.Status == "healthy");
+            result.Status = allHealthy ? "healthy" : "unhealthy";
+            result.IsHealthy = allHealthy;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Liveness check failed");
+            result.Status = "unhealthy";
+            result.IsHealthy = false;
+            result.Checks["process"] = new ComponentHealth
+            {
+                Status = "unhealthy",
+                Message = $"Exception during liveness check: {ex.Message}"
+            };
+        }
+
+        result.DurationMs = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("Liveness check completed: {status} in {duration}ms", result.Status, result.DurationMs);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Readiness check - tenant database connectivity and responsiveness.
+    /// Tests tenant database connectivity and ensures the service is ready to accept traffic.
+    /// </summary>
+    public async Task<HealthStatusResult> CheckReadinessAsync()
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var result = new HealthStatusResult
+        {
+            Status = "healthy",
+            IsHealthy = true,
+            CheckedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            // Check database connectivity
+            var dbHealthy = await IsDatabaseHealthyAsync();
+            result.Checks["database"] = new ComponentHealth
+            {
+                Status = dbHealthy ? "healthy" : "unhealthy",
+                Message = dbHealthy ? "Database connectivity OK" : "Database connectivity failed",
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+
+            // Check disk space (tenant databases need space)
+            var diskHealthy = await IsDiskSpaceHealthyAsync();
+            result.Checks["disk"] = new ComponentHealth
+            {
+                Status = diskHealthy ? "healthy" : "unhealthy",
+                Message = diskHealthy ? "Disk space sufficient" : "Insufficient disk space",
+                ResponseTimeMs = stopwatch.ElapsedMilliseconds
+            };
+
+            // Overall readiness: database + disk space
+            var allHealthy = result.Checks.Values.All(c => c.Status == "healthy");
+            result.Status = allHealthy ? "healthy" : "unhealthy";
+            result.IsHealthy = allHealthy;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Readiness check failed");
+            result.Status = "unhealthy";
+            result.IsHealthy = false;
+            result.Checks["database"] = new ComponentHealth
+            {
+                Status = "unhealthy",
+                Message = $"Exception during readiness check: {ex.Message}"
+            };
+        }
+
+        result.DurationMs = stopwatch.ElapsedMilliseconds;
+        _logger.LogInformation("Readiness check completed: {status} in {duration}ms", result.Status, result.DurationMs);
+
+        return result;
+    }
+}
+
+/// <summary>
+/// Structured health status result for liveness and readiness checks.
+/// Contains overall status, individual check results, and timing information.
+/// </summary>
+public sealed class HealthStatusResult
+{
+    public string Status { get; set; } = string.Empty;
+    public bool IsHealthy { get; set; }
+    public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
+    public long DurationMs { get; set; }
+    public Dictionary<string, ComponentHealth> Checks { get; set; } = new();
 }
 
 /// <summary>
