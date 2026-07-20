@@ -388,6 +388,149 @@ namespace SqliteMultiTenant.Tests
         /// <summary>
         /// Disposes the test resources by closing and disposing the database connection.
         /// </summary>
+
+    [Fact]
+    /// <summary>
+    /// Tests that <see cref="DataExporter.ExportAsJsonLinesAsync"/> creates a valid JSON Lines (.jsonl) file
+    /// with one JSON object per row when the table contains sample data.
+    /// </summary>
+    public async Task ExportAsJsonLinesAsync_ShouldCreateValidJsonLinesFile_WhenTableHasData()
+    {
+        // Arrange
+        var outputPath = "/tmp/test_export.jsonl";
+        if (System.IO.File.Exists(outputPath))
+        {
+            System.IO.File.Delete(outputPath);
+        }
+
+        // Act
+        await _sut.ExportAsJsonLinesAsync(_connection, _testTableName, outputPath);
+
+        // Assert
+        System.IO.File.Exists(outputPath).Should().BeTrue();
+
+        var lines = await System.IO.File.ReadAllLinesAsync(outputPath);
+        lines.Should().HaveCount(3); // 3 rows in test table
+
+        // Verify each line is valid JSON
+        foreach (var line in lines)
+        {
+            var jsonDoc = JsonDocument.Parse(line);
+            jsonDoc.RootElement.TryGetProperty("Id", out var idProp).Should().BeTrue();
+            jsonDoc.RootElement.TryGetProperty("Name", out var nameProp).Should().BeTrue();
+            jsonDoc.RootElement.TryGetProperty("Email", out var emailProp).Should().BeTrue();
+        }
+
+        // Verify first row content
+        var firstLine = JsonDocument.Parse(lines[0]);
+        firstLine.RootElement.GetProperty("Id").GetInt32().Should().Be(1);
+        firstLine.RootElement.GetProperty("Name").GetString().Should().Be("Alice");
+        firstLine.RootElement.GetProperty("Email").GetString().Should().Be("alice@example.com");
+
+        // Verify second row content
+        var secondLine = JsonDocument.Parse(lines[1]);
+        secondLine.RootElement.GetProperty("Id").GetInt32().Should().Be(2);
+        secondLine.RootElement.GetProperty("Name").GetString().Should().Be("Bob");
+        secondLine.RootElement.GetProperty("Email").GetString().Should().Be("bob@example.com");
+
+        // Verify third row with NULL value
+        var thirdLine = JsonDocument.Parse(lines[2]);
+        thirdLine.RootElement.GetProperty("Id").GetInt32().Should().Be(3);
+        thirdLine.RootElement.GetProperty("Name").GetString().Should().Be("Charlie");
+        thirdLine.RootElement.GetProperty("Email").ValueKind.Should().Be(JsonValueKind.Null);
+
+        // Cleanup
+        System.IO.File.Delete(outputPath);
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that <see cref="DataExporter.ExportAsJsonLinesAsync"/> creates an empty JSON Lines file
+    /// when the table is empty.
+    /// </summary>
+    public async Task ExportAsJsonLinesAsync_ShouldCreateEmptyFile_WhenTableIsEmpty()
+    {
+        // Arrange
+        var outputPath = "/tmp/test_export_empty.jsonl";
+        if (System.IO.File.Exists(outputPath))
+        {
+            System.IO.File.Delete(outputPath);
+        }
+
+        // Act
+        await _sut.ExportAsJsonLinesAsync(_connection, _emptyTableName, outputPath);
+
+        // Assert
+        System.IO.File.Exists(outputPath).Should().BeTrue();
+
+        var lines = await System.IO.File.ReadAllLinesAsync(outputPath);
+        lines.Should().BeEmpty(); // Empty table = empty file
+
+        // Cleanup
+        System.IO.File.Delete(outputPath);
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that <see cref="DataExporter.ExportAsJsonLinesAsync"/> throws an <see cref="ArgumentNullException"/>
+    /// when the database connection parameter is null.
+    /// </summary>
+    public async Task ExportAsJsonLinesAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
+    {
+        // Arrange
+        var outputPath = "/tmp/test_export_null.jsonl";
+
+        // Act & Assert
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(null, _testTableName, outputPath))
+            .Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("connection");
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that <see cref="DataExporter.ExportAsJsonLinesAsync"/> throws an <see cref="ArgumentNullException"/>
+    /// when the table name parameter is null.
+    /// </summary>
+    public async Task ExportAsJsonLinesAsync_ShouldThrowArgumentNullException_WhenTableNameIsNull()
+    {
+        // Arrange
+        var outputPath = "/tmp/test_export_null.jsonl";
+
+        // Act & Assert
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, null, outputPath))
+            .Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("tableName");
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that <see cref="DataExporter.ExportAsJsonLinesAsync"/> throws an <see cref="ArgumentNullException"/>
+    /// when the output path parameter is null.
+    /// </summary>
+    public async Task ExportAsJsonLinesAsync_ShouldThrowArgumentNullException_WhenOutputPathIsNull()
+    {
+        // Act & Assert
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, _testTableName, null))
+            .Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("outputPath");
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that <see cref="DataExporter.ExportAsJsonLinesAsync"/> throws an <see cref="ArgumentNullException"/>
+    /// when the output path parameter is empty.
+    /// </summary>
+    public async Task ExportAsJsonLinesAsync_ShouldThrowArgumentNullException_WhenOutputPathIsEmpty()
+    {
+        // Arrange
+        var outputPath = "";
+
+        // Act & Assert
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, _testTableName, outputPath))
+            .Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("outputPath");
+    }
+
         public void Dispose()
         {
             _connection?.Close();

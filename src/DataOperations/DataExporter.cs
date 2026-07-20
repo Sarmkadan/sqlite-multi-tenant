@@ -292,6 +292,82 @@ namespace SqliteMultiTenant.DataOperations
             }
         }
 
+    /// <summary>
+    /// Exports all rows from the specified <paramref name="tableName"/> as a JSON Lines (.jsonl) file.
+    /// Each row is serialized as a separate JSON object on its own line.
+    /// </summary>
+    /// <param name="connection">
+    /// An open <see cref="SQLiteConnection"/> used to query the table.
+    /// </param>
+    /// <param name="tableName">
+    /// The name of the table whose data should be exported.
+    /// </param>
+    /// <param name="outputPath">
+    /// The file path where the JSON Lines output will be written.
+    /// </param>
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous export operation.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="outputPath"/> is <c>null</c>
+    /// or empty.
+    /// </exception>
+    /// <exception cref="Exception">
+    /// Propagates any exception that occurs while reading from the database or writing to the file.
+    /// </exception>
+    public async Task ExportAsJsonLinesAsync(SQLiteConnection connection, string tableName, string outputPath)
+    {
+        if (connection is null)
+            throw new ArgumentNullException(nameof(connection));
+
+        if (string.IsNullOrEmpty(tableName))
+            throw new ArgumentNullException(nameof(tableName));
+
+        if (string.IsNullOrEmpty(outputPath))
+            throw new ArgumentNullException(nameof(outputPath));
+
+        try
+        {
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = $"SELECT * FROM {tableName}";
+
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    var fieldCount = reader.FieldCount;
+                    var fieldNames = new string[fieldCount];
+
+                    for (int i = 0; i < fieldCount; i++)
+                    {
+                        fieldNames[i] = reader.GetName(i);
+                    }
+
+                    // Stream directly to file instead of materializing all rows in memory
+                    await using (var fileStream = System.IO.File.Create(outputPath))
+                    await using (var writer = new System.IO.StreamWriter(fileStream, Encoding.UTF8))
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var row = new Dictionary<string, object?>();
+                            for (int i = 0; i < fieldCount; i++)
+                            {
+                                row[fieldNames[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                            }
+
+                            var json = JsonSerializer.Serialize(row, new JsonSerializerOptions { WriteIndented = false });
+                            await writer.WriteLineAsync(json);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to export table {TableName} as JSON Lines", tableName);
+            throw;
+        }
+    }
+
         private string EscapeCsvField(string field)
         {
             if (string.IsNullOrEmpty(field))
