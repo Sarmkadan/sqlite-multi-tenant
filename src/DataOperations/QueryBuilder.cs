@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
+using System.Linq;
 using System.Text;
 
 namespace SqliteMultiTenant.DataOperations
@@ -91,6 +92,35 @@ private string _havingClause;
 
             return this;
         }
+
+    // Adds WHERE IN condition with parameterized values
+    public QueryBuilder WhereIn(string column, IEnumerable<object> values)
+    {
+        if (string.IsNullOrWhiteSpace(column))
+            throw new ArgumentException("Column cannot be empty", nameof(column));
+
+        if (values == null)
+            throw new ArgumentNullException(nameof(values));
+
+        var valuesList = values.ToList();
+        if (valuesList.Count == 0)
+            throw new ArgumentException("Values collection cannot be empty", nameof(values));
+
+        var paramNames = new List<string>();
+        foreach (var value in valuesList)
+        {
+            var paramName = $"p_{column}_{_parameters.Count}";
+            paramNames.Add(paramName);
+            _parameters.Add((paramName, value ?? DBNull.Value));
+        }
+
+        var placeholders = string.Join(", ", paramNames.Select(p => $"@{p}"));
+        _whereClause = !string.IsNullOrEmpty(_whereClause)
+            ? "(" + _whereClause + ") AND ([" + column + "] IN (" + placeholders + "))"
+            : "[" + column + "] IN (" + placeholders + ")";
+
+        return this;
+    }
 
         // Adds OR condition to existing WHERE
         public QueryBuilder Or(string condition, params (string name, object value)[] parameters)
