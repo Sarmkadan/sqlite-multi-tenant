@@ -34,6 +34,8 @@ namespace SqliteMultiTenant.DataOperations
         private string _whereClause;
         private List<string> _joins;
         private List<(string column, string direction)> _orderBy;
+private List<string> _groupBy;
+private string _havingClause;
         private int? _limit;
         private int? _offset;
 
@@ -48,6 +50,7 @@ namespace SqliteMultiTenant.DataOperations
             _columns    = new List<string>();
             _joins      = new List<string>();
             _orderBy    = new List<(string, string)>();
+        _groupBy = new List<string>();
         }
 
         // Selects specific columns (if empty, selects all)
@@ -139,6 +142,17 @@ namespace SqliteMultiTenant.DataOperations
             return this;
         }
 
+// Adds GROUP BY clause
+public QueryBuilder GroupBy(params string[] columns)
+{
+    if (columns == null || columns.Length == 0)
+        throw new ArgumentException("At least one column must be specified", nameof(columns));
+
+    _groupBy.AddRange(columns);
+    return this;
+}
+
+
         // Adds LIMIT clause
         public QueryBuilder Limit(int limit)
         {
@@ -148,6 +162,19 @@ namespace SqliteMultiTenant.DataOperations
             _limit = limit;
             return this;
         }
+
+// Adds HAVING clause
+public QueryBuilder Having(string condition, params (string name, object value)[] parameters)
+{
+    if (string.IsNullOrWhiteSpace(condition))
+        throw new ArgumentException("Condition cannot be empty", nameof(condition));
+
+    _havingClause = condition;
+    if (parameters.Length > 0)
+        _parameters.AddRange(parameters);
+    return this;
+}
+
 
         // Adds OFFSET clause
         public QueryBuilder Offset(int offset)
@@ -190,7 +217,22 @@ namespace SqliteMultiTenant.DataOperations
             if (!string.IsNullOrEmpty(_whereClause))
                 _query.Append(" WHERE ").Append(_whereClause);
 
-            // ORDER BY clause
+// GROUP BY clause
+if (_groupBy.Count > 0)
+{
+    _query.Append(" GROUP BY ");
+    for (int i = 0; i < _groupBy.Count; i++)
+    {
+        if (i > 0) _query.Append(", ");
+        _query.Append('[').Append(_groupBy[i]).Append(']');
+    }
+}
+
+// HAVING clause
+if (!string.IsNullOrEmpty(_havingClause))
+    _query.Append(" HAVING ").Append(_havingClause);
+
+// ORDER BY clause
             if (_orderBy.Count > 0)
             {
                 _query.Append(" ORDER BY ");
@@ -230,6 +272,8 @@ namespace SqliteMultiTenant.DataOperations
             _whereClause = null;
             _joins.Clear();
             _orderBy.Clear();
+        _groupBy.Clear();
+        _havingClause = null;
             _limit  = null;
             _offset = null;
 
