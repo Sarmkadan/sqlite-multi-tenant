@@ -141,6 +141,9 @@ public static class DependencyInjectionSetup
         // Register tenant size report service
         services.AddTenantSizeReportService();
 
+        // Register integrity check service
+        services.AddIntegrityCheckService();
+
         return services;
     }
 
