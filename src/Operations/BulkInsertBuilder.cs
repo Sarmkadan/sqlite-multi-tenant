@@ -39,11 +39,9 @@ namespace SqliteMultiTenant.Operations
         public BulkInsertBuilder(SQLiteConnection connection, ILogger<BulkInsertBuilder> logger,
             string tableName, int batchSize = 1000)
         {
-            if (connection is null)
-                throw new ArgumentNullException(nameof(connection));
+            if (connection is null) throw new ArgumentNullException(nameof(connection));
 
-            if (string.IsNullOrWhiteSpace(tableName))
-                throw new ArgumentException("Table name cannot be empty", nameof(tableName));
+            if (string.IsNullOrWhiteSpace(tableName)) throw new ArgumentException("Table name cannot be empty", nameof(tableName));
 
             _connection = connection;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -55,8 +53,7 @@ namespace SqliteMultiTenant.Operations
         // Adds a record to the bulk insert
         public BulkInsertBuilder AddRecord(Dictionary<string, object> record)
         {
-            if (record is null)
-                throw new ArgumentNullException(nameof(record));
+            if (record is null) throw new ArgumentNullException(nameof(record));
 
             _records.Add(record);
             return this;
@@ -65,8 +62,7 @@ namespace SqliteMultiTenant.Operations
         // Adds multiple records
         public BulkInsertBuilder AddRecords(IEnumerable<Dictionary<string, object>> records)
         {
-            if (records is null)
-                throw new ArgumentNullException(nameof(records));
+            if (records is null) throw new ArgumentNullException(nameof(records));
 
             _records.AddRange(records);
             return this;
@@ -124,21 +120,28 @@ namespace SqliteMultiTenant.Operations
 
         private async Task<int> InsertBatchAsync(List<Dictionary<string, object>> batch)
         {
-            if (batch.Count == 0)
-                return 0;
+            if (batch.Count == 0) return 0;
 
             var insertedCount = 0;
             var columnNames = batch[0].Keys.ToList();
 
-            foreach (var record in batch)
+            // Build parameter placeholders and column list once for the batch
+            var columnList = string.Join(", ", columnNames.Select(c => $"[{c}]"));
+            var paramList = string.Join(", ", columnNames.Select((_, i) => $"@p{i}"));
+            var insertSql = $"INSERT INTO [{_tableName}] ({columnList}) VALUES ({paramList})\n";
+
+            // Prepare the command once for the entire batch
+            using (var command = _connection.CreateCommand())
             {
-                var columnList = string.Join(", ", columnNames.Select(c => $"[{c}]"));
-                var paramList = string.Join(", ", columnNames.Select((_, i) => $"@p{i}"));
+                command.CommandText = insertSql;
 
-                using (var command = _connection.CreateCommand())
+                // Process all records in the batch
+                foreach (var record in batch)
                 {
-                    command.CommandText = $"INSERT INTO [{_tableName}] ({columnList}) VALUES ({paramList})\n";
+                    // Clear parameters from previous iteration
+                    command.Parameters.Clear();
 
+                    // Add parameters for current record
                     for (int i = 0; i < columnNames.Count; i++)
                     {
                         var value = record.ContainsKey(columnNames[i])
@@ -161,8 +164,7 @@ namespace SqliteMultiTenant.Operations
             var sql = new StringBuilder();
 
             var columnNames = _records.FirstOrDefault()?.Keys.ToList();
-            if (columnNames is null || columnNames.Count == 0)
-                return "";
+            if (columnNames is null || columnNames.Count == 0) return "";
 
             foreach (var record in _records)
             {
@@ -231,7 +233,7 @@ namespace SqliteMultiTenant.Operations
 
             if (_updates.Count == 0)
             {
-                _logger.LogWarning("No updates specified");
+                _logger?.LogWarning("No updates specified");
                 return result;
             }
 
@@ -253,13 +255,13 @@ namespace SqliteMultiTenant.Operations
                     result.AffectedRows = await command.ExecuteNonQueryAsync();
                     result.IsSuccessful = true;
 
-                    _logger.LogInformation("Bulk update completed: {AffectedRows} rows updated",
+                    _logger?.LogInformation("Bulk update completed: {AffectedRows} rows updated",
                         result.AffectedRows);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Bulk update operation failed");
+                _logger?.LogError(ex, "Bulk update operation failed");
                 result.Error = ex.Message;
             }
 
