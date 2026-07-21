@@ -78,7 +78,7 @@ public sealed class TenantQuotaEnforcer
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
         {
-            throw new TenantNotFoundException($"Tenant {tenantId} not found");
+            throw new TenantNotFoundException($"Tenant with ID '{tenantId}' was not found.", tenantId);
         }
 
         var sizeInfo = await _tenantService.GetTenantDatabaseSizeAsync(tenantId, cancellationToken);
