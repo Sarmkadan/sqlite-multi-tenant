@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// ===========================================================================
 
 using System;
 using System.Collections.Generic;
@@ -17,43 +17,41 @@ using Microsoft.Extensions.Logging;
 namespace SqliteMultiTenant.DataOperations
 {
     /// <summary>
-/// Provides functionality for importing data into tenant databases from various formats.
-/// Supports JSON, CSV, and raw SQL INSERT statements with transaction support, validation, and rollback capability.
-/// </summary>
-        public sealed class DataImporter {
+    /// Provides functionality for importing data into tenant databases from various formats.
+    /// Supports JSON, CSV, and raw SQL INSERT statements with transaction support, validation, and rollback capability.
+    /// </summary>
+    public sealed class DataImporter
+    {
         private readonly ILogger<DataImporter> _logger;
 
         /// <summary>
-/// Initializes a new instance of the <see cref="DataImporter"/> class.
-/// </summary>
-/// <param name="logger">The logger instance used for logging import operations and errors.</param>
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-public DataImporter(ILogger<DataImporter> logger)
+        /// Initializes a new instance of the <see cref="DataImporter"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance used for logging import operations and errors.</param>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+        public DataImporter(ILogger<DataImporter> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
-/// Imports JSON data into a specified table with transaction support and validation.
-/// </summary>
-/// <param name="connection">The SQLite database connection to use for the import operation.</param>
-/// <param name="tableName">Name of the table where data will be imported.</param>
-/// <param name="jsonData">JSON string containing the data to import. Can be either an array of objects or an object with a "data" property containing an array.</param>
-/// <param name="truncateTable">If true, truncates the target table before importing data.</param>
-/// <returns>Number of rows successfully imported.</returns>
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="jsonData"/> is null.</exception>
-/// <exception cref="Exception">Thrown when JSON parsing fails or database operation encounters an error.</exception>
+        /// Imports JSON data into a specified table with transaction support and validation.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for the import operation.</param>
+        /// <param name="tableName">Name of the table where data will be imported.</param>
+        /// <param name="jsonData">JSON string containing the data to import. Can be either an array of objects or an object with a "data" property containing an array.</param>
+        /// <param name="truncateTable">If true, truncates the target table before importing data.</param>
+        /// <returns>Number of rows successfully imported.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="jsonData"/> is null.</exception>
+        /// <exception cref="Exception">Thrown when JSON parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromJsonAsync(SQLiteConnection connection, string tableName,
             string jsonData, bool truncateTable = false)
         {
-            if (connection is null)
-                throw new ArgumentNullException(nameof(connection));
+            if (connection is null) throw new ArgumentNullException(nameof(connection));
 
-            if (string.IsNullOrEmpty(tableName))
-                throw new ArgumentNullException(nameof(tableName));
+            if (string.IsNullOrEmpty(tableName)) throw new ArgumentNullException(nameof(tableName));
 
-            if (string.IsNullOrEmpty(jsonData))
-                throw new ArgumentNullException(nameof(jsonData));
+            if (string.IsNullOrEmpty(jsonData)) throw new ArgumentNullException(nameof(jsonData));
 
             try
             {
@@ -84,28 +82,25 @@ public DataImporter(ILogger<DataImporter> logger)
         }
 
         /// <summary>
-/// Imports CSV data into a specified table with configurable delimiter and header row support.
-/// </summary>
-/// <param name="connection">The SQLite database connection to use for the import operation.</param>
-/// <param name="tableName">Name of the table where data will be imported.</param>
-/// <param name="csvData">CSV string containing the data to import.</param>
-/// <param name="hasHeaders">If true, treats the first row as column headers.</param>
-/// <param name="delimiter">The delimiter character used to separate values in the CSV data.</param>
-/// <param name="truncateTable">If true, truncates the target table before importing data.</param>
-/// <returns>Number of rows successfully imported.</returns>
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="csvData"/> is null.</exception>
-/// <exception cref="Exception">Thrown when CSV parsing fails or database operation encounters an error.</exception>
+        /// Imports CSV data into a specified table with configurable delimiter and header row support.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for the import operation.</param>
+        /// <param name="tableName">Name of the table where data will be imported.</param>
+        /// <param name="csvData">CSV string containing the data to import.</param>
+        /// <param name="hasHeaders">If true, treats the first row as column headers.</param>
+        /// <param name="delimiter">The delimiter character used to separate values in the CSV data.</param>
+        /// <param name="truncateTable">If true, truncates the target table before importing data.</param>
+        /// <returns>Number of rows successfully imported.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/>, <paramref name="tableName"/>, or <paramref name="csvData"/> is null.</exception>
+        /// <exception cref="Exception">Thrown when CSV parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromCsvAsync(SQLiteConnection connection, string tableName,
             string csvData, bool hasHeaders = true, string delimiter = ",", bool truncateTable = false)
         {
-            if (connection is null)
-                throw new ArgumentNullException(nameof(connection));
+            if (connection is null) throw new ArgumentNullException(nameof(connection));
 
-            if (string.IsNullOrEmpty(tableName))
-                throw new ArgumentNullException(nameof(tableName));
+            if (string.IsNullOrEmpty(tableName)) throw new ArgumentNullException(nameof(tableName));
 
-            if (string.IsNullOrEmpty(csvData))
-                throw new ArgumentNullException(nameof(csvData));
+            if (string.IsNullOrEmpty(csvData)) throw new ArgumentNullException(nameof(csvData));
 
             try
             {
@@ -144,25 +139,32 @@ public DataImporter(ILogger<DataImporter> logger)
                             }
                         }
 
-                        // Insert data rows
-                        for (int i = startIndex; i < lines.Length; i++)
+                        // Build INSERT SQL once for the entire batch
+                        var columnList = string.Join(", ", columnNames.Select(c => $"[{c}]"));
+                        var paramList = string.Join(", ", Enumerable.Range(0, columnNames.Length)
+                            .Select(j => $"@p{j}"));
+                        var insertSql = $"INSERT INTO [{tableName}] ({columnList}) VALUES ({paramList})";
+
+                        // Prepare command once for the entire batch
+                        using (var command = connection.CreateCommand())
                         {
-                            var values = ParseCsvLine(lines[i], delimiter);
+                            command.CommandText = insertSql;
 
-                            if (values.Length != columnNames.Length)
+                            // Insert data rows
+                            for (int i = startIndex; i < lines.Length; i++)
                             {
-                                _logger.LogWarning("Row {RowIndex} has mismatched column count", i);
-                                continue;
-                            }
+                                var values = ParseCsvLine(lines[i], delimiter);
 
-                            using (var command = connection.CreateCommand())
-                            {
-                                var columnList = string.Join(", ", columnNames.Select(c => $"[{c}]"));
-                                var paramList = string.Join(", ", Enumerable.Range(0, columnNames.Length)
-                                    .Select(j => $"@p{j}"));
+                                if (values.Length != columnNames.Length)
+                                {
+                                    _logger.LogWarning("Row {RowIndex} has mismatched column count", i);
+                                    continue;
+                                }
 
-                                command.CommandText = $"INSERT INTO [{tableName}] ({columnList}) VALUES ({paramList})";
+                                // Clear parameters from previous iteration
+                                command.Parameters.Clear();
 
+                                // Add parameters for current row
                                 for (int j = 0; j < columnNames.Length; j++)
                                 {
                                     var value = string.IsNullOrEmpty(values[j]) ? (object)DBNull.Value : values[j];
@@ -196,20 +198,18 @@ public DataImporter(ILogger<DataImporter> logger)
         }
 
         /// <summary>
-/// Imports raw SQL INSERT statements into the database.
-/// </summary>
-/// <param name="connection">The SQLite database connection to use for the import operation.</param>
-/// <param name="sqlStatements">SQL statements string containing INSERT statements separated by semicolons.</param>
-/// <returns>Total number of rows affected by all INSERT statements.</returns>
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="sqlStatements"/> is null.</exception>
-/// <exception cref="Exception">Thrown when SQL parsing fails or database operation encounters an error.</exception>
+        /// Imports raw SQL INSERT statements into the database.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for the import operation.</param>
+        /// <param name="sqlStatements">SQL statements string containing INSERT statements separated by semicolons.</param>
+        /// <returns>Total number of rows affected by all INSERT statements.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="connection"/> or <paramref name="sqlStatements"/> is null.</exception>
+        /// <exception cref="Exception">Thrown when SQL parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromSqlAsync(SQLiteConnection connection, string sqlStatements)
         {
-            if (connection is null)
-                throw new ArgumentNullException(nameof(connection));
+            if (connection is null) throw new ArgumentNullException(nameof(connection));
 
-            if (string.IsNullOrEmpty(sqlStatements))
-                throw new ArgumentNullException(nameof(sqlStatements));
+            if (string.IsNullOrEmpty(sqlStatements)) throw new ArgumentNullException(nameof(sqlStatements));
 
             try
             {
@@ -220,14 +220,17 @@ public DataImporter(ILogger<DataImporter> logger)
                 {
                     try
                     {
-                        foreach (var statement in statements)
+                        // Prepare command once for the entire batch
+                        using (var command = connection.CreateCommand())
                         {
-                            var trimmed = statement.Trim();
-                            if (string.IsNullOrEmpty(trimmed))
-                                continue;
-
-                            using (var command = connection.CreateCommand())
+                            // Process all statements
+                            foreach (var statement in statements)
                             {
+                                var trimmed = statement.Trim();
+                                if (string.IsNullOrEmpty(trimmed)) continue;
+
+                                // Clear parameters from previous statement
+                                command.Parameters.Clear();
                                 command.CommandText = trimmed;
                                 rowsAffected += await command.ExecuteNonQueryAsync();
                             }
@@ -252,18 +255,20 @@ public DataImporter(ILogger<DataImporter> logger)
         }
 
         /// <summary>
-/// Imports a collection of JSON records into a specified table with transaction support.
-/// This is an internal method used by <see cref="ImportFromJsonAsync"/>.
-/// </summary>
-/// <param name="connection">The SQLite database connection to use for the import operation.</param>
-/// <param name="tableName">Name of the table where data will be imported.</param>
-/// <param name="records">List of JSON elements representing the records to import.</param>
-/// <param name="truncateTable">If true, truncates the target table before importing data.</param>
-/// <returns>Number of rows successfully imported.</returns>
-/// <exception cref="Exception">Thrown when database operation encounters an error.</exception>
-private async Task<int> ImportRecordsAsync(SQLiteConnection connection, string tableName,
+        /// Imports a collection of JSON records into a specified table with transaction support.
+        /// This is an internal method used by <see cref="ImportFromJsonAsync"/>.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for the import operation.</param>
+        /// <param name="tableName">Name of the table where data will be imported.</param>
+        /// <param name="records">List of JSON elements representing the records to import.</param>
+        /// <param name="truncateTable">If true, truncates the target table before importing data.</param>
+        /// <returns>Number of rows successfully imported.</returns>
+        /// <exception cref="Exception">Thrown when database operation encounters an error.</exception>
+        private async Task<int> ImportRecordsAsync(SQLiteConnection connection, string tableName,
             List<JsonElement> records, bool truncateTable)
         {
+            if (records.Count == 0) return 0;
+
             var rowsImported = 0;
 
             using (var transaction = connection.BeginTransaction())
@@ -279,30 +284,42 @@ private async Task<int> ImportRecordsAsync(SQLiteConnection connection, string t
                         }
                     }
 
-                    foreach (var record in records)
+                    // Get column names from first record
+                    var firstRecord = records[0];
+                    if (firstRecord.ValueKind != JsonValueKind.Object)
+                        return 0;
+
+                    var properties = firstRecord.EnumerateObject().ToList();
+                    var columns = properties.Select(p => p.Name).ToList();
+
+                    // Build INSERT SQL once
+                    var columnList = string.Join(", ", columns.Select(c => $"[{c}]"));
+                    var paramList = string.Join(", ", Enumerable.Range(0, columns.Count)
+                        .Select(i => $"@p{i}"));
+                    var insertSql = $"INSERT INTO [{tableName}] ({columnList}) VALUES ({paramList})";
+
+                    // Prepare command once for the entire batch
+                    using (var command = connection.CreateCommand())
                     {
-                        if (record.ValueKind != JsonValueKind.Object)
-                            continue;
+                        command.CommandText = insertSql;
 
-                        var properties = record.EnumerateObject().ToList();
-                        var columns = properties.Select(p => p.Name).ToList();
-                        var values = new List<object>();
-
-                        foreach (var prop in properties)
+                        // Process all records
+                        foreach (var record in records)
                         {
-                            values.Add(prop.Value.ValueKind == JsonValueKind.Null
-                                ? DBNull.Value
-                                : (object)prop.Value.GetString());
-                        }
+                            if (record.ValueKind != JsonValueKind.Object)
+                                continue;
 
-                        using (var command = connection.CreateCommand())
-                        {
-                            var columnList = string.Join(", ", columns.Select(c => $"[{c}]"));
-                            var paramList = string.Join(", ", Enumerable.Range(0, columns.Count)
-                                .Select(i => $"@p{i}"));
+                            command.Parameters.Clear();
 
-                            command.CommandText = $"INSERT INTO [{tableName}] ({columnList}) VALUES ({paramList})";
+                            var values = new List<object>();
+                            foreach (var prop in properties)
+                            {
+                                values.Add(prop.Value.ValueKind == JsonValueKind.Null
+                                    ? DBNull.Value
+                                    : (object)prop.Value.GetString());
+                            }
 
+                            // Add parameters for current record
                             for (int i = 0; i < columns.Count; i++)
                             {
                                 command.Parameters.AddWithValue($"@p{i}", values[i]);
@@ -326,13 +343,13 @@ private async Task<int> ImportRecordsAsync(SQLiteConnection connection, string t
         }
 
         /// <summary>
-/// Parses a single line of CSV data into an array of field values.
-/// Handles quoted fields and escaped quotes according to CSV format specifications.
-/// </summary>
-/// <param name="line">The CSV line to parse.</param>
-/// <param name="delimiter">The delimiter character used to separate values in the CSV data.</param>
-/// <returns>Array of parsed field values.</returns>
-private string[] ParseCsvLine(string line, string delimiter)
+        /// Parses a single line of CSV data into an array of field values.
+        /// Handles quoted fields and escaped quotes according to CSV format specifications.
+        /// </summary>
+        /// <param name="line">The CSV line to parse.</param>
+        /// <param name="delimiter">The delimiter character used to separate values in the CSV data.</param>
+        /// <returns>Array of parsed field values.</returns>
+        private string[] ParseCsvLine(string line, string delimiter)
         {
             var fields = new List<string>();
             var current = new StringBuilder();
@@ -382,20 +399,15 @@ private string[] ParseCsvLine(string line, string delimiter)
         /// <exception cref="Exception">Thrown when CSV parsing fails or database operation encounters an error.</exception>
         public async Task<int> ImportFromCsvAsync(string tenantId, string tableName, string csvText)
         {
-            if (string.IsNullOrEmpty(tenantId))
-                throw new ArgumentNullException(nameof(tenantId));
+            if (string.IsNullOrEmpty(tenantId)) throw new ArgumentNullException(nameof(tenantId));
 
-            if (tenantId.All(char.IsDigit) == false)
-                throw new ArgumentException("TenantId must be numeric", nameof(tenantId));
+            if (tenantId.All(char.IsDigit) == false) throw new ArgumentException("TenantId must be numeric", nameof(tenantId));
 
-            if (int.TryParse(tenantId, out var tenantIdInt) == false || tenantIdInt <= 0)
-                throw new ArgumentOutOfRangeException(nameof(tenantId), "TenantId must be a positive integer");
+            if (int.TryParse(tenantId, out var tenantIdInt) == false || tenantIdInt <= 0) throw new ArgumentOutOfRangeException(nameof(tenantId), "TenantId must be a positive integer");
 
-            if (string.IsNullOrEmpty(tableName))
-                throw new ArgumentNullException(nameof(tableName));
+            if (string.IsNullOrEmpty(tableName)) throw new ArgumentNullException(nameof(tableName));
 
-            if (string.IsNullOrEmpty(csvText))
-                throw new ArgumentNullException(nameof(csvText));
+            if (string.IsNullOrEmpty(csvText)) throw new ArgumentNullException(nameof(csvText));
 
             // Construct tenant database path (databases/{tenantId}_*.db)
             var tenantDbPath = Path.Combine("databases", $"{tenantId}_primary.db");
