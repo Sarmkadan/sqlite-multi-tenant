@@ -139,7 +139,7 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
-    public async Task ExecuteMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
+    public async Task<MigrationResult> ExecuteMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
@@ -151,11 +151,12 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw MigrationException.NotFound(migrationId);
+                return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
 
             migration.MarkAsStarted(executedBy);
             await _repository.UpdateAsync(migration, cancellationToken);
             _logger.LogInformation($"Migration execution started: {migration.GetDisplayName()}");
+            return MigrationResult.SuccessResult();
         }
         catch (Exception ex)
         {
@@ -164,23 +165,27 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
-    public async Task RollbackMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
+    public async Task<MigrationResult> RollbackMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+
+        if (string.IsNullOrWhiteSpace(executedBy))
+            throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
 
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw MigrationException.NotFound(migrationId);
+                return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
 
             if (!migration.CanRollback())
-                throw new MigrationException($"Migration cannot be rolled back: {migration.GetDisplayName()}");
+                return MigrationResult.FailureResult($"Migration cannot be rolled back: {migration.GetDisplayName()}");
 
             migration.MarkAsRolledBack(0);
             await _repository.UpdateAsync(migration, cancellationToken);
             _logger.LogInformation($"Migration rolled back: {migration.GetDisplayName()}");
+            return MigrationResult.SuccessResult();
         }
         catch (Exception ex)
         {
@@ -189,7 +194,7 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
-    public async Task MarkMigrationAsCompletedAsync(string migrationId, long executionTimeMs, CancellationToken cancellationToken = default)
+    public async Task<MigrationResult> MarkMigrationAsCompletedAsync(string migrationId, long executionTimeMs, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
@@ -198,11 +203,12 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw MigrationException.NotFound(migrationId);
+                return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
 
             migration.MarkAsCompleted(executionTimeMs);
             await _repository.UpdateAsync(migration, cancellationToken);
             _logger.LogInformation($"Migration completed: {migration.GetDisplayName()} ({executionTimeMs}ms)");
+            return MigrationResult.SuccessResult();
         }
         catch (Exception ex)
         {
@@ -211,20 +217,24 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
-    public async Task MarkMigrationAsFailedAsync(string migrationId, string errorMessage, CancellationToken cancellationToken = default)
+    public async Task<MigrationResult> MarkMigrationAsFailedAsync(string migrationId, string errorMessage, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+
+        if (string.IsNullOrWhiteSpace(errorMessage))
+            throw new ArgumentException("Error message cannot be empty", nameof(errorMessage));
 
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                throw MigrationException.NotFound(migrationId);
+                return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
 
             migration.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(migration, cancellationToken);
             _logger.LogError($"Migration failed: {migration.GetDisplayName()} - {errorMessage}");
+            return MigrationResult.FailureResult(errorMessage);
         }
         catch (Exception ex)
         {

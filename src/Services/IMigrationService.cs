@@ -63,7 +63,8 @@ public interface IMigrationService
     /// <param name="migrationId">The migration ID.</param>
     /// <param name="executedBy">The user or process executing the migration.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task ExecuteMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default);
+    /// <returns>Migration result indicating success/failure.</returns>
+    Task<MigrationResult> ExecuteMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Rolls back a migration.
@@ -71,7 +72,8 @@ public interface IMigrationService
     /// <param name="migrationId">The migration ID.</param>
     /// <param name="executedBy">The user or process rolling back the migration.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task RollbackMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default);
+    /// <returns>Migration result indicating success/failure.</returns>
+    Task<MigrationResult> RollbackMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Marks a migration as completed.
@@ -79,7 +81,8 @@ public interface IMigrationService
     /// <param name="migrationId">The migration ID.</param>
     /// <param name="executionTimeMs">The time taken to execute in milliseconds.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task MarkMigrationAsCompletedAsync(string migrationId, long executionTimeMs, CancellationToken cancellationToken = default);
+    /// <returns>Migration result indicating success/failure.</returns>
+    Task<MigrationResult> MarkMigrationAsCompletedAsync(string migrationId, long executionTimeMs, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Marks a migration as failed.
@@ -87,7 +90,8 @@ public interface IMigrationService
     /// <param name="migrationId">The migration ID.</param>
     /// <param name="errorMessage">The error message.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task MarkMigrationAsFailedAsync(string migrationId, string errorMessage, CancellationToken cancellationToken = default);
+    /// <returns>Migration result indicating success/failure.</returns>
+    Task<MigrationResult> MarkMigrationAsFailedAsync(string migrationId, string errorMessage, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the count of migrations for a database.
