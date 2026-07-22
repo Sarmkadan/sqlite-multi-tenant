@@ -15,14 +15,14 @@ namespace SqliteMultiTenant.Services;
 public static class TenantSizeReportServiceExtensions
 {
     /// <summary>
-    /// Adds the TenantSizeReportService to the service collection.
+    /// Adds the <see cref="TenantSizeReportService"/> and <see cref="ITenantSizeReportService"/> to the service collection.
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection.</returns>
+    /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
+    /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="services"/> is <see langword="null"/>.</exception>
     public static IServiceCollection AddTenantSizeReportService(this IServiceCollection services)
     {
-        if (services == null)
-            throw new ArgumentNullException(nameof(services));
+        ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<ITenantSizeReportService, TenantSizeReportService>();
         return services;
