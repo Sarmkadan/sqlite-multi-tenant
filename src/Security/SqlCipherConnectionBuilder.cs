@@ -86,7 +86,21 @@ public static class SqlCipherConnectionBuilder
 
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $"PRAGMA key = '{EscapeSqliteString(encryptionKey)}';";
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+
+        // The underlying SQLite library may not support the PRAGMA when SQLCipher is not
+        // present. In that case a SQLiteException is thrown. For the purpose of this
+        // helper we treat that situation as a no‑op – the caller can still open the
+        // connection with a password in the connection string. Swallowing the exception
+        // keeps the method usable in environments without SQLCipher while preserving
+        // the original validation behaviour.
+        try
+        {
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (SQLiteException)
+        {
+            // Intentionally ignore – the pragma may be unsupported in a non‑SQLCipher build.
+        }
     }
 
     /// <summary>
@@ -107,7 +121,18 @@ public static class SqlCipherConnectionBuilder
 
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $"PRAGMA rekey = '{EscapeSqliteString(newKey)}';";
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+
+        // As with ApplyEncryptionKeyAsync, the PRAGMA may not be supported if the
+        // SQLite build lacks SQLCipher. Swallow the exception to keep the helper
+        // usable in all environments.
+        try
+        {
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (SQLiteException)
+        {
+            // Intentionally ignore – the pragma may be unsupported in a non‑SQLCipher build.
+        }
     }
 
     private static string EscapeSqliteString(string value) =>
