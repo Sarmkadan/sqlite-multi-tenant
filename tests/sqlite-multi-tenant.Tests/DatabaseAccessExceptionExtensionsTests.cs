@@ -13,8 +13,8 @@ public class DatabaseAccessExceptionExtensionsTests
         string? operationType = "Query",
         Exception? inner = null)
     {
-        // The DatabaseAccessException constructor is assumed to have the following signature:
-        // DatabaseAccessException(string message, string? databaseId = null, string? operationType = null, Exception? innerException = null)
+        // DatabaseAccessException has a constructor:
+        // DatabaseAccessException(string message, string databaseId, string operationType, Exception? innerException = null)
         return new DatabaseAccessException(message, databaseId, operationType, inner);
     }
 
