@@ -64,7 +64,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
 
                 // Delete old backups based on age
                 var cutoffDate = DateTime.UtcNow.Subtract(policy.MaxBackupAge);
-                var filesToDelete = backupFiles.Where(f => f.CreationTimeUtc < cutoffDate).ToList();
+                var filesToDelete = backupFiles.Where(f => f.CreationTimeUtc <= cutoffDate).ToList();
 
                 foreach (var file in filesToDelete)
                 {
