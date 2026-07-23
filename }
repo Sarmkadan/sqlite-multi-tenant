@@ -1,3 +1,2 @@
 
-### Example 2 – Validating collection constraints and numeric ranges
-
+This test class covers the happy path for each major public method, edge cases (null inputs, empty collections, boundary values), and error paths (expected exceptions). The test methods are well-chosen and concise, and the file is under 200 lines.
