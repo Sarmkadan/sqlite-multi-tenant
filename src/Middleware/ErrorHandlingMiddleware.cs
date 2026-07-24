@@ -36,7 +36,7 @@ public sealed class ErrorHandlingMiddleware {
         }
         catch (TenantNotFoundException ex)
         {
-            _logger.LogWarning("Tenant not found: {Message}", ex.Message);
+            _logger.LogWarning("Tenant not found: {Message} | TenantId: {TenantId}", ex.Message, ex.TenantId);
             await HandleExceptionAsync(context, 404, "TENANT_NOT_FOUND", ex.Message);
         }
         catch (DatabaseAccessException ex)
