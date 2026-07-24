@@ -2,11 +2,13 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// ====================================================================
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Models;
@@ -25,6 +27,7 @@ namespace SqliteMultiTenant.Utilities
         /// Initializes a new instance of the <see cref="TenantContextHelper"/> class.
         /// </summary>
         /// <param name="logger">The logger instance.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
         public TenantContextHelper(ILogger<TenantContextHelper> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -34,6 +37,7 @@ namespace SqliteMultiTenant.Utilities
         /// Sets the current tenant context.
         /// </summary>
         /// <param name="context">The tenant context to set.</param>
+        /// <exception cref="ArgumentNullException">Thrown when context is null.</exception>
         public void SetTenantContext(TenantContext context)
         {
             if (context is null)
@@ -88,6 +92,12 @@ namespace SqliteMultiTenant.Utilities
         /// <summary>
         /// Validates the tenant context.
         /// </summary>
+        /// <remarks>
+        /// This method performs constant-time comparison when comparing tenant IDs to prevent timing side-channel attacks.
+        /// Tenant IDs are security-critical identifiers used for multi-tenant data isolation.
+        /// An attacker with timing information could potentially use it to enumerate valid tenant IDs
+        /// or bypass tenant isolation checks in a multi-tenant system.
+        /// </remarks>
         /// <param name="expectedTenantId">The expected tenant ID, or null to ignore.</param>
         /// <returns>true if the tenant context is valid, false otherwise.</returns>
         public bool ValidateTenantContext(string expectedTenantId = null)
@@ -106,14 +116,26 @@ namespace SqliteMultiTenant.Utilities
                 return false;
             }
 
-            if (!string.IsNullOrEmpty(expectedTenantId) && context.TenantId != expectedTenantId)
+            // If no expected tenant ID provided, just validate the context exists
+            if (string.IsNullOrEmpty(expectedTenantId))
             {
-                _logger.LogWarning("Tenant context validation failed: expected {Expected}, got {Actual}",
-                    expectedTenantId, context.TenantId);
-                return false;
+                return true;
             }
 
-            return true;
+            // Use constant-time comparison to prevent timing side-channel attacks
+            // This ensures that the comparison time does not leak information about the tenant ID
+            var currentBytes = Encoding.UTF8.GetBytes(context.TenantId.Trim());
+            var expectedBytes = Encoding.UTF8.GetBytes(expectedTenantId.Trim());
+            var isMatch = CryptographicOperations.FixedTimeEquals(
+                currentBytes.AsSpan(),
+                expectedBytes.AsSpan());
+
+            if (!isMatch)
+            {
+                _logger.LogWarning("Tenant context validation failed: expected tenant ID does not match current context");
+            }
+
+            return isMatch;
         }
 
         /// <summary>
@@ -122,6 +144,7 @@ namespace SqliteMultiTenant.Utilities
         /// <param name="tenantId">The tenant ID to use for the scoped context.</param>
         /// <param name="userId">The user ID to use for the scoped context, or null to ignore.</param>
         /// <returns>An IDisposable instance that will restore the previous context when disposed.</returns>
+        /// <exception cref="ArgumentException">Thrown when Tenant ID cannot be empty.</exception>
         public IDisposable CreateScope(string tenantId, string userId = null)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
