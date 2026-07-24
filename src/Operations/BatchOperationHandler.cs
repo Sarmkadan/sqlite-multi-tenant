@@ -5,7 +5,7 @@
 // ===========================================================================
 
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
+using SqliteMultiTenant.Utilities;
 
 namespace SqliteMultiTenant.Operations;
 
@@ -117,11 +117,21 @@ public sealed class BatchOperationStatus
 public sealed class BatchOperationHandler : IBatchOperationHandler
 {
     private readonly ILogger<BatchOperationHandler> _logger;
+    private readonly TenantContextHelper _tenantContextHelper;
     private readonly Dictionary<string, BatchOperationStatus> _statusTracker = new();
 
-    public BatchOperationHandler(ILogger<BatchOperationHandler> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchOperationHandler"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="tenantContextHelper">The tenant context helper for authorization checks.</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger or tenantContextHelper is null.</exception>
+    public BatchOperationHandler(
+        ILogger<BatchOperationHandler> logger,
+        TenantContextHelper tenantContextHelper)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _tenantContextHelper = tenantContextHelper ?? throw new ArgumentNullException(nameof(tenantContextHelper));
     }
 
     /// <summary>
@@ -133,6 +143,7 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     /// <param name="cancellationToken">Cancellation token for cooperative cancellation.</param>
     /// <returns>Result of the batch operation with per-resource details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when operation is null.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when caller is not authorized for one or more tenant resources.</exception>
     public async Task<BatchOperationResult> ExecuteAsync(BatchOperation operation, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -147,6 +158,9 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
             operation.ResourceIds.Count,
             operation.AtomicityMode,
             operation.ContinueOnError);
+
+        // Validate tenant authorization before processing
+        ValidateTenantAuthorization(operation.ResourceIds);
 
         // Initialize status tracking
         _statusTracker[operationId] = new BatchOperationStatus
@@ -241,6 +255,48 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     }
 
     /// <summary>
+    /// Validates that the current caller is authorized to access all tenant resources in the batch.
+    /// Throws <see cref="UnauthorizedAccessException"/> if authorization check fails.
+    /// </summary>
+    /// <param name="resourceIds">Collection of tenant resource IDs to validate.</param>
+    /// <exception cref="UnauthorizedAccessException">Thrown when caller is not authorized for one or more tenant resources.</exception>
+    private void ValidateTenantAuthorization(IEnumerable<string> resourceIds)
+    {
+        if (resourceIds is null || !resourceIds.Any())
+            return;
+
+        var currentTenantId = _tenantContextHelper.GetCurrentTenantId();
+
+        if (string.IsNullOrEmpty(currentTenantId))
+        {
+            _logger.LogError("Tenant authorization failed: No tenant context available for caller");
+            throw new UnauthorizedAccessException(
+                "Tenant authorization failed: No tenant context available. Please ensure you are authenticated with a valid tenant.");
+        }
+
+        var unauthorizedTenants = new List<string>();
+        foreach (var resourceId in resourceIds)
+        {
+            if (!string.IsNullOrEmpty(resourceId) && resourceId != currentTenantId)
+            {
+                unauthorizedTenants.Add(resourceId);
+            }
+        }
+
+        if (unauthorizedTenants.Any())
+        {
+            _logger.LogError("Tenant authorization failed: Caller {currentTenant} attempted to access unauthorized tenants: {unauthorizedTenants}",
+                currentTenantId,
+                string.Join(", ", unauthorizedTenants));
+            throw new UnauthorizedAccessException(
+                $"Tenant authorization failed: You are not authorized to access tenant(s) {string.Join(", ", unauthorizedTenants)}. " +
+                $"Current tenant: {currentTenantId}. Only operations on your authorized tenant are permitted.");
+        }
+
+        _logger.LogDebug("Tenant authorization successful for caller {tenantId}", currentTenantId);
+    }
+
+    /// <summary>
     /// Processes individual resource in batch operation.
     /// </summary>
     /// <param name="operationId">The batch operation identifier.</param>
@@ -263,7 +319,13 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
         try
         {
             // Execute operation based on type with transaction handling
-            var resourceResult = await ExecuteOperationWithTransactionAsync(operationId, operationType, resourceId, parameters, operation, cancellationToken);
+            var resourceResult = await ExecuteOperationWithTransactionAsync(
+                operationId,
+                operationType,
+                resourceId,
+                parameters,
+                operation,
+                cancellationToken);
 
             stopwatch.Stop();
 
@@ -407,5 +469,4 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
 
         return Task.CompletedTask;
     }
-
 }

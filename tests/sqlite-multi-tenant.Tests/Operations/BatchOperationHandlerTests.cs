@@ -2,9 +2,11 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// ===========================================================================
 
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Utilities;
 using Xunit;
 
 namespace SqliteMultiTenant.Operations.Tests;
@@ -15,6 +17,7 @@ namespace SqliteMultiTenant.Operations.Tests;
 public class BatchOperationHandlerTests
 {
     private readonly ILogger<BatchOperationHandler> _logger;
+    private readonly TenantContextHelper _tenantContextHelper;
     private readonly IBatchOperationHandler _handler;
 
     public BatchOperationHandlerTests()
@@ -25,7 +28,8 @@ public class BatchOperationHandlerTests
             builder.AddDebug();
         });
         _logger = loggerFactory.CreateLogger<BatchOperationHandler>();
-        _handler = new BatchOperationHandler(_logger);
+        _tenantContextHelper = new TenantContextHelper(loggerFactory.CreateLogger<TenantContextHelper>());
+        _handler = new BatchOperationHandler(_logger, _tenantContextHelper);
     }
 
     [Fact]
@@ -196,5 +200,67 @@ public class BatchOperationHandlerTests
 
         // Assert
         Assert.Null(status);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithUnauthorizedTenant_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange - Set up tenant context for tenant1
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.AddDebug();
+        });
+        var tenantContextHelper = new TenantContextHelper(loggerFactory.CreateLogger<TenantContextHelper>());
+        var handler = new BatchOperationHandler(
+            loggerFactory.CreateLogger<BatchOperationHandler>(),
+            tenantContextHelper);
+
+        // Set current tenant to "tenant1"
+        var context = new TenantContext { TenantId = "tenant1" };
+        tenantContextHelper.SetTenantContext(context);
+
+        var operation = new BatchOperation
+        {
+            OperationType = "Test",
+            ResourceIds = new List<string> { "tenant1", "tenant2" } // tenant2 is unauthorized
+        };
+
+        // Act & Assert - Should throw UnauthorizedAccessException
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => handler.ExecuteAsync(operation, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithValidTenant_Succeeds()
+    {
+        // Arrange - Set up tenant context for tenant1
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+            builder.AddDebug();
+        });
+        var tenantContextHelper = new TenantContextHelper(loggerFactory.CreateLogger<TenantContextHelper>());
+        var handler = new BatchOperationHandler(
+            loggerFactory.CreateLogger<BatchOperationHandler>(),
+            tenantContextHelper);
+
+        // Set current tenant to "tenant1"
+        var context = new TenantContext { TenantId = "tenant1" };
+        tenantContextHelper.SetTenantContext(context);
+
+        var operation = new BatchOperation
+        {
+            OperationType = "Test",
+            ResourceIds = new List<string> { "tenant1" } // Only authorized tenant
+        };
+
+        // Act
+        var result = await handler.ExecuteAsync(operation, CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(1, result.TotalResources);
+        Assert.Equal(1, result.SuccessCount);
     }
 }
