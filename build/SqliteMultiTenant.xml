@@ -1706,15 +1706,22 @@
             Provides task status tracking and execution history.
             </summary>
         </member>
-        <member name="M:SqliteMultiTenant.BackgroundWorkers.ScheduledTaskService.RegisterTask(System.String,System.Func{System.Threading.Tasks.Task},System.TimeSpan)">
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.ScheduledTaskService.RegisterTask(System.String,System.Func{System.Threading.Tasks.Task},System.TimeSpan,System.String)">
             <summary>
             Registers a new scheduled task.
             </summary>
+            <param name="taskId">The unique identifier for the task.</param>
+            <param name="taskAction">The action to execute.</param>
+            <param name="interval">The interval between task executions.</param>
+            <param name="tenantId">Optional tenant ID to associate with the task. If provided, the task will execute within that tenant's context.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when taskAction is null.</exception>
+            <exception cref="T:System.ArgumentException">Thrown when taskId is null or whitespace.</exception>
         </member>
         <member name="M:SqliteMultiTenant.BackgroundWorkers.ScheduledTaskService.UnregisterTask(System.String)">
             <summary>
             Unregisters a scheduled task.
             </summary>
+            <param name="taskId">The ID of the task to unregister.</param>
         </member>
         <member name="M:SqliteMultiTenant.BackgroundWorkers.ScheduledTaskService.StartAsync">
             <summary>
@@ -1730,6 +1737,16 @@
             <summary>
             Gets the status of a scheduled task.
             </summary>
+            <param name="taskId">The ID of the task to query.</param>
+            <returns>A <see cref="T:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus"/> object containing the task's status.</returns>
+            <exception cref="T:System.Collections.Generic.KeyNotFoundException">Thrown when the task ID is not found.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.ScheduledTaskService.GetNextInterval(SqliteMultiTenant.BackgroundWorkers.ScheduledTask)">
+            <summary>
+            Calculates the next execution interval with exponential backoff for consecutive failures.
+            </summary>
+            <param name="task">The task to calculate the interval for.</param>
+            <returns>The calculated interval.</returns>
         </member>
         <member name="T:SqliteMultiTenant.BulkOperations.BulkDataExtensions">
             <summary>
@@ -5026,6 +5043,24 @@
             </summary>
             <returns>A dictionary mapping event type names to their statistics.</returns>
         </member>
+        <member name="M:SqliteMultiTenant.Events.EventBusImpl.GetDeadLetterQueue(System.Int32)">
+            <summary>
+            Gets all dead letter events from the queue.
+            </summary>
+            <param name="take">Maximum number of events to return (default: 100).</param>
+            <returns>A list of dead letter events ordered by failure time (most recent first).</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Events.EventBusImpl.GetDeadLetterCount">
+            <summary>
+            Gets the count of dead letter events in the queue.
+            </summary>
+            <returns>The total number of dead letter events.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Events.EventBusImpl.ClearDeadLetterQueue">
+            <summary>
+            Clears all dead letter events from the queue.
+            </summary>
+        </member>
         <member name="M:SqliteMultiTenant.Events.EventBusImpl.ClearHistory">
             <summary>
             Clears the event history, removing all stored published events.
@@ -5044,6 +5079,11 @@
         <member name="T:SqliteMultiTenant.Events.EventStatistics">
             <summary>
             Contains statistics about event subscriptions and publication counts for a specific event type.
+            </summary>
+        </member>
+        <member name="T:SqliteMultiTenant.Events.DeadLetterEvent">
+            <summary>
+            Represents a dead letter event that failed to be processed after maximum retry attempts.
             </summary>
         </member>
         <member name="T:SqliteMultiTenant.Events.EventBusImplExtensions">
@@ -5761,21 +5801,47 @@
             Sends a GET request and deserializes response to specified type.
             Includes retry logic for transient failures.
             </summary>
+            <typeparam name="T">The response type to deserialize.</typeparam>
+            <param name="url">The request URL.</param>
+            <returns>The deserialized response, or <see langword="null"/> on failure.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="url"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Integration.HttpClientWrapper.PostAsync``1(System.String,System.Object)">
             <summary>
             Sends a POST request with JSON payload and deserializes response.
             </summary>
+            <typeparam name="T">The response type to deserialize.</typeparam>
+            <param name="url">The request URL.</param>
+            <param name="payload">The request payload to serialize as JSON.</param>
+            <returns>The deserialized response, or <see langword="null"/> on failure.</returns>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="url"/> is <see langword="null"/>.
+            or <paramref name="payload"/> is <see langword="null"/>.
+            </exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Integration.HttpClientWrapper.PutAsync(System.String,System.Object)">
             <summary>
             Sends a PUT request with JSON payload.
             </summary>
+            <param name="url">The request URL.</param>
+            <param name="payload">The request payload to serialize as JSON.</param>
+            <returns><see langword="true"/> if the request succeeded; otherwise <see langword="false"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="url"/> is <see langword="null"/>.
+            or <paramref name="payload"/> is <see langword="null"/>.
+            </exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Integration.HttpClientWrapper.DeleteAsync(System.String)">
             <summary>
             Sends a DELETE request.
             </summary>
+            <param name="url">The request URL.</param>
+            <returns><see langword="true"/> if the request succeeded; otherwise <see langword="false"/>.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="url"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Integration.HttpClientWrapper.SendWithRetryAsync(System.Func{System.Threading.Tasks.Task{System.Net.Http.HttpResponseMessage}},System.String)">
             <summary>
@@ -5787,30 +5853,40 @@
             <summary>
             Adds a custom header to all requests.
             </summary>
+            <param name="name">The header name.</param>
+            <param name="value">The header value.</param>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="name"/> is <see langword="null"/>.
+            or <paramref name="value"/> is <see langword="null"/>.
+            </exception>
+            <exception cref="T:System.ArgumentException"><paramref name="name"/> is empty or whitespace.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Integration.HttpClientWrapper.SetBearerToken(System.String)">
             <summary>
             Sets the authorization header with bearer token.
             </summary>
+            <param name="token">The bearer token.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="token"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="token"/> is empty or whitespace.</exception>
         </member>
         <member name="T:SqliteMultiTenant.Integration.HttpClientWrapperExtensions">
             <summary>
-            Extension methods that add convenient helpers for <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/>.
+            Extension methods that add convenient helpers for <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/>.
             </summary>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperExtensions.AddJsonAcceptHeader(SqliteMultiTenant.Integration.HttpClientWrapper)">
+        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperExtensions.AddJsonAcceptHeader(SqliteMultiTenant.Integration.IHttpClientWrapper)">
             <summary>
-            Adds a default <c>Accept: application/json</c> header to the wrapped <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/>.
+            Adds a default <c>Accept: application/json</c> header to the wrapped <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/>.
             </summary>
-            <param name="client">The <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/> instance.</param>
+            <param name="client">The <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/> instance.</param>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="client"/> is <c>null</c>.</exception>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperExtensions.GetListAsync``1(SqliteMultiTenant.Integration.HttpClientWrapper,System.String)">
+        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperExtensions.GetListAsync``1(SqliteMultiTenant.Integration.IHttpClientWrapper,System.String)">
             <summary>
             Sends a GET request and deserialises the response as a read-only list of <typeparamref name="T"/>.
             </summary>
             <typeparam name="T">The element type of the expected collection.</typeparam>
-            <param name="client">The <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/> instance.</param>
+            <param name="client">The <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/> instance.</param>
             <param name="requestUri">The request URI.</param>
             <returns>An <see cref="T:System.Collections.Generic.IReadOnlyList`1"/> containing the deserialized items.</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="client"/> is <c>null</c>.</exception>
@@ -5818,11 +5894,11 @@
             <exception cref="T:System.Net.Http.HttpRequestException">Thrown when the HTTP request fails.</exception>
             <exception cref="T:System.InvalidOperationException">Thrown when the response cannot be deserialized.</exception>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperExtensions.DeleteIfExistsAsync(SqliteMultiTenant.Integration.HttpClientWrapper,System.String)">
+        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperExtensions.DeleteIfExistsAsync(SqliteMultiTenant.Integration.IHttpClientWrapper,System.String)">
             <summary>
             Sends a DELETE request and returns <c>true</c> only when the operation succeeded.
             </summary>
-            <param name="client">The <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/> instance.</param>
+            <param name="client">The <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/> instance.</param>
             <param name="requestUri">The request URI.</param>
             <returns><c>true</c> if the DELETE request succeeded; otherwise <c>false</c>.</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="client"/> is <c>null</c>.</exception>
@@ -5835,25 +5911,25 @@
             Validates constructor parameters, method arguments, and internal state.
             </summary>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperValidation.Validate(SqliteMultiTenant.Integration.HttpClientWrapper)">
+        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperValidation.Validate(SqliteMultiTenant.Integration.IHttpClientWrapper)">
             <summary>
-            Validates an <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/> instance for common problems.
+            Validates an <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/> instance for common problems.
             </summary>
             <param name="value">The instance to validate.</param>
             <returns>A list of human-readable validation problems; empty if valid.</returns>
             <exception cref="T:System.ArgumentNullException"><paramref name="value"/> is null.</exception>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperValidation.IsValid(SqliteMultiTenant.Integration.HttpClientWrapper)">
+        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperValidation.IsValid(SqliteMultiTenant.Integration.IHttpClientWrapper)">
             <summary>
-            Determines whether an <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/> instance is valid.
+            Determines whether an <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/> instance is valid.
             </summary>
             <param name="value">The instance to check.</param>
             <returns>True if valid; otherwise, false.</returns>
             <exception cref="T:System.ArgumentNullException"><paramref name="value"/> is null.</exception>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperValidation.EnsureValid(SqliteMultiTenant.Integration.HttpClientWrapper)">
+        <member name="M:SqliteMultiTenant.Integration.HttpClientWrapperValidation.EnsureValid(SqliteMultiTenant.Integration.IHttpClientWrapper)">
             <summary>
-            Ensures that an <see cref="T:SqliteMultiTenant.Integration.HttpClientWrapper"/> instance is valid.
+            Ensures that an <see cref="T:SqliteMultiTenant.Integration.IHttpClientWrapper"/> instance is valid.
             </summary>
             <param name="value">The instance to validate.</param>
             <exception cref="T:System.ArgumentNullException"><paramref name="value"/> is null.</exception>
@@ -5899,6 +5975,79 @@
             </summary>
             <typeparam name="T">The response type.</typeparam>
             <returns>A list of human-readable validation problems; empty if valid.</returns>
+        </member>
+        <member name="T:SqliteMultiTenant.Integration.IHttpClientWrapper">
+            <summary>
+            Defines the contract for an HTTP client wrapper that provides typed HTTP operations
+            with retry logic, timeout handling, and request/response logging.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.IHttpClientWrapper.GetAsync``1(System.String)">
+            <summary>
+            Sends a GET request and deserializes response to specified type.
+            Includes retry logic for transient failures.
+            </summary>
+            <typeparam name="T">The response type to deserialize.</typeparam>
+            <param name="url">The request URL.</param>
+            <returns>The deserialized response, or <see langword="null"/> on failure.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="url"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.IHttpClientWrapper.PostAsync``1(System.String,System.Object)">
+            <summary>
+            Sends a POST request with JSON payload and deserializes response.
+            </summary>
+            <typeparam name="T">The response type to deserialize.</typeparam>
+            <param name="url">The request URL.</param>
+            <param name="payload">The request payload to serialize as JSON.</param>
+            <returns>The deserialized response, or <see langword="null"/> on failure.</returns>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="url"/> is <see langword="null"/>.
+            or <paramref name="payload"/> is <see langword="null"/>.
+            </exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.IHttpClientWrapper.PutAsync(System.String,System.Object)">
+            <summary>
+            Sends a PUT request with JSON payload.
+            </summary>
+            <param name="url">The request URL.</param>
+            <param name="payload">The request payload to serialize as JSON.</param>
+            <returns><see langword="true"/> if the request succeeded; otherwise <see langword="false"/>.</returns>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="url"/> is <see langword="null"/>.
+            or <paramref name="payload"/> is <see langword="null"/>.
+            </exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.IHttpClientWrapper.DeleteAsync(System.String)">
+            <summary>
+            Sends a DELETE request.
+            </summary>
+            <param name="url">The request URL.</param>
+            <returns><see langword="true"/> if the request succeeded; otherwise <see langword="false"/>.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="url"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.IHttpClientWrapper.AddDefaultHeader(System.String,System.String)">
+            <summary>
+            Adds a custom header to all requests.
+            </summary>
+            <param name="name">The header name.</param>
+            <param name="value">The header value.</param>
+            <exception cref="T:System.ArgumentNullException">
+            <paramref name="name"/> is <see langword="null"/>.
+            or <paramref name="value"/> is <see langword="null"/>.
+            </exception>
+            <exception cref="T:System.ArgumentException"><paramref name="name"/> is empty or whitespace.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.IHttpClientWrapper.SetBearerToken(System.String)">
+            <summary>
+            Sets the authorization header with bearer token.
+            </summary>
+            <param name="token">The bearer token.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="token"/> is <see langword="null"/>.</exception>
+            <exception cref="T:System.ArgumentException"><paramref name="token"/> is empty or whitespace.</exception>
         </member>
         <member name="T:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory">
             <summary>
@@ -8216,9 +8365,42 @@
             Tracks progress and handles partial failures gracefully.
             </summary>
         </member>
+        <member name="T:SqliteMultiTenant.Operations.BatchAtomicityMode">
+            <summary>
+            Defines atomicity modes for batch operations.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Operations.BatchAtomicityMode.CrossTenant">
+            <summary>
+            Cross-tenant operations are best-effort. Each resource operation is independent.
+            Failures in one tenant do not affect processing of other tenants.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Operations.BatchAtomicityMode.SingleTenant">
+            <summary>
+            Single-tenant operations are transactional. All operations against a single tenant
+            database are wrapped in a transaction and will be rolled back if any operation fails.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Operations.BatchOperation">
             <summary>
             Batch operation definition with resources and parameters.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Operations.BatchOperation.ContinueOnError">
+            <summary>
+            Gets or sets a value indicating whether the batch operation should continue processing
+            remaining resources when an error occurs (best-effort mode). When false, the operation
+            will attempt to maintain atomicity per tenant (all-or-nothing for that tenant's operations).
+            Defaults to true for backward compatibility.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Operations.BatchOperation.AtomicityMode">
+            <summary>
+            Gets or sets the atomicity mode for the batch operation.
+            - CrossTenant: Operations across multiple tenant databases are best-effort (ContinueOnError applies)
+            - SingleTenant: Operations against a single tenant database are transactional (all-or-nothing)
+            Defaults to CrossTenant for backward compatibility.
             </summary>
         </member>
         <member name="T:SqliteMultiTenant.Operations.BatchOperationResult">
@@ -8229,6 +8411,12 @@
         <member name="T:SqliteMultiTenant.Operations.BatchResourceResult">
             <summary>
             Result for individual resource in batch operation.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Operations.BatchResourceResult.Transactional">
+            <summary>
+            Gets or sets the transaction status for this resource operation.
+            True if the operation was wrapped in a transaction and completed successfully.
             </summary>
         </member>
         <member name="T:SqliteMultiTenant.Operations.BatchOperationStatus">
@@ -8245,25 +8433,65 @@
             <summary>
             Executes batch operation across multiple resources.
             Processes in parallel with configurable concurrency level.
-            Tracks progress and handles failures without stopping other operations.
+            Tracks progress and handles failures according to the specified atomicity mode.
             </summary>
+            <param name="operation">The batch operation to execute.</param>
+            <param name="cancellationToken">Cancellation token for cooperative cancellation.</param>
+            <returns>Result of the batch operation with per-resource details.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when operation is null.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.GetStatusAsync(System.String)">
             <summary>
             Gets status of batch operation.
             Used for polling progress from clients.
             </summary>
+            <param name="operationId">The operation identifier.</param>
+            <returns>The current status of the batch operation.</returns>
         </member>
-        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ProcessResourceAsync(System.String,System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ProcessResourceAsync(System.String,System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},SqliteMultiTenant.Operations.BatchOperation,System.Threading.CancellationToken)">
             <summary>
             Processes individual resource in batch operation.
             </summary>
+            <param name="operationId">The batch operation identifier.</param>
+            <param name="operationType">Type of operation to perform.</param>
+            <param name="resourceId">The resource (tenant) identifier.</param>
+            <param name="parameters">Operation parameters.</param>
+            <param name="operation">The batch operation configuration.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Result of the resource operation.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ExecuteOperationWithTransactionAsync(System.String,System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},SqliteMultiTenant.Operations.BatchOperation,System.Threading.CancellationToken)">
+            <summary>
+            Executes the operation with transaction handling based on atomicity mode.
+            </summary>
+            <param name="operationId">The batch operation identifier.</param>
+            <param name="operationType">Type of operation to perform.</param>
+            <param name="resourceId">The resource (tenant) identifier.</param>
+            <param name="parameters">Operation parameters.</param>
+            <param name="operation">The batch operation configuration.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Result of the operation with transaction status.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ExecuteWithTransactionAsync(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
+            <summary>
+            Executes the operation within a transaction for single-tenant atomicity.
+            </summary>
+            <param name="operationType">Type of operation to perform.</param>
+            <param name="resourceId">The resource (tenant) identifier.</param>
+            <param name="parameters">Operation parameters.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Result of the operation.</returns>
         </member>
         <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ExecuteOperationAsync(System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Threading.CancellationToken)">
             <summary>
             Executes specific operation type on resource.
             This would be enhanced with actual operation implementations.
             </summary>
+            <param name="operationType">Type of operation to perform.</param>
+            <param name="resourceId">The resource (tenant) identifier.</param>
+            <param name="parameters">Operation parameters.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Task representing the asynchronous operation.</returns>
         </member>
         <member name="T:SqliteMultiTenant.Operations.IBatchProcessor">
             <summary>
@@ -9710,40 +9938,57 @@
         <member name="T:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions">
             <summary>
             Configuration options for tenant database maintenance operations.
+            Controls which maintenance operations are enabled and their behavior.
             </summary>
         </member>
         <member name="P:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions.EnableVacuum">
             <summary>
-            Enable VACUUM operation to reclaim disk space.
-            Default: true (recommended for production).
+            Gets or sets a value indicating whether to enable VACUUM operation to reclaim disk space.
+            VACUUM rebuilds the database file, repacking it into a minimal amount of disk space.
+            Default: true (recommended for production to prevent database bloat).
             </summary>
         </member>
         <member name="P:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions.EnableAnalyze">
             <summary>
-            Enable ANALYZE operation to update query statistics.
-            Default: true (improves query performance).
+            Gets or sets a value indicating whether to enable ANALYZE operation to update query statistics.
+            ANALYZE collects statistics about tables and indexes and stores them in the sqlite_stat1 table,
+            which improves the SQLite query planner's performance.
+            Default: true (recommended for production to maintain optimal query performance).
             </summary>
         </member>
         <member name="P:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions.EnableOptimize">
             <summary>
-            Enable PRAGMA optimize operation to update database statistics.
-            Default: true (recommended for production).
+            Gets or sets a value indicating whether to enable PRAGMA optimize operation to update database statistics.
+            PRAGMA optimize runs ANALYZE and other database optimizations automatically.
+            Default: true (recommended for production to ensure regular database optimization).
             </summary>
         </member>
         <member name="P:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions.IntervalHours">
             <summary>
-            Maintenance interval in hours (default: 24 = daily).
+            Gets or sets the maintenance interval in hours.
+            Specifies how often maintenance operations should be executed on each tenant database.
+            Default: 24 (daily maintenance cycle).
+            Minimum: 1 (hourly maintenance).
             </summary>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when value is less than 1.</exception>
         </member>
         <member name="P:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions.TimeoutSeconds">
             <summary>
-            Maximum time allowed for maintenance on a single database (in seconds).
+            Gets or sets the maximum time allowed for maintenance on a single database, in seconds.
+            This timeout applies to each individual maintenance operation (VACUUM, ANALYZE, PRAGMA optimize).
+            Default: 300 (5 minutes per database operation).
+            Minimum: 30 (30 seconds minimum to allow for small databases).
             </summary>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when value is less than 30.</exception>
         </member>
         <member name="P:SqliteMultiTenant.Services.TenantDatabaseMaintenanceOptions.DegreeOfParallelism">
             <summary>
-            Parallelism level for maintenance operations (0 = sequential).
+            Gets or sets the parallelism level for maintenance operations.
+            A value of 0 runs operations sequentially. A value greater than 1 enables parallel execution.
+            Note: Parallel execution may increase resource utilization and should be used cautiously in production.
+            Default: 1 (sequential execution).
             </summary>
+            <exception cref="T:System.ArgumentOutOfRangeException">Thrown when value is less than 0.</exception>
         </member>
         <member name="T:SqliteMultiTenant.Services.TenantService">
             <summary>
