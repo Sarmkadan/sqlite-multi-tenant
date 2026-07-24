@@ -4,6 +4,15 @@
 // CTO & Software Architect
 // =========================================================================
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Utilities;
+
 namespace SqliteMultiTenant.BackgroundWorkers;
 
 /// <summary>
@@ -13,299 +22,348 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// </summary>
 public interface IScheduledTaskService
 {
-    void RegisterTask(string taskId, Func<Task> taskAction, TimeSpan interval);
-    void UnregisterTask(string taskId);
-    Task StartAsync();
-    Task StopAsync();
-    Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId);
+	void RegisterTask(string taskId, Func<Task> taskAction, TimeSpan interval, string? tenantId = null);
+	void UnregisterTask(string taskId);
+	Task StartAsync();
+	Task StopAsync();
+	Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId);
 }
 
-public sealed class ScheduledTaskService : IScheduledTaskService {
-    private readonly Dictionary<string, ScheduledTask> _tasks;
-    private readonly Dictionary<string, CancellationTokenSource> _cancellationTokens;
-    private readonly ILogger<ScheduledTaskService> _logger;
-    private readonly SemaphoreSlim _semaphore;
-    private bool _isRunning;
+public sealed class ScheduledTaskService : IScheduledTaskService
+{
+	private readonly Dictionary<string, ScheduledTask> _tasks;
+	private readonly Dictionary<string, CancellationTokenSource> _cancellationTokens;
+	private readonly ILogger<ScheduledTaskService> _logger;
+	private readonly SemaphoreSlim _semaphore;
+	private readonly TenantContextHelper _tenantContextHelper;
+	private bool _isRunning;
 
-    public ScheduledTaskService(ILogger<ScheduledTaskService> logger)
-    {
-        _logger = logger;
-        _tasks = new Dictionary<string, ScheduledTask>();
-        _cancellationTokens = new Dictionary<string, CancellationTokenSource>();
-        _semaphore = new SemaphoreSlim(1);
-        _isRunning = false;
-    }
+	public ScheduledTaskService(
+		ILogger<ScheduledTaskService> logger,
+		TenantContextHelper tenantContextHelper)
+	{
+		_logger = logger ?? throw new ArgumentNullException(nameof(logger));
+		_tenantContextHelper = tenantContextHelper ?? throw new ArgumentNullException(nameof(tenantContextHelper));
+		_tasks = new Dictionary<string, ScheduledTask>();
+		_cancellationTokens = new Dictionary<string, CancellationTokenSource>();
+		_semaphore = new SemaphoreSlim(1);
+		_isRunning = false;
+	}
 
-    /// <summary>
-    /// Registers a new scheduled task.
-    /// </summary>
-    public void RegisterTask(string taskId, Func<Task> taskAction, TimeSpan interval)
-    {
-        try
-        {
-            _semaphore.Wait();
+	/// <summary>
+	/// Registers a new scheduled task.
+	/// </summary>
+	/// <param name="taskId">The unique identifier for the task.</param>
+	/// <param name="taskAction">The action to execute.</param>
+	/// <param name="interval">The interval between task executions.</param>
+	/// <param name="tenantId">Optional tenant ID to associate with the task. If provided, the task will execute within that tenant's context.</param>
+	/// <exception cref="ArgumentNullException">Thrown when taskAction is null.</exception>
+	/// <exception cref="ArgumentException">Thrown when taskId is null or whitespace.</exception>
+	public void RegisterTask(string taskId, Func<Task> taskAction, TimeSpan interval, string? tenantId = null)
+	{
+		ArgumentNullException.ThrowIfNull(taskAction);
+		ArgumentException.ThrowIfNullOrWhiteSpace(taskId, nameof(taskId));
 
-            var task = new ScheduledTask
-            {
-                Id = taskId,
-                Action = taskAction,
-                Interval = interval,
-                LastExecutedAt = null,
-                NextExecutionAt = DateTime.UtcNow.Add(interval),
-                ExecutionCount = 0,
-                FailureCount = 0,
-                IsEnabled = true,
-                IsExecuting = false,
-                LastAttemptedAt = null
-            };
+		try
+		{
+			_semaphore.Wait();
 
-            _tasks[taskId] = task;
-            _logger.LogInformation("Scheduled task registered: {TaskId}, Interval: {TotalSeconds}s", taskId, interval.TotalSeconds);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
+			var task = new ScheduledTask
+			{
+				Id = taskId,
+				Action = taskAction,
+				Interval = interval,
+				LastExecutedAt = null,
+				NextExecutionAt = DateTime.UtcNow.Add(interval),
+				ExecutionCount = 0,
+				FailureCount = 0,
+				IsEnabled = true,
+				IsExecuting = false,
+				LastAttemptedAt = null,
+				TenantId = tenantId
+			};
 
-    /// <summary>
-    /// Unregisters a scheduled task.
-    /// </summary>
-    public void UnregisterTask(string taskId)
-    {
-        try
-        {
-            _semaphore.Wait();
+			_tasks[taskId] = task;
+			_logger.LogInformation("Scheduled task registered: {TaskId}, Interval: {TotalSeconds}s, TenantId: {TenantId}",
+				taskId, interval.TotalSeconds, tenantId ?? "(none)");
+		}
+		finally
+		{
+			_semaphore.Release();
+		}
+	}
 
-            if (_tasks.Remove(taskId))
-            {
-                if (_cancellationTokens.TryGetValue(taskId, out var cts))
-                {
-                    cts.Cancel();
-                    cts.Dispose();
-                    _cancellationTokens.Remove(taskId);
-                }
+	/// <summary>
+	/// Unregisters a scheduled task.
+	/// </summary>
+	/// <param name="taskId">The ID of the task to unregister.</param>
+	public void UnregisterTask(string taskId)
+	{
+		try
+		{
+			_semaphore.Wait();
 
-                _logger.LogInformation("Scheduled task unregistered: {TaskId}", taskId);
-            }
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
+			if (_tasks.Remove(taskId))
+			{
+				if (_cancellationTokens.TryGetValue(taskId, out var cts))
+				{
+					cts.Cancel();
+					cts.Dispose();
+					_cancellationTokens.Remove(taskId);
+				}
 
-    /// <summary>
-    /// Starts executing all registered tasks.
-    /// </summary>
-    public async Task StartAsync()
-    {
-        try
-        {
-            await _semaphore.WaitAsync();
+				_logger.LogInformation("Scheduled task unregistered: {TaskId}", taskId);
+			}
+		}
+		finally
+		{
+			_semaphore.Release();
+		}
+	}
 
-            if (_isRunning)
-            {
-                _logger.LogWarning("Task service is already running");
-                return;
-            }
+	/// <summary>
+	/// Starts executing all registered tasks.
+	/// </summary>
+	public async Task StartAsync()
+	{
+		try
+		{
+			await _semaphore.WaitAsync();
 
-            _isRunning = true;
-            _logger.LogInformation("Scheduled task service started with {Count} tasks", _tasks.Count);
+			if (_isRunning)
+			{
+				_logger.LogWarning("Task service is already running");
+				return;
+			}
 
-            // Start execution for each task
-            foreach (var taskId in _tasks.Keys.ToList())
-            {
-                var cts = new CancellationTokenSource();
-                _cancellationTokens[taskId] = cts;
+			_isRunning = true;
+			_logger.LogInformation("Scheduled task service started with {Count} tasks", _tasks.Count);
 
-                _ = ExecuteTaskLoopAsync(taskId, cts.Token);
-            }
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
+			// Start execution for each task
+			foreach (var taskId in _tasks.Keys.ToList())
+			{
+				var cts = new CancellationTokenSource();
+				_cancellationTokens[taskId] = cts;
 
-    /// <summary>
-    /// Stops all scheduled tasks.
-    /// </summary>
-    public async Task StopAsync()
-    {
-        try
-        {
-            await _semaphore.WaitAsync();
+				_ = ExecuteTaskLoopAsync(taskId, cts.Token);
+			}
+		}
+		finally
+		{
+			_semaphore.Release();
+			await Task.CompletedTask;
+		}
+	}
 
-            if (!_isRunning)
-                return;
+	/// <summary>
+	/// Stops all scheduled tasks.
+	/// </summary>
+	public async Task StopAsync()
+	{
+		try
+		{
+			await _semaphore.WaitAsync();
 
-            // Cancel all running tasks
-            foreach (var cts in _cancellationTokens.Values)
-            {
-                cts.Cancel();
-                cts.Dispose();
-            }
+			if (!_isRunning)
+				return;
 
-            _cancellationTokens.Clear();
-            _isRunning = false;
-            _logger.LogInformation("Scheduled task service stopped");
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
+			// Cancel all running tasks
+			foreach (var cts in _cancellationTokens.Values)
+			{
+				cts.Cancel();
+				cts.Dispose();
+			}
 
-    /// <summary>
-    /// Gets the status of a scheduled task.
-    /// </summary>
-    public async Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId)
-    {
-        try
-        {
-            await _semaphore.WaitAsync();
+			_cancellationTokens.Clear();
+			_isRunning = false;
+			_logger.LogInformation("Scheduled task service stopped");
+		}
+		finally
+		{
+			_semaphore.Release();
+			await Task.CompletedTask;
+		}
+	}
 
-            if (_tasks.TryGetValue(taskId, out var task))
-            {
-                return new TaskExecutionStatus
-                {
-                    TaskId = taskId,
-                    IsEnabled = task.IsEnabled,
-                    IsRunning = _isRunning,
-                    LastExecutedAt = task.LastExecutedAt,
-                    NextExecutionAt = task.NextExecutionAt,
-                    ExecutionCount = task.ExecutionCount,
-                    FailureCount = task.FailureCount,
-                    LastError = task.LastError,
-                    IsExecuting = task.IsExecuting
-                };
-            }
+	/// <summary>
+	/// Gets the status of a scheduled task.
+	/// </summary>
+	/// <param name="taskId">The ID of the task to query.</param>
+	/// <returns>A <see cref="TaskExecutionStatus"/> object containing the task's status.</returns>
+	/// <exception cref="KeyNotFoundException">Thrown when the task ID is not found.</exception>
+	public async Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId)
+	{
+		try
+		{
+			await _semaphore.WaitAsync();
 
-            throw new KeyNotFoundException($"Task {taskId} not found");
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
+			if (_tasks.TryGetValue(taskId, out var task))
+			{
+				return new TaskExecutionStatus
+				{
+					TaskId = taskId,
+					IsEnabled = task.IsEnabled,
+					IsRunning = _isRunning,
+					LastExecutedAt = task.LastExecutedAt,
+					NextExecutionAt = task.NextExecutionAt,
+					ExecutionCount = task.ExecutionCount,
+					FailureCount = task.FailureCount,
+					LastError = task.LastError,
+					IsExecuting = task.IsExecuting,
+					TenantId = task.TenantId
+				};
+			}
 
-    private async Task ExecuteTaskLoopAsync(string taskId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                if (!_tasks.TryGetValue(taskId, out var task))
-                    break;
+			throw new KeyNotFoundException($"Task {taskId} not found");
+		}
+		finally
+		{
+			_semaphore.Release();
+			await Task.CompletedTask;
+		}
+	}
 
-                var now = DateTime.UtcNow;
+	private async Task ExecuteTaskLoopAsync(string taskId, CancellationToken cancellationToken)
+	{
+		try
+		{
+			while (!cancellationToken.IsCancellationRequested)
+			{
+				if (!_tasks.TryGetValue(taskId, out var task))
+					break;
 
-                // Overlap prevention: Skip execution if previous run is still executing
-                if (now >= task.NextExecutionAt && task.IsEnabled && !task.IsExecuting)
-                {
-                    await ExecuteTaskAsync(task);
-                }
+				var now = DateTime.UtcNow;
 
-                // Check every second
-                await Task.Delay(1000, cancellationToken);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Task was cancelled, exit gracefully
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Error in task loop for {TaskId}: {Message}", taskId, ex.Message);
-        }
-    }
+				// Overlap prevention: Skip execution if previous run is still executing
+				if (now >= task.NextExecutionAt && task.IsEnabled && !task.IsExecuting)
+				{
+					await ExecuteTaskAsync(task);
+				}
 
-    private async Task ExecuteTaskAsync(ScheduledTask task)
-    {
-        try
-        {
-            // Mark task as executing
-            task.IsExecuting = true;
-            task.LastAttemptedAt = DateTime.UtcNow;
+				// Check every second
+				await Task.Delay(1000, cancellationToken);
+			}
+		}
+		catch (OperationCanceledException)
+		{
+			// Task was cancelled, exit gracefully
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "Error in task loop for {TaskId}", taskId);
+		}
+	}
 
-            _logger.LogDebug("Executing scheduled task: {Id}", task.Id);
+	private async Task ExecuteTaskAsync(ScheduledTask task)
+	{
+		if (task is null)
+		{
+			_logger.LogError("Task is null");
+			return;
+		}
 
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+		try
+		{
+			// Mark task as executing
+			task.IsExecuting = true;
+			task.LastAttemptedAt = DateTime.UtcNow;
 
-            await task.Action();
+			_logger.LogDebug("Executing scheduled task: {Id}", task.Id);
 
-            stopwatch.Stop();
+			var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-            task.LastExecutedAt = DateTime.UtcNow;
-            task.NextExecutionAt = DateTime.UtcNow.Add(GetNextInterval(task));
-            task.ExecutionCount++;
-            task.LastError = null;
+			// Execute the task within the tenant context if TenantId is set
+			if (!string.IsNullOrWhiteSpace(task.TenantId))
+			{
+				_tenantContextHelper.ExecuteInTenantContext(task.TenantId, async () =>
+				{
+					await task.Action();
+				});
+			}
+			else
+			{
+				// Execute without tenant context for backward compatibility
+				await task.Action();
+			}
 
-            _logger.LogInformation(
-                $"Task executed: {task.Id}, Duration: {stopwatch.ElapsedMilliseconds}ms");
-        }
-        catch (Exception ex)
-        {
-            task.FailureCount++;
-            task.LastError = ex.Message;
-            task.NextExecutionAt = DateTime.UtcNow.Add(GetNextInterval(task));
+			stopwatch.Stop();
 
-            _logger.LogError("Task failed: {Id}, Error: {Message}", task.Id, ex.Message);
-        }
-        finally
-        {
-            // Always mark task as not executing
-            task.IsExecuting = false;
-        }
-    }
+			task.LastExecutedAt = DateTime.UtcNow;
+			task.NextExecutionAt = DateTime.UtcNow.Add(GetNextInterval(task));
+			task.ExecutionCount++;
+			task.LastError = null;
 
-    /// <summary>
-    /// Calculates the next execution interval with exponential backoff for consecutive failures.
-    /// </summary>
-    private TimeSpan GetNextInterval(ScheduledTask task)
-    {
-        // Base interval
-        var baseInterval = task.Interval;
+			_logger.LogInformation(
+				$"Task executed: {task.Id}, Duration: {stopwatch.ElapsedMilliseconds}ms, TenantId: {task.TenantId ?? "(none)"}");
+		}
+		catch (Exception ex)
+		{
+			task.FailureCount++;
+			task.LastError = ex.Message;
+			task.NextExecutionAt = DateTime.UtcNow.Add(GetNextInterval(task));
 
-        // Apply exponential backoff for failures
-        // Formula: baseInterval * (2 ^ (failureCount - 1))
-        // But cap at reasonable maximum to avoid excessive delays
-        if (task.FailureCount > 0)
-        {
-            var backoffFactor = Math.Pow(2, Math.Min(task.FailureCount - 1, 5)); // Cap at 2^5 = 32x
-            var backoffInterval = baseInterval.TotalSeconds * backoffFactor;
-            var maxBackoff = TimeSpan.FromHours(24); // Maximum 24 hours backoff
+			_logger.LogError(ex, "Task failed: {Id}, Error: {Message}, TenantId: {TenantId}",
+				task.Id, ex.Message, task.TenantId ?? "(none)");
+		}
+		finally
+		{
+			// Always mark task as not executing
+			task.IsExecuting = false;
+		}
+	}
 
-            return TimeSpan.FromSeconds(Math.Min(backoffInterval, maxBackoff.TotalSeconds));
-        }
+	/// <summary>
+	/// Calculates the next execution interval with exponential backoff for consecutive failures.
+	/// </summary>
+	/// <param name="task">The task to calculate the interval for.</param>
+	/// <returns>The calculated interval.</returns>
+	private TimeSpan GetNextInterval(ScheduledTask task)
+	{
+		// Base interval
+		var baseInterval = task.Interval;
 
-        return baseInterval;
-    }
+		// Apply exponential backoff for failures
+		// Formula: baseInterval * (2 ^ (failureCount - 1))
+		// But cap at reasonable maximum to avoid excessive delays
+		if (task.FailureCount > 0)
+		{
+			var backoffFactor = Math.Pow(2, Math.Min(task.FailureCount - 1, 5)); // Cap at 2^5 = 32x
+			var backoffInterval = baseInterval.TotalSeconds * backoffFactor;
+			var maxBackoff = TimeSpan.FromHours(24); // Maximum 24 hours backoff
+
+			return TimeSpan.FromSeconds(Math.Min(backoffInterval, maxBackoff.TotalSeconds));
+		}
+
+	return baseInterval;
+	}
 }
 
-public sealed class ScheduledTask {
-    public string Id { get; set; } = string.Empty;
-    public Func<Task> Action { get; set; } = null!;
-    public TimeSpan Interval { get; set; }
-    public DateTime? LastExecutedAt { get; set; }
-    public DateTime NextExecutionAt { get; set; }
-    public long ExecutionCount { get; set; }
-    public long FailureCount { get; set; }
-    public bool IsEnabled { get; set; }
-    public string? LastError { get; set; }
-    public bool IsExecuting { get; set; }
-    public DateTime? LastAttemptedAt { get; set; }
+public sealed class ScheduledTask
+{
+	public string Id { get; set; } = string.Empty;
+	public Func<Task> Action { get; set; } = null!;
+	public TimeSpan Interval { get; set; }
+	public DateTime? LastExecutedAt { get; set; }
+	public DateTime NextExecutionAt { get; set; }
+	public long ExecutionCount { get; set; }
+	public long FailureCount { get; set; }
+	public bool IsEnabled { get; set; }
+	public string? LastError { get; set; }
+	public bool IsExecuting { get; set; }
+	public DateTime? LastAttemptedAt { get; set; }
+	public string? TenantId { get; set; }
 }
 
-public sealed class TaskExecutionStatus {
-    public string TaskId { get; set; } = string.Empty;
-    public bool IsEnabled { get; set; }
-    public bool IsRunning { get; set; }
-    public DateTime? LastExecutedAt { get; set; }
-    public DateTime NextExecutionAt { get; set; }
-    public long ExecutionCount { get; set; }
-    public long FailureCount { get; set; }
-    public string? LastError { get; set; }
-    public bool IsExecuting { get; set; }
+public sealed class TaskExecutionStatus
+{
+	public string TaskId { get; set; } = string.Empty;
+	public bool IsEnabled { get; set; }
+	public bool IsRunning { get; set; }
+	public DateTime? LastExecutedAt { get; set; }
+	public DateTime NextExecutionAt { get; set; }
+	public long ExecutionCount { get; set; }
+	public long FailureCount { get; set; }
+	public string? LastError { get; set; }
+	public bool IsExecuting { get; set; }
+	public string? TenantId { get; set; }
 }
