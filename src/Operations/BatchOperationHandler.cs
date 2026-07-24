@@ -81,6 +81,30 @@ public sealed class BatchOperationResult
     public List<BatchResourceResult> ResourceResults { get; set; } = new();
     public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
     public TimeSpan Duration { get; set; }
+
+    /// <summary>
+    /// Gets the overall status of the batch operation based on individual resource results.
+    /// </summary>
+    /// <returns>The aggregated status of the batch operation.</returns>
+    public BatchOperationAggregateStatus GetOverallStatus()
+    {
+        if (TotalResources == 0)
+        {
+            return BatchOperationAggregateStatus.Empty;
+        }
+
+        if (FailureCount == 0 && SuccessCount > 0)
+        {
+            return BatchOperationAggregateStatus.AllSucceeded;
+        }
+
+        if (SuccessCount == 0 && FailureCount > 0)
+        {
+            return BatchOperationAggregateStatus.AllFailed;
+        }
+
+        return BatchOperationAggregateStatus.PartialSuccess;
+    }
 }
 
 /// <summary>
@@ -163,6 +187,32 @@ public sealed class BatchOperationStatus : OperationStatusBase
     {
         ValidateStatus();
     }
+}
+
+/// <summary>
+/// Represents the overall status of a batch operation based on aggregated resource results.
+/// </summary>
+public enum BatchOperationAggregateStatus
+{
+    /// <summary>
+    /// All resources in the batch operation succeeded.
+    /// </summary>
+    AllSucceeded,
+
+    /// <summary>
+    /// All resources in the batch operation failed.
+    /// </summary>
+    AllFailed,
+
+    /// <summary>
+    /// Some resources succeeded and some failed (partial success).
+    /// </summary>
+    PartialSuccess,
+
+    /// <summary>
+    /// The batch operation had no resources to process.
+    /// </summary>
+    Empty
 }
 
 /// <summary>
