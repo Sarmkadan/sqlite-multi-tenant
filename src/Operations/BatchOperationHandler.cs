@@ -5,6 +5,7 @@
 // ===========================================================================
 
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace SqliteMultiTenant.Operations;
 
@@ -162,23 +163,35 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
             TotalResources = operation.ResourceIds.Count
         };
 
-        // Process resources in batches (max 10 concurrent)
-        var batchSize = 10;
-        var batches = operation.ResourceIds.Chunk(batchSize);
+        // Group resources by tenant ID to minimize connection churn
+        // This ensures all operations for a single tenant are processed with a single connection
+        var resourcesByTenant = operation.ResourceIds
+            .Where(resourceId => !string.IsNullOrEmpty(resourceId))
+            .GroupBy(resourceId => resourceId)
+            .ToDictionary(group => group.Key, group => group.ToList());
 
-        foreach (var batch in batches)
+        // Process each tenant group sequentially to avoid parallel writes to the same database
+        // SQLite only allows one writer per database file at a time
+        foreach (var tenantGroup in resourcesByTenant)
         {
             if (cancellationToken.IsCancellationRequested)
                 break;
 
-            var tasks = batch.Select(resourceId =>
-                ProcessResourceAsync(operationId, operation.OperationType, resourceId, operation.Parameters, operation, cancellationToken)
-            );
+            var tenantId = tenantGroup.Key;
+            var tenantResourceIds = tenantGroup.Value;
 
-            var batchResults = await Task.WhenAll(tasks);
-
-            foreach (var resourceResult in batchResults)
+            // Process all resources for this tenant
+            foreach (var resourceId in tenantResourceIds)
             {
+                var resourceResult = await ProcessResourceAsync(
+                    operationId,
+                    operation.OperationType,
+                    resourceId,
+                    operation.Parameters,
+                    operation,
+                    cancellationToken
+                );
+
                 result.ResourceResults.Add(resourceResult);
 
                 if (resourceResult.Success)
@@ -189,6 +202,9 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
                 // Update progress
                 if (_statusTracker.TryGetValue(operationId, out var status))
                     status.ProcessedResources = result.SuccessCount + result.FailureCount;
+
+                if (cancellationToken.IsCancellationRequested)
+                    break;
             }
         }
 
