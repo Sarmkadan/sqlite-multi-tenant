@@ -7,6 +7,7 @@
 using System.Data.SQLite;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Services;
@@ -46,7 +47,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
-            throw new KeyNotFoundException($"Tenant with ID {tenantId} not found");
+            throw new TenantNotFoundException(tenantId);
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
