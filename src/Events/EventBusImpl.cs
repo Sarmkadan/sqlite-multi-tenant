@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace SqliteMultiTenant.Events
 {
@@ -20,10 +21,18 @@ namespace SqliteMultiTenant.Events
     /// This implementation provides thread-safe event publishing and subscription management using concurrent collections.
     /// It maintains an event history for monitoring and debugging purposes, and supports both synchronous and asynchronous publishing.
     /// </remarks>
-    public sealed class EventBusImpl {
+    public sealed class EventBusImpl : IDisposable
+    {
         private readonly ConcurrentDictionary<string, List<EventSubscription>> _subscriptions;
         private readonly ILogger<EventBusImpl> _logger;
         private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
+        private readonly ConcurrentDictionary<string, int> _handlerFailureCounts;
+    private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
+        private readonly ConcurrentDictionary<string, List<DeadLetterEvent>> _deadLetterQueue;
+    private readonly ConcurrentDictionary<string, EventStatistics> _statistics;
+        private const int MaxDeadLetterSize = 1000;
+        private const int MaxRetryAttempts = 3;
+        private bool _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EventBusImpl"/> class.
@@ -36,6 +45,8 @@ namespace SqliteMultiTenant.Events
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _subscriptions = new ConcurrentDictionary<string, List<EventSubscription>>();
             _eventHistory = new ConcurrentQueue<PublishedEvent>();
+            _handlerFailureCounts = new ConcurrentDictionary<string, int>();
+            _deadLetterQueue = new ConcurrentDictionary<string, List<DeadLetterEvent>>();
         }
 
         /// <summary>
@@ -47,7 +58,7 @@ namespace SqliteMultiTenant.Events
         /// <returns>A disposable object that can be used to unsubscribe from the event.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is null.</exception>
         public IDisposable Subscribe<TEvent>(Func<TEvent, Task> handler, int priority = 0)
-        where TEvent : DomainEvent
+            where TEvent : DomainEvent
         {
             if (handler is null)
                 throw new ArgumentNullException(nameof(handler));
@@ -102,7 +113,7 @@ namespace SqliteMultiTenant.Events
 
                 if (_subscriptions.TryGetValue(eventType, out var handlers))
                 {
-                    var tasks = handlers.Select(h => ExecuteHandlerSafelyAsync(h, @event));
+                    var tasks = handlers.Select(h => ExecuteHandlerSafelyAsync(h, @event, eventType));
                     await Task.WhenAll(tasks);
                 }
 
@@ -181,6 +192,44 @@ namespace SqliteMultiTenant.Events
         }
 
         /// <summary>
+        /// Gets all dead letter events from the queue.
+        /// </summary>
+        /// <param name="take">Maximum number of events to return (default: 100).</param>
+        /// <returns>A list of dead letter events ordered by failure time (most recent first).</returns>
+        public List<DeadLetterEvent> GetDeadLetterQueue(int take = 100)
+        {
+            var allEvents = new List<DeadLetterEvent>();
+
+            foreach (var kvp in _deadLetterQueue)
+            {
+                allEvents.AddRange(kvp.Value);
+            }
+
+            return allEvents
+                .OrderByDescending(e => e.FailedAt)
+                .Take(take)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets the count of dead letter events in the queue.
+        /// </summary>
+        /// <returns>The total number of dead letter events.</returns>
+        public int GetDeadLetterCount()
+        {
+            return _deadLetterQueue.Values.Sum(v => v.Count);
+        }
+
+        /// <summary>
+        /// Clears all dead letter events from the queue.
+        /// </summary>
+        public void ClearDeadLetterQueue()
+        {
+            _deadLetterQueue.Clear();
+            _handlerFailureCounts.Clear();
+        }
+
+        /// <summary>
         /// Clears the event history, removing all stored published events.
         /// </summary>
         public void ClearHistory()
@@ -193,20 +242,51 @@ namespace SqliteMultiTenant.Events
         /// </summary>
         public void Dispose()
         {
-            _subscriptions.Clear();
-            ClearHistory();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        private async Task ExecuteHandlerSafelyAsync(EventSubscription subscription, DomainEvent @event)
+        private void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                _subscriptions.Clear();
+                ClearHistory();
+                ClearDeadLetterQueue();
+            }
+
+            _disposed = true;
+        }
+
+        private async Task ExecuteHandlerSafelyAsync(EventSubscription subscription, DomainEvent @event, string eventType)
         {
             try
             {
                 await subscription.Handler(@event);
+
+                // Reset failure count on successful execution
+                _handlerFailureCounts.AddOrUpdate(eventType, 0, (_, _) => 0);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing handler for event {EventType}",
-                    subscription.EventType);
+                // Increment failure count for this event type
+                var failureCount = _handlerFailureCounts.AddOrUpdate(
+                    eventType,
+                    1,
+                    (_, current) => Math.Min(current + 1, MaxRetryAttempts + 1)
+                );
+
+                _logger.LogError(ex, "Error executing handler for event {EventType} (Failure #{FailureCount})",
+                    eventType, failureCount);
+
+                // Add to dead letter queue if max retries exceeded
+                if (failureCount > MaxRetryAttempts)
+                {
+                    AddToDeadLetterQueue(eventType, @event, ex);
+                }
             }
         }
 
@@ -215,11 +295,37 @@ namespace SqliteMultiTenant.Events
             _eventHistory.Enqueue(publishedEvent);
         }
 
+        private void AddToDeadLetterQueue(string eventType, DomainEvent @event, Exception exception)
+        {
+            var eventData = JsonSerializer.Serialize(@event);
+
+            var deadLetterEvent = new DeadLetterEvent
+            {
+                EventType = eventType,
+                EventData = eventData,
+                Exception = exception.Message,
+                StackTrace = exception.StackTrace,
+                TenantId = @event.TenantId ?? string.Empty,
+                RetryCount = _handlerFailureCounts.TryGetValue(eventType, out var count) ? count : 1
+            };
+
+            // Add to the specific event type's dead letter list
+            var deadLettersForType = _deadLetterQueue.GetOrAdd(eventType, _ => new List<DeadLetterEvent>());
+
+            // Enforce max size by removing oldest if needed
+            if (deadLettersForType.Count >= MaxDeadLetterSize)
+            {
+                deadLettersForType.RemoveAt(0);
+            }
+
+            deadLettersForType.Add(deadLetterEvent);
+        }
+
         private class EventSubscription
         {
             public Guid Id { get; set; }
-            public string EventType { get; set; }
-            public Func<DomainEvent, Task> Handler { get; set; }
+            public string EventType { get; set; } = string.Empty;
+            public Func<DomainEvent, Task> Handler { get; set; } = null!;
             public int Priority { get; set; }
         }
 
@@ -253,20 +359,37 @@ namespace SqliteMultiTenant.Events
     /// <summary>
     /// Represents a published event with metadata about its publication.
     /// </summary>
-    public sealed class PublishedEvent {
+    public sealed class PublishedEvent
+    {
         public Guid Id { get; set; }
-        public string EventType { get; set; }
+        public string EventType { get; set; } = string.Empty;
         public DateTime PublishedAt { get; set; }
-        public string TenantId { get; set; }
+        public string TenantId { get; set; } = string.Empty;
         public int SuccessfulHandlers { get; set; }
     }
 
     /// <summary>
     /// Contains statistics about event subscriptions and publication counts for a specific event type.
     /// </summary>
-    public sealed class EventStatistics {
-        public string EventType { get; set; }
+    public sealed class EventStatistics
+    {
+        public string EventType { get; set; } = string.Empty;
         public int SubscriberCount { get; set; }
         public int TotalPublished { get; set; }
+    }
+
+    /// <summary>
+    /// Represents a dead letter event that failed to be processed after maximum retry attempts.
+    /// </summary>
+    public sealed class DeadLetterEvent
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string EventType { get; set; } = string.Empty;
+        public string EventData { get; set; } = string.Empty;
+        public string Exception { get; set; } = string.Empty;
+        public string? StackTrace { get; set; }
+        public DateTime FailedAt { get; set; } = DateTime.UtcNow;
+        public int RetryCount { get; set; }
+        public string TenantId { get; set; } = string.Empty;
     }
 }
