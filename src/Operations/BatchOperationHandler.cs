@@ -2,9 +2,10 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// ===========================================================================
+// =======================================================================
 
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Utilities;
 
 namespace SqliteMultiTenant.Operations;
@@ -100,15 +101,66 @@ public sealed class BatchResourceResult
 /// <summary>
 /// Status of ongoing batch operation.
 /// </summary>
-public sealed class BatchOperationStatus
+public sealed class BatchOperationStatus : OperationStatusBase
 {
-    public string OperationId { get; set; } = string.Empty;
-    public string State { get; set; } = string.Empty; // pending, running, completed, failed
+    /// <summary>
+    /// The total number of resources to process.
+    /// </summary>
     public int TotalResources { get; set; }
+
+    /// <summary>
+    /// The number of resources that have been processed so far.
+    /// </summary>
     public int ProcessedResources { get; set; }
+
+    /// <summary>
+    /// The percentage of completion (0-100).
+    /// </summary>
     public int ProgressPercent => TotalResources > 0 ? (ProcessedResources * 100) / TotalResources : 0;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime? CompletedAt { get; set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchOperationStatus"/> class.
+    /// </summary>
+    public BatchOperationStatus()
+    {
+        OperationId = nameof(BatchOperationStatus);
+        Status = OperationStatus.Pending;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Updates the status to running.
+    /// </summary>
+    public void MarkRunning()
+    {
+        MarkRunning();
+    }
+
+    /// <summary>
+    /// Updates the status to completed successfully.
+    /// </summary>
+    public void MarkCompleted()
+    {
+        MarkCompleted();
+    }
+
+    /// <summary>
+    /// Updates the status to failed.
+    /// </summary>
+    /// <param name="error">The error message.</param>
+    public void MarkFailed(string error)
+    {
+        MarkFailed(error);
+    }
+
+    /// <summary>
+    /// Validates the batch operation status.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when the status is invalid.</exception>
+    public void Validate()
+    {
+        ValidateStatus();
+    }
 }
 
 /// <summary>
@@ -163,13 +215,13 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
         ValidateTenantAuthorization(operation.ResourceIds);
 
         // Initialize status tracking
-        _statusTracker[operationId] = new BatchOperationStatus
+        var status = new BatchOperationStatus
         {
             OperationId = operationId,
-            State = "running",
-            TotalResources = operation.ResourceIds.Count,
-            CreatedAt = startTime
+            TotalResources = operation.ResourceIds.Count
         };
+        status.MarkRunning();
+        _statusTracker[operationId] = status;
 
         var result = new BatchOperationResult
         {
@@ -214,8 +266,7 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
                     result.FailureCount++;
 
                 // Update progress
-                if (_statusTracker.TryGetValue(operationId, out var status))
-                    status.ProcessedResources = result.SuccessCount + result.FailureCount;
+                status.ProcessedResources = result.SuccessCount + result.FailureCount;
 
                 if (cancellationToken.IsCancellationRequested)
                     break;
@@ -224,11 +275,7 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
 
         // Finalize
         result.Duration = DateTime.UtcNow - startTime;
-        if (_statusTracker.TryGetValue(operationId, out var finalStatus))
-        {
-            finalStatus.State = result.FailureCount == 0 ? "completed" : "completed";
-            finalStatus.CompletedAt = DateTime.UtcNow;
-        }
+        status.MarkCompleted();
 
         _logger.LogInformation(
             "Batch operation completed {operationId}: {success}/{total} successful in {duration}ms",
