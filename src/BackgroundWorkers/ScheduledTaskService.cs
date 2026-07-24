@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =========================================================================
 
 namespace SqliteMultiTenant.BackgroundWorkers;
 
@@ -54,7 +54,9 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
                 NextExecutionAt = DateTime.UtcNow.Add(interval),
                 ExecutionCount = 0,
                 FailureCount = 0,
-                IsEnabled = true
+                IsEnabled = true,
+                IsExecuting = false,
+                LastAttemptedAt = null
             };
 
             _tasks[taskId] = task;
@@ -175,7 +177,8 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
                     NextExecutionAt = task.NextExecutionAt,
                     ExecutionCount = task.ExecutionCount,
                     FailureCount = task.FailureCount,
-                    LastError = task.LastError
+                    LastError = task.LastError,
+                    IsExecuting = task.IsExecuting
                 };
             }
 
@@ -198,7 +201,8 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
 
                 var now = DateTime.UtcNow;
 
-                if (now >= task.NextExecutionAt && task.IsEnabled)
+                // Overlap prevention: Skip execution if previous run is still executing
+                if (now >= task.NextExecutionAt && task.IsEnabled && !task.IsExecuting)
                 {
                     await ExecuteTaskAsync(task);
                 }
@@ -221,6 +225,10 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
     {
         try
         {
+            // Mark task as executing
+            task.IsExecuting = true;
+            task.LastAttemptedAt = DateTime.UtcNow;
+
             _logger.LogDebug("Executing scheduled task: {Id}", task.Id);
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -230,7 +238,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
             stopwatch.Stop();
 
             task.LastExecutedAt = DateTime.UtcNow;
-            task.NextExecutionAt = DateTime.UtcNow.Add(task.Interval);
+            task.NextExecutionAt = DateTime.UtcNow.Add(GetNextInterval(task));
             task.ExecutionCount++;
             task.LastError = null;
 
@@ -241,10 +249,38 @@ public sealed class ScheduledTaskService : IScheduledTaskService {
         {
             task.FailureCount++;
             task.LastError = ex.Message;
-            task.NextExecutionAt = DateTime.UtcNow.Add(task.Interval);
+            task.NextExecutionAt = DateTime.UtcNow.Add(GetNextInterval(task));
 
             _logger.LogError("Task failed: {Id}, Error: {Message}", task.Id, ex.Message);
         }
+        finally
+        {
+            // Always mark task as not executing
+            task.IsExecuting = false;
+        }
+    }
+
+    /// <summary>
+    /// Calculates the next execution interval with exponential backoff for consecutive failures.
+    /// </summary>
+    private TimeSpan GetNextInterval(ScheduledTask task)
+    {
+        // Base interval
+        var baseInterval = task.Interval;
+
+        // Apply exponential backoff for failures
+        // Formula: baseInterval * (2 ^ (failureCount - 1))
+        // But cap at reasonable maximum to avoid excessive delays
+        if (task.FailureCount > 0)
+        {
+            var backoffFactor = Math.Pow(2, Math.Min(task.FailureCount - 1, 5)); // Cap at 2^5 = 32x
+            var backoffInterval = baseInterval.TotalSeconds * backoffFactor;
+            var maxBackoff = TimeSpan.FromHours(24); // Maximum 24 hours backoff
+
+            return TimeSpan.FromSeconds(Math.Min(backoffInterval, maxBackoff.TotalSeconds));
+        }
+
+        return baseInterval;
     }
 }
 
@@ -258,6 +294,8 @@ public sealed class ScheduledTask {
     public long FailureCount { get; set; }
     public bool IsEnabled { get; set; }
     public string? LastError { get; set; }
+    public bool IsExecuting { get; set; }
+    public DateTime? LastAttemptedAt { get; set; }
 }
 
 public sealed class TaskExecutionStatus {
@@ -269,4 +307,5 @@ public sealed class TaskExecutionStatus {
     public long ExecutionCount { get; set; }
     public long FailureCount { get; set; }
     public string? LastError { get; set; }
+    public bool IsExecuting { get; set; }
 }
