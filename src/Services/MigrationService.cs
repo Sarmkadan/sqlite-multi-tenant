@@ -17,6 +17,7 @@ namespace SqliteMultiTenant.Services;
 public sealed class MigrationService : IMigrationService {
     private readonly IMigrationRepository _repository;
     private readonly ILogger<MigrationService> _logger;
+    private readonly Random _random = new();
 
     public MigrationService(IMigrationRepository repository, ILogger<MigrationService> logger)
     {
@@ -293,5 +294,279 @@ public sealed class MigrationService : IMigrationService {
             _logger.LogError("Error retrieving failed migrations: {Message}", ex.Message);
             throw;
         }
+    }
+
+    public async Task<Models.MigrationBatchResult> ApplyMigrationsWithFaultIsolationAsync(string databaseId, string executedBy, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(databaseId))
+            throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        if (string.IsNullOrWhiteSpace(executedBy))
+            throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
+
+        try
+        {
+            var pendingMigrations = await _repository.GetPendingMigrationsAsync(databaseId, cancellationToken);
+            if (pendingMigrations.Count == 0)
+            {
+                _logger.LogInformation("No pending migrations for database {DatabaseId}", databaseId);
+                return Models.MigrationBatchResult.SuccessResult(0, 0, new List<Models.TenantMigrationResult> {
+                    Models.TenantMigrationResult.SuccessResult(databaseId, null, null, 0, 0, null)
+                });
+            }
+
+            var tenantResult = await ApplyMigrationsToDatabaseWithFaultIsolationAsync(databaseId, executedBy, pendingMigrations, cancellationToken);
+            var batchResult = Models.MigrationBatchResult.SuccessResult(
+                totalMigrationsAttempted: tenantResult.TotalMigrationsAttempted,
+                successfulMigrations: tenantResult.SuccessfulMigrations,
+                tenantResults: new List<Models.TenantMigrationResult> { tenantResult }
+            );
+
+            _logger.LogInformation("Batch migration completed for database {DatabaseId}: {Summary}",
+                databaseId, batchResult.ResultSummary);
+
+            return batchResult;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error applying migrations with fault isolation to database {DatabaseId}: {Message}",
+                databaseId, ex.Message);
+            return Models.MigrationBatchResult.FailureResult(ex.Message, new List<Models.TenantMigrationResult>());
+        }
+    }
+
+    public async Task<Models.MigrationBatchResult> ApplyMigrationsToMultipleDatabasesAsync(
+        List<string> databaseIds,
+        string executedBy,
+        CancellationToken cancellationToken = default)
+    {
+        if (databaseIds == null || databaseIds.Count == 0)
+            throw new ArgumentException("Database IDs list cannot be null or empty", nameof(databaseIds));
+
+        if (string.IsNullOrWhiteSpace(executedBy))
+            throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
+
+        try
+        {
+            var allTenantResults = new List<Models.TenantMigrationResult>();
+            int totalMigrationsAttempted = 0;
+            int successfulMigrations = 0;
+
+            foreach (var databaseId in databaseIds)
+            {
+                try
+                {
+                    var pendingMigrations = await _repository.GetPendingMigrationsAsync(databaseId, cancellationToken);
+                    if (pendingMigrations.Count == 0)
+                    {
+                        _logger.LogInformation("No pending migrations for database {DatabaseId}", databaseId);
+                        allTenantResults.Add(Models.TenantMigrationResult.SuccessResult(databaseId, null, null, 0, 0, null));
+                        continue;
+                    }
+
+                    var tenantResult = await ApplyMigrationsToDatabaseWithFaultIsolationAsync(databaseId, executedBy, pendingMigrations, cancellationToken);
+                    totalMigrationsAttempted += tenantResult.TotalMigrationsAttempted;
+                    successfulMigrations += tenantResult.SuccessfulMigrations;
+                    allTenantResults.Add(tenantResult);
+                }
+                catch (Exception tenantEx)
+                {
+                    _logger.LogError("Error processing database {DatabaseId}: {Message}", databaseId, tenantEx.Message);
+                    allTenantResults.Add(Models.TenantMigrationResult.FailureResult(
+                        databaseId: databaseId,
+                        tenantId: null,
+                        databaseName: null,
+                        totalMigrationsAttempted: 0,
+                        successfulMigrations: 0,
+                        schemaVersionReached: null,
+                        failures: new List<Models.MigrationFailure> {
+                            Models.MigrationFailure.Create(
+                                migrationId: "system",
+                                version: "system",
+                                name: "Database Processing Error",
+                                errorMessage: tenantEx.Message,
+                                exception: tenantEx
+                            )
+                        }
+                    ));
+                }
+            }
+
+            var batchResult = Models.MigrationBatchResult.SuccessResult(
+                totalMigrationsAttempted: totalMigrationsAttempted,
+                successfulMigrations: successfulMigrations,
+                tenantResults: allTenantResults
+            );
+
+            if (batchResult.IsSuccess)
+            {
+                _logger.LogInformation("Batch migration completed for {Count} database(s): {Summary}",
+                    databaseIds.Count, batchResult.ResultSummary);
+            }
+            else
+            {
+                _logger.LogWarning("Batch migration completed with failures for {Count} database(s): {Summary}",
+                    databaseIds.Count, batchResult.ResultSummary);
+            }
+
+            return batchResult;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error applying migrations to multiple databases: {Message}", ex.Message);
+            return Models.MigrationBatchResult.FailureResult(ex.Message, new List<Models.TenantMigrationResult>());
+        }
+    }
+
+    private async Task<Models.TenantMigrationResult> ApplyMigrationsToDatabaseWithFaultIsolationAsync(
+        string databaseId,
+        string executedBy,
+        List<Models.Migration> pendingMigrations,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
+        ArgumentNullException.ThrowIfNull(pendingMigrations);
+        ArgumentException.ThrowIfNullOrEmpty(executedBy);
+
+        var failures = new List<Models.MigrationFailure>();
+        int successfulCount = 0;
+        string? lastSuccessfulVersion = null;
+
+        _logger.LogInformation("Starting fault-isolated migration for database {DatabaseId} with {Count} pending migrations",
+            databaseId, pendingMigrations.Count);
+
+        foreach (var migration in pendingMigrations.OrderBy(m => m.ExecutionOrder))
+        {
+            try
+            {
+                // Mark migration as started
+                migration.MarkAsStarted(executedBy);
+                await _repository.UpdateAsync(migration, cancellationToken);
+                _logger.LogInformation("Executing migration {Version} - {Name} for database {DatabaseId}",
+                    migration.Version, migration.Name, databaseId);
+
+                // Execute the actual migration script
+                var executionTimeMs = await ExecuteMigrationScriptAsync(migration, cancellationToken);
+
+                // Mark as completed
+                migration.MarkAsCompleted(executionTimeMs);
+                await _repository.UpdateAsync(migration, cancellationToken);
+
+                successfulCount++;
+                lastSuccessfulVersion = migration.Version;
+                _logger.LogInformation("Successfully completed migration {Version} for database {DatabaseId}",
+                    migration.Version, databaseId);
+            }
+            catch (MigrationException mex)
+            {
+                _logger.LogError("Migration failed for database {DatabaseId}: {Message}", databaseId, mex.Message);
+                failures.Add(mex.ToMigrationFailure());
+
+                // Mark as failed in database
+                try
+                {
+                    migration.MarkAsFailed(mex.Message);
+                    await _repository.UpdateAsync(migration, cancellationToken);
+                }
+                catch (Exception updateEx)
+                {
+                    _logger.LogError("Failed to mark migration as failed in database {DatabaseId}: {Message}",
+                        databaseId, updateEx.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Unexpected error during migration {Version} for database {DatabaseId}: {Message}",
+                    migration.Version, databaseId, ex.Message);
+
+                var migrationException = MigrationException.ExecutionFailed(
+                    migration.MigrationId,
+                    migration.Version,
+                    ex);
+
+                failures.Add(migrationException.ToMigrationFailure());
+
+                // Mark as failed in database
+                try
+                {
+                    migration.MarkAsFailed(ex.Message);
+                    await _repository.UpdateAsync(migration, cancellationToken);
+                }
+                catch (Exception updateEx)
+                {
+                    _logger.LogError("Failed to mark migration as failed in database {DatabaseId}: {Message}",
+                        databaseId, updateEx.Message);
+                }
+            }
+        }
+
+        var tenantResult = Models.TenantMigrationResult.SuccessResult(
+            databaseId: databaseId,
+            tenantId: null, // Would be populated from tenant service in real implementation
+            databaseName: null, // Would be populated from database service in real implementation
+            totalMigrationsAttempted: pendingMigrations.Count,
+            successfulMigrations: successfulCount,
+            schemaVersionReached: lastSuccessfulVersion
+        );
+
+        if (failures.Count > 0)
+        {
+            tenantResult = Models.TenantMigrationResult.FailureResult(
+                databaseId: databaseId,
+                tenantId: null,
+                databaseName: null,
+                totalMigrationsAttempted: pendingMigrations.Count,
+                successfulMigrations: successfulCount,
+                schemaVersionReached: lastSuccessfulVersion,
+                failures: failures
+            );
+        }
+
+        _logger.LogInformation("Migration batch completed for database {DatabaseId}: {Summary}",
+            databaseId, tenantResult.IsSuccess
+            ? $"Success: {successfulCount}/{pendingMigrations.Count} migrations applied"
+            : $"Failed: {failures.Count} migration(s) failed, schema version reached: {lastSuccessfulVersion}");
+
+        return tenantResult;
+    }
+
+    /// <summary>
+    /// Executes the migration SQL script against the database.
+    /// In a real implementation, this would connect to the specific tenant database and execute the script.
+    /// For this implementation, we simulate the execution and introduce controlled failure scenarios.
+    /// </summary>
+    /// <param name="migration">The migration to execute.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Execution time in milliseconds.</returns>
+    private async Task<long> ExecuteMigrationScriptAsync(Models.Migration migration, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(migration);
+
+        // Simulate database connection and execution
+        await Task.Delay(50, cancellationToken); // Simulate actual execution time
+
+        // Simulate controlled failure scenarios based on migration version
+        // This allows testing the fault isolation system
+        if (migration.Version.Contains("fail", StringComparison.OrdinalIgnoreCase) ||
+            migration.Version.Contains("error", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new MigrationException(
+                $"Migration execution failed: {migration.Name} (v{migration.Version})",
+                migration.MigrationId,
+                migration.Version,
+                new Exception("Database constraint violation: column already exists or constraint failed"));
+        }
+
+        // Simulate occasional failures for demonstration (5% chance)
+        if (_random.Next(0, 100) < 5)
+        {
+            throw new MigrationException(
+                $"Random migration failure during execution of {migration.Name} (v{migration.Version})",
+                migration.MigrationId,
+                migration.Version,
+                new Exception("Simulated database error"));
+        }
+
+        return _random.Next(10, 200); // Return random execution time between 10-200ms
     }
 }

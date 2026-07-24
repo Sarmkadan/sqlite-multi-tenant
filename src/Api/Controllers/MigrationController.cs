@@ -208,4 +208,112 @@ public sealed class MigrationController {
             return ApiResponse<MigrationHistoryResponse>.InternalServerError(ex.Message);
         }
     }
+
+    /// <summary>
+    /// Applies pending migrations to a specific database with fault isolation.
+    /// Executes migrations one by one, collecting failures without aborting on individual migration failures.
+    /// Returns detailed results including which migrations succeeded and which failed.
+    /// </summary>
+    public async Task<ApiResponse<MigrationBatchResponse>> ApplyMigrationsWithFaultIsolationAsync(string databaseId, string appliedBy)
+    {
+        _logger.LogInformation("Applying migrations with fault isolation to database: {DatabaseId} by {AppliedBy}", databaseId, appliedBy);
+
+        try
+        {
+            var result = await _migrationService.ApplyMigrationsWithFaultIsolationAsync(databaseId, appliedBy);
+
+            if (result.IsSuccess)
+            {
+                var response = new MigrationBatchResponse
+                {
+                    DatabaseId = databaseId,
+                    TotalMigrations = result.TotalMigrationsAttempted,
+                    SuccessfulCount = result.SuccessfulMigrations,
+                    AppliedAt = DateTime.UtcNow,
+                    AppliedBy = appliedBy,
+                    IsSuccess = true,
+                    TenantResults = result.TenantResults.Select(Responses.TenantMigrationResultResponse.FromModel).ToList()
+                };
+
+                return ApiResponse<MigrationBatchResponse>.Success(response, result.ResultSummary);
+            }
+            else
+            {
+                var response = new MigrationBatchResponse
+                {
+                    DatabaseId = databaseId,
+                    TotalMigrations = result.TotalMigrationsAttempted,
+                    SuccessfulCount = result.SuccessfulMigrations,
+                    AppliedAt = DateTime.UtcNow,
+                    AppliedBy = appliedBy,
+                    IsSuccess = false,
+                    ErrorMessage = result.Error,
+                    TenantResults = result.TenantResults.Select(Responses.TenantMigrationResultResponse.FromModel).ToList()
+                };
+
+                return ApiResponse<MigrationBatchResponse>.BadRequest(result.ResultSummary);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error applying migrations with fault isolation: {Message}", ex.Message);
+            return ApiResponse<MigrationBatchResponse>.InternalServerError(ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Applies pending migrations to multiple databases with fault isolation.
+    /// Executes migrations per database in isolation, collecting failures without aborting the entire process.
+    /// Returns detailed results for all tenants/databases.
+    /// </summary>
+    public async Task<ApiResponse<MigrationBatchResponse>> ApplyMigrationsToMultipleDatabasesAsync(ApplyMigrationsToMultipleRequest request)
+    {
+        _logger.LogInformation("Applying migrations with fault isolation to {Count} databases by {AppliedBy}",
+            request?.DatabaseIds?.Count ?? 0, request?.AppliedBy);
+
+        try
+        {
+            ArgumentException.ThrowIfNullOrEmpty(request?.AppliedBy);
+            ArgumentNullException.ThrowIfNull(request?.DatabaseIds);
+
+            var result = await _migrationService.ApplyMigrationsToMultipleDatabasesAsync(request.DatabaseIds, request.AppliedBy);
+
+            if (result.IsSuccess)
+            {
+                var response = new MigrationBatchResponse
+                {
+                    DatabaseId = "multiple",
+                    TotalMigrations = result.TotalMigrationsAttempted,
+                    SuccessfulCount = result.SuccessfulMigrations,
+                    AppliedAt = DateTime.UtcNow,
+                    AppliedBy = request.AppliedBy,
+                    IsSuccess = true,
+                    TenantResults = result.TenantResults.Select(Responses.TenantMigrationResultResponse.FromModel).ToList()
+                };
+
+                return ApiResponse<MigrationBatchResponse>.Success(response, result.ResultSummary);
+            }
+            else
+            {
+                var response = new MigrationBatchResponse
+                {
+                    DatabaseId = "multiple",
+                    TotalMigrations = result.TotalMigrationsAttempted,
+                    SuccessfulCount = result.SuccessfulMigrations,
+                    AppliedAt = DateTime.UtcNow,
+                    AppliedBy = request.AppliedBy,
+                    IsSuccess = false,
+                    ErrorMessage = result.Error,
+                    TenantResults = result.TenantResults.Select(Responses.TenantMigrationResultResponse.FromModel).ToList()
+                };
+
+                return ApiResponse<MigrationBatchResponse>.BadRequest(result.ResultSummary);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error applying migrations to multiple databases: {Message}", ex.Message);
+            return ApiResponse<MigrationBatchResponse>.InternalServerError(ex.Message);
+        }
+    }
 }
