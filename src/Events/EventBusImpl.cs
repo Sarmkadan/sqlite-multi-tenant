@@ -28,6 +28,7 @@ namespace SqliteMultiTenant.Events
         private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
         private readonly ConcurrentDictionary<string, int> _handlerFailureCounts;
     private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
+private readonly ConcurrentDictionary<string, int> _publishAttempts;
         private readonly ConcurrentDictionary<string, List<DeadLetterEvent>> _deadLetterQueue;
     private readonly ConcurrentDictionary<string, EventStatistics> _statistics;
         private const int MaxDeadLetterSize = 1000;
@@ -46,6 +47,8 @@ namespace SqliteMultiTenant.Events
             _subscriptions = new ConcurrentDictionary<string, List<EventSubscription>>();
             _eventHistory = new ConcurrentQueue<PublishedEvent>();
             _handlerFailureCounts = new ConcurrentDictionary<string, int>();
+        _successfulHandlerCounts = new ConcurrentDictionary<string, int>();
+        _publishAttempts = new ConcurrentDictionary<string, int>();
             _deadLetterQueue = new ConcurrentDictionary<string, List<DeadLetterEvent>>();
         }
 
@@ -101,36 +104,61 @@ namespace SqliteMultiTenant.Events
 
             var eventType = typeof(TEvent).Name;
 
-            try
+
+        // Track publish attempt using Interlocked for thread-safety
+        _publishAttempts.AddOrUpdate(eventType, 1, (_, current) => current + 1);
+
+        try
+        {
+            var publishedEvent = new PublishedEvent
             {
-                var publishedEvent = new PublishedEvent
-                {
-                    Id = Guid.NewGuid(),
-                    EventType = eventType,
-                    PublishedAt = DateTime.UtcNow,
-                    TenantId = @event.TenantId
-                };
+                Id = Guid.NewGuid(),
+                EventType = eventType,
+                PublishedAt = DateTime.UtcNow,
+                TenantId = @event.TenantId
+            };
 
-                if (_subscriptions.TryGetValue(eventType, out var handlers))
-                {
-                    var tasks = handlers.Select(h => ExecuteHandlerSafelyAsync(h, @event, eventType));
-                    await Task.WhenAll(tasks);
-                }
+            int successfulHandlerCount = 0;
+            int failedHandlerCount = 0;
 
-                publishedEvent.SuccessfulHandlers = _subscriptions.TryGetValue(eventType, out var count)
-                    ? count.Count
-                    : 0;
-
-                AddToHistory(publishedEvent);
-
-                _logger.LogDebug("Event published: {EventType} with {HandlerCount} handlers",
-                    eventType, publishedEvent.SuccessfulHandlers);
-            }
-            catch (Exception ex)
+            if (_subscriptions.TryGetValue(eventType, out var handlers) && handlers.Count > 0)
             {
-                _logger.LogError(ex, "Error publishing event: {EventType}", eventType);
-                throw;
+                var tasks = handlers.Select(h => ExecuteHandlerSafelyAsync(h, @event, eventType));
+                await Task.WhenAll(tasks);
+                successfulHandlerCount = handlers.Count(h => h.LastExecutionSucceeded);
+                failedHandlerCount = handlers.Count - successfulHandlerCount;
             }
+            else
+            {
+                // No subscribers registered - still track the publish attempt but no handlers executed
+                _logger.LogDebug("No subscribers registered for event type: {EventType}", eventType);
+            }
+
+            publishedEvent.SuccessfulHandlers = successfulHandlerCount;
+
+            AddToHistory(publishedEvent);
+
+            // Track successful handlers using Interlocked for thread-safety
+            if (successfulHandlerCount > 0)
+            {
+                _successfulHandlerCounts.AddOrUpdate(eventType, successfulHandlerCount, (_, current) => current + successfulHandlerCount);
+            }
+
+            // Track failed handlers using Interlocked for thread-safety
+            if (failedHandlerCount > 0)
+            {
+                _handlerFailureCounts.AddOrUpdate(eventType, failedHandlerCount, (_, current) => current + failedHandlerCount);
+            }
+
+            _logger.LogDebug("Event published: {EventType} with {HandlerCount} handlers",
+                eventType, publishedEvent.SuccessfulHandlers);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing event: {EventType}", eventType);
+            throw;
+        }
+
         }
 
         /// <summary>
@@ -174,22 +202,31 @@ namespace SqliteMultiTenant.Events
         /// Generates statistics about event subscriptions and publication counts.
         /// </summary>
         /// <returns>A dictionary mapping event type names to their statistics.</returns>
-        public Dictionary<string, EventStatistics> GetEventStatistics()
+public Dictionary<string, EventStatistics> GetEventStatistics()
         {
             var stats = new Dictionary<string, EventStatistics>();
 
             foreach (var kvp in _subscriptions)
             {
-                stats[kvp.Key] = new EventStatistics
+                var eventType = kvp.Key;
+                var publishAttempts = _publishAttempts.TryGetValue(eventType, out var attempts) ? attempts : 0;
+                var successfulHandlers = _successfulHandlerCounts.TryGetValue(eventType, out var successCount) ? successCount : 0;
+                var failureCount = _handlerFailureCounts.TryGetValue(eventType, out var failCount) ? failCount : 0;
+
+                stats[eventType] = new EventStatistics
                 {
-                    EventType = kvp.Key,
+                    EventType = eventType,
                     SubscriberCount = kvp.Value.Count,
-                    TotalPublished = _eventHistory.Count(e => e.EventType == kvp.Key)
+                    TotalPublished = _eventHistory.Count(e => e.EventType == eventType),
+                    TotalPublishAttempts = publishAttempts,
+                    SuccessfulHandlerInvocations = successfulHandlers,
+                    FailedHandlerInvocations = failureCount
                 };
             }
 
             return stats;
         }
+
 
         /// <summary>
         /// Gets all dead letter events from the queue.
@@ -266,12 +303,15 @@ namespace SqliteMultiTenant.Events
             try
             {
                 await subscription.Handler(@event);
+                subscription.LastExecutionSucceeded = true;
 
                 // Reset failure count on successful execution
                 _handlerFailureCounts.AddOrUpdate(eventType, 0, (_, _) => 0);
             }
             catch (Exception ex)
             {
+                subscription.LastExecutionSucceeded = false;
+
                 // Increment failure count for this event type
                 var failureCount = _handlerFailureCounts.AddOrUpdate(
                     eventType,
@@ -327,6 +367,7 @@ namespace SqliteMultiTenant.Events
             public string EventType { get; set; } = string.Empty;
             public Func<DomainEvent, Task> Handler { get; set; } = null!;
             public int Priority { get; set; }
+            public bool LastExecutionSucceeded { get; set; }
         }
 
         private class Unsubscriber : IDisposable
@@ -376,6 +417,9 @@ namespace SqliteMultiTenant.Events
         public string EventType { get; set; } = string.Empty;
         public int SubscriberCount { get; set; }
         public int TotalPublished { get; set; }
+    public int TotalPublishAttempts { get; set; }
+    public int SuccessfulHandlerInvocations { get; set; }
+    public int FailedHandlerInvocations { get; set; }
     }
 
     /// <summary>
