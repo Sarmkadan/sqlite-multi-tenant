@@ -5,6 +5,7 @@
 // =====================================================================
 
 using System;
+using System.Threading.Tasks;
 using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Utilities
@@ -27,20 +28,17 @@ namespace SqliteMultiTenant.Utilities
             ArgumentNullException.ThrowIfNull(helper);
             ArgumentException.ThrowIfNullOrWhiteSpace(tenantId, nameof(tenantId));
 
-            if (!helper.ValidateTenantContext(tenantId))
+            if (helper.IsCurrentTenant(tenantId))
             {
-                return helper.CreateScope(tenantId, userId);
+                return new EmptyDisposable();
             }
 
-            var existingContext = helper.GetTenantContext();
-            helper.SetTenantContext(new TenantContext
-            {
-                TenantId = tenantId,
-                UserId = userId ?? existingContext?.UserId,
-                CreatedAt = DateTime.UtcNow
-            });
-
             return helper.CreateScope(tenantId, userId);
+        }
+
+        private sealed class EmptyDisposable : IDisposable
+        {
+            public void Dispose() { }
         }
 
         /// <summary>
@@ -138,6 +136,49 @@ namespace SqliteMultiTenant.Utilities
             ArgumentException.ThrowIfNullOrWhiteSpace(expectedTenantId, nameof(expectedTenantId));
 
             return string.Equals(helper.GetCurrentTenantId(), expectedTenantId, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Executes an async action within a tenant context scope, automatically restoring the previous context.
+        /// </summary>
+        /// <param name="helper">The tenant context helper instance.</param>
+        /// <param name="tenantId">The tenant ID to set for the duration of the action.</param>
+        /// <param name="action">The async action to execute.</param>
+        /// <param name="userId">Optional user ID to associate with the context.</param>
+        /// <returns>A Task representing the async operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when helper or action is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
+        public static async Task ExecuteInTenantContextAsync(this TenantContextHelper helper, string tenantId, Func<Task> action, string userId = null)
+        {
+            ArgumentNullException.ThrowIfNull(helper);
+            ArgumentNullException.ThrowIfNull(action);
+            ArgumentException.ThrowIfNullOrWhiteSpace(tenantId, nameof(tenantId));
+
+            using var scope = helper.CreateScope(tenantId, userId);
+            await action();
+        }
+
+        /// <summary>
+        /// Executes an async function within a tenant context scope, automatically restoring the previous context.
+        /// </summary>
+        /// <typeparam name="T">The return type of the function.</typeparam>
+        /// <param name="helper">The tenant context helper instance.</param>
+        /// <param name="tenantId">The tenant ID to set for the duration of the function.</param>
+        /// <param name="func">The async function to execute.</param>
+        /// <param name="userId">Optional user ID to associate with the context.</param>
+        /// <returns>The result of the async function execution.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when helper or func is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
+        public static async Task<T> ExecuteInTenantContextAsync<T>(this TenantContextHelper helper, string tenantId, Func<Task<T>> func, string userId = null)
+        {
+            ArgumentNullException.ThrowIfNull(helper);
+            ArgumentNullException.ThrowIfNull(func);
+            ArgumentException.ThrowIfNullOrWhiteSpace(tenantId, nameof(tenantId));
+
+            using var scope = helper.CreateScope(tenantId, userId);
+            return await func();
         }
     }
 }
