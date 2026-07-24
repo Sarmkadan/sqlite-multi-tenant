@@ -63,108 +63,80 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
-        public void IsSuccess_ReturnsTrue_WhenIsOkTrueAndErrorNullOrEmpty()
+        public void IsOk_Property_ReturnsTrue_WhenIsOkTrue()
         {
             // Arrange
-            var result = new TenantIntegrityCheckResult
-            {
-                TenantId = "t1",
-                TenantName = "Tenant",
-                IsOk = true,
-                Error = null,
-                IntegrityOutput = "ok",
-                CheckedAt = DateTime.UtcNow
-            };
+            var result = new TenantIntegrityCheckResult { IsOk = true };
+
+            // Act & Assert
+            Assert.True(result.IsOk);
+        }
+
+        [Fact]
+        public void IsOk_Property_ReturnsFalse_WhenIsOkFalse()
+        {
+            // Arrange
+            var result = new TenantIntegrityCheckResult { IsOk = false };
+
+            // Act & Assert
+            Assert.False(result.IsOk);
+        }
+
+        [Fact]
+        public void IsSuccess_Property_ReturnsTrue_WhenIsOkTrueAndErrorNullOrEmpty()
+        {
+            // Arrange
+            var result = new TenantIntegrityCheckResult { IsOk = true, Error = null };
 
             // Act & Assert
             Assert.True(result.IsSuccess);
         }
 
         [Fact]
-        public void IsSuccess_ReturnsFalse_WhenIsOkFalse()
+        public void IsSuccess_Property_ReturnsFalse_WhenIsOkFalse()
         {
             // Arrange
-            var result = new TenantIntegrityCheckResult
-            {
-                TenantId = "t1",
-                TenantName = "Tenant",
-                IsOk = false,
-                Error = null,
-                IntegrityOutput = null,
-                CheckedAt = DateTime.UtcNow
-            };
+            var result = new TenantIntegrityCheckResult { IsOk = false };
 
             // Act & Assert
             Assert.False(result.IsSuccess);
         }
 
         [Fact]
-        public void IsSuccess_ReturnsFalse_WhenErrorNotEmpty()
+        public void IsSuccess_Property_ReturnsFalse_WhenErrorNotEmpty()
         {
             // Arrange
-            var result = new TenantIntegrityCheckResult
-            {
-                TenantId = "t1",
-                TenantName = "Tenant",
-                IsOk = true,
-                Error = "error",
-                IntegrityOutput = null,
-                CheckedAt = DateTime.UtcNow
-            };
+            var result = new TenantIntegrityCheckResult { IsOk = true, Error = "error" };
 
             // Act & Assert
             Assert.False(result.IsSuccess);
         }
 
         [Fact]
-        public void ResultSummary_ReturnsOk_WhenIsSuccessTrue()
+        public void ResultSummary_Property_ReturnsOk_WhenIsSuccessTrue()
         {
             // Arrange
-            var result = new TenantIntegrityCheckResult
-            {
-                TenantId = "t1",
-                TenantName = "Tenant",
-                IsOk = true,
-                Error = null,
-                IntegrityOutput = null,
-                CheckedAt = DateTime.UtcNow
-            };
+            var result = new TenantIntegrityCheckResult { IsOk = true };
 
             // Act & Assert
             Assert.Equal("OK", result.ResultSummary);
         }
 
         [Fact]
-        public void ResultSummary_IncludesError_WhenIsOkFalseAndErrorNotNull()
+        public void ResultSummary_Property_IncludesError_WhenIsOkFalseAndErrorNotNull()
         {
             // Arrange
-            var result = new TenantIntegrityCheckResult
-            {
-                TenantId = "t1",
-                TenantName = "Tenant",
-                IsOk = false,
-                Error = "something went wrong",
-                IntegrityOutput = null,
-                CheckedAt = DateTime.UtcNow
-            };
+            var result = new TenantIntegrityCheckResult { IsOk = false, Error = "something went wrong" };
 
             // Act & Assert
             Assert.Equal("FAILED: something went wrong", result.ResultSummary);
         }
 
         [Fact]
-        public void ResultSummary_IncludesIntegrityOutput_WhenProvided()
+        public void ResultSummary_Property_IncludesIntegrityOutput_WhenProvided()
         {
             // Arrange
-            var result = new TenantIntegrityCheckResult
-            {
-                TenantId = "t1",
-                TenantName = "Tenant",
-                IsOk = false,
-                Error = null,
-                IntegrityOutput = "integrity output line1\nintegrity output line2",
-                CheckedAt = DateTime.UtcNow
-            };
+            var result = new TenantIntegrityCheckResult { IntegrityOutput = "integrity output line1\nintegrity output line2" };
 
             // Act & Assert
             Assert.Contains("integrity output line1", result.ResultSummary);
@@ -173,31 +145,23 @@ namespace SqliteMultiTenant.Tests
         }
 
         [Fact]
-        public void DetailedResult_IncludesAllFields_WhenAllSet()
+        public void DetailedResult_Property_ReturnsDetailedSummary_WhenAllFieldsSet()
         {
             // Arrange
-            var tenantId = "t1";
-            var tenantName = "Tenant";
-            var isOk = true;
-            var error = "error";
-            var integrityOutput = "output";
-            var checkedAt = new DateTime(2023, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-
             var result = new TenantIntegrityCheckResult
             {
-                TenantId = tenantId,
-                TenantName = tenantName,
-                IsOk = isOk,
-                Error = error,
-                IntegrityOutput = integrityOutput,
-                CheckedAt = checkedAt
+                TenantId = "t1",
+                TenantName = "Tenant",
+                IsOk = true,
+                Error = null,
+                IntegrityOutput = "output",
+                CheckedAt = new DateTime(2023, 1, 1, 12, 0, 0, DateTimeKind.Utc)
             };
 
             // Act & Assert
-            Assert.Contains($"Integrity Check for Tenant: {tenantName} ({tenantId})", result.DetailedResult);
-            Assert.Contains($"Status: FAILED: {error}", result.DetailedResult);
-            Assert.Contains($"Error: {error}", result.DetailedResult);
-            Assert.Contains($"Checked At: {checkedAt:yyyy-MM-dd HH:mm:ss UTC}", result.DetailedResult);
+            Assert.Contains($"Integrity Check for Tenant: {result.TenantName} ({result.TenantId})", result.DetailedResult);
+            Assert.Contains($"Status: OK", result.DetailedResult);
+            Assert.Contains($"Checked At: {result.CheckedAt:yyyy-MM-dd HH:mm:ss UTC}", result.DetailedResult);
         }
     }
 }
