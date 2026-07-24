@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Integration;
 /// Provides typed methods for common HTTP operations (GET, POST, PUT, DELETE).
 /// Implements resilience patterns for external API communication.
 /// </summary>
-public sealed class HttpClientWrapper {
+public sealed class HttpClientWrapper : IHttpClientWrapper
+{
     private readonly HttpClient _httpClient;
     private readonly ILogger<HttpClientWrapper> _logger;
     private readonly int _maxRetries;
@@ -26,18 +27,25 @@ public sealed class HttpClientWrapper {
         int maxRetries = 3,
         int retryDelayMs = 1000)
     {
-        _httpClient = httpClient;
-        _logger = logger;
-        _maxRetries = maxRetries;
-        _retryDelay = TimeSpan.FromMilliseconds(retryDelayMs);
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _maxRetries = maxRetries >= 0 ? maxRetries : throw new ArgumentOutOfRangeException(nameof(maxRetries), "Value must be non-negative.");
+        _retryDelay = retryDelayMs >= 0 ? TimeSpan.FromMilliseconds(retryDelayMs) : throw new ArgumentOutOfRangeException(nameof(retryDelayMs), "Value must be non-negative.");
     }
 
     /// <summary>
     /// Sends a GET request and deserializes response to specified type.
     /// Includes retry logic for transient failures.
     /// </summary>
+    /// <typeparam name="T">The response type to deserialize.</typeparam>
+    /// <param name="url">The request URL.</param>
+    /// <returns>The deserialized response, or <see langword="null"/> on failure.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="url"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<T?> GetAsync<T>(string url) where T : class
     {
+        ArgumentNullException.ThrowIfNull(url);
+
         try
         {
             _logger.LogInformation("GET request: {Url}", url);
@@ -58,7 +66,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError("GET error: {Message}", ex.Message);
+            _logger.LogError(ex, "GET error: {Message}", ex.Message);
             return null;
         }
     }
@@ -66,8 +74,20 @@ public sealed class HttpClientWrapper {
     /// <summary>
     /// Sends a POST request with JSON payload and deserializes response.
     /// </summary>
+    /// <typeparam name="T">The response type to deserialize.</typeparam>
+    /// <param name="url">The request URL.</param>
+    /// <param name="payload">The request payload to serialize as JSON.</param>
+    /// <returns>The deserialized response, or <see langword="null"/> on failure.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="url"/> is <see langword="null"/>.
+    /// or <paramref name="payload"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<T?> PostAsync<T>(string url, object payload) where T : class
     {
+        ArgumentNullException.ThrowIfNull(url);
+        ArgumentNullException.ThrowIfNull(payload);
+
         try
         {
             _logger.LogInformation("POST request: {Url}", url);
@@ -91,7 +111,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError("POST error: {Message}", ex.Message);
+            _logger.LogError(ex, "POST error: {Message}", ex.Message);
             return null;
         }
     }
@@ -99,8 +119,19 @@ public sealed class HttpClientWrapper {
     /// <summary>
     /// Sends a PUT request with JSON payload.
     /// </summary>
+    /// <param name="url">The request URL.</param>
+    /// <param name="payload">The request payload to serialize as JSON.</param>
+    /// <returns><see langword="true"/> if the request succeeded; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="url"/> is <see langword="null"/>.
+    /// or <paramref name="payload"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<bool> PutAsync(string url, object payload)
     {
+        ArgumentNullException.ThrowIfNull(url);
+        ArgumentNullException.ThrowIfNull(payload);
+
         try
         {
             _logger.LogInformation("PUT request: {Url}", url);
@@ -116,7 +147,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError("PUT error: {Message}", ex.Message);
+            _logger.LogError(ex, "PUT error: {Message}", ex.Message);
             return false;
         }
     }
@@ -124,8 +155,14 @@ public sealed class HttpClientWrapper {
     /// <summary>
     /// Sends a DELETE request.
     /// </summary>
+    /// <param name="url">The request URL.</param>
+    /// <returns><see langword="true"/> if the request succeeded; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="url"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<bool> DeleteAsync(string url)
     {
+        ArgumentNullException.ThrowIfNull(url);
+
         try
         {
             _logger.LogInformation("DELETE request: {Url}", url);
@@ -138,7 +175,7 @@ public sealed class HttpClientWrapper {
         }
         catch (Exception ex)
         {
-            _logger.LogError("DELETE error: {Message}", ex.Message);
+            _logger.LogError(ex, "DELETE error: {Message}", ex.Message);
             return false;
         }
     }
@@ -195,16 +232,31 @@ public sealed class HttpClientWrapper {
     /// <summary>
     /// Adds a custom header to all requests.
     /// </summary>
+    /// <param name="name">The header name.</param>
+    /// <param name="value">The header value.</param>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="name"/> is <see langword="null"/>.
+    /// or <paramref name="value"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is empty or whitespace.</exception>
     public void AddDefaultHeader(string name, string value)
     {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(value);
+
         _httpClient.DefaultRequestHeaders.Add(name, value);
     }
 
     /// <summary>
     /// Sets the authorization header with bearer token.
     /// </summary>
+    /// <param name="token">The bearer token.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="token"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="token"/> is empty or whitespace.</exception>
     public void SetBearerToken(string token)
     {
+        ArgumentNullException.ThrowIfNull(token);
+
         _httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
     }

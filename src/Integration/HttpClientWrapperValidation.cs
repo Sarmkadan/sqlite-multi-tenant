@@ -17,42 +17,42 @@ namespace SqliteMultiTenant.Integration;
 public static class HttpClientWrapperValidation
 {
     /// <summary>
-    /// Validates an <see cref="HttpClientWrapper"/> instance for common problems.
+    /// Validates an <see cref="IHttpClientWrapper"/> instance for common problems.
     /// </summary>
     /// <param name="value">The instance to validate.</param>
     /// <returns>A list of human-readable validation problems; empty if valid.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
-    public static IReadOnlyList<string> Validate(this HttpClientWrapper? value)
+    public static IReadOnlyList<string> Validate(this IHttpClientWrapper? value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
         var problems = new List<string>();
 
-        // HttpClientWrapper itself is validated by constructor
+        // IHttpClientWrapper implementations are validated by their constructors
         // No additional internal state validation needed beyond null check
 
         return problems.AsReadOnly();
     }
 
     /// <summary>
-    /// Determines whether an <see cref="HttpClientWrapper"/> instance is valid.
+    /// Determines whether an <see cref="IHttpClientWrapper"/> instance is valid.
     /// </summary>
     /// <param name="value">The instance to check.</param>
     /// <returns>True if valid; otherwise, false.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
-    public static bool IsValid(this HttpClientWrapper? value)
+    public static bool IsValid(this IHttpClientWrapper? value)
     {
         ArgumentNullException.ThrowIfNull(value);
         return Validate(value).Count == 0;
     }
 
     /// <summary>
-    /// Ensures that an <see cref="HttpClientWrapper"/> instance is valid.
+    /// Ensures that an <see cref="IHttpClientWrapper"/> instance is valid.
     /// </summary>
     /// <param name="value">The instance to validate.</param>
     /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
     /// <exception cref="ArgumentException"><paramref name="value"/> is not valid. The exception message lists all validation problems.</exception>
-    public static void EnsureValid(this HttpClientWrapper? value)
+    public static void EnsureValid(this IHttpClientWrapper? value)
     {
         ArgumentNullException.ThrowIfNull(value);
 
@@ -60,7 +60,7 @@ public static class HttpClientWrapperValidation
         if (problems.Count > 0)
         {
             throw new ArgumentException(
-                $"HttpClientWrapper is not valid. Problems:{Environment.NewLine}- " + string.Join($"{Environment.NewLine}- ", problems));
+                $"IHttpClientWrapper is not valid. Problems:{Environment.NewLine}- " + string.Join($"{Environment.NewLine}- ", problems));
         }
     }
 
