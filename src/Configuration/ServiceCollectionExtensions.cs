@@ -64,7 +64,7 @@ public static class ServiceCollectionExtensions
 
         // Integration services
         services.AddSingleton<WebhookService>();
-        services.AddHttpClient<HttpClientWrapper>()
+        services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>()
             .ConfigureHttpClient(client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(options.HttpClientTimeoutSeconds);
