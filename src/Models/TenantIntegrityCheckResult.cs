@@ -70,7 +70,7 @@ public sealed class TenantIntegrityCheckResult
 
             if (!string.IsNullOrEmpty(IntegrityOutput))
             {
-                sb.Append($@"\nIntegrity output:\n{IntegrityOutput}");
+                sb.Append($"\nIntegrity output:\n{IntegrityOutput}");
             }
 
             return sb.ToString();
