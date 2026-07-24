@@ -4,9 +4,11 @@
 // CTO & Software Architect
 // =======================================================================
 
+using SqliteMultiTenant.Configuration;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Utilities;
+using SqliteMultiTenant.Exceptions;
 
 namespace SqliteMultiTenant.Operations;
 
@@ -133,7 +135,7 @@ public sealed class BatchOperationStatus : OperationStatusBase
     /// </summary>
     public void MarkRunning()
     {
-        MarkRunning();
+        base.MarkRunning();
     }
 
     /// <summary>
@@ -141,7 +143,7 @@ public sealed class BatchOperationStatus : OperationStatusBase
     /// </summary>
     public void MarkCompleted()
     {
-        MarkCompleted();
+        base.MarkCompleted();
     }
 
     /// <summary>
@@ -150,7 +152,7 @@ public sealed class BatchOperationStatus : OperationStatusBase
     /// <param name="error">The error message.</param>
     public void MarkFailed(string error)
     {
-        MarkFailed(error);
+        base.MarkFailed(error);
     }
 
     /// <summary>
@@ -171,19 +173,132 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     private readonly ILogger<BatchOperationHandler> _logger;
     private readonly TenantContextHelper _tenantContextHelper;
     private readonly Dictionary<string, BatchOperationStatus> _statusTracker = new();
+    private readonly int _maxBatchItems;
+    private readonly long _maxBatchPayloadSizeBytes;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchOperationHandler"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="tenantContextHelper">The tenant context helper for authorization checks.</param>
+    /// <param name="options">Optional configuration options. If null, uses defaults (max 500 items, 1 MB payload).</param>
     /// <exception cref="ArgumentNullException">Thrown when logger or tenantContextHelper is null.</exception>
     public BatchOperationHandler(
         ILogger<BatchOperationHandler> logger,
-        TenantContextHelper tenantContextHelper)
+        TenantContextHelper tenantContextHelper,
+        SqliteMultiTenantOptions? options = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _tenantContextHelper = tenantContextHelper ?? throw new ArgumentNullException(nameof(tenantContextHelper));
+
+        // Use configured values or defaults
+        _maxBatchItems = options?.MaxBatchItems ?? 500;
+        _maxBatchPayloadSizeBytes = options?.MaxBatchPayloadSizeBytes ?? (1024 * 1024); // 1 MB
+    }
+
+    /// <summary>
+    /// Validates that the batch operation does not exceed configured size limits.
+    /// Throws <see cref="BatchTooLargeException"/> if limits are exceeded.
+    /// </summary>
+    /// <param name="operation">The batch operation to validate.</param>
+    /// <exception cref="BatchTooLargeException">Thrown when the batch exceeds configured size limits.</exception>
+    private void ValidateBatchSize(BatchOperation operation)
+    {
+        if (operation is null)
+        {
+            throw new ArgumentNullException(nameof(operation));
+        }
+
+        // Validate item count limit
+        if (_maxBatchItems > 0 && operation.ResourceIds.Count > _maxBatchItems)
+        {
+            _logger.LogWarning(
+                "Batch operation {operationId} rejected: item count {actualCount} exceeds maximum {maxCount}",
+                operation.OperationId,
+                operation.ResourceIds.Count,
+                _maxBatchItems);
+
+            throw new BatchTooLargeException(
+                _maxBatchItems,
+                operation.ResourceIds.Count);
+        }
+
+        // Validate payload size limit
+        if (_maxBatchPayloadSizeBytes > 0)
+        {
+            long payloadSize = CalculatePayloadSize(operation.Parameters);
+            if (payloadSize > _maxBatchPayloadSizeBytes)
+            {
+                _logger.LogWarning(
+                    "Batch operation {operationId} rejected: payload size {actualSize} exceeds maximum {maxSize}",
+                    operation.OperationId,
+                    FormatSize(payloadSize),
+                    FormatSize(_maxBatchPayloadSizeBytes));
+
+                throw new BatchTooLargeException(
+                    _maxBatchItems,
+                    operation.ResourceIds.Count,
+                    _maxBatchPayloadSizeBytes,
+                    payloadSize);
+            }
+        }
+
+        _logger.LogDebug(
+            "Batch operation {operationId} validated: {count} items, payload size {payloadSize}",
+            operation.OperationId,
+            operation.ResourceIds.Count,
+            FormatSize(CalculatePayloadSize(operation.Parameters)));
+    }
+
+    /// <summary>
+    /// Calculates the approximate size of the batch operation parameters in bytes.
+    /// </summary>
+    /// <param name="parameters">The parameters dictionary.</param>
+    /// <returns>The approximate size in bytes.</returns>
+    private static long CalculatePayloadSize(Dictionary<string, object>? parameters)
+    {
+        if (parameters is null || parameters.Count == 0)
+        {
+            return 0;
+        }
+
+        long size = 0;
+        foreach (var kvp in parameters)
+        {
+            // Add key size
+            size += kvp.Key.Length * sizeof(char);
+
+            // Add value size based on type
+            if (kvp.Value is string strValue)
+            {
+                size += strValue.Length * sizeof(char);
+            }
+            else if (kvp.Value is not null)
+            {
+                // For other types, use approximate size
+                size += 128; // Conservative estimate for serialized objects
+            }
+        }
+
+        return size;
+    }
+
+    /// <summary>
+    /// Formats a byte size for human-readable output.
+    /// </summary>
+    /// <param name="bytes">The size in bytes.</param>
+    /// <returns>Formatted string with appropriate unit.</returns>
+    private static string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        int order = 0;
+        double len = bytes;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
     }
 
     /// <summary>
@@ -196,9 +311,13 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     /// <returns>Result of the batch operation with per-resource details.</returns>
     /// <exception cref="ArgumentNullException">Thrown when operation is null.</exception>
     /// <exception cref="UnauthorizedAccessException">Thrown when caller is not authorized for one or more tenant resources.</exception>
+    /// <exception cref="BatchTooLargeException">Thrown when the batch exceeds configured size limits (max items or payload size).</exception>
     public async Task<BatchOperationResult> ExecuteAsync(BatchOperation operation, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(operation);
+    // Validate batch size limits to prevent resource exhaustion
+    ValidateBatchSize(operation);
+
 
         var operationId = operation.OperationId;
         var startTime = DateTime.UtcNow;
@@ -307,6 +426,7 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     /// </summary>
     /// <param name="resourceIds">Collection of tenant resource IDs to validate.</param>
     /// <exception cref="UnauthorizedAccessException">Thrown when caller is not authorized for one or more tenant resources.</exception>
+    /// <exception cref="BatchTooLargeException">Thrown when the batch exceeds configured size limits (max items or payload size).</exception>
     private void ValidateTenantAuthorization(IEnumerable<string> resourceIds)
     {
         if (resourceIds is null || !resourceIds.Any())

@@ -5,6 +5,7 @@
 // ===========================================================================
 
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Utilities;
 using Xunit;
@@ -262,5 +263,102 @@ public class BatchOperationHandlerTests
         Assert.NotNull(result);
         Assert.Equal(1, result.TotalResources);
         Assert.Equal(1, result.SuccessCount);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithBatchExceedingMaxItems_ThrowsBatchTooLargeException()
+    {
+        // Arrange
+        _tenantContextHelper.SetTenantContext(new TenantContext { TenantId = "tenant1" });
+        var operation = new BatchOperation
+        {
+            OperationType = "Test",
+            ResourceIds = new List<string>(),
+            Parameters = new Dictionary<string, object>()
+        };
+
+        // Create a list with more items than the default max (500)
+        for (int i = 0; i < 501; i++)
+        {
+            operation.ResourceIds.Add("tenant1");
+        }
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<BatchTooLargeException>(
+            () => _handler.ExecuteAsync(operation, CancellationToken.None));
+
+        // Assert
+        Assert.Equal(500, exception.MaxItemCount);
+        Assert.Equal(501, exception.ActualItemCount);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithBatchAtMaxItems_Succeeds()
+    {
+        // Arrange
+        _tenantContextHelper.SetTenantContext(new TenantContext { TenantId = "tenant1" });
+        var operation = new BatchOperation
+        {
+            OperationType = "Test",
+            ResourceIds = new List<string>(),
+            Parameters = new Dictionary<string, object>()
+        };
+
+        // Create a list with exactly the max items (500)
+        for (int i = 0; i < 500; i++)
+        {
+            operation.ResourceIds.Add("tenant1");
+        }
+
+        // Act
+        var result = await _handler.ExecuteAsync(operation, CancellationToken.None);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(500, result.TotalResources);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithEmptyResourceIds_Succeeds()
+    {
+        // Arrange
+        _tenantContextHelper.SetTenantContext(new TenantContext { TenantId = "tenant1" });
+        var operation = new BatchOperation
+        {
+            OperationType = "Test",
+            ResourceIds = new List<string>() // Empty list
+        };
+
+        // Act
+        var result = await _handler.ExecuteAsync(operation, CancellationToken.None);
+
+        // Assert - empty batch should succeed (no-op is acceptable for empty batches)
+        Assert.NotNull(result);
+        Assert.Equal(0, result.TotalResources);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithBatchExceedingMaxPayloadSize_ThrowsBatchTooLargeException()
+    {
+        // Arrange
+        _tenantContextHelper.SetTenantContext(new TenantContext { TenantId = "tenant1" });
+        var largePayload = new string('x', 1024 * 1025); // ~1 MB + 1 KB
+        var operation = new BatchOperation
+        {
+            OperationType = "Test",
+            ResourceIds = new List<string> { "tenant1" },
+            Parameters = new Dictionary<string, object>
+            {
+                ["LargeData"] = largePayload
+            }
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<BatchTooLargeException>(
+            () => _handler.ExecuteAsync(operation, CancellationToken.None));
+
+        // Assert
+        Assert.True(exception.MaxPayloadSizeBytes > 0);
+        Assert.True(exception.ActualPayloadSizeBytes > exception.MaxPayloadSizeBytes);
     }
 }

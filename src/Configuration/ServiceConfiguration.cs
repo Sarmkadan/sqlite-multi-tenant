@@ -75,4 +75,18 @@ public class SqliteMultiTenantOptions
     public string BackupDirectory { get; set; } = "backups";
     public string DatabaseDirectory { get; set; } = "databases";
     public bool EnableLogging { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the maximum number of items allowed in a single batch operation.
+    /// Defaults to 500 to prevent resource exhaustion attacks.
+    /// Set to 0 or negative to disable the limit.
+    /// </summary>
+    public int MaxBatchItems { get; set; } = 500;
+
+    /// <summary>
+    /// Gets or sets the maximum total payload size in bytes for batch operation parameters.
+    /// Defaults to 1 MB to prevent memory exhaustion from large parameter payloads.
+    /// Set to 0 or negative to disable the limit.
+    /// </summary>
+    public long MaxBatchPayloadSizeBytes { get; set; } = 1024 * 1024; // 1 MB
 }
