@@ -2,7 +2,7 @@
 // =============================================================================
 // Author: Vladyslav Zaiets | https://sarmkadan.com
 // CTO & Software Architect
-// =============================================================================
+// =========================================================================
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,148 +28,152 @@ namespace SqliteMultiTenant.Configuration;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registers all SQLite Multi-Tenant services.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-    /// <param name="configureOptions">Optional configuration action for service options.</param>
-    /// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
-    public static IServiceCollection AddSqliteMultiTenantServices(
-        this IServiceCollection services,
-        Action<ServiceOptions>? configureOptions = null)
-    {
-        ArgumentNullException.ThrowIfNull(services);
+	/// <summary>
+	/// Registers all SQLite Multi-Tenant services.
+	/// </summary>
+	/// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
+	/// <param name="configureOptions">Optional configuration action for service options.</param>
+	/// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
+	public static IServiceCollection AddSqliteMultiTenantServices(
+		this IServiceCollection services,
+		Action<ServiceOptions>? configureOptions = null)
+	{
+		ArgumentNullException.ThrowIfNull(services);
 
-        var options = new ServiceOptions();
-        configureOptions?.Invoke(options);
+		var options = new ServiceOptions();
+		configureOptions?.Invoke(options);
 
-        // Core services
-        services.AddSingleton<IConfigurationManager, ConfigurationManager>();
-        services.AddSingleton<IDataMapper>(
-            sp => new DataMapper(sp.GetRequiredService<ILogger<DataMapper>>()));
+		// Core services
+	services.AddSingleton<IConfigurationManager, ConfigurationManager>();
+	services.AddSingleton<IDataMapper>(
+		sp => new DataMapper(sp.GetRequiredService<ILogger<DataMapper>>()));
 
-        // Caching
-        services.AddSingleton<IDistributedCache>(
-            sp =>
-            new DistributedCacheService(
-                sp.GetRequiredService<ILogger<DistributedCacheService>>(),
-                options.MaxCacheItems));
+		// Caching
+	services.AddSingleton<IDistributedCache>(
+		sp =>
+			new DistributedCacheService(
+				sp.GetRequiredService<ILogger<DistributedCacheService>>(),
+				options.MaxCacheItems));
 
-        // Event bus (conditionally registered based on options)
-        if (options.EnableEventBus)
-        {
-            services.AddSingleton<IEventBus, EventBus>();
-        }
+		// Event bus (conditionally registered based on options)
+		if (options.EnableEventBus)
+		{
+			services.AddSingleton<IEventBus, EventBus>();
+		}
 
-        // Integration services
-        services.AddSingleton<WebhookService>();
-        services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>()
-            .ConfigureHttpClient(client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(options.HttpClientTimeoutSeconds);
-            });
+		// Integration services
+	services.AddSingleton<WebhookService>();
+	services.AddHttpClient<IHttpClientWrapper, HttpClientWrapper>()
+		.ConfigureHttpClient(client =>
+		{
+			client.Timeout = TimeSpan.FromSeconds(options.HttpClientTimeoutSeconds);
+		});
 
-        // Monitoring & Logging
-        services.AddSingleton<IAuditLogger, AuditLogger>();
-        services.AddSingleton<IStatisticsService, StatisticsService>();
-        services.AddSingleton<IRequestResponseLogger, RequestResponseLogger>();
+		// Monitoring & Logging
+	services.AddSingleton<IAuditLogger, AuditLogger>();
+	services.AddSingleton<IStatisticsService, StatisticsService>();
+	services.AddSingleton<IRequestResponseLogger, RequestResponseLogger>();
 
-        // Validation
-        services.AddScoped(sp => new DataValidator(sp.GetRequiredService<ILogger<DataValidator>>()));
+		// Validation
+	services.AddScoped(sp => new DataValidator(sp.GetRequiredService<ILogger<DataValidator>>()));
 
-        // Background workers
-        services.AddSingleton<IScheduledTaskService>(
-            sp => new ScheduledTaskService(sp.GetRequiredService<ILogger<ScheduledTaskService>>()));
+		// Background workers
+	services.AddSingleton<TenantContextHelper>();
+	services.AddSingleton<IScheduledTaskService>(
+		sp =>
+			new ScheduledTaskService(
+				sp.GetRequiredService<ILogger<ScheduledTaskService>>(),
+				sp.GetRequiredService<TenantContextHelper>()));
 
-        // Operations
-        services.AddScoped<IBatchProcessor, BatchProcessor>();
+		// Operations
+	services.AddScoped<IBatchProcessor, BatchProcessor>();
 
-        // CLI
-        services.AddScoped<Cli.CommandParser>();
-        services.AddScoped<Cli.CommandExecutor>();
-        services.AddScoped<Cli.CliApplication>();
-        services.AddScoped<Cli.IConsoleWriter, Cli.ConsoleWriter>();
+		// CLI
+	services.AddScoped<Cli.CommandParser>();
+	services.AddScoped<Cli.CommandExecutor>();
+	services.AddScoped<Cli.CliApplication>();
+	services.AddScoped<Cli.IConsoleWriter, Cli.ConsoleWriter>();
 
-        return services;
-    }
+	return services;
+}
 
-    /// <summary>
-    /// Registers exception handling services.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-    /// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
-    public static IServiceCollection AddExceptionHandling(this IServiceCollection services)
-    {
-        ArgumentNullException.ThrowIfNull(services);
+	/// <summary>
+	/// Registers exception handling services.
+	/// </summary>
+	/// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
+	/// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
+	public static IServiceCollection AddExceptionHandling(this IServiceCollection services)
+	{
+		ArgumentNullException.ThrowIfNull(services);
 
-        services.AddSingleton<Exceptions.IExceptionProcessor, Exceptions.ExceptionProcessor>();
-        return services;
-    }
+		services.AddSingleton<Exceptions.IExceptionProcessor, Exceptions.ExceptionProcessor>();
+		return services;
+	}
 
-    /// <summary>
-    /// Registers event handlers.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-    /// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
-    public static IServiceCollection AddEventHandlers(this IServiceCollection services)
-    {
-        ArgumentNullException.ThrowIfNull(services);
+	/// <summary>
+	/// Registers event handlers.
+	/// </summary>
+	/// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
+	/// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
+	public static IServiceCollection AddEventHandlers(this IServiceCollection services)
+	{
+		ArgumentNullException.ThrowIfNull(services);
 
-        services.AddScoped<Events.IDomainEventHandler<Events.TenantCreatedNotificationEvent>, Events.TenantCreatedEventHandler>();
-        services.AddScoped<Events.IDomainEventHandler<Events.TenantDeletedEvent>, Events.TenantDeletedEventHandler>();
-        services.AddScoped<Events.IDomainEventHandler<Events.BackupCompletedNotificationEvent>, Events.BackupCompletedEventHandler>();
-        services.AddScoped<Events.IDomainEventHandler<Events.MigrationCompletedEvent>, Events.MigrationCompletedEventHandler>();
-        return services;
-    }
+		services.AddScoped<Events.IDomainEventHandler<Events.TenantCreatedNotificationEvent>, Events.TenantCreatedEventHandler>();
+		services.AddScoped<Events.IDomainEventHandler<Events.TenantDeletedEvent>, Events.TenantDeletedEventHandler>();
+		services.AddScoped<Events.IDomainEventHandler<Events.BackupCompletedNotificationEvent>, Events.BackupCompletedEventHandler>();
+		services.AddScoped<Events.IDomainEventHandler<Events.MigrationCompletedEvent>, Events.MigrationCompletedEventHandler>();
+		return services;
+	}
 
-    /// <summary>
-    /// Registers health check services.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-    /// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
-    public static IServiceCollection AddHealthChecks(this IServiceCollection services)
-    {
-        ArgumentNullException.ThrowIfNull(services);
+	/// <summary>
+	/// Registers health check services.
+	/// </summary>
+	/// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
+	/// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
+	public static IServiceCollection AddHealthChecks(this IServiceCollection services)
+	{
+		ArgumentNullException.ThrowIfNull(services);
 
-        services.AddSingleton<Health.HealthCheckService>();
-        return services;
-    }
+		services.AddSingleton<Health.HealthCheckService>();
+		return services;
+	}
 
-    /// <summary>
-    /// Registers formatters.
-    /// </summary>
-    /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-    /// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
-    public static IServiceCollection AddFormatters(this IServiceCollection services)
-    {
-        ArgumentNullException.ThrowIfNull(services);
+	/// <summary>
+	/// Registers formatters.
+	/// </summary>
+	/// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
+	/// <returns>The <see cref="IServiceCollection"/> so calls can be chained.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="services"/> is <see langword="null"/>.</exception>
+	public static IServiceCollection AddFormatters(this IServiceCollection services)
+	{
+		ArgumentNullException.ThrowIfNull(services);
 
-        services.AddSingleton<Formatters.OutputFormatter>();
-        services.AddScoped(sp => new Formatters.JsonExportFormatter(sp.GetRequiredService<ILogger<Formatters.JsonExportFormatter>>()));
-        services.AddScoped(sp => new Formatters.CsvExportFormatter(sp.GetRequiredService<ILogger<Formatters.CsvExportFormatter>>()));
-        services.AddScoped(sp => new Formatters.XmlExportFormatter(sp.GetRequiredService<ILogger<Formatters.XmlExportFormatter>>()));
-        return services;
-    }
+		services.AddSingleton<Formatters.OutputFormatter>();
+	services.AddScoped(sp => new Formatters.JsonExportFormatter(sp.GetRequiredService<ILogger<Formatters.JsonExportFormatter>>()));
+	services.AddScoped(sp => new Formatters.CsvExportFormatter(sp.GetRequiredService<ILogger<Formatters.CsvExportFormatter>>()));
+	services.AddScoped(sp => new Formatters.XmlExportFormatter(sp.GetRequiredService<ILogger<Formatters.XmlExportFormatter>>()));
+		return services;
+	}
 
-    /// <summary>
-    /// Adds request/response logging middleware.
-    /// </summary>
-    /// <param name="app">The <see cref="IApplicationBuilder"/> to configure.</param>
-    /// <returns>The <see cref="IApplicationBuilder"/> so calls can be chained.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="app"/> is <see langword="null"/>.</exception>
-    public static IApplicationBuilder UseRequestResponseLogging(this IApplicationBuilder app)
-    {
-        ArgumentNullException.ThrowIfNull(app);
+	/// <summary>
+	/// Adds request/response logging middleware.
+	/// </summary>
+	/// <param name="app">The <see cref="IApplicationBuilder"/> to configure.</param>
+	/// <returns>The <see cref="IApplicationBuilder"/> so calls can be chained.</returns>
+	/// <exception cref="ArgumentNullException">Thrown if <paramref name="app"/> is <see langword="null"/>.</exception>
+	public static IApplicationBuilder UseRequestResponseLogging(this IApplicationBuilder app)
+	{
+		ArgumentNullException.ThrowIfNull(app);
 
-        app.UseMiddleware<Middleware.CorrelationIdMiddleware>();
-        app.UsePerformanceTracking();
-        return app;
-    }
+		app.UseMiddleware<Middleware.CorrelationIdMiddleware>();
+		app.UsePerformanceTracking();
+		return app;
+	}
 }
 
 /// <summary>
@@ -177,41 +181,41 @@ public static class ServiceCollectionExtensions
 /// </summary>
 public sealed class ServiceOptions
 {
-    private int _maxCacheItems = 1000;
-    private int _httpClientTimeoutSeconds = 30;
+	private int _maxCacheItems = 1000;
+	private int _httpClientTimeoutSeconds = 30;
 
-    /// <summary>
-    /// Gets or sets the maximum number of items to cache.
-    /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if value is less than 0.</exception>
-    public int MaxCacheItems
-    {
-        get => _maxCacheItems;
-        set => _maxCacheItems = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), "MaxCacheItems must be non-negative");
-    }
+	/// <summary>
+	/// Gets or sets the maximum number of items to cache.
+	/// </summary>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if value is less than 0.</exception>
+	public int MaxCacheItems
+	{
+		get => _maxCacheItems;
+		set => _maxCacheItems = value >= 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), "MaxCacheItems must be non-negative");
+	}
 
-    /// <summary>
-    /// Gets or sets the HTTP client timeout in seconds.
-    /// </summary>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown if value is less than 1.</exception>
-    public int HttpClientTimeoutSeconds
-    {
-        get => _httpClientTimeoutSeconds;
-        set => _httpClientTimeoutSeconds = value >= 1 ? value : throw new ArgumentOutOfRangeException(nameof(value), "HttpClientTimeoutSeconds must be at least 1");
-    }
+	/// <summary>
+	/// Gets or sets the HTTP client timeout in seconds.
+	/// </summary>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown if value is less than 1.</exception>
+	public int HttpClientTimeoutSeconds
+	{
+		get => _httpClientTimeoutSeconds;
+		set => _httpClientTimeoutSeconds = value >= 1 ? value : throw new ArgumentOutOfRangeException(nameof(value), "HttpClientTimeoutSeconds must be at least 1");
+	}
 
-    /// <summary>
-    /// Gets or sets whether auditing is enabled.
-    /// </summary>
-    public bool EnableAuiting { get; set; } = true;
+	/// <summary>
+	/// Gets or sets whether auditing is enabled.
+	/// </summary>
+	public bool EnableAuiting { get; set; } = true;
 
-    /// <summary>
-    /// Gets or sets whether metrics collection is enabled.
-    /// </summary>
-    public bool EnableMetrics { get; set; } = true;
+	/// <summary>
+	/// Gets or sets whether metrics collection is enabled.
+	/// </summary>
+	public bool EnableMetrics { get; set; } = true;
 
-    /// <summary>
-    /// Gets or sets whether the event bus is enabled.
-    /// </summary>
-    public bool EnableEventBus { get; set; } = true;
+	/// <summary>
+	/// Gets or sets whether the event bus is enabled.
+	/// </summary>
+	public bool EnableEventBus { get; set; } = true;
 }
