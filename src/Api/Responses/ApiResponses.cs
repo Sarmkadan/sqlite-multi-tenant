@@ -95,16 +95,102 @@ public sealed class MigrationResponse {
 }
 
 /// <summary>
+/// Response DTO for individual migration failure details.
+/// Provides detailed information about a single migration failure.
+/// </summary>
+public sealed class MigrationFailureResponse
+{
+    public string MigrationId { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
+    public string? ExceptionDetails { get; set; }
+    public DateTime FailedAt { get; set; }
+    public string ErrorType { get; set; } = "Unknown";
+    public string ErrorSummary { get; set; } = string.Empty;
+
+    public static MigrationFailureResponse FromModel(Models.MigrationFailure failure)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(failure.MigrationId);
+        ArgumentException.ThrowIfNullOrEmpty(failure.Version);
+        ArgumentException.ThrowIfNullOrEmpty(failure.Name);
+        ArgumentException.ThrowIfNullOrEmpty(failure.ErrorMessage);
+
+        return new MigrationFailureResponse
+        {
+            MigrationId = failure.MigrationId,
+            Version = failure.Version,
+            Name = failure.Name,
+            ErrorMessage = failure.ErrorMessage,
+            ExceptionDetails = failure.ExceptionDetails,
+            FailedAt = failure.FailedAt,
+            ErrorType = failure.ExceptionDetails?.Contains("constraint", StringComparison.OrdinalIgnoreCase) == true ? "ConstraintViolation" :
+                        failure.ExceptionDetails?.Contains("duplicate", StringComparison.OrdinalIgnoreCase) == true ? "DuplicateKey" :
+                        failure.ExceptionDetails?.Contains("timeout", StringComparison.OrdinalIgnoreCase) == true ? "Timeout" :
+                        "Unknown",
+            ErrorSummary = failure.ExceptionDetails != null ?
+                (failure.ExceptionDetails.Contains("constraint", StringComparison.OrdinalIgnoreCase) ? "Database constraint violation" :
+                 failure.ExceptionDetails.Contains("duplicate", StringComparison.OrdinalIgnoreCase) ? "Duplicate key or already exists" :
+                 failure.ExceptionDetails.Contains("timeout", StringComparison.OrdinalIgnoreCase) ? "Operation timeout" :
+                 "Migration failed") : "Migration failed"
+        };
+    }
+}
+
+/// <summary>
+/// Response DTO for tenant-specific migration results.
+/// Provides detailed results for a single tenant/database migration operation.
+/// </summary>
+public sealed class TenantMigrationResultResponse
+{
+    public string DatabaseId { get; set; } = string.Empty;
+    public string? TenantId { get; set; }
+    public string? DatabaseName { get; set; }
+    public int TotalMigrationsAttempted { get; set; }
+    public int SuccessfulMigrations { get; set; }
+    public int FailedMigrations => TotalMigrationsAttempted - SuccessfulMigrations;
+    public bool IsSuccess => FailedMigrations == 0;
+    public string? SchemaVersionReached { get; set; }
+    public List<MigrationFailureResponse> Failures { get; set; } = new();
+    public string ResultSummary => IsSuccess
+        ? $"Success: {SuccessfulMigrations}/{TotalMigrationsAttempted} migrations applied"
+        : $"Failed: {FailedMigrations} migration(s) failed, schema version reached: {SchemaVersionReached ?? "none"}";
+
+    public static TenantMigrationResultResponse FromModel(Models.TenantMigrationResult result)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(result.DatabaseId);
+
+        return new TenantMigrationResultResponse
+        {
+            DatabaseId = result.DatabaseId,
+            TenantId = result.TenantId,
+            DatabaseName = result.DatabaseName,
+            TotalMigrationsAttempted = result.TotalMigrationsAttempted,
+            SuccessfulMigrations = result.SuccessfulMigrations,
+            SchemaVersionReached = result.SchemaVersionReached,
+            Failures = result.Failures.Select(MigrationFailureResponse.FromModel).ToList()
+        };
+    }
+}
+
+/// <summary>
 /// Response DTO for batch migration operations.
 /// Allows clients to track bulk operations across tenants.
 /// </summary>
-public sealed class MigrationBatchResponse {
+public sealed class MigrationBatchResponse
+{
     public string DatabaseId { get; set; } = string.Empty;
     public int TotalMigrations { get; set; }
     public int SuccessfulCount { get; set; }
     public int FailedCount => TotalMigrations - SuccessfulCount;
+    public bool IsSuccess { get; set; }
+    public string? ErrorMessage { get; set; }
     public DateTime AppliedAt { get; set; }
     public string AppliedBy { get; set; } = string.Empty;
+    public List<TenantMigrationResultResponse> TenantResults { get; set; } = new();
+    public int TotalTenants => TenantResults.Count;
+    public int TotalSuccessfulTenants => TenantResults.Count(r => r.IsSuccess);
+    public int TotalFailedTenants => TotalTenants - TotalSuccessfulTenants;
 }
 
 /// <summary>

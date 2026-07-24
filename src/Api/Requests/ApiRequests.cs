@@ -95,3 +95,11 @@ public sealed class WebhookSubscriptionRequest {
     public bool Enabled { get; set; } = true;
     public Dictionary<string, string> Headers { get; set; } = new();
 }
+
+/// <summary>
+/// Request DTO for applying migrations to multiple databases with fault isolation.
+/// </summary>
+public sealed class ApplyMigrationsToMultipleRequest {
+    public List<string> DatabaseIds { get; set; } = new();
+    public string AppliedBy { get; set; } = string.Empty;
+}

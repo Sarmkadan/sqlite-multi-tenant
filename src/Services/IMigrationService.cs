@@ -117,4 +117,29 @@ public interface IMigrationService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of failed migrations.</returns>
     Task<List<Migration>> GetFailedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Applies pending migrations to a specific database with fault isolation.
+    /// Executes migrations one by one, collecting failures without aborting the entire process.
+    /// Returns detailed results including which migrations succeeded and which failed.
+    /// </summary>
+    /// <param name="databaseId">The database ID to migrate.</param>
+    /// <param name="executedBy">The user or process executing the migration.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Batch migration result with tenant-level details.</returns>
+    Task<Models.MigrationBatchResult> ApplyMigrationsWithFaultIsolationAsync(string databaseId, string executedBy, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Applies pending migrations to multiple databases with fault isolation.
+    /// Executes migrations per database in isolation, collecting failures without aborting the entire process.
+    /// Returns detailed results for all tenants/databases.
+    /// </summary>
+    /// <param name="databaseIds">List of database IDs to migrate.</param>
+    /// <param name="executedBy">The user or process executing the migration.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Batch migration result with results for all tenants/databases.</returns>
+    Task<Models.MigrationBatchResult> ApplyMigrationsToMultipleDatabasesAsync(
+        List<string> databaseIds,
+        string executedBy,
+        CancellationToken cancellationToken = default);
 }
