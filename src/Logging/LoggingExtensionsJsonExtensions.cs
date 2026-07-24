@@ -16,6 +16,7 @@ public static class LoggingExtensionsJsonExtensions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
+        MaxDepth = 100,
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
         ReferenceHandler = ReferenceHandler.IgnoreCycles,
     };

@@ -17,12 +17,14 @@ public static class TenantStorageInfoJsonExtensions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
+        MaxDepth = 100,
     };
 
     private static readonly JsonSerializerOptions _jsonOptionsIndented = new(JsonSerializerDefaults.Web)
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
+        MaxDepth = 100,
     };
 
     /// <summary>

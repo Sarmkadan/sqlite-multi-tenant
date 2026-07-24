@@ -19,6 +19,7 @@ public static class TenantContextJsonExtensions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = false,
+        MaxDepth = 100,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         Converters = { new TenantContextJsonConverter() }
     };
