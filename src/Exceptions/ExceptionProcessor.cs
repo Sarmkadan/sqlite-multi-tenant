@@ -119,7 +119,7 @@ public sealed class ExceptionProcessor : IExceptionProcessor {
     {
         return exception switch
         {
-            TenantNotFoundException ex => $"Tenant not found: {ex.Message}",
+            TenantNotFoundException ex => $"Tenant with ID '{ex.TenantId}' was not found.",
             DatabaseAccessException ex => "Unable to access database. Please try again later.",
             MigrationException ex => $"Migration error: {ex.Message}",
             BackupException ex => $"Backup error: {ex.Message}",
@@ -133,13 +133,20 @@ public sealed class ExceptionProcessor : IExceptionProcessor {
 
     private Dictionary<string, object> GetErrorDetails(Exception exception)
     {
-        return new Dictionary<string, object>
+        var details = new Dictionary<string, object>
         {
             { "ExceptionType", exception.GetType().Name },
             { "Message", exception.Message },
             { "Source", exception.Source ?? "Unknown" },
             { "StackTrace", exception.StackTrace ?? "Not available" }
         };
+
+        if (exception is TenantNotFoundException tenantEx)
+        {
+            details.Add("TenantId", tenantEx.TenantId ?? "Unknown");
+        }
+
+        return details;
     }
 }
 
