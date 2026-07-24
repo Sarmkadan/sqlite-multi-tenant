@@ -5,6 +5,8 @@
 // =====================================================================
 
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using SqliteMultiTenant.Models;
 
@@ -126,16 +128,37 @@ namespace SqliteMultiTenant.Utilities
         /// <summary>
         /// Checks if the current tenant context matches the expected tenant ID.
         /// </summary>
+        /// <remarks>
+        /// This method performs a constant-time comparison to prevent timing side-channel attacks.
+        /// Tenant IDs are security-critical identifiers used for multi-tenant data isolation.
+        /// An attacker with timing information could potentially use it to enumerate valid tenant IDs
+        /// or bypass tenant isolation checks in a multi-tenant system.
+        /// </remarks>
         /// <param name="helper">The tenant context helper instance.</param>
         /// <param name="expectedTenantId">The tenant ID to compare against.</param>
         /// <returns>True if the current tenant matches the expected tenant; otherwise false.</returns>
         /// <exception cref="ArgumentNullException">Thrown when helper or expectedTenantId is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when expectedTenantId is empty or consists only of whitespace.</exception>
         public static bool IsCurrentTenant(this TenantContextHelper helper, string expectedTenantId)
         {
             ArgumentNullException.ThrowIfNull(helper);
             ArgumentException.ThrowIfNullOrWhiteSpace(expectedTenantId, nameof(expectedTenantId));
 
-            return string.Equals(helper.GetCurrentTenantId(), expectedTenantId, StringComparison.Ordinal);
+            var currentTenantId = helper.GetCurrentTenantId();
+
+            // If no tenant context is set, return false (not the expected tenant)
+            if (currentTenantId is null)
+            {
+                return false;
+            }
+
+            // Use constant-time comparison to prevent timing side-channel attacks
+            // This ensures that the comparison time does not leak information about the tenant ID
+            var currentBytes = Encoding.UTF8.GetBytes(currentTenantId.Trim());
+            var expectedBytes = Encoding.UTF8.GetBytes(expectedTenantId.Trim());
+            return CryptographicOperations.FixedTimeEquals(
+                currentBytes.AsSpan(),
+                expectedBytes.AsSpan());
         }
 
         /// <summary>
