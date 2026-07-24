@@ -378,6 +378,20 @@
             Returns complete migration history for compliance reporting.
             </summary>
         </member>
+        <member name="M:SqliteMultiTenant.Api.Controllers.MigrationController.ApplyMigrationsWithFaultIsolationAsync(System.String,System.String)">
+            <summary>
+            Applies pending migrations to a specific database with fault isolation.
+            Executes migrations one by one, collecting failures without aborting on individual migration failures.
+            Returns detailed results including which migrations succeeded and which failed.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Api.Controllers.MigrationController.ApplyMigrationsToMultipleDatabasesAsync(SqliteMultiTenant.Api.Requests.ApplyMigrationsToMultipleRequest)">
+            <summary>
+            Applies pending migrations to multiple databases with fault isolation.
+            Executes migrations per database in isolation, collecting failures without aborting the entire process.
+            Returns detailed results for all tenants/databases.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Api.Controllers.MigrationControllerJsonExtensions">
             <summary>
             Provides System.Text.Json serialization extensions for <see cref="T:SqliteMultiTenant.Api.Controllers.MigrationController"/>.
@@ -711,6 +725,11 @@
             Enables event-driven integrations (e.g., notify on backup completion).
             </summary>
         </member>
+        <member name="T:SqliteMultiTenant.Api.Requests.ApplyMigrationsToMultipleRequest">
+            <summary>
+            Request DTO for applying migrations to multiple databases with fault isolation.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Api.Responses.ApiResponse`1">
             <summary>
             Generic API response wrapper for consistent response format.
@@ -740,6 +759,18 @@
             <summary>
             Response DTO for individual migration information.
             Shows version history and rollback capability for schema evolution tracking.
+            </summary>
+        </member>
+        <member name="T:SqliteMultiTenant.Api.Responses.MigrationFailureResponse">
+            <summary>
+            Response DTO for individual migration failure details.
+            Provides detailed information about a single migration failure.
+            </summary>
+        </member>
+        <member name="T:SqliteMultiTenant.Api.Responses.TenantMigrationResultResponse">
+            <summary>
+            Response DTO for tenant-specific migration results.
+            Provides detailed results for a single tenant/database migration operation.
             </summary>
         </member>
         <member name="T:SqliteMultiTenant.Api.Responses.MigrationBatchResponse">
@@ -1747,6 +1778,74 @@
             </summary>
             <param name="task">The task to calculate the interval for.</param>
             <returns>The calculated interval.</returns>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.TaskId">
+            <summary>
+            The unique identifier for the task.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.IsEnabled">
+            <summary>
+            Indicates whether the task is enabled.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.LastExecutedAt">
+            <summary>
+            The timestamp when the task was last executed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.NextExecutionAt">
+            <summary>
+            The timestamp when the task will next execute.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.ExecutionCount">
+            <summary>
+            The total number of times the task has executed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.FailureCount">
+            <summary>
+            The total number of times the task has failed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.TenantId">
+            <summary>
+            The tenant ID associated with this task, if any.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus"/> class.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.MarkCompleted(System.Nullable{System.DateTime},System.Int64,System.Int64)">
+            <summary>
+            Updates the status to completed successfully.
+            </summary>
+            <param name="lastExecutedAt">The timestamp when the task was last executed.</param>
+            <param name="executionCount">The total execution count.</param>
+            <param name="failureCount">The total failure count.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.MarkFailed(System.String,System.Nullable{System.DateTime},System.Int64,System.Int64)">
+            <summary>
+            Updates the status to failed.
+            </summary>
+            <param name="error">The error message.</param>
+            <param name="lastExecutedAt">The timestamp when the task was last executed.</param>
+            <param name="executionCount">The total execution count.</param>
+            <param name="failureCount">The total failure count.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.MarkRunning">
+            <summary>
+            Updates the status to running.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.BackgroundWorkers.TaskExecutionStatus.Validate">
+            <summary>
+            Validates the task execution status.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown when the status is invalid.</exception>
         </member>
         <member name="T:SqliteMultiTenant.BulkOperations.BulkDataExtensions">
             <summary>
@@ -3551,6 +3650,20 @@
             Configuration options for multi-tenant system
             </summary>
         </member>
+        <member name="P:SqliteMultiTenant.Configuration.SqliteMultiTenantOptions.MaxBatchItems">
+            <summary>
+            Gets or sets the maximum number of items allowed in a single batch operation.
+            Defaults to 500 to prevent resource exhaustion attacks.
+            Set to 0 or negative to disable the limit.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Configuration.SqliteMultiTenantOptions.MaxBatchPayloadSizeBytes">
+            <summary>
+            Gets or sets the maximum total payload size in bytes for batch operation parameters.
+            Defaults to 1 MB to prevent memory exhaustion from large parameter payloads.
+            Set to 0 or negative to disable the limit.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Configuration.ServiceConfigurationJsonExtensions">
             <summary>
             Provides System.Text.Json serialization extensions for <see cref="T:SqliteMultiTenant.Configuration.AppConfiguration"/>.
@@ -5255,6 +5368,56 @@
             <returns>True if deserialization succeeded; otherwise, false</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="json"/> is null</exception>
         </member>
+        <member name="T:SqliteMultiTenant.Exceptions.BatchTooLargeException">
+            <summary>
+            Thrown when a batch operation exceeds configured size limits to prevent resource exhaustion attacks.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.BatchTooLargeException.MaxItemCount">
+            <summary>Gets the maximum allowed item count.</summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.BatchTooLargeException.ActualItemCount">
+            <summary>Gets the actual item count in the batch.</summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.BatchTooLargeException.MaxPayloadSizeBytes">
+            <summary>Gets the maximum allowed payload size in bytes.</summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.BatchTooLargeException.ActualPayloadSizeBytes">
+            <summary>Gets the actual payload size in bytes.</summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.BatchTooLargeException.#ctor(System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException"/> class.
+            </summary>
+            <param name="maxItemCount">The maximum allowed item count.</param>
+            <param name="actualItemCount">The actual item count in the batch.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.BatchTooLargeException.#ctor(System.Int32,System.Int32,System.Int64,System.Int64)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException"/> class.
+            </summary>
+            <param name="maxItemCount">The maximum allowed item count.</param>
+            <param name="actualItemCount">The actual item count in the batch.</param>
+            <param name="maxPayloadSizeBytes">The maximum allowed payload size in bytes.</param>
+            <param name="actualPayloadSizeBytes">The actual payload size in bytes.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.BatchTooLargeException.#ctor(System.String,System.Int32,System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException"/> class with a custom message.
+            </summary>
+            <param name="message">The exception message.</param>
+            <param name="maxItemCount">The maximum allowed item count.</param>
+            <param name="actualItemCount">The actual item count in the batch.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.BatchTooLargeException.#ctor(System.String,System.Int32,System.Int32,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException"/> class with inner exception.
+            </summary>
+            <param name="message">The exception message.</param>
+            <param name="maxItemCount">The maximum allowed item count.</param>
+            <param name="actualItemCount">The actual item count in the batch.</param>
+            <param name="innerException">The inner exception.</param>
+        </member>
         <member name="T:SqliteMultiTenant.Exceptions.DatabaseAccessException">
             <summary>
             Thrown when database access operations fail
@@ -5398,6 +5561,55 @@
             </returns>
             <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
         </member>
+        <member name="M:SqliteMultiTenant.Exceptions.MigrationExceptionExtensions.ToMigrationFailure(SqliteMultiTenant.Exceptions.MigrationException)">
+            <summary>
+            Creates a migration failure record from a MigrationException.
+            </summary>
+            <param name="exception">The exception containing migration details. Cannot be null.</param>
+            <returns>A MigrationFailure record with details from the exception.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.MigrationExceptionExtensions.IsConstraintViolation(SqliteMultiTenant.Exceptions.MigrationException)">
+            <summary>
+            Determines whether the exception represents a database constraint violation.
+            </summary>
+            <param name="exception">The exception to analyze. Cannot be null.</param>
+            <returns>True if the exception message contains "constraint" or "violation" (case-insensitive); otherwise, false.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.MigrationExceptionExtensions.IsDuplicateKeyError(SqliteMultiTenant.Exceptions.MigrationException)">
+            <summary>
+            Determines whether the exception represents a duplicate key or already exists error.
+            </summary>
+            <param name="exception">The exception to analyze. Cannot be null.</param>
+            <returns>True if the exception message contains "already exists" or "duplicate" (case-insensitive); otherwise, false.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.MigrationExceptionExtensions.IsTimeoutOrDeadlock(SqliteMultiTenant.Exceptions.MigrationException)">
+            <summary>
+            Determines whether the exception represents a timeout or deadlock error.
+            </summary>
+            <param name="exception">The exception to analyze. Cannot be null.</param>
+            <returns>True if the exception message contains "timeout" or "deadlock" (case-insensitive); otherwise, false.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.MigrationExceptionExtensions.IsTenantRelatedFailure(SqliteMultiTenant.Exceptions.MigrationException)">
+            <summary>
+            Determines whether the exception represents a tenant-related failure.
+            This includes cases where tenant context is missing or tenant-specific operations fail.
+            </summary>
+            <param name="exception">The exception to analyze. Cannot be null.</param>
+            <returns>True if the exception message contains tenant-related keywords; otherwise, false.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.MigrationExceptionExtensions.GetErrorSummary(SqliteMultiTenant.Exceptions.MigrationException)">
+            <summary>
+            Gets a formatted error summary for the migration failure.
+            </summary>
+            <param name="exception">The exception containing migration details. Cannot be null.</param>
+            <returns>A user-friendly error summary.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+        </member>
         <member name="T:SqliteMultiTenant.Exceptions.MigrationExceptionValidation">
             <summary>
             Provides validation helpers for <see cref="T:SqliteMultiTenant.Exceptions.MigrationException"/> instances
@@ -5426,6 +5638,53 @@
             <param name="value">The exception to validate</param>
             <exception cref="T:System.ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
             <exception cref="T:System.ArgumentException">Thrown if <paramref name="value"/> is invalid, containing a list of problems</exception>
+        </member>
+        <member name="T:SqliteMultiTenant.Exceptions.QuotaExceededException">
+            <summary>
+            Thrown when a tenant's storage quota would be exceeded by an operation.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.QuotaExceededException.TenantId">
+            <summary>Gets the tenant identifier.</summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.QuotaExceededException.QuotaBytes">
+            <summary>Gets the quota limit in bytes.</summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.QuotaExceededException.CurrentSizeBytes">
+            <summary>Gets the current size in bytes.</summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Exceptions.QuotaExceededException.DeltaBytes">
+            <summary>Gets the size delta that would be added by the operation.</summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.QuotaExceededException.#ctor(System.String,System.Int64,System.Int64,System.Int64)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/> class.
+            </summary>
+            <param name="tenantId">The tenant identifier.</param>
+            <param name="quotaBytes">The quota limit in bytes.</param>
+            <param name="currentSizeBytes">The current database size in bytes.</param>
+            <param name="deltaBytes">The size delta that would be added by the operation.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.QuotaExceededException.#ctor(System.String,System.String,System.Int64,System.Int64,System.Int64)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/> class with a custom message.
+            </summary>
+            <param name="message">The exception message.</param>
+            <param name="tenantId">The tenant identifier.</param>
+            <param name="quotaBytes">The quota limit in bytes.</param>
+            <param name="currentSizeBytes">The current database size in bytes.</param>
+            <param name="deltaBytes">The size delta that would be added by the operation.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Exceptions.QuotaExceededException.#ctor(System.String,System.String,System.Int64,System.Int64,System.Int64,System.Exception)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/> class with inner exception.
+            </summary>
+            <param name="message">The exception message.</param>
+            <param name="tenantId">The tenant identifier.</param>
+            <param name="quotaBytes">The quota limit in bytes.</param>
+            <param name="currentSizeBytes">The current database size in bytes.</param>
+            <param name="deltaBytes">The size delta that would be added by the operation.</param>
+            <param name="innerException">The inner exception.</param>
         </member>
         <member name="T:SqliteMultiTenant.Exceptions.TenantNotFoundException">
             <summary>
@@ -5479,6 +5738,37 @@
             original exception set as its <c>InnerException</c>.
             </returns>
             <exception cref="T:System.ArgumentNullException"><paramref name="exception"/> is <c>null</c>.</exception>
+        </member>
+        <member name="T:SqliteMultiTenant.QuotaExceededExceptionExtensions">
+            <summary>
+            Provides JSON serialization and deserialization extensions for <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/>.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.QuotaExceededExceptionExtensions.ToJson(SqliteMultiTenant.Exceptions.QuotaExceededException,System.Boolean)">
+            <summary>
+            Serializes a <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/> instance to a JSON string.
+            </summary>
+            <param name="exception">The exception to serialize.</param>
+            <param name="indented">Whether to format the JSON with indentation for readability.</param>
+            <returns>A JSON string representation of the exception.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when <paramref name="exception"/> is <see langword="null"/>.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.QuotaExceededExceptionExtensions.FromJson(System.String)">
+            <summary>
+            Deserializes a JSON string to a <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/> instance.
+            </summary>
+            <param name="json">The JSON string to deserialize.</param>
+            <returns>The deserialized exception, or <see langword="null"/> if the JSON is empty or whitespace.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when <paramref name="json"/> is <see langword="null"/> or empty.</exception>
+            <exception cref="T:System.Text.Json.JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.QuotaExceededExceptionExtensions.TryFromJson(System.String,SqliteMultiTenant.Exceptions.QuotaExceededException@)">
+            <summary>
+            Attempts to deserialize a JSON string to a <see cref="T:SqliteMultiTenant.Exceptions.QuotaExceededException"/> instance.
+            </summary>
+            <param name="json">The JSON string to deserialize.</param>
+            <param name="exception">Receives the deserialized exception if successful.</param>
+            <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
         </member>
         <member name="T:SqliteMultiTenant.Formatters.CsvExportFormatter">
             <summary>
@@ -6049,17 +6339,44 @@
             <exception cref="T:System.ArgumentNullException"><paramref name="token"/> is <see langword="null"/>.</exception>
             <exception cref="T:System.ArgumentException"><paramref name="token"/> is empty or whitespace.</exception>
         </member>
+        <member name="T:SqliteMultiTenant.Integration.HttpClientAddressValidator">
+            <summary>
+            Utility methods for validating HTTP client base addresses to prevent SSRF attacks.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.HttpClientAddressValidator.ValidateBaseAddress(System.String,System.String,System.Collections.Generic.IEnumerable{System.String},System.Text.RegularExpressions.Regex)">
+            <summary>
+            Validates a base address to prevent SSRF attacks.
+            </summary>
+            <param name="baseAddress">The base address to validate.</param>
+            <param name="paramName">The name of the parameter being validated.</param>
+            <param name="allowedHosts">An optional list of allowed hosts.</param>
+            <param name="allowedHostRegex">An optional regex for allowed hosts.</param>
+            <exception cref="T:System.ArgumentException">Thrown when the base address is invalid.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.HttpClientAddressValidator.IsLinkLocalAddress(System.String)">
+            <summary>
+            Checks if a hostname or IP address is a link-local address.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.HttpClientAddressValidator.IsPrivateIpAddress(System.String)">
+            <summary>
+            Checks if a hostname or IP address is in a private IP range.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory">
             <summary>
             Creates and manages HTTP clients with tenant-aware headers and configuration.
             </summary>
         </member>
-        <member name="M:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory.#ctor(Microsoft.Extensions.Logging.ILogger{SqliteMultiTenant.Integration.MultiTenantHttpClientFactory},System.String)">
+        <member name="M:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory.#ctor(Microsoft.Extensions.Logging.ILogger{SqliteMultiTenant.Integration.MultiTenantHttpClientFactory},System.String,System.Collections.Generic.IEnumerable{System.String},System.Text.RegularExpressions.Regex)">
             <summary>
             Initializes a new instance of the <see cref="T:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory"/> class.
             </summary>
             <param name="logger">The logger instance.</param>
             <param name="defaultUserAgent">The default user agent string.</param>
+            <param name="allowedHosts">An optional list of allowed hosts.</param>
+            <param name="allowedHostRegex">An optional regex for allowed hosts.</param>
         </member>
         <member name="M:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory.CreateClientForTenant(System.String,System.String,System.Int32,System.String)">
             <summary>
@@ -6070,6 +6387,7 @@
             <param name="timeoutSeconds">The timeout in seconds (default: 30).</param>
             <param name="baseAddress">The base address (optional).</param>
             <returns>The HTTP client instance.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when baseAddress is invalid.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Integration.MultiTenantHttpClientFactory.GetCachedClient(System.String)">
             <summary>
@@ -6140,6 +6458,20 @@
             <param name="baseAddress">The base address.</param>
             <returns>The builder instance.</returns>
         </member>
+        <member name="M:SqliteMultiTenant.Integration.TenantHttpClientBuilder.WithAllowedHosts(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Specifies the allowed hosts.
+            </summary>
+            <param name="allowedHosts">The allowed hosts.</param>
+            <returns>The builder instance.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Integration.TenantHttpClientBuilder.WithAllowedHostRegex(System.Text.RegularExpressions.Regex)">
+            <summary>
+            Specifies the allowed host regex.
+            </summary>
+            <param name="allowedHostRegex">The allowed host regex.</param>
+            <returns>The builder instance.</returns>
+        </member>
         <member name="M:SqliteMultiTenant.Integration.TenantHttpClientBuilder.AddHeader(System.String,System.String)">
             <summary>
             Adds a custom header.
@@ -6153,6 +6485,7 @@
             Builds the HTTP client instance.
             </summary>
             <returns>The HTTP client instance.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when baseAddress is invalid.</exception>
         </member>
         <member name="T:SqliteMultiTenant.Integration.MultiTenantHttpClientFactoryExtensions">
             <summary>
@@ -7085,6 +7418,172 @@
             Gets the display name for the migration
             </summary>
         </member>
+        <member name="T:SqliteMultiTenant.Models.MigrationBatchResult">
+            <summary>
+            Represents the result of a batch migration operation across multiple tenants/databases.
+            Contains success status, count of successful migrations, and detailed tenant-level results.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.Success">
+            <summary>
+            Indicates whether the batch migration operation was successful.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.TotalMigrationsAttempted">
+            <summary>
+            The total number of migrations that were attempted.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.SuccessfulMigrations">
+            <summary>
+            The number of migrations that were successfully applied.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.FailedMigrations">
+            <summary>
+            The number of migrations that failed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.Error">
+            <summary>
+            Error message if the batch migration failed, otherwise null.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.IsSuccess">
+            <summary>
+            Indicates whether the migration operation completed successfully.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.TenantResults">
+            <summary>
+            Collection of tenant-specific migration results.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.FailedTenantResults">
+            <summary>
+            Collection of failed tenant migration results for easy access.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationBatchResult.ResultSummary">
+            <summary>
+            Gets a human-readable summary of the migration result.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.MigrationBatchResult.SuccessResult(System.Int32,System.Int32,System.Collections.Generic.List{SqliteMultiTenant.Models.TenantMigrationResult})">
+            <summary>
+            Creates a successful migration batch result with the specified counts.
+            </summary>
+            <param name="totalMigrationsAttempted">Total migrations attempted.</param>
+            <param name="successfulMigrations">Number of successful migrations.</param>
+            <param name="tenantResults">Tenant-level results.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.MigrationBatchResult.FailureResult(System.String,System.Collections.Generic.List{SqliteMultiTenant.Models.TenantMigrationResult})">
+            <summary>
+            Creates a failed migration batch result with the specified error message.
+            </summary>
+            <param name="error">Error message.</param>
+            <param name="tenantResults">Tenant-level results (may be partial).</param>
+        </member>
+        <member name="T:SqliteMultiTenant.Models.TenantMigrationResult">
+            <summary>
+            Represents the migration result for a specific tenant/database.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.DatabaseId">
+            <summary>
+            The tenant/database identifier.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.TenantId">
+            <summary>
+            The tenant identifier (if available).
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.DatabaseName">
+            <summary>
+            The database name.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.TotalMigrationsAttempted">
+            <summary>
+            Total migrations attempted for this tenant.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.SuccessfulMigrations">
+            <summary>
+            Number of migrations successfully applied.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.FailedMigrations">
+            <summary>
+            Number of migrations that failed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.SchemaVersionReached">
+            <summary>
+            Schema version reached before failures (last successfully applied version).
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.Failures">
+            <summary>
+            Collection of individual migration failures.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.TenantMigrationResult.IsSuccess">
+            <summary>
+            Indicates whether this tenant's migrations were all successful.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.TenantMigrationResult.SuccessResult(System.String,System.String,System.String,System.Int32,System.Int32,System.String)">
+            <summary>
+            Creates a tenant migration result with successful migrations.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.TenantMigrationResult.FailureResult(System.String,System.String,System.String,System.Int32,System.Int32,System.String,System.Collections.Generic.List{SqliteMultiTenant.Models.MigrationFailure})">
+            <summary>
+            Creates a tenant migration result with failed migrations.
+            </summary>
+        </member>
+        <member name="T:SqliteMultiTenant.Models.MigrationFailure">
+            <summary>
+            Represents a single migration failure with details.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationFailure.MigrationId">
+            <summary>
+            The migration ID that failed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationFailure.Version">
+            <summary>
+            The migration version.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationFailure.Name">
+            <summary>
+            The migration name.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationFailure.ErrorMessage">
+            <summary>
+            The error message.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationFailure.ExceptionDetails">
+            <summary>
+            The exception that occurred (serialized if needed).
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.MigrationFailure.FailedAt">
+            <summary>
+            The timestamp when the failure occurred.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.MigrationFailure.Create(System.String,System.String,System.String,System.String,System.Exception)">
+            <summary>
+            Creates a migration failure record.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Models.MigrationExtensions">
             <summary>
             Extension methods for the <see cref="T:SqliteMultiTenant.Models.Migration"/> class providing additional functionality
@@ -7271,6 +7770,140 @@
             <summary>
             Creates a failed migration result with the specified error message.
             </summary>
+        </member>
+        <member name="T:SqliteMultiTenant.Models.OperationStatus">
+            <summary>
+            Represents the lifecycle status of an operation.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Models.OperationStatus.Pending">
+            <summary>
+            The operation is pending execution.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Models.OperationStatus.Running">
+            <summary>
+            The operation is currently executing.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Models.OperationStatus.Succeeded">
+            <summary>
+            The operation completed successfully.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Models.OperationStatus.Failed">
+            <summary>
+            The operation failed.
+            </summary>
+        </member>
+        <member name="T:SqliteMultiTenant.Models.OperationStatusBase">
+            <summary>
+            Common operation status information shared by all operation status types.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.OperationId">
+            <summary>
+            The unique identifier for the operation.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.Status">
+            <summary>
+            The current status of the operation.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.StartedAt">
+            <summary>
+            The timestamp when the operation started.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.CompletedAt">
+            <summary>
+            The timestamp when the operation completed (if applicable).
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.Error">
+            <summary>
+            Error message if the operation failed, otherwise null.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.CreatedAt">
+            <summary>
+            The timestamp when the operation was created.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.IsRunning">
+            <summary>
+            Indicates whether the operation is currently running.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.IsCompleted">
+            <summary>
+            Indicates whether the operation completed successfully.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.IsFailed">
+            <summary>
+            Indicates whether the operation failed.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.IsPending">
+            <summary>
+            Indicates whether the operation is pending execution.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.DurationMs">
+            <summary>
+            The duration of the operation in milliseconds (if completed).
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Models.OperationStatusBase.State">
+            <summary>
+            Gets the string representation of the current status.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.OperationStatusBase.ValidateStatus">
+            <summary>
+            Validates the operation status.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown when the status is invalid.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.OperationStatusBase.MarkRunning">
+            <summary>
+            Marks the operation as running.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.OperationStatusBase.MarkCompleted">
+            <summary>
+            Marks the operation as completed successfully.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.OperationStatusBase.MarkFailed(System.String)">
+            <summary>
+            Marks the operation as failed.
+            </summary>
+            <param name="error">The error message describing the failure.</param>
+        </member>
+        <member name="T:SqliteMultiTenant.Models.OperationStatusJsonConverter">
+            <summary>
+            JSON converter for <see cref="T:SqliteMultiTenant.Models.OperationStatus"/> enum.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.OperationStatusJsonConverter.Read(System.Text.Json.Utf8JsonReader@,System.Type,System.Text.Json.JsonSerializerOptions)">
+            <summary>
+            Reads and converts the JSON to/from <see cref="T:SqliteMultiTenant.Models.OperationStatus"/>.
+            </summary>
+            <param name="reader">The reader.</param>
+            <param name="typeToConvert">The type to convert.</param>
+            <param name="options">Serializer options.</param>
+            <returns>The converted value.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Models.OperationStatusJsonConverter.Write(System.Text.Json.Utf8JsonWriter,SqliteMultiTenant.Models.OperationStatus,System.Text.Json.JsonSerializerOptions)">
+            <summary>
+            Writes the value to JSON.
+            </summary>
+            <param name="writer">The writer.</param>
+            <param name="value">The value to write.</param>
+            <param name="options">Serializer options.</param>
         </member>
         <member name="T:SqliteMultiTenant.Models.Tenant">
             <summary>
@@ -8408,6 +9041,12 @@
             Result of batch operation execution.
             </summary>
         </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationResult.GetOverallStatus">
+            <summary>
+            Gets the overall status of the batch operation based on individual resource results.
+            </summary>
+            <returns>The aggregated status of the batch operation.</returns>
+        </member>
         <member name="T:SqliteMultiTenant.Operations.BatchResourceResult">
             <summary>
             Result for individual resource in batch operation.
@@ -8424,10 +9063,108 @@
             Status of ongoing batch operation.
             </summary>
         </member>
+        <member name="P:SqliteMultiTenant.Operations.BatchOperationStatus.TotalResources">
+            <summary>
+            The total number of resources to process.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Operations.BatchOperationStatus.ProcessedResources">
+            <summary>
+            The number of resources that have been processed so far.
+            </summary>
+        </member>
+        <member name="P:SqliteMultiTenant.Operations.BatchOperationStatus.ProgressPercent">
+            <summary>
+            The percentage of completion (0-100).
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationStatus.#ctor">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Operations.BatchOperationStatus"/> class.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationStatus.MarkRunning">
+            <summary>
+            Updates the status to running.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationStatus.MarkCompleted">
+            <summary>
+            Updates the status to completed successfully.
+            </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationStatus.MarkFailed(System.String)">
+            <summary>
+            Updates the status to failed.
+            </summary>
+            <param name="error">The error message.</param>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationStatus.Validate">
+            <summary>
+            Validates the batch operation status.
+            </summary>
+            <exception cref="T:System.ArgumentException">Thrown when the status is invalid.</exception>
+        </member>
+        <member name="T:SqliteMultiTenant.Operations.BatchOperationAggregateStatus">
+            <summary>
+            Represents the overall status of a batch operation based on aggregated resource results.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Operations.BatchOperationAggregateStatus.AllSucceeded">
+            <summary>
+            All resources in the batch operation succeeded.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Operations.BatchOperationAggregateStatus.AllFailed">
+            <summary>
+            All resources in the batch operation failed.
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Operations.BatchOperationAggregateStatus.PartialSuccess">
+            <summary>
+            Some resources succeeded and some failed (partial success).
+            </summary>
+        </member>
+        <member name="F:SqliteMultiTenant.Operations.BatchOperationAggregateStatus.Empty">
+            <summary>
+            The batch operation had no resources to process.
+            </summary>
+        </member>
         <member name="T:SqliteMultiTenant.Operations.BatchOperationHandler">
             <summary>
             Batch operation handler implementation.
             </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.#ctor(Microsoft.Extensions.Logging.ILogger{SqliteMultiTenant.Operations.BatchOperationHandler},SqliteMultiTenant.Utilities.TenantContextHelper,SqliteMultiTenant.Configuration.SqliteMultiTenantOptions)">
+            <summary>
+            Initializes a new instance of the <see cref="T:SqliteMultiTenant.Operations.BatchOperationHandler"/> class.
+            </summary>
+            <param name="logger">The logger instance.</param>
+            <param name="tenantContextHelper">The tenant context helper for authorization checks.</param>
+            <param name="options">Optional configuration options. If null, uses defaults (max 500 items, 1 MB payload).</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when logger or tenantContextHelper is null.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ValidateBatchSize(SqliteMultiTenant.Operations.BatchOperation)">
+            <summary>
+            Validates that the batch operation does not exceed configured size limits.
+            Throws <see cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException"/> if limits are exceeded.
+            </summary>
+            <param name="operation">The batch operation to validate.</param>
+            <exception cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException">Thrown when the batch exceeds configured size limits.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.CalculatePayloadSize(System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            Calculates the approximate size of the batch operation parameters in bytes.
+            </summary>
+            <param name="parameters">The parameters dictionary.</param>
+            <returns>The approximate size in bytes.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.FormatSize(System.Int64)">
+            <summary>
+            Formats a byte size for human-readable output.
+            </summary>
+            <param name="bytes">The size in bytes.</param>
+            <returns>Formatted string with appropriate unit.</returns>
         </member>
         <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ExecuteAsync(SqliteMultiTenant.Operations.BatchOperation,System.Threading.CancellationToken)">
             <summary>
@@ -8439,6 +9176,8 @@
             <param name="cancellationToken">Cancellation token for cooperative cancellation.</param>
             <returns>Result of the batch operation with per-resource details.</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when operation is null.</exception>
+            <exception cref="T:System.UnauthorizedAccessException">Thrown when caller is not authorized for one or more tenant resources.</exception>
+            <exception cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException">Thrown when the batch exceeds configured size limits (max items or payload size).</exception>
         </member>
         <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.GetStatusAsync(System.String)">
             <summary>
@@ -8447,6 +9186,15 @@
             </summary>
             <param name="operationId">The operation identifier.</param>
             <returns>The current status of the batch operation.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ValidateTenantAuthorization(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            Validates that the current caller is authorized to access all tenant resources in the batch.
+            Throws <see cref="T:System.UnauthorizedAccessException"/> if authorization check fails.
+            </summary>
+            <param name="resourceIds">Collection of tenant resource IDs to validate.</param>
+            <exception cref="T:System.UnauthorizedAccessException">Thrown when caller is not authorized for one or more tenant resources.</exception>
+            <exception cref="T:SqliteMultiTenant.Exceptions.BatchTooLargeException">Thrown when the batch exceeds configured size limits (max items or payload size).</exception>
         </member>
         <member name="M:SqliteMultiTenant.Operations.BatchOperationHandler.ProcessResourceAsync(System.String,System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},SqliteMultiTenant.Operations.BatchOperation,System.Threading.CancellationToken)">
             <summary>
@@ -9540,6 +10288,28 @@
             <param name="cancellationToken">Cancellation token.</param>
             <returns>A list of failed migrations.</returns>
         </member>
+        <member name="M:SqliteMultiTenant.Services.IMigrationService.ApplyMigrationsWithFaultIsolationAsync(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Applies pending migrations to a specific database with fault isolation.
+            Executes migrations one by one, collecting failures without aborting the entire process.
+            Returns detailed results including which migrations succeeded and which failed.
+            </summary>
+            <param name="databaseId">The database ID to migrate.</param>
+            <param name="executedBy">The user or process executing the migration.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Batch migration result with tenant-level details.</returns>
+        </member>
+        <member name="M:SqliteMultiTenant.Services.IMigrationService.ApplyMigrationsToMultipleDatabasesAsync(System.Collections.Generic.List{System.String},System.String,System.Threading.CancellationToken)">
+            <summary>
+            Applies pending migrations to multiple databases with fault isolation.
+            Executes migrations per database in isolation, collecting failures without aborting the entire process.
+            Returns detailed results for all tenants/databases.
+            </summary>
+            <param name="databaseIds">List of database IDs to migrate.</param>
+            <param name="executedBy">The user or process executing the migration.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Batch migration result with results for all tenants/databases.</returns>
+        </member>
         <member name="T:SqliteMultiTenant.Services.IntegrityCheckService">
             <summary>
             Service implementation for performing SQLite database integrity checks on tenant databases.
@@ -9835,6 +10605,16 @@
             <summary>
             Service implementation for database migration management
             </summary>
+        </member>
+        <member name="M:SqliteMultiTenant.Services.MigrationService.ExecuteMigrationScriptAsync(SqliteMultiTenant.Models.Migration,System.Threading.CancellationToken)">
+            <summary>
+            Executes the migration SQL script against the database.
+            In a real implementation, this would connect to the specific tenant database and execute the script.
+            For this implementation, we simulate the execution and introduce controlled failure scenarios.
+            </summary>
+            <param name="migration">The migration to execute.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>Execution time in milliseconds.</returns>
         </member>
         <member name="T:SqliteMultiTenant.Services.TenantDatabaseMaintenanceService">
             <summary>
@@ -11967,12 +12747,14 @@
             Initializes a new instance of the <see cref="T:SqliteMultiTenant.Utilities.TenantContextHelper"/> class.
             </summary>
             <param name="logger">The logger instance.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when logger is null.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Utilities.TenantContextHelper.SetTenantContext(SqliteMultiTenant.Models.TenantContext)">
             <summary>
             Sets the current tenant context.
             </summary>
             <param name="context">The tenant context to set.</param>
+            <exception cref="T:System.ArgumentNullException">Thrown when context is null.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Utilities.TenantContextHelper.GetTenantContext">
             <summary>
@@ -12001,6 +12783,12 @@
             <summary>
             Validates the tenant context.
             </summary>
+            <remarks>
+            This method performs constant-time comparison when comparing tenant IDs to prevent timing side-channel attacks.
+            Tenant IDs are security-critical identifiers used for multi-tenant data isolation.
+            An attacker with timing information could potentially use it to enumerate valid tenant IDs
+            or bypass tenant isolation checks in a multi-tenant system.
+            </remarks>
             <param name="expectedTenantId">The expected tenant ID, or null to ignore.</param>
             <returns>true if the tenant context is valid, false otherwise.</returns>
         </member>
@@ -12011,6 +12799,7 @@
             <param name="tenantId">The tenant ID to use for the scoped context.</param>
             <param name="userId">The user ID to use for the scoped context, or null to ignore.</param>
             <returns>An IDisposable instance that will restore the previous context when disposed.</returns>
+            <exception cref="T:System.ArgumentException">Thrown when Tenant ID cannot be empty.</exception>
         </member>
         <member name="M:SqliteMultiTenant.Utilities.TenantContextHelper.GetContextMetadata">
             <summary>
@@ -12100,10 +12889,44 @@
             <summary>
             Checks if the current tenant context matches the expected tenant ID.
             </summary>
+            <remarks>
+            This method performs a constant-time comparison to prevent timing side-channel attacks.
+            Tenant IDs are security-critical identifiers used for multi-tenant data isolation.
+            An attacker with timing information could potentially use it to enumerate valid tenant IDs
+            or bypass tenant isolation checks in a multi-tenant system.
+            </remarks>
             <param name="helper">The tenant context helper instance.</param>
             <param name="expectedTenantId">The tenant ID to compare against.</param>
             <returns>True if the current tenant matches the expected tenant; otherwise false.</returns>
             <exception cref="T:System.ArgumentNullException">Thrown when helper or expectedTenantId is null.</exception>
+            <exception cref="T:System.ArgumentException">Thrown when expectedTenantId is empty or consists only of whitespace.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Utilities.TenantContextHelperExtensions.ExecuteInTenantContextAsync(SqliteMultiTenant.Utilities.TenantContextHelper,System.String,System.Func{System.Threading.Tasks.Task},System.String)">
+            <summary>
+            Executes an async action within a tenant context scope, automatically restoring the previous context.
+            </summary>
+            <param name="helper">The tenant context helper instance.</param>
+            <param name="tenantId">The tenant ID to set for the duration of the action.</param>
+            <param name="action">The async action to execute.</param>
+            <param name="userId">Optional user ID to associate with the context.</param>
+            <returns>A Task representing the async operation.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when helper or action is null.</exception>
+            <exception cref="T:System.ArgumentException">Thrown when tenantId is null or whitespace.</exception>
+            <exception cref="T:System.InvalidOperationException">Thrown when CreateScope fails.</exception>
+        </member>
+        <member name="M:SqliteMultiTenant.Utilities.TenantContextHelperExtensions.ExecuteInTenantContextAsync``1(SqliteMultiTenant.Utilities.TenantContextHelper,System.String,System.Func{System.Threading.Tasks.Task{``0}},System.String)">
+            <summary>
+            Executes an async function within a tenant context scope, automatically restoring the previous context.
+            </summary>
+            <typeparam name="T">The return type of the function.</typeparam>
+            <param name="helper">The tenant context helper instance.</param>
+            <param name="tenantId">The tenant ID to set for the duration of the function.</param>
+            <param name="func">The async function to execute.</param>
+            <param name="userId">Optional user ID to associate with the context.</param>
+            <returns>The result of the async function execution.</returns>
+            <exception cref="T:System.ArgumentNullException">Thrown when helper or func is null.</exception>
+            <exception cref="T:System.ArgumentException">Thrown when tenantId is null or whitespace.</exception>
+            <exception cref="T:System.InvalidOperationException">Thrown when CreateScope fails.</exception>
         </member>
         <member name="T:SqliteMultiTenant.Utilities.TenantNameValidator">
             <summary>

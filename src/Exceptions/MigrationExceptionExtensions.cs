@@ -108,6 +108,24 @@ public static class MigrationExceptionExtensions
     }
 
     /// <summary>
+    /// Determines whether the exception represents a tenant-related failure.
+    /// This includes cases where tenant context is missing or tenant-specific operations fail.
+    /// </summary>
+    /// <param name="exception">The exception to analyze. Cannot be null.</param>
+    /// <returns>True if the exception message contains tenant-related keywords; otherwise, false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="exception"/> is null.</exception>
+    public static bool IsTenantRelatedFailure(this MigrationException exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        var message = exception.Message + (exception.InnerException?.Message ?? "");
+        return message.Contains("tenant", StringComparison.OrdinalIgnoreCase) &&
+               (message.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("missing", StringComparison.OrdinalIgnoreCase) ||
+                message.Contains("invalid", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
     /// Gets a formatted error summary for the migration failure.
     /// </summary>
     /// <param name="exception">The exception containing migration details. Cannot be null.</param>
@@ -131,6 +149,9 @@ public static class MigrationExceptionExtensions
 
         if (exception.IsExecutionFailure())
             return "Migration execution failed - check the database logs for details";
+
+        if (exception.IsTenantRelatedFailure())
+            return "Tenant-related migration failure - verify tenant context and database associations";
 
         return "Migration failed - check the exception details for more information";
     }
