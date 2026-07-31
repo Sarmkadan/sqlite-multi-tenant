@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Utilities;
@@ -29,7 +30,7 @@ public interface IScheduledTaskService
     Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId);
 }
 
-public sealed class ScheduledTaskService : IScheduledTaskService
+public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
 {
     private readonly Dictionary<string, ScheduledTask> _tasks;
     private readonly Dictionary<string, CancellationTokenSource> _cancellationTokens;
@@ -124,66 +125,12 @@ public sealed class ScheduledTaskService : IScheduledTaskService
     /// <summary>
     /// Starts executing all registered tasks.
     /// </summary>
-    public async Task StartAsync()
-    {
-        try
-        {
-            await _semaphore.WaitAsync();
-
-            if (_isRunning)
-            {
-                _logger.LogWarning("Task service is already running");
-                return;
-            }
-
-            _isRunning = true;
-            _logger.LogInformation("Scheduled task service started with {Count} tasks", _tasks.Count);
-
-            // Start execution for each task
-            foreach (var taskId in _tasks.Keys.ToList())
-            {
-                var cts = new CancellationTokenSource();
-                _cancellationTokens[taskId] = cts;
-
-                _ = ExecuteTaskLoopAsync(taskId, cts.Token);
-            }
-        }
-        finally
-        {
-            _semaphore.Release();
-            await Task.CompletedTask;
-        }
-    }
+    public Task StartAsync() => StartAsync(CancellationToken.None);
 
     /// <summary>
     /// Stops all scheduled tasks.
     /// </summary>
-    public async Task StopAsync()
-    {
-        try
-        {
-            await _semaphore.WaitAsync();
-
-            if (!_isRunning)
-                return;
-
-            // Cancel all running tasks
-            foreach (var cts in _cancellationTokens.Values)
-            {
-                cts.Cancel();
-                cts.Dispose();
-            }
-
-            _cancellationTokens.Clear();
-            _isRunning = false;
-            _logger.LogInformation("Scheduled task service stopped");
-        }
-        finally
-        {
-            _semaphore.Release();
-            await Task.CompletedTask;
-        }
-    }
+    public Task StopAsync() => StopAsync(CancellationToken.None);
 
     /// <summary>
     /// Gets the status of a scheduled task.
@@ -235,13 +182,98 @@ public sealed class ScheduledTaskService : IScheduledTaskService
         }
     }
 
+    // IHostedService implementation
+    Task IHostedService.StartAsync(CancellationToken cancellationToken) => StartAsync(cancellationToken);
+    Task IHostedService.StopAsync(CancellationToken cancellationToken) => StopAsync(cancellationToken);
+
+    /// <summary>
+    /// Starts executing all registered tasks with a cancellation token.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to observe.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+
+            if (_isRunning)
+            {
+                _logger.LogWarning("Task service is already running");
+                return;
+            }
+
+            _isRunning = true;
+            _logger.LogInformation("Scheduled task service started with {Count} tasks", _tasks.Count);
+
+            // Start execution for each task
+            foreach (var taskId in _tasks.Keys.ToList())
+            {
+                var cts = new CancellationTokenSource();
+                var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, cts.Token);
+                _cancellationTokens[taskId] = linkedCts;
+
+                _ = ExecuteTaskLoopAsync(taskId, linkedCts.Token);
+            }
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Stops all scheduled tasks with a cancellation token.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to observe.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _semaphore.WaitAsync(cancellationToken);
+
+            if (!_isRunning)
+                return;
+
+            // Cancel all running tasks
+            foreach (var cts in _cancellationTokens.Values)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+
+            _cancellationTokens.Clear();
+            _isRunning = false;
+            _logger.LogInformation("Scheduled task service stopped");
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
     private async Task ExecuteTaskLoopAsync(string taskId, CancellationToken cancellationToken)
     {
         try
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (!_tasks.TryGetValue(taskId, out var task))
+                ScheduledTask? task = null;
+                await _semaphore.WaitAsync();
+                try
+                {
+                    if (!_tasks.TryGetValue(taskId, out task))
+                    {
+                        break;
+                    }
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+
+                if (task is null)
                     break;
 
                 var now = DateTime.UtcNow;
