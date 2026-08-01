@@ -50,20 +50,21 @@ public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
             {
                 var result = new ConsistencyCheckResult();
 
-                // Run PRAGMA integrity_check
-                result.IntegrityCheckPassed = await VerifyDatabaseIntegrityAsync(connection);
+                // Define all checks as (name, func) tuples
+                var checks = new List<(string name, Func<SQLiteConnection, ConsistencyCheckResult, Task> check)>
+                {
+                    ("IntegrityCheck", (conn, res) => VerifyDatabaseIntegrityAsync(conn).ContinueWith(t => res.IntegrityCheckPassed = t.Result)),
+                    ("OrphanedRecords", (conn, res) => FindOrphanedRecordsAsync(conn).ContinueWith(t => res.OrphanedRecords = t.Result)),
+                    ("ForeignKeyViolations", (conn, res) => CheckForeignKeyConstraintsAsync(conn).ContinueWith(t => res.ForeignKeyViolations = t.Result)),
+                    ("MissingIndexes", (conn, res) => FindMissingIndexesAsync(conn).ContinueWith(t => res.MissingIndexes = t.Result)),
+                    ("TableStatistics", (conn, res) => GetTableStatisticsAsync(conn).ContinueWith(t => res.TableStatistics = t.Result))
+                };
 
-                // Check for orphaned records
-                result.OrphanedRecords = await FindOrphanedRecordsAsync(connection);
-
-                // Verify foreign keys
-                result.ForeignKeyViolations = await CheckForeignKeyConstraintsAsync(connection);
-
-                // Check indexes
-                result.MissingIndexes = await FindMissingIndexesAsync(connection);
-
-                // Verify row counts
-                result.TableStatistics = await GetTableStatisticsAsync(connection);
+                // Execute all checks
+                foreach (var (name, check) in checks)
+                {
+                    await check(connection, result);
+                }
 
                 result.CheckedAt = DateTime.UtcNow;
                 result.IsHealthy = result.IntegrityCheckPassed
