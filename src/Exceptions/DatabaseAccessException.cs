@@ -9,16 +9,20 @@ namespace SqliteMultiTenant.Exceptions;
 /// <summary>
 /// Thrown when database access operations fail
 /// </summary>
-public sealed class DatabaseAccessException : Exception
+public sealed class DatabaseAccessException : MultiTenantException
 {
     public string? DatabaseId { get; }
     public string? OperationType { get; }
 
     public DatabaseAccessException(string message)
-        : base(message) { }
+        : base(message)
+    {
+    }
 
     public DatabaseAccessException(string message, Exception innerException)
-        : base(message, innerException) { }
+        : base(message, innerException)
+    {
+    }
 
     public DatabaseAccessException(string message, string databaseId, string operationType, Exception? innerException = null)
         : base(message, innerException)

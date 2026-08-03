@@ -9,7 +9,8 @@ namespace SqliteMultiTenant.Exceptions;
 /// <summary>
 /// Thrown when migration operations fail
 /// </summary>
-public sealed class MigrationException : Exception {
+public sealed class MigrationException : MultiTenantException
+{
     public string? MigrationId { get; }
     public string? MigrationVersion { get; }
 
