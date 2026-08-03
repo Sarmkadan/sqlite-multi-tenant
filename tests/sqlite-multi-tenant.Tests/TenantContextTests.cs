@@ -29,7 +29,9 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public void Validate_WithValidTenantId_ReturnsTrueAndNullError()
         {
-            var context = new TenantContext { TenantId = "valid-tenant" };
+            var context = new TenantContextBuilder()
+                .WithTenantId("valid-tenant")
+                .Build();
 
             var isValid = context.Validate(out string? errorMessage);
 
