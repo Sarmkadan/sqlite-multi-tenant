@@ -1,8 +1,10 @@
 #nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Security;
 
@@ -18,18 +20,29 @@ public interface IRateLimiter
     Task<RateLimitStatus> GetStatusAsync(string identifier);
 }
 
-public sealed class RateLimiter : IRateLimiter {
+public sealed class RateLimiter : IRateLimiter
+{
     private readonly Dictionary<string, RateLimitBucket> _buckets;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<RateLimiter> _logger;
     private readonly Timer _cleanupTimer;
+    private readonly RateLimiterOptions _options;
 
-    public RateLimiter(ILogger<RateLimiter> logger)
+    /// <summary>
+    /// Creates a new <see cref="RateLimiter"/>.
+    /// </summary>
+    /// <param name="logger">Logger instance.</param>
+    /// <param name="options">
+    /// Optional configuration. If <c>null</c>, default options are used.
+    /// This overload maintains compatibility with existing call sites that only pass a logger.
+    /// </param>
+    public RateLimiter(ILogger<RateLimiter> logger, RateLimiterOptions? options = null)
     {
         _logger = logger;
+        _options = options ?? new RateLimiterOptions();
         _buckets = new Dictionary<string, RateLimitBucket>();
         _semaphore = new SemaphoreSlim(1);
-        _cleanupTimer = new Timer(CleanupExpiredBuckets, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+        _cleanupTimer = new Timer(CleanupExpiredBuckets, null, _options.CleanupInterval, _options.CleanupInterval);
     }
 
     /// <summary>
@@ -178,7 +191,7 @@ public sealed class RateLimiter : IRateLimiter {
             _semaphore.Wait();
 
             var now = DateTime.UtcNow;
-            var expirationTime = TimeSpan.FromHours(1);
+            var expirationTime = _options.ExpirationTime;
             var keysToRemove = _buckets
                 .Where(kvp => now - kvp.Value.LastAccessedAt > expirationTime)
                 .Select(kvp => kvp.Key)
@@ -206,14 +219,16 @@ public sealed class RateLimiter : IRateLimiter {
     }
 }
 
-public sealed class RateLimitBucket {
+public sealed class RateLimitBucket
+{
     public string Identifier { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime LastAccessedAt { get; set; }
     public List<DateTime> Requests { get; set; } = new();
 }
 
-public sealed class RateLimitResult {
+public sealed class RateLimitResult
+{
     public bool IsAllowed { get; set; }
     public int CurrentCount { get; set; }
     public int MaxCount { get; set; }
@@ -222,14 +237,16 @@ public sealed class RateLimitResult {
     public TimeSpan TimeUntilReset => ResetTime - DateTime.UtcNow;
 }
 
-public sealed class RateLimitStatus {
+public sealed class RateLimitStatus
+{
     public string Identifier { get; set; } = string.Empty;
     public int CurrentCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime LastAccessedAt { get; set; }
 }
 
-public sealed class RateLimiterStatistics {
+public sealed class RateLimiterStatistics
+{
     public int ActiveBuckets { get; set; }
     public int TotalRequests { get; set; }
     public DateTime OldestBucket { get; set; }
