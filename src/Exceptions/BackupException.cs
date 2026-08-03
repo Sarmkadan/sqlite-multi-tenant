@@ -9,7 +9,8 @@ namespace SqliteMultiTenant.Exceptions;
 /// <summary>
 /// Thrown when backup operations fail
 /// </summary>
-public sealed class BackupException : Exception {
+public sealed class BackupException : MultiTenantException
+{
     public string? BackupId { get; }
     public string? DatabaseId { get; }
 
