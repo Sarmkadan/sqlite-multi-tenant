@@ -47,6 +47,11 @@ public sealed class DistributedCacheService : IDistributedCache {
     /// </summary>
     public async Task<T?> GetAsync<T>(string key) where T : class
     {
+        if (key == null)
+            throw new ArgumentNullException(nameof(key));
+        if (key == string.Empty)
+            throw new ArgumentException("Key cannot be empty.", nameof(key));
+
         try
         {
             await _semaphore.WaitAsync();
@@ -84,6 +89,13 @@ public sealed class DistributedCacheService : IDistributedCache {
     /// </summary>
     public async Task SetAsync<T>(string key, T value, TimeSpan? ttl = null) where T : class
     {
+        if (key == null)
+            throw new ArgumentNullException(nameof(key));
+        if (key == string.Empty)
+            throw new ArgumentException("Key cannot be empty.", nameof(key));
+        if (value == null)
+            throw new ArgumentNullException(nameof(value));
+
         try
         {
             await _semaphore.WaitAsync();
@@ -118,6 +130,11 @@ public sealed class DistributedCacheService : IDistributedCache {
     /// </summary>
     public async Task<bool> RemoveAsync(string key)
     {
+        if (key == null)
+            throw new ArgumentNullException(nameof(key));
+        if (key == string.Empty)
+            throw new ArgumentException("Key cannot be empty.", nameof(key));
+
         try
         {
             await _semaphore.WaitAsync();
@@ -141,6 +158,11 @@ public sealed class DistributedCacheService : IDistributedCache {
     /// </summary>
     public async Task RemoveByPatternAsync(string pattern)
     {
+        if (pattern == null)
+            throw new ArgumentNullException(nameof(pattern));
+        if (pattern == string.Empty)
+            throw new ArgumentException("Pattern cannot be empty.", nameof(pattern));
+
         try
         {
             await _semaphore.WaitAsync();
