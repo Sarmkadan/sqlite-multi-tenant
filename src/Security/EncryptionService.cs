@@ -1,9 +1,6 @@
 #nullable enable
-// =============================================================================
-// Author: Vladyslav Zaiets | https://sarmkadan.com
-// CTO & Software Architect
-// =============================================================================
-
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -27,14 +24,12 @@ public interface IEncryptionService
 public sealed class EncryptionService : IEncryptionService {
     private readonly string _encryptionKey;
     private readonly ILogger<EncryptionService> _logger;
-    private const int KeySize = 256 / 8; // 256 bits
-    private const int IvSize = 128 / 8;  // 128 bits
-    private const int SaltSize = 128 / 8; // 128 bits
-    private const int Iterations = 10000;
+    private readonly EncryptionOptions _options;
 
-    public EncryptionService(IConfiguration config, ILogger<EncryptionService> logger)
+    public EncryptionService(IConfiguration config, ILogger<EncryptionService> logger, EncryptionOptions? options = null)
     {
         _logger = logger;
+        _options = options ?? new EncryptionOptions();
         _encryptionKey = config.GetValue<string>("Encryption:Key") ??
             throw new InvalidOperationException("Encryption key not configured");
 
@@ -92,7 +87,7 @@ public sealed class EncryptionService : IEncryptionService {
         {
             using (var aes = Aes.Create())
             {
-                aes.KeySize = 256;
+                aes.KeySize = _options.KeySize;
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
 
@@ -134,18 +129,18 @@ public sealed class EncryptionService : IEncryptionService {
     {
         try
         {
-            if (data.Length < IvSize)
+            if (data.Length < _options.IvSize / 8)
                 throw new InvalidOperationException("Invalid encrypted data");
 
             using (var aes = Aes.Create())
             {
-                aes.KeySize = 256;
+                aes.KeySize = _options.KeySize;
                 aes.Mode = CipherMode.CBC;
                 aes.Padding = PaddingMode.PKCS7;
 
                 // Extract IV from the beginning of data
-                byte[] iv = new byte[IvSize];
-                Array.Copy(data, 0, iv, 0, IvSize);
+                byte[] iv = new byte[_options.IvSize / 8];
+                Array.Copy(data, 0, iv, 0, _options.IvSize / 8);
                 aes.IV = iv;
 
                 // Derive key
@@ -153,7 +148,7 @@ public sealed class EncryptionService : IEncryptionService {
                 aes.Key = key;
 
                 using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
-                using (var ms = new MemoryStream(data, IvSize, data.Length - IvSize))
+                using (var ms = new MemoryStream(data, _options.IvSize / 8, data.Length - (_options.IvSize / 8)))
                 using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                 using (var resultMs = new MemoryStream())
                 {
@@ -181,12 +176,12 @@ public sealed class EncryptionService : IEncryptionService {
 
             byte[] hashBytes = Convert.FromBase64String(hash);
 
-            if (hashBytes.Length < SaltSize + KeySize)
+            if (hashBytes.Length < (_options.SaltSize / 8) + (_options.KeySize / 8))
                 return false;
 
             // Extract salt from hash
-            byte[] salt = new byte[SaltSize];
-            Array.Copy(hashBytes, 0, salt, 0, SaltSize);
+            byte[] salt = new byte[_options.SaltSize / 8];
+            Array.Copy(hashBytes, 0, salt, 0, _options.SaltSize / 8);
 
             // Derive key from password with extracted salt
             byte[] derivedKey = DeriveKeyFromPassword(plainText, salt);
@@ -194,7 +189,7 @@ public sealed class EncryptionService : IEncryptionService {
             // Compare hashes
             for (int i = 0; i < derivedKey.Length; i++)
             {
-                if (derivedKey[i] != hashBytes[i + SaltSize])
+                if (derivedKey[i] != hashBytes[i + (_options.SaltSize / 8)])
                     return false;
             }
 
@@ -214,7 +209,7 @@ public sealed class EncryptionService : IEncryptionService {
     {
         try
         {
-            byte[] salt = new byte[SaltSize];
+            byte[] salt = new byte[_options.SaltSize / 8];
             using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(salt);
@@ -239,19 +234,19 @@ public sealed class EncryptionService : IEncryptionService {
     private byte[] DeriveKey(string key)
     {
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
-        byte[] salt = Encoding.UTF8.GetBytes("SqliteMultiTenant");
+        byte[] salt = Encoding.UTF8.GetBytes(_options.DerivationSalt);
 
-        using (var pbkdf2 = new Rfc2898DeriveBytes(keyBytes, salt, Iterations, HashAlgorithmName.SHA256))
+        using (var pbkdf2 = new Rfc2898DeriveBytes(keyBytes, salt, _options.Iterations, HashAlgorithmName.SHA256))
         {
-            return pbkdf2.GetBytes(KeySize);
+            return pbkdf2.GetBytes(_options.KeySize / 8);
         }
     }
 
     private byte[] DeriveKeyFromPassword(string password, byte[] salt)
     {
-        using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, Iterations, HashAlgorithmName.SHA256))
+        using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, _options.Iterations, HashAlgorithmName.SHA256))
         {
-            return pbkdf2.GetBytes(KeySize);
+            return pbkdf2.GetBytes(_options.KeySize / 8);
         }
     }
 }
