@@ -12,18 +12,31 @@ using SqliteMultiTenant.Repositories;
 namespace SqliteMultiTenant.Services;
 
 /// <summary>
-/// Service implementation for tenant management
+/// Service implementation for tenant management.
 /// </summary>
 public sealed class TenantService : ITenantService {
     private readonly ITenantRepository _repository;
     private readonly ILogger<TenantService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TenantService"/> class.
+    /// </summary>
+    /// <param name="repository">The tenant repository.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when repository or logger is null.</exception>
     public TenantService(ITenantRepository repository, ILogger<TenantService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Retrieves a tenant by its unique identifier.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The tenant if found; otherwise, null.</returns>
+    /// <exception cref="ArgumentException">Thrown when tenantId is null, empty, or whitespace.</exception>
     public async Task<Tenant?> GetTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -46,6 +59,16 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Creates a new tenant.
+    /// </summary>
+    /// <param name="name">The name of the tenant.</param>
+    /// <param name="description">The optional description of the tenant.</param>
+    /// <param name="contactEmail">The optional contact email of the tenant.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The created tenant.</returns>
+    /// <exception cref="ArgumentException">Thrown when name is null or empty, or validation fails.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when a tenant with the same name already exists.</exception>
     public async Task<Tenant> CreateTenantAsync(string name, string? description = null, string? contactEmail = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -84,6 +107,14 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Updates an existing tenant.
+    /// </summary>
+    /// <param name="tenant">The tenant object to update.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentNullException">Thrown when tenant is null.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
+    /// <exception cref="ArgumentException">Thrown when tenant validation fails.</exception>
     public async Task UpdateTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         if (tenant is null)
@@ -110,6 +141,13 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Deletes a tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to delete.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentException">Thrown when tenantId is null or empty.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
     public async Task DeleteTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -131,6 +169,11 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Retrieves all tenants.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A list of all tenants.</returns>
     public async Task<List<Tenant>> GetAllTenantsAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -144,6 +187,11 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Retrieves all active tenants.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A list of active tenants.</returns>
     public async Task<List<Tenant>> GetActiveTenantsAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -157,6 +205,13 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Activates a tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to activate.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentException">Thrown when tenantId is null or empty.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
     public async Task ActivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -179,6 +234,13 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Deactivates a tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to deactivate.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentException">Thrown when tenantId is null or empty.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
     public async Task DeactivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -201,6 +263,13 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Suspends a tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to suspend.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentException">Thrown when tenantId is null or empty.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
     public async Task SuspendTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -224,6 +293,12 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Checks if a tenant exists.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>True if the tenant exists; otherwise, false.</returns>
     public async Task<bool> TenantExistsAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -240,6 +315,11 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Gets the total count of tenants.
+    /// </summary>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The total number of tenants.</returns>
     public async Task<int> GetTenantCountAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -253,6 +333,13 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Searches for tenants based on a search term.
+    /// </summary>
+    /// <param name="searchTerm">The search term.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A list of tenants matching the search term.</returns>
+    /// <exception cref="ArgumentException">Thrown when searchTerm is null or empty.</exception>
     public async Task<List<Tenant>> SearchTenantsAsync(string searchTerm, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
@@ -269,6 +356,15 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Sets metadata for a tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="key">The metadata key.</param>
+    /// <param name="value">The metadata value.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <exception cref="ArgumentException">Thrown when tenantId or key is null or empty.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
     public async Task SetTenantMetadataAsync(string tenantId, string key, string value, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
@@ -294,6 +390,15 @@ public sealed class TenantService : ITenantService {
         }
     }
 
+    /// <summary>
+    /// Retrieves the database size for a tenant.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>Storage information about the tenant's database.</returns>
+    /// <exception cref="ArgumentException">Thrown when tenantId is null or empty.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when the tenant does not exist.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the tenant has no database path configured.</exception>
     public async Task<TenantStorageInfo> GetTenantDatabaseSizeAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
