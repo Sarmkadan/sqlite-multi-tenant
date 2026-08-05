@@ -18,7 +18,8 @@ namespace SqliteMultiTenant.Validation
     /// Provides a fluent API for building complex validation rules with composable conditions.
     /// </summary>
     /// <typeparam name="T">The type of object being validated.</typeparam>
-    public sealed class ValidationRuleBuilder<T> {
+    public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<T>>
+    {
         private readonly List<ValidationRule> _rules;
 
         /// <summary>
@@ -35,7 +36,7 @@ namespace SqliteMultiTenant.Validation
         /// <param name="fieldName">The name of the field to validate.</param>
         /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-        public ValidationRuleBuilder<T> Required(string fieldName, string message = null)
+        public ValidationRuleBuilder<T> Required(string fieldName, string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -56,7 +57,7 @@ namespace SqliteMultiTenant.Validation
         /// <param name="message">Optional custom error message. If null, a default message will be generated based on the constraints.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> StringLength(string fieldName, int? minLength = null,
-            int? maxLength = null, string message = null)
+            int? maxLength = null, string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -83,7 +84,7 @@ namespace SqliteMultiTenant.Validation
         /// <param name="fieldName">The name of the field containing the email address to validate.</param>
         /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-        public ValidationRuleBuilder<T> Email(string fieldName, string message = null)
+        public ValidationRuleBuilder<T> Email(string fieldName, string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -110,8 +111,8 @@ namespace SqliteMultiTenant.Validation
         /// <param name="maxValue">Optional maximum value requirement. If null, no maximum value is enforced.</param>
         /// <param name="message">Optional custom error message. If null, a default message will be generated based on the constraints.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-        public ValidationRuleBuilder<T> Range(string fieldName, object minValue = null,
-            object maxValue = null, string message = null)
+        public ValidationRuleBuilder<T> Range(string fieldName, object? minValue = null,
+            object? maxValue = null, string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -143,7 +144,7 @@ namespace SqliteMultiTenant.Validation
         /// <param name="pattern">The regular expression pattern to match against the field value.</param>
         /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-        public ValidationRuleBuilder<T> Pattern(string fieldName, string pattern, string message = null)
+        public ValidationRuleBuilder<T> Pattern(string fieldName, string pattern, string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -169,7 +170,7 @@ namespace SqliteMultiTenant.Validation
         /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Custom(string fieldName, Func<object, bool> predicate,
-            string message = null)
+            string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -188,7 +189,7 @@ namespace SqliteMultiTenant.Validation
         /// <param name="field2">The name of the second field to compare.</param>
         /// <param name="message">Optional custom error message. If null, a default message will be used.</param>
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
-        public ValidationRuleBuilder<T> MustMatch(string field1, string field2, string message = null)
+        public ValidationRuleBuilder<T> MustMatch(string field1, string field2, string? message = null)
         {
             _rules.Add(new ValidationRule
             {
@@ -244,6 +245,49 @@ namespace SqliteMultiTenant.Validation
             };
         }
 
+        #region Equality members
+
+        public bool Equals(ValidationRuleBuilder<T>? other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            if (_rules.Count != other._rules.Count) return false;
+
+            for (int i = 0; i < _rules.Count; i++)
+            {
+                var a = _rules[i];
+                var b = other._rules[i];
+
+                if (a.FieldName != b.FieldName) return false;
+                if (!Equals(a.Predicate, b.Predicate)) return false;
+                if (a.ErrorMessage != b.ErrorMessage) return false;
+            }
+
+            return true;
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as ValidationRuleBuilder<T>);
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(_rules.Count);
+            foreach (var r in _rules)
+            {
+                hash.Add(r.FieldName);
+                hash.Add(r.Predicate);
+                hash.Add(r.ErrorMessage);
+            }
+            return hash.ToHashCode();
+        }
+
+        public static bool operator ==(ValidationRuleBuilder<T>? left, ValidationRuleBuilder<T>? right) => Equals(left, right);
+
+        public static bool operator !=(ValidationRuleBuilder<T>? left, ValidationRuleBuilder<T>? right) => !Equals(left, right);
+
+        #endregion
+
         private bool HasValue(object obj, string fieldName)
         {
             var value = GetPropertyValue(obj, fieldName);
@@ -254,7 +298,7 @@ namespace SqliteMultiTenant.Validation
             return true;
         }
 
-        private object GetPropertyValue(object obj, string propertyName)
+        private object? GetPropertyValue(object obj, string propertyName)
         {
             try
             {
@@ -278,7 +322,7 @@ namespace SqliteMultiTenant.Validation
             return $"{fieldName} length is invalid";
         }
 
-        private string BuildRangeMessage(string fieldName, object minValue, object maxValue)
+        private string BuildRangeMessage(string fieldName, object? minValue, object? maxValue)
         {
             if (minValue is not null && maxValue is not null)
                 return $"{fieldName} must be between {minValue} and {maxValue}";
@@ -294,20 +338,22 @@ namespace SqliteMultiTenant.Validation
 
         private class ValidationRule
         {
-            public string FieldName { get; set; }
-            public Func<object, bool> Predicate { get; set; }
-            public string ErrorMessage { get; set; }
+            public string? FieldName { get; set; }
+            public Func<object, bool>? Predicate { get; set; }
+            public string? ErrorMessage { get; set; }
         }
     }
 
     /// <summary>
     /// Represents the result of a validation operation, including success flag and any errors.
     /// </summary>
-    public sealed class RuleValidationResult {
+    public sealed class RuleValidationResult
+    {
         /// <summary>
         /// Gets or sets a value indicating whether the validation succeeded.
         /// </summary>
         public bool IsValid { get; set; }
+
         /// <summary>
         /// Gets the collection of validation errors.
         /// </summary>
@@ -317,14 +363,16 @@ namespace SqliteMultiTenant.Validation
     /// <summary>
     /// Represents a single validation error for a specific field.
     /// </summary>
-    public sealed class RuleValidationError {
+    public sealed class RuleValidationError
+    {
         /// <summary>
         /// Gets or sets the name of the field that failed validation.
         /// </summary>
-        public string FieldName { get; set; }
+        public string? FieldName { get; set; }
+
         /// <summary>
         /// Gets or sets the error message describing the validation failure.
         /// </summary>
-        public string Message { get; set; }
+        public string? Message { get; set; }
     }
 }
