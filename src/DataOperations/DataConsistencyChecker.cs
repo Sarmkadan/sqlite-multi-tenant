@@ -19,18 +19,64 @@ namespace SqliteMultiTenant.DataOperations
 /// </summary>
 // Verifies data integrity and consistency across tenant databases
     // Detects orphaned records, constraint violations, missing indexes, and duplicate records
-    public sealed class DataConsistencyChecker {
+    public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker> {
         private readonly ILogger<DataConsistencyChecker> _logger;
 
+        public bool IsHealthy { get; set; }
+        public bool IntegrityCheckPassed { get; set; }
+        public List<string> OrphanedRecords { get; set; } = new List<string>();
+        public List<ConstraintViolation> ForeignKeyViolations { get; set; } = new List<ConstraintViolation>();
+        public List<string> MissingIndexes { get; set; } = new List<string>();
+        public Dictionary<string, TableStatistics> TableStatistics { get; set; } = new Dictionary<string, TableStatistics>();
+        public DateTime CheckedAt { get; set; }
+        public string? Table { get; set; }
+
         /// <summary>
-/// Initializes a new instance of the <see cref="DataConsistencyChecker"/> class.
-/// </summary>
-/// <param name="logger">The logger instance to use for logging operations.</param>
-/// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
-public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
+        /// Initializes a new instance of the <see cref="DataConsistencyChecker"/> class.
+        /// </summary>
+        /// <param name="logger">The logger instance to use for logging operations.</param>
+        /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
+        public DataConsistencyChecker(ILogger<DataConsistencyChecker> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
+        public bool Equals(DataConsistencyChecker? other)
+        {
+            if (other is null) return false;
+            if (ReferenceEquals(this, other)) return true;
+
+            return IsHealthy == other.IsHealthy &&
+                   IntegrityCheckPassed == other.IntegrityCheckPassed &&
+                   OrphanedRecords.SequenceEqual(other.OrphanedRecords) &&
+                   ForeignKeyViolations.SequenceEqual(other.ForeignKeyViolations) &&
+                   MissingIndexes.SequenceEqual(other.MissingIndexes) &&
+                   TableStatistics.Count == other.TableStatistics.Count &&
+                   TableStatistics.OrderBy(kvp => kvp.Key).SequenceEqual(other.TableStatistics.OrderBy(kvp => kvp.Key)) &&
+                   CheckedAt.Equals(other.CheckedAt) &&
+                   Table == other.Table;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return ReferenceEquals(this, obj) || (obj is DataConsistencyChecker other && Equals(other));
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(IsHealthy, IntegrityCheckPassed, OrphanedRecords, ForeignKeyViolations, MissingIndexes, TableStatistics, CheckedAt, Table);
+        }
+
+        public static bool operator ==(DataConsistencyChecker? left, DataConsistencyChecker? right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(DataConsistencyChecker? left, DataConsistencyChecker? right)
+        {
+            return !Equals(left, right);
+        }
+
 
         /// <summary>
 /// Runs a complete consistency check on the database.
