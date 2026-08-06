@@ -18,7 +18,7 @@ namespace SqliteMultiTenant.Database
     /// Provides methods for creating tables, adding columns, renaming tables, and creating indexes
     /// with built-in validation and error recovery.
     /// </summary>
-    public sealed class SchemaManager
+    public sealed class SchemaManager : IEquatable<SchemaManager>
     {
         private readonly ILogger<SchemaManager> _logger;
         private readonly string _connectionString;
@@ -39,6 +39,20 @@ namespace SqliteMultiTenant.Database
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         }
+
+        public bool Equals(SchemaManager? other)
+        {
+            if (other is null) return false;
+            return ConnectionString == other.ConnectionString;
+        }
+
+        public override bool Equals(object? obj) => obj is SchemaManager other && Equals(other);
+
+        public override int GetHashCode() => HashCode.Combine(ConnectionString);
+
+        public static bool operator ==(SchemaManager? left, SchemaManager? right) => Equals(left, right);
+
+        public static bool operator !=(SchemaManager? left, SchemaManager? right) => !Equals(left, right);
 
         /// <summary>
         /// Creates the standard multi-tenant schema including Tenants and AuditLog tables
