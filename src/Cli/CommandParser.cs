@@ -93,6 +93,7 @@ public sealed class CommandParser {
     /// </summary>
     public ParsedCommand Parse(string[] args)
     {
+        _logger.LogInformation("Parse called with {ArgumentCount} arguments", args.Length);
         try
         {
             if (args.Length == 0)
@@ -126,6 +127,7 @@ public sealed class CommandParser {
                     $"Missing required arguments for '{mainCommand} {subcommand}'. " +
                     $"Expected: {string.Join(", ", subcommandDef.RequiredArgs)}");
 
+            _logger.LogInformation("Parse completed successfully: {MainCommand} {Subcommand}", mainCommand, subcommand);
             return new ParsedCommand
             {
                 Success = true,
@@ -137,7 +139,7 @@ public sealed class CommandParser {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Command parsing error: {Message}", ex.Message);
+            _logger.LogError(ex, "Command parsing error: {Message}", ex.Message);
             return CreateErrorCommand($"Error parsing command: {ex.Message}");
         }
     }
