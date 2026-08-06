@@ -33,6 +33,7 @@ public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreate
 
     public async Task HandleAsync(TenantCreatedNotificationEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         try
         {
             _logger.LogInformation($"Handling tenant created event: {(@event.TenantId)}");
@@ -71,6 +72,7 @@ public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDelete
 
     public async Task HandleAsync(TenantDeletedEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         try
         {
             _logger.LogInformation($"Handling tenant deleted event: {(@event.TenantId)}");
@@ -109,6 +111,7 @@ public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupComp
 
     public async Task HandleAsync(BackupCompletedNotificationEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         try
         {
             _logger.LogInformation($"Handling backup completed event: {(@event.BackupId)}");
