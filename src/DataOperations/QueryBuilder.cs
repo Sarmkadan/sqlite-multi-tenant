@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data.SQLite;
 using System.Linq;
 using System.Text;
+using SqliteMultiTenant.Utilities;
 
 namespace SqliteMultiTenant.DataOperations
 {
@@ -346,7 +347,7 @@ if (!string.IsNullOrEmpty(_havingClause))
             if (_values.Count == 0)
                 throw new InvalidOperationException("No values specified for insert");
 
-            var sb = new StringBuilder(128);
+            var sb = StringBuilderPool.Rent(128);
             sb.Append("INSERT INTO [").Append(_tableName).Append("] (");
 
             bool first = true;
@@ -367,7 +368,9 @@ if (!string.IsNullOrEmpty(_havingClause))
             }
             sb.Append(')');
 
-            return (sb.ToString(), _values);
+            string query = sb.ToString();
+            StringBuilderPool.Return(sb);
+            return (query, _values);
         }
     }
 
@@ -418,7 +421,7 @@ if (!string.IsNullOrEmpty(_havingClause))
             if (string.IsNullOrEmpty(_whereClause))
                 throw new InvalidOperationException("WHERE condition is required for safety");
 
-            var sb = new StringBuilder(128);
+            var sb = StringBuilderPool.Rent(128);
             sb.Append("UPDATE [").Append(_tableName).Append("] SET ");
 
             bool first = true;
@@ -431,7 +434,9 @@ if (!string.IsNullOrEmpty(_havingClause))
 
             sb.Append(" WHERE ").Append(_whereClause);
 
-            return (sb.ToString(), _values);
+            string query = sb.ToString();
+            StringBuilderPool.Return(sb);
+            return (query, _values);
         }
     }
 }
