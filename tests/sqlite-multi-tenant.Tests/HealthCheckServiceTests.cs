@@ -41,11 +41,23 @@ public sealed class HealthCheckServiceTests {
 	[Fact]
 	public async Task GetHealthStatusAsync_ShouldReturnResponse()
 	{
-		// Act
-		var response = await _healthCheckService.GetHealthStatusAsync();
+		const string testName = nameof(GetHealthStatusAsync_ShouldReturnResponse);
+		_mockLogger.LogInformation("Starting {TestName}", testName);
+		try
+		{
+			// Act
+			var response = await _healthCheckService.GetHealthStatusAsync();
 
-		// Assert
-		response.Should().NotBeNull();
+			// Assert
+			response.Should().NotBeNull();
+
+			_mockLogger.LogInformation("Finished {TestName} successfully", testName);
+		}
+		catch (Exception ex)
+		{
+			_mockLogger.LogError(ex, "Error in {TestName}", testName);
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -54,11 +66,23 @@ public sealed class HealthCheckServiceTests {
 	[Fact]
 	public async Task IsDatabaseHealthyAsync_ShouldReturnBoolean()
 	{
-		// Act
-		var isHealthy = await _healthCheckService.IsDatabaseHealthyAsync();
+		const string testName = nameof(IsDatabaseHealthyAsync_ShouldReturnBoolean);
+		_mockLogger.LogInformation("Starting {TestName}", testName);
+		try
+		{
+			// Act
+			var isHealthy = await _healthCheckService.IsDatabaseHealthyAsync();
 
-		// Assert
-		isHealthy.Should().BeTrue(); // Assuming mock or default returns true
+			// Assert
+			isHealthy.Should().BeTrue(); // Assuming mock or default returns true
+
+			_mockLogger.LogInformation("Finished {TestName} successfully", testName);
+		}
+		catch (Exception ex)
+		{
+			_mockLogger.LogError(ex, "Error in {TestName}", testName);
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -67,11 +91,23 @@ public sealed class HealthCheckServiceTests {
 	[Fact]
 	public async Task IsDiskSpaceHealthyAsync_WithDefaultRequirement_ShouldReturnBoolean()
 	{
-		// Act
-		var isHealthy = await _healthCheckService.IsDiskSpaceHealthyAsync();
+		const string testName = nameof(IsDiskSpaceHealthyAsync_WithDefaultRequirement_ShouldReturnBoolean);
+		_mockLogger.LogInformation("Starting {TestName}", testName);
+		try
+		{
+			// Act
+			var isHealthy = await _healthCheckService.IsDiskSpaceHealthyAsync();
 
-		// Assert
-		isHealthy.Should().BeTrue();
+			// Assert
+			isHealthy.Should().BeTrue();
+
+			_mockLogger.LogInformation("Finished {TestName} successfully", testName);
+		}
+		catch (Exception ex)
+		{
+			_mockLogger.LogError(ex, "Error in {TestName}", testName);
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -80,11 +116,23 @@ public sealed class HealthCheckServiceTests {
 	[Fact]
 	public async Task IsDiskSpaceHealthyAsync_WithHighRequirement_ShouldHandleProperly()
 	{
-		// Act
-		var isHealthy = await _healthCheckService.IsDiskSpaceHealthyAsync(long.MaxValue);
+		const string testName = nameof(IsDiskSpaceHealthyAsync_WithHighRequirement_ShouldHandleProperly);
+		_mockLogger.LogInformation("Starting {TestName}", testName);
+		try
+		{
+			// Act
+			var isHealthy = await _healthCheckService.IsDiskSpaceHealthyAsync(long.MaxValue);
 
-		// Assert
-		isHealthy.Should().BeFalse(); // Disk doesn't have MaxValue space
+			// Assert
+			isHealthy.Should().BeFalse(); // Disk doesn't have MaxValue space
+
+			_mockLogger.LogInformation("Finished {TestName} successfully", testName);
+		}
+		catch (Exception ex)
+		{
+			_mockLogger.LogError(ex, "Error in {TestName}", testName);
+			throw;
+		}
 	}
 
 	/// <summary>
@@ -93,10 +141,22 @@ public sealed class HealthCheckServiceTests {
 	[Fact]
 	public void Service_Initialization_WithNullLogger_ShouldThrowArgumentNullException()
 	{
-		// Act
-		var action = () => new HealthCheckService(null!);
+		const string testName = nameof(Service_Initialization_WithNullLogger_ShouldThrowArgumentNullException);
+		_mockLogger.LogInformation("Starting {TestName}", testName);
+		try
+		{
+			// Act
+			var action = () => new HealthCheckService(null!);
 
-		// Assert
-		action.Should().Throw<ArgumentNullException>();
+			// Assert
+			action.Should().Throw<ArgumentNullException>();
+
+			_mockLogger.LogInformation("Finished {TestName} successfully", testName);
+		}
+		catch (Exception ex)
+		{
+			_mockLogger.LogError(ex, "Error in {TestName}", testName);
+			throw;
+		}
 	}
 }
