@@ -1,3 +1,33 @@
+## IntegrityCheckService
+
+The `IntegrityCheckService` provides functionality to perform SQLite `PRAGMA integrity_check` operations across tenant databases. It supports checking individual tenants, batches of tenants, or all tenants in the system, with configurable parallelism to manage system load during validation.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Assume 'service' is an instance of IntegrityCheckService
+// Assume 'cancellationToken' is available
+
+// 1. Check integrity for a single tenant
+TenantIntegrityCheckResult result = await service.CheckTenantIntegrityAsync("tenant-123", cancellationToken);
+Console.WriteLine($"Tenant: {result.TenantId}, IsOk: {result.IsOk}");
+
+// 2. Check integrity for a specific list of tenants with parallelism
+List<string> tenantsToCheck = new List<string> { "tenant-123", "tenant-456" };
+List<TenantIntegrityCheckResult> batchResults = await service.CheckTenantsIntegrityAsync(tenantsToCheck, maxDegreeOfParallelism: 2, cancellationToken);
+
+// 3. Check integrity for all tenants in the system
+List<TenantIntegrityCheckResult> allResults = await service.CheckAllTenantsIntegrityAsync(maxDegreeOfParallelism: 4, cancellationToken);
+
+// 4. Check integrity for only active tenants
+List<TenantIntegrityCheckResult> activeResults = await service.CheckActiveTenantsIntegrityAsync(maxDegreeOfParallelism: 4, cancellationToken);
+```
+
 ## TenantContextHelperExtensions
 
 The `TenantContextHelperExtensions` class provides a set of extension methods for `TenantContextHelper` that simplify common operations within multi-tenant scopes. It includes utilities for managing tenant-aware scopes, retrieving tenant information safely, and executing actions within specific tenant contexts.
