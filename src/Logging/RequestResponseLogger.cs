@@ -39,39 +39,36 @@ public sealed class RequestResponseLogger : IRequestResponseLogger {
     /// Logs an HTTP request.
     /// </summary>
     public async Task LogRequestAsync(RequestLog request)
-    {
-        try
         {
-            // Apply sampling
-            if (new Random().Next(0, SamplingRate) != 0)
-                return;
-
-            await _semaphore.WaitAsync();
-
-            request.Id = Guid.NewGuid().ToString();
-            request.Timestamp = DateTime.UtcNow;
-
-            _requestLogs.Add(request);
-
-            // Maintain memory limit
-            if (_requestLogs.Count > MaxLogsInMemory)
-                _requestLogs.RemoveRange(0, _requestLogs.Count - MaxLogsInMemory);
-
-            _logger.LogDebug("Request logged: {Method} {Path}", request.Method, request.Path);
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                // Apply sampling
+                if (new Random().Next(0, SamplingRate) != 0)
+                    return;
+                await _semaphore.WaitAsync();
+                request.Id = Guid.NewGuid().ToString();
+                request.Timestamp = DateTime.UtcNow;
+                _requestLogs.Add(request);
+                // Maintain memory limit
+                if (_requestLogs.Count > MaxLogsInMemory)
+                    _requestLogs.RemoveRange(0, _requestLogs.Count - MaxLogsInMemory);
+                _logger.LogDebug("Request logged: {Method} {Path}", request.Method, request.Path);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
-        finally
-        {
-            _semaphore.Release();
-        }
-    }
 
     /// <summary>
     /// Logs an HTTP response.
     /// </summary>
     public async Task LogResponseAsync(ResponseLog response)
-    {
-        try
         {
+            ArgumentNullException.ThrowIfNull(response);
+            try
+            {
             await _semaphore.WaitAsync();
 
             response.Id = Guid.NewGuid().ToString();
@@ -96,6 +93,7 @@ public sealed class RequestResponseLogger : IRequestResponseLogger {
     /// </summary>
     public async Task<List<RequestLog>> GetRequestLogsAsync(LogFilter filter)
     {
+        ArgumentNullException.ThrowIfNull(filter);
         try
         {
             await _semaphore.WaitAsync();
@@ -130,6 +128,7 @@ public sealed class RequestResponseLogger : IRequestResponseLogger {
     /// </summary>
     public async Task<List<ResponseLog>> GetResponseLogsAsync(LogFilter filter)
     {
+        ArgumentNullException.ThrowIfNull(filter);
         try
         {
             await _semaphore.WaitAsync();
