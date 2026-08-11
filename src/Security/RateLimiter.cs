@@ -54,6 +54,7 @@ public sealed class RateLimiter : IRateLimiter
         int maxRequests,
         TimeSpan window)
     {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
         try
         {
             await _semaphore.WaitAsync();
@@ -117,6 +118,7 @@ public sealed class RateLimiter : IRateLimiter
     /// </summary>
     public async Task ResetAsync(string identifier)
     {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
         try
         {
             await _semaphore.WaitAsync();
@@ -137,6 +139,7 @@ public sealed class RateLimiter : IRateLimiter
     /// </summary>
     public async Task<RateLimitStatus> GetStatusAsync(string identifier)
     {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
         try
         {
             await _semaphore.WaitAsync();
