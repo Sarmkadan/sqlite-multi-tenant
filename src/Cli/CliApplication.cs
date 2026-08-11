@@ -23,6 +23,10 @@ public sealed class CliApplication {
         ILogger<CliApplication> logger,
         IConsoleWriter consoleWriter)
     {
+        ArgumentNullException.ThrowIfNull(parser);
+        ArgumentNullException.ThrowIfNull(executor);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(consoleWriter);
         _parser = parser;
         _executor = executor;
         _logger = logger;
@@ -36,6 +40,7 @@ public sealed class CliApplication {
     /// </summary>
     public async Task<int> RunAsync(string[] args)
     {
+        ArgumentNullException.ThrowIfNull(args);
         try
         {
             _logger.LogInformation("=== SQLite Multi-Tenant CLI ===");
