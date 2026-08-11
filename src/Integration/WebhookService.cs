@@ -38,6 +38,9 @@ public sealed class WebhookService {
         Dictionary<string, string>? headers = null,
         string? secret = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(eventType);
+        ArgumentException.ThrowIfNullOrEmpty(webhookUrl);
+
         try
         {
             await _semaphore.WaitAsync();
@@ -73,6 +76,8 @@ public sealed class WebhookService {
     /// </summary>
     public async Task<bool> UnsubscribeAsync(string subscriptionId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(subscriptionId);
+
         try
         {
             await _semaphore.WaitAsync();
@@ -102,6 +107,8 @@ public sealed class WebhookService {
     /// </summary>
     public async Task TriggerWebhooksAsync(string eventType, object eventData)
     {
+        ArgumentException.ThrowIfNullOrEmpty(eventType);
+
         try
         {
             if (!_subscriptions.TryGetValue(eventType, out var subscriptions))
