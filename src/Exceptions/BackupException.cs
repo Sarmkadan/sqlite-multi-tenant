@@ -17,11 +17,13 @@ public sealed class BackupException : MultiTenantException
     public BackupException(string message)
         : base(message)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
     }
 
     public BackupException(string message, Exception innerException)
         : base(message, innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
     }
 
     public BackupException(string message, string backupId, string databaseId, Exception? innerException = null)
@@ -33,6 +35,7 @@ public sealed class BackupException : MultiTenantException
 
     public static BackupException CreationFailed(string databaseId, Exception innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
         return new BackupException(
             $"Failed to create backup for database '{databaseId}'",
             string.Empty,
@@ -42,6 +45,8 @@ public sealed class BackupException : MultiTenantException
 
     public static BackupException VerificationFailed(string backupId, string databaseId, Exception? innerException = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(backupId);
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
         return new BackupException(
             $"Backup verification failed for backup '{backupId}'",
             backupId,
@@ -51,6 +56,8 @@ public sealed class BackupException : MultiTenantException
 
     public static BackupException RestoreFailed(string backupId, string databaseId, Exception innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(backupId);
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
         return new BackupException(
             $"Failed to restore backup '{backupId}' to database '{databaseId}'",
             backupId,
@@ -60,6 +67,7 @@ public sealed class BackupException : MultiTenantException
 
     public static BackupException NotFound(string backupId)
     {
+        ArgumentException.ThrowIfNullOrEmpty(backupId);
         return new BackupException($"Backup with ID '{backupId}' was not found");
     }
 }
