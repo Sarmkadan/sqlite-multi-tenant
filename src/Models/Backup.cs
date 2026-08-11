@@ -71,6 +71,7 @@ public sealed class Backup {
     /// </summary>
     public void MarkAsStarted(string createdBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(createdBy);
         Status = BackupStatus.InProgress;
         CreatedBy = createdBy;
     }
@@ -97,6 +98,7 @@ public sealed class Backup {
     /// </summary>
     public void MarkAsFailed(string errorMessage)
     {
+        ArgumentException.ThrowIfNullOrEmpty(errorMessage);
         Status = BackupStatus.Failed;
         ErrorMessage = errorMessage;
     }
@@ -106,6 +108,7 @@ public sealed class Backup {
     /// </summary>
     public void MarkAsVerified(string verifiedBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(verifiedBy);
         IsVerified = true;
         VerifiedAt = DateTime.UtcNow;
         VerifiedBy = verifiedBy;
@@ -130,6 +133,7 @@ public sealed class Backup {
     /// </summary>
     public void AddTag(string tag)
     {
+        ArgumentException.ThrowIfNullOrEmpty(tag);
         if (string.IsNullOrEmpty(Tags))
         {
             Tags = tag;
