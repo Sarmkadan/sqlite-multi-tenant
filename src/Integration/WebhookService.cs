@@ -219,12 +219,9 @@ public sealed class WebhookService {
     /// <returns>True if the signature is valid; otherwise, false.</returns>
     public static bool VerifySignature(string payload, string signature, string secret)
     {
-        if (string.IsNullOrEmpty(payload))
-            throw new ArgumentException("Payload cannot be null or empty.", nameof(payload));
-        if (string.IsNullOrEmpty(signature))
-            throw new ArgumentException("Signature cannot be null or empty.", nameof(signature));
-        if (string.IsNullOrEmpty(secret))
-            throw new ArgumentException("Secret cannot be null or empty.", nameof(secret));
+        ArgumentException.ThrowIfNullOrEmpty(payload);
+        ArgumentException.ThrowIfNullOrEmpty(signature);
+        ArgumentException.ThrowIfNullOrEmpty(secret);
 
         using (var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes(secret)))
         {
@@ -239,6 +236,8 @@ public sealed class WebhookService {
     /// </summary>
     public async Task<List<WebhookSubscription>> GetSubscriptionsAsync(string eventType)
     {
+        ArgumentException.ThrowIfNullOrEmpty(eventType);
+
         try
         {
             await _semaphore.WaitAsync();
