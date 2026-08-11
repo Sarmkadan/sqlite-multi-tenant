@@ -17,22 +17,30 @@ public sealed class DatabaseAccessException : MultiTenantException
     public DatabaseAccessException(string message)
         : base(message)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
     }
 
     public DatabaseAccessException(string message, Exception innerException)
         : base(message, innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        ArgumentNullException.ThrowIfNull(innerException);
     }
 
     public DatabaseAccessException(string message, string databaseId, string operationType, Exception? innerException = null)
         : base(message, innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
+        ArgumentException.ThrowIfNullOrEmpty(operationType);
         DatabaseId = databaseId;
         OperationType = operationType;
     }
 
     public static DatabaseAccessException ConnectionFailed(string databaseId, Exception innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
+        ArgumentNullException.ThrowIfNull(innerException);
         return new DatabaseAccessException(
             $"Failed to connect to database '{databaseId}'",
             databaseId,
@@ -42,6 +50,9 @@ public sealed class DatabaseAccessException : MultiTenantException
 
     public static DatabaseAccessException QueryFailed(string databaseId, string query, Exception innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
+        ArgumentException.ThrowIfNullOrEmpty(query);
+        ArgumentNullException.ThrowIfNull(innerException);
         return new DatabaseAccessException(
             $"Query execution failed on database '{databaseId}': {query}",
             databaseId,
@@ -51,6 +62,8 @@ public sealed class DatabaseAccessException : MultiTenantException
 
     public static DatabaseAccessException TransactionFailed(string databaseId, Exception innerException)
     {
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
+        ArgumentNullException.ThrowIfNull(innerException);
         return new DatabaseAccessException(
             $"Transaction failed on database '{databaseId}'",
             databaseId,
@@ -60,6 +73,8 @@ public sealed class DatabaseAccessException : MultiTenantException
 
     public static DatabaseAccessException ReadOnlyViolation(string databaseId, string operation)
     {
+        ArgumentException.ThrowIfNullOrEmpty(databaseId);
+        ArgumentException.ThrowIfNullOrEmpty(operation);
         return new DatabaseAccessException(
             $"Database '{databaseId}' is in read-only mode. Write operation '{operation}' is not allowed.",
             databaseId,
