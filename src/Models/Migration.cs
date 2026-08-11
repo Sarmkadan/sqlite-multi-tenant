@@ -69,6 +69,7 @@ public sealed class Migration {
     /// </summary>
     public void MarkAsStarted(string executedBy)
     {
+        ArgumentException.ThrowIfNullOrEmpty(executedBy);
         Status = MigrationStatus.Running;
         ExecutedAt = DateTime.UtcNow;
         ExecutedBy = executedBy;
@@ -90,6 +91,7 @@ public sealed class Migration {
     /// </summary>
     public void MarkAsFailed(string errorMessage)
     {
+        ArgumentException.ThrowIfNullOrEmpty(errorMessage);
         Status = MigrationStatus.Failed;
         ErrorMessage = errorMessage;
     }
