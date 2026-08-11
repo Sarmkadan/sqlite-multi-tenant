@@ -40,6 +40,14 @@ public sealed class BatchProcessor : IBatchProcessor {
         Func<TItem, Task<TResult>> operation,
         int maxConcurrency = 4)
     {
+        if (items == null)
+        {
+            throw new ArgumentNullException(nameof(items));
+        }
+        if (operation == null)
+        {
+            throw new ArgumentNullException(nameof(operation));
+        }
         var result = new BatchProcessResult<TResult>();
         var itemList = items.ToList();
 
@@ -85,6 +93,14 @@ public sealed class BatchProcessor : IBatchProcessor {
         Func<TItem, Task> operation,
         int maxConcurrency = 4)
     {
+        if (items == null)
+        {
+            throw new ArgumentNullException(nameof(items));
+        }
+        if (operation == null)
+        {
+            throw new ArgumentNullException(nameof(operation));
+        }
         var result = new BatchProcessResult<object>();
         var itemList = items.ToList();
 
