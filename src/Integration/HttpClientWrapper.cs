@@ -44,7 +44,7 @@ public sealed class HttpClientWrapper : IHttpClientWrapper
     /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<T?> GetAsync<T>(string url) where T : class
     {
-        ArgumentNullException.ThrowIfNull(url);
+        ArgumentException.ThrowIfNullOrEmpty(url);
 
         try
         {
@@ -85,7 +85,7 @@ public sealed class HttpClientWrapper : IHttpClientWrapper
     /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<T?> PostAsync<T>(string url, object payload) where T : class
     {
-        ArgumentNullException.ThrowIfNull(url);
+        ArgumentException.ThrowIfNullOrEmpty(url);
         ArgumentNullException.ThrowIfNull(payload);
 
         try
@@ -129,7 +129,7 @@ public sealed class HttpClientWrapper : IHttpClientWrapper
     /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<bool> PutAsync(string url, object payload)
     {
-        ArgumentNullException.ThrowIfNull(url);
+        ArgumentException.ThrowIfNullOrEmpty(url);
         ArgumentNullException.ThrowIfNull(payload);
 
         try
@@ -161,7 +161,7 @@ public sealed class HttpClientWrapper : IHttpClientWrapper
     /// <exception cref="ArgumentException"><paramref name="url"/> is empty or whitespace.</exception>
     public async Task<bool> DeleteAsync(string url)
     {
-        ArgumentNullException.ThrowIfNull(url);
+        ArgumentException.ThrowIfNullOrEmpty(url);
 
         try
         {
@@ -241,8 +241,8 @@ public sealed class HttpClientWrapper : IHttpClientWrapper
     /// <exception cref="ArgumentException"><paramref name="name"/> is empty or whitespace.</exception>
     public void AddDefaultHeader(string name, string value)
     {
-        ArgumentNullException.ThrowIfNull(name);
-        ArgumentNullException.ThrowIfNull(value);
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        ArgumentException.ThrowIfNullOrEmpty(value);
 
         _httpClient.DefaultRequestHeaders.Add(name, value);
     }
@@ -255,7 +255,7 @@ public sealed class HttpClientWrapper : IHttpClientWrapper
     /// <exception cref="ArgumentException"><paramref name="token"/> is empty or whitespace.</exception>
     public void SetBearerToken(string token)
     {
-        ArgumentNullException.ThrowIfNull(token);
+        ArgumentException.ThrowIfNullOrEmpty(token);
 
         _httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
