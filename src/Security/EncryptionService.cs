@@ -42,6 +42,7 @@ public sealed class EncryptionService : IEncryptionService {
     /// </summary>
     public string Encrypt(string plainText)
     {
+        ArgumentException.ThrowIfNullOrEmpty(plainText);
         try
         {
             if (string.IsNullOrEmpty(plainText))
@@ -62,6 +63,7 @@ public sealed class EncryptionService : IEncryptionService {
     /// </summary>
     public string Decrypt(string cipherText)
     {
+        ArgumentException.ThrowIfNullOrEmpty(cipherText);
         try
         {
             if (string.IsNullOrEmpty(cipherText))
@@ -81,7 +83,7 @@ public sealed class EncryptionService : IEncryptionService {
     /// <summary>
     /// Encrypts raw bytes.
     /// </summary>
-    public byte[] EncryptBytes(byte[] data)
+    public byte[] EncryptBytes(byte[]? data)
     {
         try
         {
@@ -125,7 +127,7 @@ public sealed class EncryptionService : IEncryptionService {
     /// <summary>
     /// Decrypts raw bytes.
     /// </summary>
-    public byte[] DecryptBytes(byte[] data)
+    public byte[] DecryptBytes(byte[]? data)
     {
         try
         {
@@ -167,7 +169,7 @@ public sealed class EncryptionService : IEncryptionService {
     /// <summary>
     /// Verifies a password hash.
     /// </summary>
-    public bool VerifyHash(string plainText, string hash)
+    public bool VerifyHash(string? plainText, string? hash)
     {
         try
         {
