@@ -26,10 +26,14 @@ public sealed class PerformanceMiddleware {
         ILogger<PerformanceMiddleware> logger,
         long slowRequestThresholdMs = 1000)
     {
-        _next = next;
-        _logger = logger;
-        _slowRequestThresholdMs = slowRequestThresholdMs;
-        _monitor = new PerformanceMonitor();
+            ArgumentNullException.ThrowIfNull(next);
+            ArgumentNullException.ThrowIfNull(logger);
+            ArgumentNullException.ThrowIfNull(next);
+ArgumentNullException.ThrowIfNull(logger);
+_next = next;
+            _logger = logger;
+            _slowRequestThresholdMs = slowRequestThresholdMs;
+            _monitor = new PerformanceMonitor();
     }
 
     public async Task InvokeAsync(HttpContext context)
