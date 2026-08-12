@@ -37,6 +37,7 @@ public sealed class StatisticsService : IStatisticsService {
     /// </summary>
     public async Task RecordEventAsync(SystemEvent @event)
     {
+        ArgumentNullException.ThrowIfNull(@event);
         try
         {
             await _semaphore.WaitAsync();
@@ -98,6 +99,7 @@ public sealed class StatisticsService : IStatisticsService {
     /// </summary>
     public async Task<List<AggregatedMetric>> GetMetricsAsync(string metricName, TimeSpan period)
     {
+        ArgumentException.ThrowIfNullOrEmpty(metricName);
         try
         {
             await _semaphore.WaitAsync();
@@ -134,6 +136,7 @@ public sealed class StatisticsService : IStatisticsService {
     /// </summary>
     public async Task<TrendAnalysis> AnalyzeTrendAsync(string metricName, TimeSpan period)
     {
+        ArgumentException.ThrowIfNullOrEmpty(metricName);
         try
         {
             await _semaphore.WaitAsync();
