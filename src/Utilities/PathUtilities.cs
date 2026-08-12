@@ -18,7 +18,10 @@ public static class PathUtilities
     /// </summary>
     public static string SafeCombinePath(string basePath, string relativePath)
     {
+        // Guard clauses
+        ArgumentException.ThrowIfNullOrEmpty(basePath);
         ArgumentException.ThrowIfNullOrEmpty(relativePath);
+
         if (string.IsNullOrEmpty(basePath))
             throw new ArgumentException("Base path cannot be null or empty");
 
@@ -42,6 +45,7 @@ public static class PathUtilities
     /// </summary>
     public static bool SafeCreateDirectory(string path)
     {
+        // Guard clause
         ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
@@ -63,6 +67,7 @@ public static class PathUtilities
     /// </summary>
     public static long GetDirectorySizeBytes(string path)
     {
+        // Guard clause
         ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
@@ -110,6 +115,7 @@ public static class PathUtilities
     /// </summary>
     public static bool SafeDeleteDirectory(string path, int retryCount = 3)
     {
+        // Guard clause
         ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
@@ -144,6 +150,7 @@ public static class PathUtilities
     /// </summary>
     public static List<string> GetFilesRecursive(string path, string? searchPattern = null)
     {
+        // Guard clause
         ArgumentException.ThrowIfNullOrEmpty(path);
         var files = new List<string>();
 
@@ -193,6 +200,7 @@ public static class PathUtilities
     /// </summary>
     public static string NormalizePath(string path)
     {
+        // Guard clause
         ArgumentException.ThrowIfNullOrEmpty(path);
         if (string.IsNullOrEmpty(path))
             return path;
@@ -206,6 +214,7 @@ public static class PathUtilities
     /// </summary>
     public static string MakeRelativePath(string basePath, string fullPath)
     {
+        // Guard clauses
         ArgumentException.ThrowIfNullOrEmpty(basePath);
         ArgumentException.ThrowIfNullOrEmpty(fullPath);
         try
@@ -246,6 +255,8 @@ public static class PathUtilities
     /// </summary>
     public static bool IsDirectoryEmpty(string path)
     {
+        // Guard clause
+        ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
             if (!Directory.Exists(path))
@@ -264,6 +275,8 @@ public static class PathUtilities
     /// </summary>
     public static int CleanupOldFiles(string path, TimeSpan maxAge)
     {
+        // Guard clause
+        ArgumentException.ThrowIfNullOrEmpty(path);
         int deletedCount = 0;
 
         try
@@ -297,6 +310,8 @@ public static class PathUtilities
     /// </summary>
     public static string GetExtensionWithoutDot(string path)
     {
+        // Guard clause
+        ArgumentException.ThrowIfNullOrEmpty(path);
         var extension = Path.GetExtension(path);
         return extension.TrimStart('.');
     }
