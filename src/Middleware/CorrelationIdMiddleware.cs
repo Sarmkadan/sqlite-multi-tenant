@@ -21,12 +21,16 @@ public sealed class CorrelationIdMiddleware {
 
     public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
     {
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(logger);
         _next = next;
         _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
+        ArgumentNullException.ThrowIfNull(context);
+
         // Get correlation ID from request header or generate new one
         string correlationId = GetOrGenerateCorrelationId(context);
 
