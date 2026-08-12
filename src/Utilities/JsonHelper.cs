@@ -42,6 +42,7 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>The serialized JSON string.</returns>
         public static string Serialize<T>(T obj, bool indented = true)
         {
+            ArgumentNullException.ThrowIfNull(nameof(obj));
             try
             {
                 var options = indented ? DefaultOptions : CompactOptions;
@@ -61,6 +62,7 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>The deserialized object.</returns>
         public static T Deserialize<T>(string json)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(json));
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentException("JSON string cannot be empty", nameof(json));
 
@@ -81,6 +83,7 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>The deserialized dynamic object.</returns>
         public static dynamic DeserializeDynamic(string json)
         {
+            ArgumentNullException.ThrowIfNull(nameof(json));
             if (string.IsNullOrWhiteSpace(json))
                 return null;
 
@@ -103,6 +106,8 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>The merged JSON string.</returns>
         public static string MergeJson(string json1, string json2)
         {
+            ArgumentNullException.ThrowIfNull(nameof(json1));
+            ArgumentNullException.ThrowIfNull(nameof(json2));
             try
             {
                 using var doc1 = JsonDocument.Parse(json1);
@@ -132,6 +137,8 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>The extracted property value.</returns>
         public static T GetProperty<T>(string json, string propertyPath)
         {
+            ArgumentNullException.ThrowIfNull(nameof(json));
+            ArgumentNullException.ThrowIfNull(nameof(propertyPath));
             if (string.IsNullOrWhiteSpace(json))
                 return default;
 
@@ -161,6 +168,7 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>True if the JSON is valid, false otherwise.</returns>
         public static bool IsValidJson(string json)
         {
+            ArgumentNullException.ThrowIfNull(nameof(json));
             if (string.IsNullOrWhiteSpace(json))
                 return false;
 
