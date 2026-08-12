@@ -125,6 +125,7 @@ public static class DependencyInjectionSetup
     public static IServiceCollection AddHealthCheckServices(this IServiceCollection services, string databasePath = ".")
     {
         ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrEmpty(databasePath);
 
         services.AddScoped<IHealthCheckService>(sp => new HealthCheckService(
             sp.GetRequiredService<ILogger<HealthCheckService>>(),
@@ -139,6 +140,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddBackgroundWorkers(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         // Register backup scheduler
         services.AddSingleton<BackupSchedulerService>();
         services.AddHostedService<BackupSchedulerService>(sp => sp.GetRequiredService<BackupSchedulerService>());
@@ -149,7 +152,7 @@ public static class DependencyInjectionSetup
 
         // Register database maintenance worker and service
         services.AddTenantDatabaseMaintenanceService();
-            services.AddSingleton<DatabaseMaintenanceWorker>();
+        services.AddSingleton<DatabaseMaintenanceWorker>();
         services.AddHostedService<DatabaseMaintenanceWorker>(sp => sp.GetRequiredService<DatabaseMaintenanceWorker>());
 
         // Register tenant size report service
@@ -182,6 +185,7 @@ public static class DependencyInjectionSetup
         string databasePath = ".")
     {
         ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrEmpty(databasePath);
 
         services.AddApiControllers();
         services.AddMiddlewareServices();
@@ -201,7 +205,8 @@ public static class DependencyInjectionSetup
 /// Builder pattern for fluent configuration of multi-tenant options.
 /// Enables progressive configuration without modifying ServiceConfiguration directly.
 /// </summary>
-public sealed class MultiTenantOptionsBuilder {
+public sealed class MultiTenantOptionsBuilder
+{
     private readonly SqliteMultiTenantOptions _options;
 
     public MultiTenantOptionsBuilder()
@@ -235,12 +240,14 @@ public sealed class MultiTenantOptionsBuilder {
 
     public MultiTenantOptionsBuilder WithBackupDirectory(string path)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         _options.BackupDirectory = path;
         return this;
     }
 
     public MultiTenantOptionsBuilder WithDatabaseDirectory(string path)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         _options.DatabaseDirectory = path;
         return this;
     }
