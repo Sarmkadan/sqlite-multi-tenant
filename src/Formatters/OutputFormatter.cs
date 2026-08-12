@@ -41,7 +41,10 @@ public sealed class JsonFormatter : IOutputFormatter {
     /// </summary>
     public string Format<T>(T data)
     {
-        try
+        ArgumentNullException.ThrowIfNull(data);
+    ArgumentNullException.ThrowIfNull(data);
+
+    try
         {
             return JsonSerializer.Serialize(data, Options);
         }
@@ -66,7 +69,10 @@ public sealed class CsvFormatter : IOutputFormatter {
     /// </summary>
     public string Format<T>(T data)
     {
-        try
+        ArgumentNullException.ThrowIfNull(data);
+    ArgumentNullException.ThrowIfNull(data);
+
+    try
         {
             if (data is IEnumerable<object> collection)
                 return FormatCollection(collection);
@@ -151,7 +157,10 @@ public sealed class XmlFormatter : IOutputFormatter {
     /// </summary>
     public string Format<T>(T data)
     {
-        try
+        ArgumentNullException.ThrowIfNull(data);
+    ArgumentNullException.ThrowIfNull(data);
+
+    try
         {
             XElement root = data switch
             {
