@@ -58,6 +58,7 @@ public sealed class SettingsController : ControllerBase {
     [ProducesResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
     public IActionResult GetSetting(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         try
         {
             _logger.LogInformation("Setting requested: {Key}", key);
@@ -90,6 +91,8 @@ public sealed class SettingsController : ControllerBase {
     [ProducesResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
     public IActionResult SetSetting(string key, [FromBody] SetSettingRequest request)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
+        ArgumentNullException.ThrowIfNull(request);
         try
         {
             if (!ModelState.IsValid)
@@ -170,6 +173,7 @@ public sealed class SettingsController : ControllerBase {
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public IActionResult RemoveSetting(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         try
         {
             _logger.LogInformation("Setting removed: {Key}", key);
@@ -191,6 +195,7 @@ public sealed class SettingsController : ControllerBase {
     [HttpHead("{key}")]
     public IActionResult CheckSetting(string key)
     {
+        ArgumentException.ThrowIfNullOrEmpty(key);
         _logger.LogInformation("Setting existence check: {Key}", key);
 
         if (_configManager.Contains(key))
