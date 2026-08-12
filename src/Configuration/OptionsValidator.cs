@@ -23,6 +23,7 @@ namespace SqliteMultiTenant.Configuration
         /// </exception>
         public static void Validate(MultiTenantOptions options)
         {
+            ArgumentNullException.ThrowIfNull(options);
             if (string.IsNullOrWhiteSpace(options?.BasePath))
                 throw new ArgumentException("BasePath cannot be empty");
 
@@ -45,6 +46,7 @@ namespace SqliteMultiTenant.Configuration
         /// </exception>
         public static void Validate(BackupOptions options)
         {
+            ArgumentNullException.ThrowIfNull(options);
             if (options?.MaxConcurrentBackups <= 0)
                 throw new ArgumentException("MaxConcurrentBackups must be greater than 0");
 
@@ -61,6 +63,7 @@ namespace SqliteMultiTenant.Configuration
         /// </exception>
         public static void Validate(SecurityOptions options)
         {
+            ArgumentNullException.ThrowIfNull(options);
             if (options?.SessionTimeout <= TimeSpan.Zero)
                 throw new ArgumentException("SessionTimeout must be positive");
 
