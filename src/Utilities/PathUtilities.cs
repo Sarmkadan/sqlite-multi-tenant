@@ -18,6 +18,7 @@ public static class PathUtilities
     /// </summary>
     public static string SafeCombinePath(string basePath, string relativePath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(relativePath);
         if (string.IsNullOrEmpty(basePath))
             throw new ArgumentException("Base path cannot be null or empty");
 
@@ -41,6 +42,7 @@ public static class PathUtilities
     /// </summary>
     public static bool SafeCreateDirectory(string path)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
             if (Directory.Exists(path))
@@ -61,6 +63,7 @@ public static class PathUtilities
     /// </summary>
     public static long GetDirectorySizeBytes(string path)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
             if (!Directory.Exists(path))
@@ -107,6 +110,7 @@ public static class PathUtilities
     /// </summary>
     public static bool SafeDeleteDirectory(string path, int retryCount = 3)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         try
         {
             if (!Directory.Exists(path))
@@ -140,6 +144,7 @@ public static class PathUtilities
     /// </summary>
     public static List<string> GetFilesRecursive(string path, string? searchPattern = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         var files = new List<string>();
 
         try
@@ -188,6 +193,7 @@ public static class PathUtilities
     /// </summary>
     public static string NormalizePath(string path)
     {
+        ArgumentException.ThrowIfNullOrEmpty(path);
         if (string.IsNullOrEmpty(path))
             return path;
 
@@ -200,6 +206,8 @@ public static class PathUtilities
     /// </summary>
     public static string MakeRelativePath(string basePath, string fullPath)
     {
+        ArgumentException.ThrowIfNullOrEmpty(basePath);
+        ArgumentException.ThrowIfNullOrEmpty(fullPath);
         try
         {
             var baseUri = new Uri(Path.GetFullPath(basePath) + Path.DirectorySeparatorChar);
