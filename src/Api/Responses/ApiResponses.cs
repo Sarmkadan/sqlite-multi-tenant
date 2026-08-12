@@ -20,35 +20,62 @@ public sealed class ApiResponse<T> {
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     public static ApiResponse<T> Success(T data, string message = "Success")
-        => new() { StatusCode = 200, IsSuccess = true, Data = data, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 200, IsSuccess = true, Data = data, Message = message };
+    }
 
     public static ApiResponse<T> Created(T data, string message = "Created")
-        => new() { StatusCode = 201, IsSuccess = true, Data = data, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 201, IsSuccess = true, Data = data, Message = message };
+    }
 
     public static ApiResponse<T> BadRequest(string message, Dictionary<string, string>? errors = null)
-        => new() { StatusCode = 400, IsSuccess = false, Message = message, Errors = errors };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 400, IsSuccess = false, Message = message, Errors = errors };
+    }
 
     public static ApiResponse<T> NotFound(string message)
-        => new() { StatusCode = 404, IsSuccess = false, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 404, IsSuccess = false, Message = message };
+    }
 
     public static ApiResponse<T> Conflict(string message)
-        => new() { StatusCode = 409, IsSuccess = false, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 409, IsSuccess = false, Message = message };
+    }
 
     public static ApiResponse<T> InternalServerError(string message)
-        => new() { StatusCode = 500, IsSuccess = false, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 500, IsSuccess = false, Message = message };
+    }
 
     public static ApiResponse<T> Unauthorized(string message = "Unauthorized")
-        => new() { StatusCode = 401, IsSuccess = false, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 401, IsSuccess = false, Message = message };
+    }
 
     public static ApiResponse<T> Forbidden(string message = "Forbidden")
-        => new() { StatusCode = 403, IsSuccess = false, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { StatusCode = 403, IsSuccess = false, Message = message };
+    }
 
     /// <summary>
     /// Generic error response. Callers typically wrap this with the appropriate
     /// HTTP status code (e.g. <c>StatusCode(500, ApiResponse&lt;object&gt;.Error(...))</c>).
     /// </summary>
     public static ApiResponse<T> Error(string message)
-        => new() { IsSuccess = false, Message = message };
+    {
+        ArgumentException.ThrowIfNullOrEmpty(message);
+        return new() { IsSuccess = false, Message = message };
+    }
 }
 
 /// <summary>
@@ -111,6 +138,7 @@ public sealed class MigrationFailureResponse
 
     public static MigrationFailureResponse FromModel(Models.MigrationFailure failure)
     {
+        ArgumentNullException.ThrowIfNull(failure);
         ArgumentException.ThrowIfNullOrEmpty(failure.MigrationId);
         ArgumentException.ThrowIfNullOrEmpty(failure.Version);
         ArgumentException.ThrowIfNullOrEmpty(failure.Name);
@@ -158,6 +186,7 @@ public sealed class TenantMigrationResultResponse
 
     public static TenantMigrationResultResponse FromModel(Models.TenantMigrationResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
         ArgumentException.ThrowIfNullOrEmpty(result.DatabaseId);
 
         return new TenantMigrationResultResponse
