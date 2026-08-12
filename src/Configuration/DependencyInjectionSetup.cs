@@ -32,6 +32,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddApiControllers(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddScoped<TenantController>();
         services.AddScoped<BackupController>();
         services.AddScoped<MigrationController>();
@@ -45,6 +47,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddMiddlewareServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddScoped<ErrorHandlingMiddleware>();
         services.AddScoped<LoggingMiddleware>();
         services.AddSingleton(new RateLimitingOptions { RequestsPerMinute = 300 });
@@ -59,6 +63,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddCachingServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<IMemoryCache, MemoryCache>();
         services.AddSingleton<ICacheService, CacheService>();
         services.AddScoped<CacheInvalidationService>();
@@ -72,6 +78,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddEventServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<IEventPublisher, EventPublisher>();
 
         // Register event handlers - these can be expanded with specific handlers
@@ -86,6 +94,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddFormatterServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<FormatterFactory>();
         services.AddScoped<IOutputFormatter, JsonFormatter>();
 
@@ -98,6 +108,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddValidationServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddSingleton<TenantValidator>();
         services.AddSingleton<MigrationValidator>();
         services.AddSingleton<ConnectionStringValidator>();
@@ -112,6 +124,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddHealthCheckServices(this IServiceCollection services, string databasePath = ".")
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddScoped<IHealthCheckService>(sp => new HealthCheckService(
             sp.GetRequiredService<ILogger<HealthCheckService>>(),
             databasePath));
@@ -152,6 +166,8 @@ public static class DependencyInjectionSetup
     /// </summary>
     public static IServiceCollection AddIntegrationServices(this IServiceCollection services)
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddHttpClient<IWebhookHandler, WebhookHandler>();
 
         return services;
@@ -165,6 +181,8 @@ public static class DependencyInjectionSetup
         this IServiceCollection services,
         string databasePath = ".")
     {
+        ArgumentNullException.ThrowIfNull(services);
+
         services.AddApiControllers();
         services.AddMiddlewareServices();
         services.AddCachingServices();
