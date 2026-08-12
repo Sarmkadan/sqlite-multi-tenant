@@ -36,6 +36,7 @@ public sealed class DataMapper : IDataMapper {
     /// </summary>
     public TTarget Map<TSource, TTarget>(TSource source) where TTarget : class, new()
     {
+        ArgumentNullException.ThrowIfNull(nameof(source));
         try
         {
             if (source is null)
@@ -89,6 +90,7 @@ public sealed class DataMapper : IDataMapper {
     /// </summary>
     public List<TTarget> MapList<TSource, TTarget>(List<TSource> sources) where TTarget : class, new()
     {
+        ArgumentNullException.ThrowIfNull(nameof(sources));
         try
         {
             if (sources is null || sources.Count == 0)
