@@ -21,7 +21,7 @@ public sealed class GenericRepositoryTests {
     /// <summary>
     /// Test entity used for testing generic repository operations.
     /// </summary>
-    public class TestEntity { public string Id { get; set; } = string.Empty;
+    public class TestEntity { public string Id { get; set; } = string.Empty; }
 
     /// <summary>
     /// Test implementation of <see cref="GenericRepository{TEntity}"/> that uses an in-memory list for storage.
@@ -45,15 +45,21 @@ public sealed class GenericRepositoryTests {
         /// Asynchronously retrieves all entities from the repository.
         /// </summary>
         /// <returns>A task that represents the asynchronous operation. The task result contains a list of all entities.</returns>
-        public override Task<List<TestEntity>> GetAllAsync() => Task.FromResult(new List<TestEntity>(Items));
+        public override Task<List<TestEntity>> GetAllAsync()
+        {
+            return Task.FromResult(new List<TestEntity>(Items));
+        }
 
         /// <summary>
         /// Asynchronously retrieves an entity by its identifier.
         /// </summary>
         /// <param name="id">The identifier of the entity to retrieve.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the entity if found, otherwise null.</returns>
-        public override Task<TestEntity?> GetByIdAsync(string id) =>
-            Task.FromResult(Items.FirstOrDefault(i => i.Id == id));
+        public override Task<TestEntity?> GetByIdAsync(string id)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(id);
+            return Task.FromResult(Items.FirstOrDefault(i => i.Id == id));
+        }
 
         /// <summary>
         /// Asynchronously creates a new entity in the repository.
@@ -62,6 +68,7 @@ public sealed class GenericRepositoryTests {
         /// <returns>A task that represents the asynchronous operation. The task result contains the created entity.</returns>
         public override Task<TestEntity> CreateAsync(TestEntity entity)
         {
+            ArgumentNullException.ThrowIfNull(entity);
             Items.Add(entity);
             return Task.FromResult(entity);
         }
@@ -73,6 +80,7 @@ public sealed class GenericRepositoryTests {
         /// <returns>A task that represents the asynchronous operation. The task result indicates whether the update was successful.</returns>
         public override Task<bool> UpdateAsync(TestEntity entity)
         {
+            ArgumentNullException.ThrowIfNull(entity);
             var index = Items.FindIndex(i => i.Id == entity.Id);
             if (index < 0)
                 return Task.FromResult(false);
@@ -88,6 +96,7 @@ public sealed class GenericRepositoryTests {
         /// <returns>A task that represents the asynchronous operation. The task result indicates whether the deletion was successful.</returns>
         public override Task<bool> DeleteAsync(string id)
         {
+            ArgumentException.ThrowIfNullOrEmpty(id);
             var item = Items.FirstOrDefault(i => i.Id == id);
             if (item is null)
                 return Task.FromResult(false);
@@ -101,21 +110,31 @@ public sealed class GenericRepositoryTests {
         /// </summary>
         /// <param name="predicate">A function to test each entity for a condition.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains a list of entities that match the predicate.</returns>
-        public override Task<List<TestEntity>> FindAsync(Func<TestEntity, bool> predicate) =>
-            Task.FromResult(Items.Where(predicate).ToList());
+        public override Task<List<TestEntity>> FindAsync(Func<TestEntity, bool> predicate)
+        {
+            ArgumentNullException.ThrowIfNull(predicate);
+            return Task.FromResult(Items.Where(predicate).ToList());
+        }
 
         /// <summary>
         /// Asynchronously gets the count of entities in the repository.
         /// </summary>
         /// <returns>A task that represents the asynchronous operation. The task result contains the count of entities.</returns>
-        public override Task<int> GetCountAsync() => Task.FromResult(Items.Count);
+        public override Task<int> GetCountAsync()
+        {
+            return Task.FromResult(Items.Count);
+        }
 
         /// <summary>
         /// Asynchronously checks whether an entity with the specified identifier exists.
         /// </summary>
         /// <param name="id">The identifier to check.</param>
         /// <returns>A task that represents the asynchronous operation. The task result indicates whether the entity exists.</returns>
-        public override Task<bool> ExistsAsync(string id) => Task.FromResult(Items.Any(i => i.Id == id));
+        public override Task<bool> ExistsAsync(string id)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(id);
+            return Task.FromResult(Items.Any(i => i.Id == id));
+        }
 
         /// <summary>
         /// Asynchronously deletes entities that match the specified predicate.
@@ -124,6 +143,7 @@ public sealed class GenericRepositoryTests {
         /// <returns>A task that represents the asynchronous operation. The task result contains the count of deleted entities.</returns>
         public override Task<int> DeleteAsync(Func<TestEntity, bool> predicate)
         {
+            ArgumentNullException.ThrowIfNull(predicate);
             var toRemove = Items.Where(predicate).ToList();
             foreach (var item in toRemove)
                 Items.Remove(item);
@@ -141,6 +161,7 @@ public sealed class GenericRepositoryTests {
         /// <returns>A paginated result with items and total count</returns>
         public override Task<PagedResult<TestEntity>> GetPageAsync(string tenantId, int pageNumber, int pageSize, string? orderBy = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(tenantId);
             var all = Items.ToList();
             var totalCount = all.Count;
             var items = all
@@ -259,5 +280,4 @@ public sealed class GenericRepositoryTests {
         repository.Items.Should().Contain(item);
         repository.Items.Count.Should().Be(1);
     }
-}
 }
