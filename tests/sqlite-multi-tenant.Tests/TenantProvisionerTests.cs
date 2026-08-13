@@ -67,11 +67,17 @@ public sealed class TenantProvisionerTests : IDisposable
     [Fact]
     public async Task ValidateTenantDatabaseAsync_WithNullTenantId_ThrowsArgumentNullException()
     {
+        // Arrange
+        string? tenantId = null;
+        _mockLogger.LogInformation("ValidateTenantDatabaseAsync called with tenantId {TenantId}", tenantId);
+
         // Act
-        var act = async () => await _provisioner.ValidateTenantDatabaseAsync(null!);
+        var act = async () => await _provisioner.ValidateTenantDatabaseAsync(tenantId!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
+
+        _mockLogger.LogInformation("ValidateTenantDatabaseAsync_WithNullTenantId completed");
     }
 
     /// <summary>
@@ -80,11 +86,17 @@ public sealed class TenantProvisionerTests : IDisposable
     [Fact]
     public async Task ValidateTenantDatabaseAsync_WithEmptyTenantId_ThrowsArgumentException()
     {
+        // Arrange
+        var tenantId = string.Empty;
+        _mockLogger.LogInformation("ValidateTenantDatabaseAsync called with tenantId {TenantId}", tenantId);
+
         // Act
-        var act = async () => await _provisioner.ValidateTenantDatabaseAsync(string.Empty);
+        var act = async () => await _provisioner.ValidateTenantDatabaseAsync(tenantId);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
+
+        _mockLogger.LogInformation("ValidateTenantDatabaseAsync_WithEmptyTenantId completed");
     }
 
     /// <summary>
@@ -93,11 +105,21 @@ public sealed class TenantProvisionerTests : IDisposable
     [Fact]
     public async Task CloneTenantAsync_WithInvalidSource_ThrowsArgumentException()
     {
+        // Arrange
+        var sourceTenantId = string.Empty;
+        var targetTenantId = "target1";
+        _mockLogger.LogInformation(
+            "CloneTenantAsync called with sourceTenantId {SourceTenantId}, targetTenantId {TargetTenantId}",
+            sourceTenantId,
+            targetTenantId);
+
         // Act
-        var act = async () => await _provisioner.CloneTenantAsync(string.Empty, "target1");
+        var act = async () => await _provisioner.CloneTenantAsync(sourceTenantId, targetTenantId);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
+
+        _mockLogger.LogInformation("CloneTenantAsync_WithInvalidSource completed");
     }
 
     /// <summary>
@@ -106,11 +128,21 @@ public sealed class TenantProvisionerTests : IDisposable
     [Fact]
     public async Task CloneTenantAsync_WithInvalidTarget_ThrowsArgumentException()
     {
+        // Arrange
+        var sourceTenantId = "source1";
+        var targetTenantId = string.Empty;
+        _mockLogger.LogInformation(
+            "CloneTenantAsync called with sourceTenantId {SourceTenantId}, targetTenantId {TargetTenantId}",
+            sourceTenantId,
+            targetTenantId);
+
         // Act
-        var act = async () => await _provisioner.CloneTenantAsync("source1", string.Empty);
+        var act = async () => await _provisioner.CloneTenantAsync(sourceTenantId, targetTenantId);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
+
+        _mockLogger.LogInformation("CloneTenantAsync_WithInvalidTarget completed");
     }
 
     /// <summary>
@@ -119,10 +151,16 @@ public sealed class TenantProvisionerTests : IDisposable
     [Fact]
     public async Task DeprovisionTenantAsync_WithInvalidId_ThrowsArgumentException()
     {
+        // Arrange
+        var tenantId = string.Empty;
+        _mockLogger.LogInformation("DeprovisionTenantAsync called with tenantId {TenantId}", tenantId);
+
         // Act
-        var act = async () => await _provisioner.DeprovisionTenantAsync(string.Empty);
+        var act = async () => await _provisioner.DeprovisionTenantAsync(tenantId);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
+
+        _mockLogger.LogInformation("DeprovisionTenantAsync_WithInvalidId completed");
     }
 }
