@@ -125,4 +125,12 @@ public sealed class Migration {
     {
         return $"{Version}_{Name}";
     }
+
+    /// <summary>
+    /// Returns a concise, informative string representation of the migration.
+    /// </summary>
+    public override string ToString()
+    {
+        return $"Migration {{ MigrationId = {MigrationId}, DatabaseId = {DatabaseId}, Version = {Version}, Name = {Name}, Description = {Description}, UpScript = {UpScript} }}";
+    }
 }
