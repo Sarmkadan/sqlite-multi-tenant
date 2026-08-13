@@ -121,6 +121,13 @@ public sealed class DatabaseMaintenanceWorker : BackgroundService {
 
         return results;
     }
+
+    // Added ToString override for concise representation
+    public override string ToString()
+    {
+        var opts = new DatabaseMaintenanceOptions();
+        return $"DatabaseMaintenanceWorker {{ EnableVacuum = {opts.EnableVacuum}, EnableAnalyze = {opts.EnableAnalyze}, EnableReindex = {opts.EnableReindex}, IntervalHours = {opts.IntervalHours}, TimeoutSeconds = {opts.TimeoutSeconds}, DegreeOfParallelism = {opts.DegreeOfParallelism} }}";
+    }
 }
 
 /// <summary>
