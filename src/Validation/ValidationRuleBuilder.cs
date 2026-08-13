@@ -38,6 +38,7 @@ namespace SqliteMultiTenant.Validation
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Required(string fieldName, string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
             _rules.Add(new ValidationRule
             {
                 FieldName = fieldName,
@@ -59,6 +60,7 @@ namespace SqliteMultiTenant.Validation
         public ValidationRuleBuilder<T> StringLength(string fieldName, int? minLength = null,
             int? maxLength = null, string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
             _rules.Add(new ValidationRule
             {
                 FieldName = fieldName,
@@ -86,6 +88,7 @@ namespace SqliteMultiTenant.Validation
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Email(string fieldName, string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
             _rules.Add(new ValidationRule
             {
                 FieldName = fieldName,
@@ -114,6 +117,7 @@ namespace SqliteMultiTenant.Validation
         public ValidationRuleBuilder<T> Range(string fieldName, object? minValue = null,
             object? maxValue = null, string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
             _rules.Add(new ValidationRule
             {
                 FieldName = fieldName,
@@ -146,6 +150,8 @@ namespace SqliteMultiTenant.Validation
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> Pattern(string fieldName, string pattern, string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
+            ArgumentException.ThrowIfNullOrEmpty(nameof(pattern));
             _rules.Add(new ValidationRule
             {
                 FieldName = fieldName,
@@ -172,6 +178,8 @@ namespace SqliteMultiTenant.Validation
         public ValidationRuleBuilder<T> Custom(string fieldName, Func<object, bool> predicate,
             string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
+            ArgumentNullException.ThrowIfNull(nameof(predicate));
             _rules.Add(new ValidationRule
             {
                 FieldName = fieldName,
@@ -191,6 +199,8 @@ namespace SqliteMultiTenant.Validation
         /// <returns>The current <see cref="ValidationRuleBuilder{T}"/> instance for method chaining.</returns>
         public ValidationRuleBuilder<T> MustMatch(string field1, string field2, string? message = null)
         {
+            ArgumentException.ThrowIfNullOrEmpty(nameof(field1));
+            ArgumentException.ThrowIfNullOrEmpty(nameof(field2));
             _rules.Add(new ValidationRule
             {
                 FieldName = $"{field1},{field2}",
@@ -213,6 +223,7 @@ namespace SqliteMultiTenant.Validation
         /// <returns>A <see cref="RuleValidationResult"/> indicating whether validation succeeded and containing any errors.</returns>
         public RuleValidationResult Validate(T obj)
         {
+            ArgumentNullException.ThrowIfNull(nameof(obj));
             var errors = new List<RuleValidationError>();
 
             foreach (var rule in _rules)
