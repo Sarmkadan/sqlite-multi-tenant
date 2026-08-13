@@ -21,8 +21,11 @@ public static class TenantDatabaseMaintenanceExample
     /// <summary>
     /// Demonstrates maintenance operations on a single tenant.
     /// </summary>
-    public static async Task ExampleSingleTenantMaintenance(IServiceProvider serviceProvider, string tenantId)
+    public static async Task ExampleSingleTenantMaintenance(IServiceProvider serviceProvider, string? tenantId)
     {
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentException.ThrowIfNullOrEmpty(tenantId);
+
         Console.WriteLine("=== Tenant Database Maintenance Example ===\n");
 
         // Get the maintenance service from DI
