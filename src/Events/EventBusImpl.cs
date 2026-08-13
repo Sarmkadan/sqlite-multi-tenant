@@ -27,10 +27,10 @@ namespace SqliteMultiTenant.Events
         private readonly ILogger<EventBusImpl> _logger;
         private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
         private readonly ConcurrentDictionary<string, int> _handlerFailureCounts;
-    private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
-private readonly ConcurrentDictionary<string, int> _publishAttempts;
+        private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
+        private readonly ConcurrentDictionary<string, int> _publishAttempts;
         private readonly ConcurrentDictionary<string, List<DeadLetterEvent>> _deadLetterQueue;
-    private readonly ConcurrentDictionary<string, EventStatistics> _statistics;
+        private readonly ConcurrentDictionary<string, EventStatistics> _statistics;
         private const int MaxDeadLetterSize = 1000;
         private const int MaxRetryAttempts = 3;
         private bool _disposed;
@@ -47,8 +47,8 @@ private readonly ConcurrentDictionary<string, int> _publishAttempts;
             _subscriptions = new ConcurrentDictionary<string, List<EventSubscription>>();
             _eventHistory = new ConcurrentQueue<PublishedEvent>();
             _handlerFailureCounts = new ConcurrentDictionary<string, int>();
-        _successfulHandlerCounts = new ConcurrentDictionary<string, int>();
-        _publishAttempts = new ConcurrentDictionary<string, int>();
+            _successfulHandlerCounts = new ConcurrentDictionary<string, int>();
+            _publishAttempts = new ConcurrentDictionary<string, int>();
             _deadLetterQueue = new ConcurrentDictionary<string, List<DeadLetterEvent>>();
         }
 
@@ -202,7 +202,7 @@ private readonly ConcurrentDictionary<string, int> _publishAttempts;
         /// Generates statistics about event subscriptions and publication counts.
         /// </summary>
         /// <returns>A dictionary mapping event type names to their statistics.</returns>
-public Dictionary<string, EventStatistics> GetEventStatistics()
+        public Dictionary<string, EventStatistics> GetEventStatistics()
         {
             var stats = new Dictionary<string, EventStatistics>();
 
@@ -395,6 +395,14 @@ public Dictionary<string, EventStatistics> GetEventStatistics()
                 }
             }
         }
+
+        /// <summary>
+        /// Provides a concise string representation of the EventBusImpl instance.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"EventBusImpl {{ SubscriptionsCount = {_subscriptions.Count} }}";
+        }
     }
 
     /// <summary>
@@ -417,9 +425,9 @@ public Dictionary<string, EventStatistics> GetEventStatistics()
         public string EventType { get; set; } = string.Empty;
         public int SubscriberCount { get; set; }
         public int TotalPublished { get; set; }
-    public int TotalPublishAttempts { get; set; }
-    public int SuccessfulHandlerInvocations { get; set; }
-    public int FailedHandlerInvocations { get; set; }
+        public int TotalPublishAttempts { get; set; }
+        public int SuccessfulHandlerInvocations { get; set; }
+        public int FailedHandlerInvocations { get; set; }
     }
 
     /// <summary>
