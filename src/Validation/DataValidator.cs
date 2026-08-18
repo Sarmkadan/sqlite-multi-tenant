@@ -27,6 +27,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireString(string? value, string fieldName, int? maxLength = null)
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (string.IsNullOrWhiteSpace(value))
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (maxLength.HasValue && value.Length > maxLength)
@@ -40,6 +41,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireRange(int? value, int minValue, int maxValue, string fieldName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (!value.HasValue)
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (value < minValue || value > maxValue)
@@ -54,6 +56,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireValidEmail(string? email, string fieldName = "Email")
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (string.IsNullOrWhiteSpace(email))
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (!IsValidEmail(email))
@@ -67,6 +70,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireValidUrl(string? url, string fieldName = "URL")
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (string.IsNullOrWhiteSpace(url))
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (!Uri.TryCreate(url, UriKind.Absolute, out var result) ||
@@ -81,6 +85,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireValidGuid(string? guid, string fieldName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (string.IsNullOrWhiteSpace(guid) || !Guid.TryParse(guid, out _))
             _errors.Add(new ValidationError(fieldName, $"{fieldName} must be a valid GUID"));
 
@@ -92,6 +97,9 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequirePattern(string? value, string pattern, string fieldName, string message)
     {
+        ArgumentException.ThrowIfNullOrEmpty(pattern);
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
+        ArgumentException.ThrowIfNullOrEmpty(message);
         if (!string.IsNullOrWhiteSpace(value))
         {
             if (!Regex.IsMatch(value, pattern))
@@ -106,6 +114,9 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator Require<T>(T? value, Func<T?, bool> predicate, string fieldName, string message)
     {
+        ArgumentNullException.ThrowIfNull(predicate);
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
+        ArgumentException.ThrowIfNullOrEmpty(message);
         if (!predicate(value))
             _errors.Add(new ValidationError(fieldName, message));
 
@@ -117,6 +128,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireNotEmpty<T>(IEnumerable<T>? collection, string fieldName)
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (collection is null || !collection.Any())
             _errors.Add(new ValidationError(fieldName, $"{fieldName} must contain at least one item"));
 
@@ -128,6 +140,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireEqual<T>(T? value, T? expectedValue, string fieldName) where T : class
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (value != expectedValue)
             _errors.Add(new ValidationError(fieldName, $"{fieldName} does not match expected value"));
 
@@ -139,6 +152,7 @@ public sealed class DataValidator {
     /// </summary>
     public DataValidator RequireNotEqual<T>(T? value, T? unexpectedValue, string fieldName) where T : class
     {
+        ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (value == unexpectedValue)
             _errors.Add(new ValidationError(fieldName, $"{fieldName} must not equal the given value"));
 
