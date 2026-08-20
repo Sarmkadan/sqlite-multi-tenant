@@ -44,6 +44,7 @@ namespace SqliteMultiTenant.Database
         public async Task<SQLiteConnection> GetConnectionAsync(string tenantId, string connectionString,
             CancellationToken cancellationToken = default)
         {
+            _logger.LogInformation("Getting connection for tenant {TenantId}", tenantId);
             ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (string.IsNullOrEmpty(tenantId))
@@ -55,7 +56,9 @@ namespace SqliteMultiTenant.Database
             var pool = _pools.GetOrAdd(tenantId,
                 _ => new ConnectionPool(connectionString, _maxConnectionsPerPool, _logger));
 
-            return await pool.GetConnectionAsync(cancellationToken);
+            var connection = await pool.GetConnectionAsync(cancellationToken);
+            _logger.LogInformation("Acquired connection for tenant {TenantId}", tenantId);
+            return connection;
         }
 
         /// <summary>
