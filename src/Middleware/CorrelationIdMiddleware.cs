@@ -30,6 +30,7 @@ public sealed class CorrelationIdMiddleware {
     public async Task InvokeAsync(HttpContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
+        _logger.LogInformation("InvokeAsync called with {TraceIdentifier}", context.TraceIdentifier);
 
         // Get correlation ID from request header or generate new one
         string correlationId = GetOrGenerateCorrelationId(context);
@@ -47,14 +48,13 @@ public sealed class CorrelationIdMiddleware {
         });
 
         // Log request with correlation ID
-        _logger.LogInformation(
-            $"[{correlationId}] {context.Request.Method} {context.Request.Path}");
+        _logger.LogInformation("[{correlationId}] {Method} {Path}", correlationId, context.Request.Method, context.Request.Path);
 
         await _next(context);
 
         // Log response with correlation ID
-        _logger.LogInformation(
-            $"[{correlationId}] Response: {context.Response.StatusCode}");
+        _logger.LogInformation("[{correlationId}] Response: {StatusCode}", correlationId, context.Response.StatusCode);
+        _logger.LogInformation("InvokeAsync completed for {TraceIdentifier}", context.TraceIdentifier);
     }
 
     private string GetOrGenerateCorrelationId(HttpContext context)
