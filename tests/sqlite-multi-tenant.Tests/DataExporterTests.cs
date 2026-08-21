@@ -56,6 +56,7 @@ namespace SqliteMultiTenant.Tests
         public DataExporterTests()
         {
             _mockLogger = Substitute.For<ILogger<DataExporter>>();
+            _mockLogger.LogInformation("Initializing DataExporterTests with mock logger");
             _sut = new DataExporter(_mockLogger);
 
             InitializeInMemoryDatabase();
@@ -92,6 +93,8 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task ExportAsJsonAsync_ShouldReturnCorrectJson_WhenTableHasData()
         {
+            _mockLogger.LogInformation("ExportAsJsonAsync_ShouldReturnCorrectJson_WhenTableHasData called with {TableName}, {IncludeMeta}", _testTableName, true);
+
             // Act
             var result = await _sut.ExportAsJsonAsync(_connection, _testTableName, true);
 
@@ -115,6 +118,8 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task ExportAsJsonAsync_ShouldExcludeMetadata_WhenIncludeMetaIsFalse()
         {
+            _mockLogger.LogInformation("ExportAsJsonAsync_ShouldExcludeMetadata_WhenIncludeMetaIsFalse called with {TableName}, {IncludeMeta}", _testTableName, false);
+
             // Act
             var result = await _sut.ExportAsJsonAsync(_connection, _testTableName, false);
 
@@ -208,6 +213,8 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task ExportAsCsvAsync_ShouldExcludeHeaders_WhenIncludeHeadersIsFalse()
         {
+            _mockLogger.LogInformation("ExportAsCsvAsync_ShouldExcludeHeaders_WhenIncludeHeadersIsFalse called with {TableName}, {IncludeHeaders}", _testTableName, false);
+
             // Arrange
             var expectedCsv =
             "1,Alice,alice@example.com\n" +
@@ -330,6 +337,8 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task ExportAsSqlAsync_ShouldReturnCorrectSql_WhenTableHasData()
         {
+            _mockLogger.LogInformation("ExportAsSqlAsync_ShouldReturnCorrectSql_WhenTableHasData called with {TableName}", _testTableName);
+
             // Act
             var result = await _sut.ExportAsSqlAsync(_connection, _testTableName);
 
