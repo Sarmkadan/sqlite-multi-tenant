@@ -36,6 +36,8 @@ namespace SqliteMultiTenant.Monitoring
         public string GenerateHealthReport(SystemHealthSummary health,
             Dictionary<string, OperationStatistics> operationStats)
         {
+            _logger.LogInformation("GenerateHealthReport called. Uptime: {UptimeSeconds}s, TotalOperations: {TotalOperations}, SuccessRate: {SuccessRate:P2}, OperationTypes: {OperationTypes}",
+                health.UptimeSeconds, health.TotalOperations, health.SuccessRate, health.OperationTypes);
             var report = new StringBuilder();
 
             report.AppendLine("=== SYSTEM HEALTH REPORT ===");
