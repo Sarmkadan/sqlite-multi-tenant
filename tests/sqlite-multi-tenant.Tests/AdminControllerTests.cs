@@ -69,6 +69,8 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public void GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot()
         {
+            _mockLogger.LogInformation("GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot started");
+
             // Arrange
             _mockMetricsService.RecordRequest("/api/test", 150, 200);
             _mockMetricsService.RecordBackup(1024, 500, true);
@@ -96,6 +98,8 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public void GetMetricsDashboard_ReturnsEmptySnapshot_WhenNoMetricsRecorded()
         {
+            _mockLogger.LogInformation("GetMetricsDashboard_ReturnsEmptySnapshot_WhenNoMetricsRecorded started");
+
             // Act
             var result = _controller.GetMetricsDashboard() as OkObjectResult;
 
