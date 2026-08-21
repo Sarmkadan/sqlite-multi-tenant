@@ -52,6 +52,7 @@ namespace SqliteMultiTenant.Monitoring
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _metrics = new ConcurrentDictionary<string, List<PerformanceMetric>>();
             _uptime = Stopwatch.StartNew();
+            _logger.LogInformation("PerformanceMonitor initialized");
         }
 
         /// <summary>
@@ -66,6 +67,7 @@ namespace SqliteMultiTenant.Monitoring
             if (string.IsNullOrWhiteSpace(operationName))
                 throw new ArgumentException("Operation name cannot be empty", nameof(operationName));
 
+            _logger.LogInformation("Starting operation {OperationName} for tenant {TenantId}", operationName, tenantId ?? "null");
             return new PerformanceTracker(this, operationName, tenantId);
         }
 
