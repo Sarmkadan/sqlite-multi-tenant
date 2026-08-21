@@ -32,6 +32,7 @@ public sealed class BackupServiceTests {
         public BackupServiceTests()
         {
             _mockBackupRepository = Substitute.For<IBackupRepository>();
+            _mockLogger.LogInformation("Test {TestName} started", "GetBackupAsync_ShouldReturnBackup_WhenBackupExists");
             _mockLogger = Substitute.For<ILogger<BackupService>>();
             _backupService = new BackupService(_mockBackupRepository, _mockLogger);
         }
@@ -43,6 +44,8 @@ public sealed class BackupServiceTests {
         /// </summary>
         public async Task GetBackupAsync_ShouldReturnBackup_WhenBackupExists()
         {
+            _mockLogger.LogInformation("Starting {MethodName} test with backupId: {BackupId}", nameof(GetBackupAsync_ShouldReturnBackup_WhenBackupExists), "test_backup_id");
+
             // Arrange
             var backupId = "test_backup_id";
             var expectedBackup = new Backup { BackupId = backupId, DatabaseId = "db1" };
@@ -54,6 +57,8 @@ public sealed class BackupServiceTests {
 
             // Assert
             result.Should().BeEquivalentTo(expectedBackup);
+
+            _mockLogger.LogInformation("Completed {MethodName} test successfully", nameof(GetBackupAsync_ShouldReturnBackup_WhenBackupExists));
         }
 
         [Fact]
@@ -63,6 +68,8 @@ public sealed class BackupServiceTests {
         /// </summary>
         public async Task GetBackupAsync_ShouldReturnNull_WhenBackupDoesNotExist()
         {
+            _mockLogger.LogInformation("Starting {MethodName} test with backupId: {BackupId}", nameof(GetBackupAsync_ShouldReturnNull_WhenBackupDoesNotExist), "non_existent_id");
+
             // Arrange
             var backupId = "non_existent_id";
             _mockBackupRepository.GetByIdAsync(backupId, Arg.Any<CancellationToken>())
@@ -73,6 +80,8 @@ public sealed class BackupServiceTests {
 
             // Assert
             result.Should().BeNull();
+
+            _mockLogger.LogInformation("Completed {MethodName} test successfully", nameof(GetBackupAsync_ShouldReturnNull_WhenBackupDoesNotExist));
         }
 
         [Fact]
@@ -100,6 +109,8 @@ public sealed class BackupServiceTests {
         /// </summary>
         public async Task CreateBackupAsync_ShouldCreateNewBackup()
         {
+            _mockLogger.LogInformation("Starting {MethodName} test with databaseId: {DatabaseId}, createdBy: {CreatedBy}", nameof(CreateBackupAsync_ShouldCreateNewBackup), "test_db", "test_user");
+
             // Arrange
             var databaseId = "test_db";
             var createdBy = "test_user";
@@ -118,6 +129,8 @@ public sealed class BackupServiceTests {
             result.Status.Should().Be(BackupStatus.Pending);
             result.BackupId.Should().NotBeEmpty();
             _mockLogger.AssertLoggedAny(LogLevel.Information);
+
+            _mockLogger.LogInformation("Completed {MethodName} test successfully", nameof(CreateBackupAsync_ShouldCreateNewBackup));
         }
 
         [Fact]
@@ -127,6 +140,8 @@ public sealed class BackupServiceTests {
         /// </summary>
         public async Task CreateBackupAsync_ShouldThrowArgumentException_WhenDatabaseIdIsEmpty()
         {
+            _mockLogger.LogInformation("Starting {MethodName} test with databaseId: {DatabaseId}, createdBy: {CreatedBy}", nameof(CreateBackupAsync_ShouldThrowArgumentException_WhenDatabaseIdIsEmpty), "", "test_user");
+
             // Arrange
             var databaseId = "";
             var createdBy = "test_user";
@@ -137,6 +152,8 @@ public sealed class BackupServiceTests {
             // Assert
             await action.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("Database ID cannot be empty (Parameter 'databaseId')");
+
+            _mockLogger.LogInformation("Completed {MethodName} test successfully", nameof(CreateBackupAsync_ShouldThrowArgumentException_WhenDatabaseIdIsEmpty));
         }
 
         [Fact]
@@ -146,6 +163,8 @@ public sealed class BackupServiceTests {
         /// </summary>
         public async Task MarkBackupAsCompletedAsync_ShouldUpdateBackupStatus()
         {
+            _mockLogger.LogInformation("Starting {MethodName} test with backupId: {BackupId}", nameof(MarkBackupAsCompletedAsync_ShouldUpdateBackupStatus), "pending_backup");
+
             // Arrange
             var backupId = "pending_backup";
             var backup = new Backup { BackupId = backupId, Status = BackupStatus.Pending };
@@ -161,6 +180,8 @@ public sealed class BackupServiceTests {
             backup.DurationMs.Should().Be(500);
             _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
             _mockLogger.AssertLoggedAny(LogLevel.Information);
+
+            _mockLogger.LogInformation("Completed {MethodName} test successfully", nameof(MarkBackupAsCompletedAsync_ShouldUpdateBackupStatus));
         }
 
         [Fact]
