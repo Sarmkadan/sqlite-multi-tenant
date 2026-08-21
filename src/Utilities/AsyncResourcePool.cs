@@ -52,12 +52,14 @@ namespace SqliteMultiTenant.Utilities
         /// <returns>A pooled resource.</returns>
         public async Task<PooledResource<T>> AcquireAsync(CancellationToken cancellationToken = default)
         {
+            _logger.LogInformation("Acquiring resource. Current pool count: {AvailableResources}, Total created: {TotalCreated}", _pool.Count, _totalCreated);
             await _semaphore.WaitAsync(cancellationToken);
 
             T resource;
 
             if (_pool.TryTake(out resource))
             {
+                _logger.LogInformation("Acquired resource from pool.");
                 return new PooledResource<T>(resource, ReleaseResourceAsync);
             }
 
@@ -66,12 +68,13 @@ namespace SqliteMultiTenant.Utilities
                 resource = await _resourceFactory();
                 Interlocked.Increment(ref _totalCreated);
 
-                _logger.LogDebug("Created new resource from factory. Total created: {Count}", _totalCreated);
+                _logger.LogInformation("Created new resource from factory. Total created: {Count}", _totalCreated);
 
                 return new PooledResource<T>(resource, ReleaseResourceAsync);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to create resource from factory.");
                 _semaphore.Release();
                 throw;
             }
@@ -117,6 +120,7 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         public async Task ClearAsync()
         {
+            _logger.LogInformation("Clearing resource pool. Current pool count: {AvailableResources}", _pool.Count);
             while (_pool.TryTake(out var resource))
             {
                 await _resourceDisposer(resource);
