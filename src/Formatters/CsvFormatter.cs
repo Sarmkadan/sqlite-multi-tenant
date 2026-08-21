@@ -33,19 +33,23 @@ public sealed class CsvExportFormatter {
     /// </summary>
     public string Format<T>(T? data) where T : class
     {
+        _logger.LogInformation("Formatting CSV data of type {DataType}", typeof(T).Name);
         try
         {
+            string result;
             if (data is null)
-                return string.Empty;
+                result = string.Empty;
+            else if (data is IEnumerable enumerable && !(data is string))
+                result = FormatCollection(enumerable);
+            else
+                result = FormatObject(data);
 
-            if (data is IEnumerable enumerable && !(data is string))
-                return FormatCollection(enumerable);
-
-            return FormatObject(data);
+            _logger.LogInformation("Finished formatting CSV data of type {DataType}", typeof(T).Name);
+            return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError("CSV formatting error: {Message}", ex.Message);
+            _logger.LogError(ex, "Failed to format CSV data of type {DataType}", typeof(T).Name);
             return string.Empty;
         }
     }
