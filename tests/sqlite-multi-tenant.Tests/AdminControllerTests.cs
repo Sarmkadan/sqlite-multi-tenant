@@ -58,6 +58,7 @@ namespace SqliteMultiTenant.Tests
             var quotaLogger = Substitute.For<ILogger<TenantQuotaEnforcer>>();
             _mockTenantQuotaEnforcer = new TenantQuotaEnforcer(null!);
 
+            _mockLogger.LogInformation("Test {TestName} started", "GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot");
             _mockLogger = Substitute.For<ILogger<AdminController>>();
             _controller = new AdminController(_mockHealthCheck, _mockMetricsService, _mockTenantQuotaEnforcer, _mockLogger);
         }
