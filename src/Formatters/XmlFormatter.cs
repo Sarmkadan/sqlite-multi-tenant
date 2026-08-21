@@ -21,6 +21,7 @@ public sealed class XmlExportFormatter {
 
     public XmlExportFormatter(ILogger<XmlExportFormatter> logger, bool includeDeclaration = true)
     {
+        _logger.LogInformation("Initializing XmlExportFormatter with {IncludeDeclaration} and logger {Logger}", includeDeclaration, logger);
         _includeDeclaration = includeDeclaration;
         _logger = logger;
     }
