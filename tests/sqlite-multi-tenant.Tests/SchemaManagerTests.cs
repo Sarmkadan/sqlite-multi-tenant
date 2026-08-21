@@ -146,6 +146,7 @@ namespace SqliteMultiTenant.Tests
         {
             // Arrange
             var tenantId = "testTenant";
+            _mockLogger.LogInformation("Running InitializeSchemaAsync_CreatesTablesAndIndexes for tenant {TenantId}", tenantId);
 
             // Act
             await _sut.InitializeSchemaAsync(tenantId);
