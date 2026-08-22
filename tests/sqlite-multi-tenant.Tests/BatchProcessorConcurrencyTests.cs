@@ -29,6 +29,7 @@ public class BatchProcessorConcurrencyTests
     public async Task ProcessAsync_WithManyItems_ShouldPreserveAllItems()
     {
         // Arrange
+        _mockLogger.LogInformation("Starting test {TestName}", nameof(ProcessAsync_WithManyItems_ShouldPreserveAllItems));
         var itemCount = 1000;
         var items = Enumerable.Range(0, itemCount).Select(i => $"item_{i}").ToList();
 
@@ -48,6 +49,9 @@ public class BatchProcessorConcurrencyTests
         result.SuccessCount.Should().Be(itemCount);
         result.ErrorCount.Should().Be(0);
         result.SuccessfulResults.Should().HaveCount(itemCount);
+
+        _mockLogger.LogInformation("Completed test {TestName} with {SuccessCount} successes and {ErrorCount} errors",
+            nameof(ProcessAsync_WithManyItems_ShouldPreserveAllItems), result.SuccessCount, result.ErrorCount);
     }
 
     [Fact]
