@@ -42,6 +42,8 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
+            _mockLogger.LogInformation("Starting backup rotation test for directory {Directory}", tempDir);
+
             try
             {
                 // Create 25 backup files (exceeds default max of 20)
@@ -62,6 +64,10 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
 
                 // Act
                 var result = await _manager.RotateBackupsAsync(tempDir, policy);
+
+                _mockLogger.LogInformation(
+                    "Backup rotation completed: total {TotalBackups}, remaining {RemainingBackups}, deleted by count {DeletedByCount}, deleted by age {DeletedByAge}",
+                    result.TotalBackups, result.RemainingBackups, result.DeletedByCount, result.DeletedByAge);
 
                 // Assert
                 result.IsSuccessful.Should().BeTrue();
@@ -103,6 +109,8 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
+            _mockLogger.LogInformation("Starting backup rotation test for directory {Directory}", tempDir);
+
             try
             {
                 // Create backups with different ages
@@ -132,6 +140,10 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
 
                 // Act
                 var result = await _manager.RotateBackupsAsync(tempDir, policy);
+
+                _mockLogger.LogInformation(
+                    "Backup rotation completed: total {TotalBackups}, remaining {RemainingBackups}, deleted by count {DeletedByCount}, deleted by age {DeletedByAge}",
+                    result.TotalBackups, result.RemainingBackups, result.DeletedByCount, result.DeletedByAge);
 
                 // Assert
                 result.IsSuccessful.Should().BeTrue();
@@ -173,6 +185,8 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
 
+            _mockLogger.LogInformation("Starting backup rotation test for directory {Directory}", tempDir);
+
             try
             {
                 // Create a backup file with creation time exactly at cutoff date
@@ -189,6 +203,10 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
 
                 // Act
                 var result = await _manager.RotateBackupsAsync(tempDir, policy);
+
+                _mockLogger.LogInformation(
+                    "Backup rotation completed: total {TotalBackups}, remaining {RemainingBackups}, deleted by count {DeletedByCount}, deleted by age {DeletedByAge}",
+                    result.TotalBackups, result.RemainingBackups, result.DeletedByCount, result.DeletedByAge);
 
                 // Assert
                 result.IsSuccessful.Should().BeTrue();
@@ -221,6 +239,8 @@ namespace SqliteMultiTenant.Tests.BackgroundWorkers
             // Arrange
             var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(tempDir);
+
+            _mockLogger.LogInformation("Starting backup rotation test for directory {Directory}", tempDir);
 
             try
             {
