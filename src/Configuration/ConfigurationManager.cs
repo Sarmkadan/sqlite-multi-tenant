@@ -68,6 +68,7 @@ public sealed class ConfigurationManager : IConfigurationManager {
     /// </summary>
     public Microsoft.Extensions.Configuration.IConfigurationSection GetSection(string key)
     {
+        _logger.LogInformation("Getting configuration section: {Key}", key);
         if (_appConfiguration is null)
             throw new InvalidOperationException("This ConfigurationManager instance was not created with an IConfiguration source.");
 
