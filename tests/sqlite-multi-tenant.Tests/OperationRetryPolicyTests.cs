@@ -16,12 +16,14 @@ namespace SqliteMultiTenant.Tests.Utilities
         public OperationRetryPolicyTests()
         {
             _logger = Substitute.For<ILogger<OperationRetryPolicy>>();
+            _logger.LogInformation("Initializing retry policy: MaxRetries={MaxRetries}, InitialDelayMs={InitialDelayMs}, BackoffMultiplier={BackoffMultiplier}", _retryPolicy.MaxRetries, _retryPolicy.InitialDelayMs, _retryPolicy.BackoffMultiplier);
             _retryPolicy = new OperationRetryPolicy(_logger, maxRetries: 3, initialDelayMs: 10, backoffMultiplier: 2.0);
         }
 
         [Fact]
         public async Task ExecuteAsync_WithSuccessfulOperationOnFirstTry_ReturnsResultWithoutRetrying()
         {
+            _logger.LogInformation("Starting test: ExecuteAsync_WithSuccessfulOperationOnFirstTry_ReturnsResultWithoutRetrying");
             // Arrange
             var expectedResult = "Success";
             var callCount = 0;
@@ -38,11 +40,13 @@ namespace SqliteMultiTenant.Tests.Utilities
             // Assert
             result.Should().Be(expectedResult);
             callCount.Should().Be(1);
+            _logger.LogInformation("Completed test: ExecuteAsync_WithSuccessfulOperationOnFirstTry_ReturnsResultWithoutRetrying with result {Result}", expectedResult);
         }
 
         [Fact]
         public async Task ExecuteAsync_WithSuccessfulOperationAfterOneRetry_RetriesOnceThenSucceeds()
         {
+            _logger.LogInformation("Starting test: ExecuteAsync_WithSuccessfulOperationAfterOneRetry_RetriesOnceThenSucceeds");
             // Arrange
             var expectedResult = "Success";
             var callCount = 0;
@@ -52,8 +56,10 @@ namespace SqliteMultiTenant.Tests.Utilities
                 callCount++;
                 if (callCount <= 2) // Fail first two attempts
                 {
+                    _logger.LogWarning("Attempt {Attempt} failed with timeout, will retry", callCount);
                     throw new TimeoutException("Simulated timeout");
                 }
+                _logger.LogInformation("Attempt {Attempt} succeeded", callCount);
                 return Task.FromResult(expectedResult);
             }
 
@@ -63,11 +69,13 @@ namespace SqliteMultiTenant.Tests.Utilities
             // Assert
             result.Should().Be(expectedResult);
             callCount.Should().Be(3); // 1 initial + 2 retries
+            _logger.LogInformation("Completed test: ExecuteAsync_WithSuccessfulOperationAfterOneRetry_RetriesOnceThenSucceeds with result {Result} after {CallCount} attempts", expectedResult, callCount);
         }
 
         [Fact]
         public async Task ExecuteAsync_WithSuccessfulOperationAfterMultipleRetries_RetriesMultipleTimesThenSucceeds()
         {
+            _logger.LogInformation("Starting test: ExecuteAsync_WithSuccessfulOperationAfterMultipleRetries_RetriesMultipleTimesThenSucceeds");
             // Arrange
             var expectedResult = 42;
             var callCount = 0;
@@ -77,8 +85,10 @@ namespace SqliteMultiTenant.Tests.Utilities
                 callCount++;
                 if (callCount <= 2) // Fail first two attempts (1 initial + 2 retries = 3 total attempts)
                 {
+                    _logger.LogWarning("Attempt {Attempt} failed with I/O error, will retry", callCount);
                     throw new System.IO.IOException("Simulated I/O error");
                 }
+                _logger.LogInformation("Attempt {Attempt} succeeded", callCount);
                 return Task.FromResult(expectedResult);
             }
 
@@ -88,6 +98,7 @@ namespace SqliteMultiTenant.Tests.Utilities
             // Assert
             result.Should().Be(expectedResult);
             callCount.Should().Be(3); // 1 initial + 2 retries (maxRetries=3)
+            _logger.LogInformation("Completed test: ExecuteAsync_WithSuccessfulOperationAfterMultipleRetries_RetriesMultipleTimesThenSucceeds with result {Result} after {CallCount} attempts", expectedResult, callCount);
         }
 
         [Fact]
