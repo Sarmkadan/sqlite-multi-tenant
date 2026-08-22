@@ -67,6 +67,7 @@ return new ConfigurationManager(_mockConfiguration, _mockLogger, Options.Create(
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenConfigurationIsNull()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenConfigurationIsNull called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
@@ -83,6 +84,7 @@ this.Invoking(_ => new ConfigurationManager(null, _mockLogger, Options.Create(op
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
@@ -99,6 +101,7 @@ this.Invoking(_ => new ConfigurationManager(_mockConfiguration, null, Options.Cr
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenOptionsIsNull()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenOptionsIsNull called");
 // Act & Assert
 this.Invoking(_ => new ConfigurationManager(_mockConfiguration, _mockLogger, null))
 .Should().Throw<ArgumentNullException>()
@@ -112,6 +115,7 @@ this.Invoking(_ => new ConfigurationManager(_mockConfiguration, _mockLogger, nul
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsZero()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsZero called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 0 };
 
@@ -129,6 +133,7 @@ this.Invoking(_ => CreateManager(options))
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsNegative()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentOutOfRangeException_WhenDefaultMaxConnectionsIsNegative called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = -5 };
 
@@ -146,6 +151,7 @@ this.Invoking(_ => CreateManager(options))
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsNull()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsNull called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = null, DefaultMaxConnections = 10 };
 
@@ -163,6 +169,7 @@ this.Invoking(_ => CreateManager(options))
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsEmpty()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsEmpty called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = "", DefaultMaxConnections = 10 };
 
@@ -180,6 +187,7 @@ this.Invoking(_ => CreateManager(options))
 /// </summary>
 public void ConfigurationManager_Constructor_ThrowsDirectoryNotFoundException_WhenBasePathDoesNotExist()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsDirectoryNotFoundException_WhenBasePathDoesNotExist called");
 // Arrange
 var nonExistentPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "nonexistent");
 var options = new MultiTenantOptions { BasePath = nonExistentPath, DefaultMaxConnections = 10 };
@@ -197,6 +205,7 @@ this.Invoking(_ => CreateManager(options))
 /// </summary>
 public void ConfigurationManager_Constructor_LogsSuccess_WhenOptionsAreValid()
 {
+_mockLogger.LogInformation("ConfigurationManager_Constructor_LogsSuccess_WhenOptionsAreValid called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
@@ -215,6 +224,7 @@ manager.Should().NotBeNull();
 /// </summary>
 public void GetSection_ReturnsCorrectConfigurationSection()
 {
+_mockLogger.LogInformation("GetSection_ReturnsCorrectConfigurationSection called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 var manager = CreateManager(options);
@@ -235,6 +245,7 @@ result.Should().Be(expectedSection);
 /// </summary>
 public void GetTenantSetting_ReturnsTenantSpecificSetting_WhenAvailable()
 {
+_mockLogger.LogInformation("GetTenantSetting_ReturnsTenantSpecificSetting_WhenAvailable called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 var manager = CreateManager(options);
@@ -255,6 +266,7 @@ result.Should().Be("TenantValue");
 /// </summary>
 public void GetTenantSetting_ReturnsGlobalSetting_WhenTenantSpecificNotAvailable()
 {
+_mockLogger.LogInformation("GetTenantSetting_ReturnsGlobalSetting_WhenTenantSpecificNotAvailable called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 var manager = CreateManager(options);
@@ -275,6 +287,7 @@ result.Should().Be("GlobalValue");
 /// </summary>
 public void GetTenantSetting_ReturnsNull_WhenNeitherTenantSpecificNorGlobalSettingAvailable()
 {
+_mockLogger.LogInformation("GetTenantSetting_ReturnsNull_WhenNeitherTenantSpecificNorGlobalSettingAvailable called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 var manager = CreateManager(options);
@@ -295,6 +308,7 @@ result.Should().BeNull();
 /// </summary>
 public void GetMultiTenantOptions_ReturnsConfiguredOptions()
 {
+_mockLogger.LogInformation("GetMultiTenantOptions_ReturnsConfiguredOptions called");
 // Arrange
 var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 15 };
 var manager = CreateManager(options);
