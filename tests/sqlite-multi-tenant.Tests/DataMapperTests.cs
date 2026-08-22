@@ -20,6 +20,7 @@ public class DataMapperTests
     [Fact]
     public void Map_SimplePropertyMapping_ReturnsMappedObject()
     {
+        _logger.LogInformation("Starting test {TestName}", nameof(Map_SimplePropertyMapping_ReturnsMappedObject));
         // Arrange
         var source = new SimpleSource
         {
@@ -36,7 +37,8 @@ public class DataMapperTests
         result.Id.Should().Be(1);
         result.Name.Should().Be("Test Name");
         result.Value.Should().Be(42.5);
-    }
+        _logger.LogInformation("Completed test {TestName}", nameof(Map_SimplePropertyMapping_ReturnsMappedObject));
+        _logger.LogInformation("Completed test Map_SimplePropertyMapping_ReturnsMappedObject", nameof(Map_SimplePropertyMapping_ReturnsMappedObject));    }
 
     [Fact]
     public void Map_NullSource_ReturnsNewInstance()
@@ -47,7 +49,7 @@ public class DataMapperTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeOfType<SimpleTarget>();
-    }
+        _logger.LogInformation("Completed test Map_NullSource_ReturnsNewInstance", nameof(Map_NullSource_ReturnsNewInstance));    }
 
     [Fact]
     public void Map_MissingColumns_SkipsNonExistentProperties()
@@ -65,7 +67,7 @@ public class DataMapperTests
         // Extra properties should have default values
         result.ExtraProperty.Should().Be(0);
         result.AnotherExtra.Should().BeNull();
-    }
+        _logger.LogInformation("Completed test Map_MissingColumns_SkipsNonExistentProperties", nameof(Map_MissingColumns_SkipsNonExistentProperties));    }
 
     [Fact]
     public void Map_NullValues_HandlesNullsGracefully()
@@ -86,7 +88,7 @@ public class DataMapperTests
         result.Id.Should().Be(1);
         result.Name.Should().BeNull();
         result.Value.Should().Be(0); // Default for double
-    }
+        _logger.LogInformation("Completed test Map_NullValues_HandlesNullsGracefully", nameof(Map_NullValues_HandlesNullsGracefully));    }
 
     [Fact]
     public void Map_BoolPropertyMapping_WorksCorrectly()
@@ -100,7 +102,7 @@ public class DataMapperTests
         // Assert
         result.Should().NotBeNull();
         result.BoolValue.Should().BeTrue();
-    }
+        _logger.LogInformation("Completed test Map_BoolPropertyMapping_WorksCorrectly", nameof(Map_BoolPropertyMapping_WorksCorrectly));    }
 
 
     [Fact]
@@ -132,7 +134,7 @@ public class DataMapperTests
         results[2].Id.Should().Be(3);
         results[2].Name.Should().Be("Third");
         results[2].Value.Should().Be(30.5);
-    }
+        _logger.LogInformation("Completed test Map_ListMapping_MapsAllItemsInList", nameof(Map_ListMapping_MapsAllItemsInList));    }
 
     [Fact]
     public void Map_ListMapping_WithNullList_ReturnsEmptyList()
@@ -143,7 +145,7 @@ public class DataMapperTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-    }
+        _logger.LogInformation("Completed test Map_ListMapping_WithNullList_ReturnsEmptyList", nameof(Map_ListMapping_WithNullList_ReturnsEmptyList));    }
 
     [Fact]
     public void Map_ListMapping_WithEmptyList_ReturnsEmptyList()
@@ -157,7 +159,7 @@ public class DataMapperTests
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-    }
+        _logger.LogInformation("Completed test Map_ListMapping_WithEmptyList_ReturnsEmptyList", nameof(Map_ListMapping_WithEmptyList_ReturnsEmptyList));    }
 
     [Fact]
     public void Map_CaseInsensitivePropertyMatching_MapsCorrectly()
@@ -173,7 +175,7 @@ public class DataMapperTests
         result.Id.Should().Be(42);
         result.Name.Should().Be("Test");
         result.Value.Should().Be(99.9);
-    }
+        _logger.LogInformation("Completed test Map_CaseInsensitivePropertyMatching_MapsCorrectly", nameof(Map_CaseInsensitivePropertyMatching_MapsCorrectly));    }
 
     [Fact]
     public void Map_ReadOnlyProperty_SkipsProperty()
@@ -188,7 +190,7 @@ public class DataMapperTests
         result.Should().NotBeNull();
         result.Id.Should().Be(1);
         result.Name.Should().Be("Test");
-    }
+        _logger.LogInformation("Completed test Map_ReadOnlyProperty_SkipsProperty", nameof(Map_ReadOnlyProperty_SkipsProperty));    }
 
 
     // Test classes for mapping scenarios
