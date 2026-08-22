@@ -84,6 +84,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task AcquireAsync_ShouldReturnOpenConnection()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldReturnOpenConnection));
             // Act
             var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
 
@@ -93,6 +94,7 @@ namespace SqliteMultiTenant.Tests
 
             // Cleanup
             await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldReturnOpenConnection));
         }
 
         [Fact]
@@ -103,6 +105,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task AcquireAsync_ShouldReuseConnection_WhenAvailable()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldReuseConnection_WhenAvailable));
             // Arrange
             var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
             await _connectionPoolManager.ReleaseAsync(TenantId1, connection1);
@@ -116,6 +119,7 @@ namespace SqliteMultiTenant.Tests
 
             // Cleanup
             await _connectionPoolManager.ReleaseAsync(TenantId1, connection2);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldReuseConnection_WhenAvailable));
         }
 
         [Fact]
@@ -125,6 +129,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull));
             // Arrange
             var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
 
@@ -139,6 +144,7 @@ namespace SqliteMultiTenant.Tests
             // Cleanup
             await _connectionPoolManager.ReleaseAsync(TenantId1, connection1);
             await _connectionPoolManager.ReleaseAsync(TenantId1, connection2);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull));
         }
 
         [Fact]
@@ -149,6 +155,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task ReleaseAsync_ShouldReturnConnectionToPool()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(ReleaseAsync_ShouldReturnConnectionToPool));
             // Arrange
             var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
             var statsBefore = _connectionPoolManager.GetStatistics();
@@ -160,6 +167,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             var statsAfter = _connectionPoolManager.GetStatistics();
             statsAfter[TenantId1].Available.Should().Be(1);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(ReleaseAsync_ShouldReturnConnectionToPool));
         }
 
         [Fact]
@@ -170,6 +178,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections));
             // Arrange
             var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
             await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
@@ -186,6 +195,7 @@ namespace SqliteMultiTenant.Tests
             this.Invoking(_ => connection.State)
                 .Should().Throw<ObjectDisposedException>();
             _mockLogger.AssertLogged(LogLevel.Information, 1, "Connection pool evicted for tenant {TenantId}", TenantId1);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections));
         }
 
         [Fact]
@@ -196,6 +206,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task GetStatistics_ShouldReturnCorrectStats()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(GetStatistics_ShouldReturnCorrectStats));
             // Arrange
             var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
             var conn2 = await _connectionPoolManager.AcquireAsync(TenantId2, ConnectionString2);
@@ -217,6 +228,7 @@ namespace SqliteMultiTenant.Tests
 
             // Cleanup
             await _connectionPoolManager.ReleaseAsync(TenantId2, conn2);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(GetStatistics_ShouldReturnCorrectStats));
         }
 
         [Fact]
@@ -227,6 +239,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted));
             // Arrange - MaxPoolSize is 2
             var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
             var conn2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
@@ -241,6 +254,7 @@ namespace SqliteMultiTenant.Tests
             // Cleanup
             await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
             await _connectionPoolManager.ReleaseAsync(TenantId1, conn2);
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted));
         }
 
         [Fact]
@@ -250,6 +264,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty));
             // Arrange
             string tenantId = "";
 
@@ -259,6 +274,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             await act.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("The value cannot be an empty string. (Parameter 'tenantId')");
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty));
         }
 
         [Fact]
@@ -268,6 +284,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty));
             // Arrange
             string connectionString = "";
 
@@ -277,6 +294,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             await act.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("The value cannot be an empty string. (Parameter 'connectionString')");
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty));
         }
 
         [Fact]
@@ -287,6 +305,7 @@ namespace SqliteMultiTenant.Tests
         /// </summary>
         public async Task PruneIdle_ShouldDisposeIdleConnections()
         {
+            _mockLogger.LogInformation("Entering {MethodName}", nameof(PruneIdle_ShouldDisposeIdleConnections));
             // Arrange
             _options.IdleTimeout = TimeSpan.FromMilliseconds(50); // Set a short idle timeout
             _connectionPoolManager = new ConnectionPoolManager(_options, _mockLogger); // Re-initialize with new options
@@ -307,6 +326,7 @@ namespace SqliteMultiTenant.Tests
             stats[TenantId1].Total.Should().Be(0);
             stats[TenantId1].Available.Should().Be(0);
             _mockLogger.AssertLoggedContains(LogLevel.Debug, 1, "Pruned 2 idle connection(s) from tenant pool");
+            _mockLogger.LogInformation("Exiting {MethodName}", nameof(PruneIdle_ShouldDisposeIdleConnections));
         }
 
         /// <summary>
