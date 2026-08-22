@@ -39,6 +39,7 @@ namespace SqliteMultiTenant.Tests
         {
             // Arrange
             const int maxSize = 2;
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy eviction test with max size {MaxSize}", maxSize);
             var cache = new LruCacheStrategy(_lruLoggerMock, maxSize);
 
             // Fill cache to capacity
@@ -59,6 +60,8 @@ namespace SqliteMultiTenant.Tests
             value1.Should().Be("value1"); // Should still exist (recently used)
             value2.Should().BeNull();     // Should be evicted (LRU)
             value3.Should().Be("value3"); // Should exist (just added)
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy eviction test; key1={Key1}, key2={Key2}, key3={Key3}", value1, value2, value3);
         }
 
         /// <summary>
@@ -67,6 +70,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task LruCacheStrategy_HandlesMaxSizeOfOne_Correctly()
         {
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy max size test with max size 1");
+
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 1);
 
@@ -80,6 +85,8 @@ namespace SqliteMultiTenant.Tests
 
             value1.Should().BeNull(); // Should be evicted
             value2.Should().Be("value2"); // Should exist
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy max size test; key1={Key1}, key2={Key2}", value1, value2);
         }
 
         /// <summary>
@@ -91,14 +98,18 @@ namespace SqliteMultiTenant.Tests
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 100);
             var shortLivedValue = "short-lived";
+            var ttl = TimeSpan.FromMilliseconds(10);
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy expiration test with TTL {TTL}", ttl);
 
             // Act
-            await cache.SetAsync("shortKey", shortLivedValue, TimeSpan.FromMilliseconds(10));
+            await cache.SetAsync("shortKey", shortLivedValue, ttl);
             await Task.Delay(20); // Wait for expiration
 
             // Assert
             var result = await cache.GetAsync<string>("shortKey");
             result.Should().BeNull(); // Should be expired
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy expiration test; shortKey={ShortKey}", result);
         }
 
         /// <summary>
@@ -107,6 +118,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task LruCacheStrategy_HandlesZeroTTL_ImmediateExpiration()
         {
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy zero TTL test");
+
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 100);
 
@@ -116,6 +129,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().BeNull(); // Should be immediately expired
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy zero TTL test; result={Result}", result);
         }
 
         /// <summary>
@@ -124,6 +139,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task LruCacheStrategy_HandlesNullExpiration_NoExpiration()
         {
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy null expiration test");
+
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 100);
 
@@ -133,6 +150,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().Be("value"); // Should not expire
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy null expiration test; result={Result}", result);
         }
 
         /// <summary>
@@ -141,6 +160,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task LruCacheStrategy_UpdatesAccessCount_OnGetOperations()
         {
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy access count test");
+
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 100);
             await cache.SetAsync("testKey", "testValue");
@@ -154,6 +175,8 @@ namespace SqliteMultiTenant.Tests
             var stats = cache.GetStatistics();
             stats.Should().ContainKey("testKey");
             stats["testKey"].AccessCount.Should().Be(4);
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy access count test; accessCount={AccessCount}", stats["testKey"].AccessCount);
         }
 
         /// <summary>
@@ -162,6 +185,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task LruCacheStrategy_HandlesNullKey_ReturnsDefault()
         {
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy null key test");
+
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 100);
 
@@ -170,6 +195,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().BeNull();
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy null key test; result={Result}", result);
         }
 
         /// <summary>
@@ -178,6 +205,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task LruCacheStrategy_HandlesEmptyKey_ReturnsDefault()
         {
+            _lruLoggerMock.LogInformation("Starting LruCacheStrategy empty key test");
+
             // Arrange
             var cache = new LruCacheStrategy(_lruLoggerMock, 100);
 
@@ -186,6 +215,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             result.Should().BeNull();
+
+            _lruLoggerMock.LogInformation("Completed LruCacheStrategy empty key test; result={Result}", result);
         }
 
         #endregion
@@ -198,6 +229,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task TimeBasedCacheStrategy_UsesDefaultExpiration_WhenNotProvided()
         {
+            _timeBasedLoggerMock.LogInformation("Starting TimeBasedCacheStrategy default expiration test");
+
             // Arrange
             var defaultExpiration = TimeSpan.FromMinutes(30);
             var cache = new TimeBasedCacheStrategy(_timeBasedLoggerMock, defaultExpiration);
@@ -209,6 +242,8 @@ namespace SqliteMultiTenant.Tests
             // Assert
             var result = await cache.GetAsync<string>("testKey");
             result.Should().Be("testValue"); // Should still exist (not expired yet)
+
+            _timeBasedLoggerMock.LogInformation("Completed TimeBasedCacheStrategy default expiration test; result={Result}", result);
         }
 
         /// <summary>
@@ -217,6 +252,8 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public async Task TimeBasedCacheStrategy_ExpiresEntriesBasedOnProvidedTTL()
         {
+            _timeBasedLoggerMock.LogInformation("Starting TimeBasedCacheStrategy provided TTL expiration test");
+
             // Arrange
             var cache = new TimeBasedCacheStrategy(_timeBasedLoggerMock, TimeSpan.FromHours(1));
             var shortLivedValue = "expires-soon";
@@ -228,6 +265,8 @@ namespace SqliteMultiTenant.Tests
             // Assert
             var result = await cache.GetAsync<string>("shortKey");
             result.Should().BeNull(); // Should be expired
+
+            _timeBasedLoggerMock.LogInformation("Completed TimeBasedCacheStrategy provided TTL expiration test; shortKey={ShortKey}", result);
         }
 
         /// <summary>
