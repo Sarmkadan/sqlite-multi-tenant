@@ -6,14 +6,18 @@
 
 using System;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Security;
 using Xunit;
+using Microsoft.Extensions.Logging.Abstractions;
 
 /// <summary>
 /// Tests for <see cref="EncryptionKeyManagerJsonExtensions"/> JSON serialization/deserialization.
 /// </summary>
 public sealed class EncryptionKeyManagerJsonExtensionsTests
 {
+    private static readonly ILogger<EncryptionKeyManagerJsonExtensionsTests> _logger = NullLogger<EncryptionKeyManagerJsonExtensionsTests>.Instance;
+
     /// <summary>
     /// Creates a test EncryptionKeyManager instance.
     /// </summary>
