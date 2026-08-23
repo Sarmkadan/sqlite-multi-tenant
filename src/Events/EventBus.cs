@@ -13,8 +13,11 @@ namespace SqliteMultiTenant.Events;
 /// </summary>
 public interface IEventBus
 {
+    /// <summary>Publishes an event to all registered subscribers.</summary>
     Task PublishAsync<T>(T @event, CancellationToken cancellationToken = default) where T : DomainEvent;
+    /// <summary>Registers an event handler for a specific event type.</summary>
     Task SubscribeAsync<T>(Func<T, Task> handler) where T : DomainEvent;
+    /// <summary>Unregisters an event handler for a specific event type.</summary>
     Task UnsubscribeAsync<T>(Func<T, Task> handler) where T : DomainEvent;
 }
 
@@ -24,7 +27,11 @@ public sealed class EventBus : IEventBus {
     private readonly SemaphoreSlim _semaphore;
     private readonly DeadLetterQueue _deadLetterQueue;
 
-    public EventBus(ILogger<EventBus> logger)
+    /// <summary>
+/// Initializes a new instance of the <see cref="EventBus"/> class.
+/// </summary>
+/// <param name="logger">The logger instance for recording operational events and errors.</param>
+public EventBus(ILogger<EventBus> logger)
     {
         _logger = logger;
         _subscribers = new Dictionary<Type, List<Delegate>>();
@@ -243,11 +250,18 @@ public sealed class DeadLetterQueue {
 }
 
 public sealed class FailedEvent {
+    /// <summary>Gets or sets the failed event identifier.</summary>
     public string Id { get; set; } = string.Empty;
+    /// <summary>Gets or sets the event type.</summary>
     public string EventType { get; set; } = string.Empty;
+    /// <summary>Gets or sets the event data.</summary>
     public string EventData { get; set; } = string.Empty;
+    /// <summary>Gets or sets the exception message.</summary>
     public string Exception { get; set; } = string.Empty;
+    /// <summary>Gets or sets the stack trace.</summary>
     public string? StackTrace { get; set; }
+    /// <summary>Gets or sets the timestamp when the event failed.</summary>
     public DateTime FailedAt { get; set; }
+    /// <summary>Gets or sets the retry count.</summary>
     public int RetryCount { get; set; }
 }

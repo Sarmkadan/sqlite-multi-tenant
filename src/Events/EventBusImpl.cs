@@ -410,10 +410,15 @@ namespace SqliteMultiTenant.Events
     /// </summary>
     public sealed class PublishedEvent
     {
+        /// <summary>Gets or sets the unique identifier of the event.</summary>
         public Guid Id { get; set; }
+        /// <summary>Gets or sets the type name of the event.</summary>
         public string EventType { get; set; } = string.Empty;
+        /// <summary>Gets or sets the UTC timestamp when the event was published.</summary>
         public DateTime PublishedAt { get; set; }
+        /// <summary>Gets or sets the tenant identifier associated with the event.</summary>
         public string TenantId { get; set; } = string.Empty;
+        /// <summary>Gets or sets the number of handlers that successfully processed the event.</summary>
         public int SuccessfulHandlers { get; set; }
     }
 
@@ -422,11 +427,17 @@ namespace SqliteMultiTenant.Events
     /// </summary>
     public sealed class EventStatistics
     {
+        /// <summary>Gets or sets the type name of the event.</summary>
         public string EventType { get; set; } = string.Empty;
+        /// <summary>Gets or sets the number of subscribers for this event type.</summary>
         public int SubscriberCount { get; set; }
+        /// <summary>Gets or sets the total number of times this event has been published.</summary>
         public int TotalPublished { get; set; }
+        /// <summary>Gets or sets the total number of publish attempts for this event type.</summary>
         public int TotalPublishAttempts { get; set; }
+        /// <summary>Gets or sets the total number of successful handler invocations.</summary>
         public int SuccessfulHandlerInvocations { get; set; }
+        /// <summary>Gets or sets the total number of failed handler invocations.</summary>
         public int FailedHandlerInvocations { get; set; }
     }
 
@@ -435,13 +446,21 @@ namespace SqliteMultiTenant.Events
     /// </summary>
     public sealed class DeadLetterEvent
     {
+        /// <summary>Gets or sets the unique identifier of the dead letter event.</summary>
         public string Id { get; set; } = Guid.NewGuid().ToString();
+        /// <summary>Gets or sets the type name of the event.</summary>
         public string EventType { get; set; } = string.Empty;
+        /// <summary>Gets or sets the serialized event data.</summary>
         public string EventData { get; set; } = string.Empty;
+        /// <summary>Gets or sets the error message from the exception.</summary>
         public string Exception { get; set; } = string.Empty;
+        /// <summary>Gets or sets the stack trace of the exception.</summary>
         public string? StackTrace { get; set; }
+        /// <summary>Gets or sets the UTC timestamp when the event failure occurred.</summary>
         public DateTime FailedAt { get; set; } = DateTime.UtcNow;
+        /// <summary>Gets or sets the number of retry attempts made.</summary>
         public int RetryCount { get; set; }
+        /// <summary>Gets or sets the tenant identifier associated with the event.</summary>
         public string TenantId { get; set; } = string.Empty;
     }
 }
