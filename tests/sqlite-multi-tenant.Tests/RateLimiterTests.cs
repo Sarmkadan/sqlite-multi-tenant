@@ -48,6 +48,7 @@ public sealed class RateLimiterTests
         var identifier = "test-ip-1";
         var maxRequests = 5;
         var window = TimeSpan.FromSeconds(10);
+        _mockLogger.LogInformation("Starting test CheckLimitAsync_WithRequestsUnderLimit_ShouldAllow with Identifier={Identifier}, MaxRequests={MaxRequests}, Window={Window}", identifier, maxRequests, window);
 
         // Act - make 3 requests (under limit of 5)
         var result1 = await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
@@ -64,6 +65,7 @@ public sealed class RateLimiterTests
         result1.RemainingRequests.Should().Be(4);
         result2.RemainingRequests.Should().Be(3);
         result3.RemainingRequests.Should().Be(2);
+        _mockLogger.LogInformation("Finished test CheckLimitAsync_WithRequestsUnderLimit_ShouldAllow: Result1={Result1}, Result2={Result2}, Result3={Result3}", result1, result2, result3);
     }
 
     /// <summary>
@@ -76,6 +78,7 @@ public sealed class RateLimiterTests
         var identifier = "test-ip-2";
         var maxRequests = 3;
         var window = TimeSpan.FromSeconds(10);
+        _mockLogger.LogInformation("Starting test CheckLimitAsync_WithRequestsOverLimit_ShouldReject with Identifier={Identifier}, MaxRequests={MaxRequests}, Window={Window}", identifier, maxRequests, window);
 
         // Act - make requests up to and over the limit
         var result1 = await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
@@ -95,6 +98,7 @@ public sealed class RateLimiterTests
         result4.CurrentCount.Should().Be(3); // Count doesn't increase when rejected
 
         result4.RemainingRequests.Should().Be(0);
+        _mockLogger.LogInformation("Finished test CheckLimitAsync_WithRequestsOverLimit_ShouldReject: Result1={Result1}, Result2={Result2}, Result3={Result3}, Result4={Result4}", result1, result2, result3, result4);
     }
 
     /// <summary>
@@ -107,6 +111,7 @@ public sealed class RateLimiterTests
         var identifier = "test-ip-3";
         var maxRequests = 3;
         var window = TimeSpan.FromMilliseconds(100);
+        _mockLogger.LogInformation("Starting test CheckLimitAsync_AfterWindowExpires_ShouldResetCount with Identifier={Identifier}, MaxRequests={MaxRequests}, Window={Window}", identifier, maxRequests, window);
 
         // Act - make requests to fill the bucket
         var result1 = await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
@@ -126,6 +131,7 @@ public sealed class RateLimiterTests
         result4.IsAllowed.Should().BeTrue(); // Should be allowed again after window reset
 
         result4.CurrentCount.Should().Be(1); // New count starts fresh
+        _mockLogger.LogInformation("Finished test CheckLimitAsync_AfterWindowExpires_ShouldResetCount: Result1={Result1}, Result2={Result2}, Result3={Result3}, Result4={Result4}", result1, result2, result3, result4);
     }
 
     /// <summary>
@@ -139,6 +145,7 @@ public sealed class RateLimiterTests
         var identifier2 = "ip-192.168.1.2";
         var maxRequests = 2;
         var window = TimeSpan.FromSeconds(10);
+        _mockLogger.LogInformation("Starting test CheckLimitAsync_WithDifferentIdentifiers_ShouldMaintainIndependentLimits with Identifier1={Identifier1}, Identifier2={Identifier2}, MaxRequests={MaxRequests}, Window={Window}", identifier1, identifier2, maxRequests, window);
 
         // Act - make requests for identifier1
         var result1_1 = await _rateLimiter.CheckLimitAsync(identifier1, maxRequests, window);
@@ -165,6 +172,7 @@ public sealed class RateLimiterTests
         // Both identifiers should be blocked at their limits
         result1_3.IsAllowed.Should().BeFalse();
         result2_3.IsAllowed.Should().BeFalse();
+        _mockLogger.LogInformation("Finished test CheckLimitAsync_WithDifferentIdentifiers_ShouldMaintainIndependentLimits: Result1_1={Result1_1}, Result1_2={Result1_2}, Result1_3={Result1_3}, Result2_1={Result2_1}, Result2_2={Result2_2}, Result2_3={Result2_3}", result1_1, result1_2, result1_3, result2_1, result2_2, result2_3);
     }
 
     /// <summary>
@@ -177,6 +185,7 @@ public sealed class RateLimiterTests
         var identifier = "test-ip-reset";
         var maxRequests = 3;
         var window = TimeSpan.FromSeconds(10);
+        _mockLogger.LogInformation("Starting test ResetAsync_ShouldClearRateLimit with Identifier={Identifier}, MaxRequests={MaxRequests}, Window={Window}", identifier, maxRequests, window);
 
         // Fill the bucket
         await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
@@ -197,6 +206,7 @@ public sealed class RateLimiterTests
         var result = await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
         result.IsAllowed.Should().BeTrue();
         result.CurrentCount.Should().Be(1);
+        _mockLogger.LogInformation("Finished test ResetAsync_ShouldClearRateLimit: StatusBefore={StatusBefore}, StatusAfter={StatusAfter}, Result={Result}", statusBefore, statusAfter, result);
     }
 
     /// <summary>
