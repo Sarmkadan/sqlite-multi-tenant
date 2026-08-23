@@ -48,8 +48,8 @@ namespace SqliteMultiTenant.Utilities
         /// <summary>
         /// Acquires a resource from the pool.
         /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <returns>A pooled resource.</returns>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A pooled resource. This method is thread-safe.</returns>
         public async Task<PooledResource<T>> AcquireAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Acquiring resource. Current pool count: {AvailableResources}, Total created: {TotalCreated}", _pool.Count, _totalCreated);
@@ -101,9 +101,9 @@ namespace SqliteMultiTenant.Utilities
         }
 
         /// <summary>
-        /// Gets pool statistics.
+        /// Gets the current pool statistics.
         /// </summary>
-        /// <returns>Pool statistics.</returns>
+        /// <returns>An object containing the current pool statistics. This method is thread-safe.</returns>
         public PoolStatistics GetStatistics()
         {
             return new PoolStatistics
@@ -116,8 +116,9 @@ namespace SqliteMultiTenant.Utilities
         }
 
         /// <summary>
-        /// Clears the pool and disposes all resources.
+        /// Clears the pool and disposes all currently available resources.
         /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
         public async Task ClearAsync()
         {
             _logger.LogInformation("Clearing resource pool. Current pool count: {AvailableResources}", _pool.Count);
@@ -130,8 +131,9 @@ namespace SqliteMultiTenant.Utilities
         }
 
         /// <summary>
-        /// Releases unmanaged resources and performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Releases all resources used by the <see cref="AsyncResourcePool{T}"/>.
         /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
         public void Dispose()
         {
             ClearAsync().GetAwaiter().GetResult();
@@ -152,6 +154,7 @@ namespace SqliteMultiTenant.Utilities
         /// <summary>
         /// Gets the pooled resource.
         /// </summary>
+        /// <remarks>This property is thread-safe.</remarks>
         public T Resource => _resource;
 
         /// <summary>
@@ -168,6 +171,7 @@ namespace SqliteMultiTenant.Utilities
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
         public async ValueTask DisposeAsync()
         {
             if (_disposed) return;
@@ -177,8 +181,9 @@ namespace SqliteMultiTenant.Utilities
         }
 
         /// <summary>
-        /// Releases unmanaged resources and performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Releases all resources used by the <see cref="PooledResource{T}"/>.
         /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
         public void Dispose()
         {
             if (_disposed) return;
