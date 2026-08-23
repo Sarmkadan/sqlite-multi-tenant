@@ -39,6 +39,8 @@ namespace SqliteMultiTenant.Tests.Security
         [Fact]
         public async Task GenerateKeyAsync_WithValidTenantId_ReturnsNewKeyWithVersion1()
         {
+            _logger.LogInformation("Starting test: GenerateKeyAsync_WithValidTenantId_ReturnsNewKeyWithVersion1 with TenantId={TenantId}", "tenant-123");
+
             // Arrange
             var tenantId = "tenant-123";
 
@@ -55,11 +57,15 @@ namespace SqliteMultiTenant.Tests.Security
             key.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
             key.DeactivatedAt.Should().BeNull();
             key.PreviousKeyId.Should().BeNull();
+
+            _logger.LogInformation("Completed test: GenerateKeyAsync_WithValidTenantId_ReturnsNewKeyWithVersion1");
         }
 
         [Fact]
         public async Task GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory()
         {
+            _logger.LogInformation("Starting test: GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory with TenantId={TenantId}", "tenant-cached");
+
             // Arrange
             var tenantId = "tenant-cached";
 
@@ -70,11 +76,15 @@ namespace SqliteMultiTenant.Tests.Security
             var cachedKey = await _keyManager.GetActiveKeyAsync(tenantId);
             cachedKey.Should().NotBeNull();
             cachedKey.KeyId.Should().Be(key.KeyId);
+
+            _logger.LogInformation("Completed test: GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory");
         }
 
         [Fact]
         public async Task GenerateKeyAsync_WithEmptyTenantId_ThrowsArgumentException()
         {
+            _logger.LogInformation("Starting test: GenerateKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
+
             // Arrange
             var invalidTenantId = string.Empty;
 
@@ -83,11 +93,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>("Tenant ID cannot be empty");
+
+            _logger.LogInformation("Completed test: GenerateKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
         }
 
         [Fact]
         public async Task GenerateKeyAsync_WithWhitespaceTenantId_ThrowsArgumentException()
         {
+            _logger.LogInformation("Starting test: GenerateKeyAsync_WithWhitespaceTenantId_ThrowsArgumentException");
+
             // Arrange
             var invalidTenantId = "   ";
 
@@ -96,11 +110,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>("Tenant ID cannot be empty");
+
+            _logger.LogInformation("Completed test: GenerateKeyAsync_WithWhitespaceTenantId_ThrowsArgumentException");
         }
 
         [Fact]
         public async Task GenerateKeyAsync_WithNullTenantId_ThrowsArgumentException()
         {
+            _logger.LogInformation("Starting test: GenerateKeyAsync_WithNullTenantId_ThrowsArgumentException");
+
             // Arrange
             string nullTenantId = null!;
 
@@ -109,11 +127,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>("Tenant ID cannot be empty");
+
+            _logger.LogInformation("Completed test: GenerateKeyAsync_WithNullTenantId_ThrowsArgumentException");
         }
 
         [Fact]
         public async Task GetActiveKeyAsync_ForExistingTenant_ReturnsActiveKey()
         {
+            _logger.LogInformation("Starting test: GetActiveKeyAsync_ForExistingTenant_ReturnsActiveKey with TenantId={TenantId}", "existing-tenant");
+
             // Arrange
             var tenantId = "existing-tenant";
             var generatedKey = await _keyManager.GenerateKeyAsync(tenantId);
@@ -126,11 +148,15 @@ namespace SqliteMultiTenant.Tests.Security
             retrievedKey.KeyId.Should().Be(generatedKey.KeyId);
             retrievedKey.Version.Should().Be(1);
             retrievedKey.IsActive.Should().BeTrue();
+
+            _logger.LogInformation("Completed test: GetActiveKeyAsync_ForExistingTenant_ReturnsActiveKey");
         }
 
         [Fact]
         public async Task GetActiveKeyAsync_ForNonExistentTenant_ReturnsNull()
         {
+            _logger.LogInformation("Starting test: GetActiveKeyAsync_ForNonExistentTenant_ReturnsNull with TenantId={TenantId}", "non-existent-tenant");
+
             // Arrange
             var nonExistentTenantId = "non-existent-tenant";
 
@@ -139,11 +165,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             key.Should().BeNull();
+
+            _logger.LogInformation("Completed test: GetActiveKeyAsync_ForNonExistentTenant_ReturnsNull");
         }
 
         [Fact]
         public async Task GetActiveKeyAsync_WithEmptyTenantId_ThrowsArgumentException()
         {
+            _logger.LogInformation("Starting test: GetActiveKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
+
             // Arrange
             var invalidTenantId = string.Empty;
 
@@ -152,11 +182,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>("Tenant ID cannot be empty");
+
+            _logger.LogInformation("Completed test: GetActiveKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
         }
 
         [Fact]
         public async Task RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld()
         {
+            _logger.LogInformation("Starting test: RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld with TenantId={TenantId}", "rotate-tenant");
+
             // Arrange
             var tenantId = "rotate-tenant";
             var oldKey = await _keyManager.GenerateKeyAsync(tenantId);
@@ -187,11 +221,15 @@ namespace SqliteMultiTenant.Tests.Security
             oldKeyFromDisk.Should().NotBeNull();
             oldKeyFromDisk.IsActive.Should().BeFalse();
             oldKeyFromDisk.DeactivatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+
+            _logger.LogInformation("Completed test: RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld");
         }
 
         [Fact]
         public async Task RotateKeyAsync_ForNonExistentTenant_CreatesFirstKey()
         {
+            _logger.LogInformation("Starting test: RotateKeyAsync_ForNonExistentTenant_CreatesFirstKey with TenantId={TenantId}", "first-rotation-tenant");
+
             // Arrange
             var tenantId = "first-rotation-tenant";
 
@@ -203,11 +241,15 @@ namespace SqliteMultiTenant.Tests.Security
             key.Version.Should().Be(1);
             key.IsActive.Should().BeTrue();
             key.PreviousKeyId.Should().BeNull();
+
+            _logger.LogInformation("Completed test: RotateKeyAsync_ForNonExistentTenant_CreatesFirstKey");
         }
 
         [Fact]
         public async Task RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime()
         {
+            _logger.LogInformation("Starting test: RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime with TenantId={TenantId}", "multi-rotate-tenant");
+
             // Arrange
             var tenantId = "multi-rotate-tenant";
             var initialKey = await _keyManager.GenerateKeyAsync(tenantId);
@@ -245,11 +287,15 @@ namespace SqliteMultiTenant.Tests.Security
             key3Retrieved.Should().NotBeNull("Key version 3 should exist on disk");
             key3Retrieved.IsActive.Should().BeFalse();
             key3Retrieved.Version.Should().Be(3);
+
+            _logger.LogInformation("Completed test: RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime");
         }
 
         [Fact]
         public async Task RotateKeyAsync_WithEmptyTenantId_ThrowsArgumentException()
         {
+            _logger.LogInformation("Starting test: RotateKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
+
             // Arrange
             var invalidTenantId = string.Empty;
 
@@ -258,11 +304,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>("Tenant ID cannot be empty");
+
+            _logger.LogInformation("Completed test: RotateKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
         }
 
         [Fact]
         public async Task GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey()
         {
+            _logger.LogInformation("Starting test: GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey with TenantId={TenantId}", "version-lookup");
+
             // Arrange
             var tenantId = "version-lookup";
             var originalKey = await _keyManager.GenerateKeyAsync(tenantId);
@@ -276,11 +326,15 @@ namespace SqliteMultiTenant.Tests.Security
             retrievedKey.Should().NotBeNull();
             retrievedKey.Version.Should().Be(1);
             retrievedKey.KeyId.Should().Be(originalKey.KeyId);
+
+            _logger.LogInformation("Completed test: GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey");
         }
 
         [Fact]
         public async Task GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull()
         {
+            _logger.LogInformation("Starting test: GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull with TenantId={TenantId}", "version-test");
+
             // Arrange
             var tenantId = "version-test";
             await _keyManager.GenerateKeyAsync(tenantId);
@@ -290,11 +344,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             key.Should().BeNull();
+
+            _logger.LogInformation("Completed test: GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull");
         }
 
         [Fact]
         public async Task GetKeyVersionAsync_ForNonExistentTenant_ReturnsNull()
         {
+            _logger.LogInformation("Starting test: GetKeyVersionAsync_ForNonExistentTenant_ReturnsNull with TenantId={TenantId}", "non-existent");
+
             // Arrange
             var nonExistentTenantId = "non-existent";
 
@@ -303,11 +361,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             key.Should().BeNull();
+
+            _logger.LogInformation("Completed test: GetKeyVersionAsync_ForNonExistentTenant_ReturnsNull");
         }
 
         [Fact]
         public async Task DeleteTenantKeysAsync_RemovesAllKeysForTenant()
         {
+            _logger.LogInformation("Starting test: DeleteTenantKeysAsync_RemovesAllKeysForTenant with TenantId={TenantId}", "delete-me");
+
             // Arrange
             var tenantId = "delete-me";
             await _keyManager.GenerateKeyAsync(tenantId);
@@ -332,11 +394,15 @@ namespace SqliteMultiTenant.Tests.Security
                 var key = await _keyManager.GetKeyVersionAsync(tenantId, i);
                 key.Should().BeNull();
             }
+
+            _logger.LogInformation("Completed test: DeleteTenantKeysAsync_RemovesAllKeysForTenant");
         }
 
         [Fact]
         public async Task DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue()
         {
+            _logger.LogInformation("Starting test: DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue with TenantId={TenantId}", "does-not-exist");
+
             // Arrange
             var nonExistentTenantId = "does-not-exist";
 
@@ -345,11 +411,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             result.Should().BeTrue();
+
+            _logger.LogInformation("Completed test: DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue");
         }
 
         [Fact]
         public async Task DeleteTenantKeysAsync_WithEmptyTenantId_StillReturnsTrue()
         {
+            _logger.LogInformation("Starting test: DeleteTenantKeysAsync_WithEmptyTenantId_StillReturnsTrue");
+
             // Arrange
             var invalidTenantId = string.Empty;
 
@@ -358,11 +428,15 @@ namespace SqliteMultiTenant.Tests.Security
 
             // Assert
             result.Should().BeTrue();
+
+            _logger.LogInformation("Completed test: DeleteTenantKeysAsync_WithEmptyTenantId_StillReturnsTrue");
         }
 
         [Fact]
         public async Task KeyRotation_PreservesOldKeyForDecryption()
         {
+            _logger.LogInformation("Starting test: KeyRotation_PreservesOldKeyForDecryption with TenantId={TenantId}", "decrypt-test");
+
             // Arrange
             var tenantId = "decrypt-test";
             var oldKey = await _keyManager.GenerateKeyAsync(tenantId);
@@ -375,11 +449,15 @@ namespace SqliteMultiTenant.Tests.Security
             stillRetrievableOldKey.Should().NotBeNull();
             stillRetrievableOldKey.IsActive.Should().BeFalse();
             stillRetrievableOldKey.DeactivatedAt.Should().NotBeNull();
+
+            _logger.LogInformation("Completed test: KeyRotation_PreservesOldKeyForDecryption");
         }
 
         [Fact]
         public async Task GenerateKeyAsync_WithMasterPassword_AppliesKeyDerivation()
         {
+            _logger.LogInformation("Starting test: GenerateKeyAsync_WithMasterPassword_AppliesKeyDerivation with TenantId={TenantId}, MasterPassword={MasterPassword}", "password-tenant", "***");
+
             // Arrange
             var tenantId = "password-tenant";
             var masterPassword = "MySecureMasterPassword123!";
@@ -391,11 +469,15 @@ namespace SqliteMultiTenant.Tests.Security
             key.Should().NotBeNull();
             key.TenantId.Should().Be(tenantId);
             key.Version.Should().Be(1);
+
+            _logger.LogInformation("Completed test: GenerateKeyAsync_WithMasterPassword_AppliesKeyDerivation");
         }
 
         [Fact]
         public async Task RotateKeyAsync_WithMasterPassword_AppliesKeyDerivation()
         {
+            _logger.LogInformation("Starting test: RotateKeyAsync_WithMasterPassword_AppliesKeyDerivation with TenantId={TenantId}, MasterPassword={MasterPassword}", "rotate-password-tenant", "***");
+
             // Arrange
             var tenantId = "rotate-password-tenant";
             var masterPassword = "MySecureMasterPassword123!";
@@ -408,11 +490,15 @@ namespace SqliteMultiTenant.Tests.Security
             newKey.Should().NotBeNull();
             newKey.TenantId.Should().Be(tenantId);
             newKey.Version.Should().Be(2);
+
+            _logger.LogInformation("Completed test: RotateKeyAsync_WithMasterPassword_AppliesKeyDerivation");
         }
 
         [Fact]
         public async Task KeysAreStoredOnDisk_AndCanBeReloaded()
         {
+            _logger.LogInformation("Starting test: KeysAreStoredOnDisk_AndCanBeReloaded with TenantId={TenantId}", "disk-storage");
+
             // Arrange
             var tenantId = "disk-storage";
             var originalKey = await _keyManager.GenerateKeyAsync(tenantId);
@@ -427,11 +513,15 @@ namespace SqliteMultiTenant.Tests.Security
             reloadedKey.Should().NotBeNull();
             reloadedKey.KeyId.Should().Be(originalKey.KeyId);
             reloadedKey.KeyMaterial.Should().BeEquivalentTo(originalKey.KeyMaterial);
+
+            _logger.LogInformation("Completed test: KeysAreStoredOnDisk_AndCanBeReloaded");
         }
 
         [Fact]
         public async Task MultipleTenants_HaveIndependentKeys()
         {
+            _logger.LogInformation("Starting test: MultipleTenants_HaveIndependentKeys with Tenant1={Tenant1}, Tenant2={Tenant2}", "tenant-one", "tenant-two");
+
             // Arrange
             var tenant1 = "tenant-one";
             var tenant2 = "tenant-two";
@@ -449,6 +539,8 @@ namespace SqliteMultiTenant.Tests.Security
             retrievedKey1.KeyId.Should().NotBe(retrievedKey2.KeyId);
             retrievedKey1.TenantId.Should().Be(tenant1);
             retrievedKey2.TenantId.Should().Be(tenant2);
+
+            _logger.LogInformation("Completed test: MultipleTenants_HaveIndependentKeys");
         }
     }
 }
