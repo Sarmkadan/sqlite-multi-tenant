@@ -25,6 +25,8 @@ public sealed class BulkExportStartedEvent : DomainEvent {
 
     /// <inheritdoc />
     public BulkExportStartedEvent() : base(nameof(BulkExportStartedEvent)) { }
+
+    public override string ToString() => $"BulkExportStartedEvent {{ DatabaseId = {DatabaseId}, TableNames = {TableNames}, Format = {Format}, OperationId = {OperationId} }}";
 }
 
 /// <summary>
