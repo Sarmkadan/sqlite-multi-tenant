@@ -243,6 +243,17 @@ namespace SqliteMultiTenant.BackgroundWorkers
 
             return stats;
         }
+
+        /// <summary>
+        /// Returns a concise, informative representation of this manager, including the
+        /// retention policy limits and rotation result counters.
+        /// </summary>
+        public override string ToString()
+        {
+            var policy = new BackupRotationPolicy();
+            var result = new BackupRotationResult();
+            return $"BackupRotationManager {{ MaxBackupAge = {policy.MaxBackupAge}, MaxBackupCount = {policy.MaxBackupCount}, MaxDiskUsage = {policy.MaxDiskUsage}, IsSuccessful = {result.IsSuccessful}, TotalBackups = {result.TotalBackups}, RemainingBackups = {result.RemainingBackups} }}";
+        }
     }
 
     /// <summary>
