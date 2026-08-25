@@ -17,6 +17,12 @@ public class DataMapperTests
         _mapper = new DataMapper(_logger);
     }
 
+    public override string ToString()
+    {
+        var sample = new SimpleSource { Id = 1, Name = "Test Name", Value = 42.5 };
+        return $"DataMapperTests {{ Id = {sample.Id}, Name = {sample.Name}, Value = {sample.Value}, Id = {sample.Id}, Name = {sample.Name}, Value = {sample.Value} }}";
+    }
+
     [Fact]
     public void Map_SimplePropertyMapping_ReturnsMappedObject()
     {
