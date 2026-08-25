@@ -76,6 +76,8 @@ public sealed class ApiResponse<T> {
         ArgumentException.ThrowIfNullOrEmpty(message);
         return new() { IsSuccess = false, Message = message };
     }
+
+    public override string ToString() => $"ApiResponse {{ StatusCode = {StatusCode}, IsSuccess = {IsSuccess}, Message = {Message}, Data = {Data}, Errors = {Errors}, Timestamp = {Timestamp} }}";
 }
 
 /// <summary>
