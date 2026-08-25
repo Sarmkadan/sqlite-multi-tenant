@@ -95,4 +95,6 @@ public sealed class Tenant {
     {
         return Metadata?.TryGetValue(key, out var value) == true ? value : null;
     }
+
+    public override string ToString() => $"Tenant {{ TenantId = {TenantId}, Name = {Name}, Description = {Description}, Status = {Status}, CreatedAt = {CreatedAt}, UpdatedAt = {UpdatedAt} }}";
 }
