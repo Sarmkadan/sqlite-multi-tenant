@@ -12,6 +12,7 @@ namespace SqliteMultiTenant.Models;
 /// Represents a backup of a tenant database
 /// </summary>
 public sealed class Backup {
+    public override string ToString() => $"Backup {{ BackupId = {BackupId}, DatabaseId = {DatabaseId}, BackupPath = {BackupPath}, BackupType = {BackupType}, Status = {Status}, CreatedAt = {CreatedAt} }}";
     public string BackupId { get; set; } = string.Empty;
     public string DatabaseId { get; set; } = string.Empty;
     public string BackupPath { get; set; } = string.Empty;
