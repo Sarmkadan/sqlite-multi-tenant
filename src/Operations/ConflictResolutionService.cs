@@ -22,6 +22,12 @@ namespace SqliteMultiTenant.Operations
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        // Returns a concise, informative representation of the service
+        public override string ToString()
+        {
+            return $"ConflictResolutionService {{ Field = {nameof(DataConflict.Field)}, ConflictType = {nameof(DataConflict.ConflictType)}, LocalValue = {nameof(DataConflict.LocalValue)}, RemoteValue = {nameof(DataConflict.RemoteValue)}, IsSuccessful = {nameof(ConflictResolutionResult.IsSuccessful)}, Error = {nameof(ConflictResolutionResult.Error)} }}";
+        }
+
         // Detects conflicts between two data versions
         public ConflictDetectionResult DetectConflicts(Dictionary<string, object> localVersion,
             Dictionary<string, object> remoteVersion)
