@@ -80,6 +80,13 @@ public sealed class ConnectionPoolOptions
         if (PruneInterval <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(PruneInterval), "PruneInterval must be positive.");
     }
+
+    /// <summary>
+    /// Returns a concise, informative representation of these options,
+    /// including all configurable values.
+    /// </summary>
+    public override string ToString()
+        => $"ConnectionPoolOptions {{ MinPoolSize = {MinPoolSize}, MaxPoolSize = {MaxPoolSize}, IdleTimeout = {IdleTimeout}, AcquireTimeout = {AcquireTimeout}, MaxConnectionLifetime = {MaxConnectionLifetime}, PruneInterval = {PruneInterval} }}";
 }
 
 /// <summary>
