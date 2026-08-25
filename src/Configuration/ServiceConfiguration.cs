@@ -89,4 +89,10 @@ public class SqliteMultiTenantOptions
     /// Set to 0 or negative to disable the limit.
     /// </summary>
     public long MaxBatchPayloadSizeBytes { get; set; } = 1024 * 1024; // 1 MB
+
+    /// <summary>
+    /// Returns a concise, informative representation of the options.
+    /// </summary>
+    public override string ToString()
+        => $"SqliteMultiTenantOptions {{ MaxConnections = {MaxConnections}, ConnectionTimeoutSeconds = {ConnectionTimeoutSeconds}, BackupRetentionDays = {BackupRetentionDays}, EnableEncryption = {EnableEncryption}, BackupDirectory = {BackupDirectory}, DatabaseDirectory = {DatabaseDirectory} }}";
 }
