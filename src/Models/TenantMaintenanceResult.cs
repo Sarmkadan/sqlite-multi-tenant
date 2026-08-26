@@ -125,4 +125,5 @@ public sealed class TenantMaintenanceResult
 
         return $"{size:F2} {suffixes[counter]}";
     }
+    public override string ToString() => $"TenantMaintenanceResult {{ TenantId = {TenantId}, TenantName = {TenantName}, Operation = {Operation}, StartedAt = {StartedAt}, CompletedAt = {CompletedAt}, SizeBeforeBytes = {SizeBeforeBytes} }}";
 }
