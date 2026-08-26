@@ -385,7 +385,6 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
                 ExtraColumns.Count == 0 &&
                 MissingIndexes.Count == 0 &&
                 ExtraIndexes.Count == 0;
-        }
 
         /// <summary>
         /// Schema comparison result for the entire database.
@@ -692,6 +691,11 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
                     tableDiff.ExtraIndexes.Add(indexName);
                 }
             }
+        }
+
+        public override string ToString()
+        {
+            return $"SchemaManager {{ ConnectionString = {ConnectionString} }}";
         }
     }
 }
