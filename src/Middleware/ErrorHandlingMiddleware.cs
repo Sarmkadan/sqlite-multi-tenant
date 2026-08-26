@@ -106,4 +106,9 @@ public sealed class Result<T> {
 
     public static Result<T> Success(T value) => new() { IsSuccess = true, Value = value };
     public static Result<T> Failure(string errorMessage) => new() { IsSuccess = false, ErrorMessage = errorMessage };
+
+    public override string ToString()
+    {
+        return $"Result<T> {{ IsSuccess = {IsSuccess}, Value = {Value}, ErrorMessage = {ErrorMessage} }}";
+    }
 }
