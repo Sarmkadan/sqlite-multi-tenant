@@ -55,6 +55,11 @@ namespace SqliteMultiTenant.Monitoring
             _logger.LogInformation("PerformanceMonitor initialized");
         }
 
+        public override string ToString()
+        {
+            return $"PerformanceMonitor {{ UptimeSeconds = {_uptime.Elapsed.TotalSeconds:F2}, OperationTypes = {_metrics.Count}, TotalMetrics = {_metrics.Values.Sum(list => list.Count)} }}";
+        }
+
         /// <summary>
         /// Starts timing an operation and returns a tracker that automatically records the metric when disposed.
         /// </summary>
