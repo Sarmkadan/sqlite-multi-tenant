@@ -740,4 +740,46 @@ if (!failedResult.IsOk)
 }
 ```
 
+## TenantDatabaseMaintenanceService
+
+The `TenantDatabaseMaintenanceService` performs routine SQLite maintenance operations—`VACUUM`, `ANALYZE`, and `PRAGMA optimize`—against individual tenant databases or across every tenant in the system. Single-tenant operations return a `TenantMaintenanceResult` describing the outcome for that database, while the batch variants run the same operation for all tenants and return one result per tenant. Use it to reclaim disk space, refresh query planner statistics, and keep long-lived multi-tenant databases healthy.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Assume 'service' is an instance of TenantDatabaseMaintenanceService
+// Assume 'cancellationToken' is available
+
+// 1. Reclaim unused space in a single tenant database
+TenantMaintenanceResult vacuumResult = await service.VacuumTenantDatabaseAsync("tenant-123", cancellationToken);
+
+// 2. Vacuum every tenant database
+List<TenantMaintenanceResult> vacuumResults = await service.VacuumAllTenantDatabasesAsync(cancellationToken);
+Console.WriteLine($"Vacuumed {vacuumResults.Count} tenant databases.");
+
+// 3. Refresh query planner statistics for a single tenant database
+TenantMaintenanceResult analyzeResult = await service.AnalyzeTenantDatabaseAsync("tenant-456", cancellationToken);
+
+// 4. Analyze every tenant database
+List<TenantMaintenanceResult> analyzeResults = await service.AnalyzeAllTenantDatabasesAsync(cancellationToken);
+
+// 5. Run incremental optimization for a single tenant database
+TenantMaintenanceResult optimizeResult = await service.OptimizeTenantDatabaseAsync("tenant-789", cancellationToken);
+
+// 6. Optimize every tenant database
+List<TenantMaintenanceResult> optimizeResults = await service.OptimizeAllTenantDatabasesAsync(cancellationToken);
+
+// 7. Run the complete maintenance pipeline (vacuum, analyze, optimize) for a single tenant
+TenantMaintenanceResult fullResult = await service.PerformFullMaintenanceAsync("tenant-123", cancellationToken);
+
+// 8. Run the complete maintenance pipeline across all tenants
+List<TenantMaintenanceResult> fullResults = await service.PerformFullMaintenanceOnAllAsync(cancellationToken);
+Console.WriteLine($"Completed full maintenance on {fullResults.Count} tenant databases.");
+```
+
 
