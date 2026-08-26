@@ -642,4 +642,60 @@ bool? nullableBool = testInstance.GetNullableValue<bool>(boolSettings);
 IReadOnlyList<TenantSettings> settingsCollection = testInstance.CreateSettingsCollection(count: 5);
 ```
 
+## TenantSizeReportRecord
+
+The `TenantSizeReportRecord` model captures storage metrics for a single tenant SQLite database: its identifier, display name, database path, page-based size figures (`SizeBytes`, `PageCount`, `PageSize`, `FreeListCount`), as well as WAL and on-disk file sizes (`WalSizeBytes`, `FileSizeBytes`). Instances can be ordered with their `CompareTo` method, rendered as rows of a fixed-width text table via `ToTextTableRow`, and combined into tabular or aggregated output through the static `GetTextTableHeader`, `GetTextTableFooter`, and `GetSummaryReport` helpers.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+using System.Collections.Generic;
+
+// Collect size information for each tenant database
+var records = new List<TenantSizeReportRecord>
+{
+    new TenantSizeReportRecord
+    {
+        TenantId = "tenant-123",
+        TenantName = "Acme Corp",
+        DatabasePath = "/data/tenants/tenant-123.db",
+        SizeBytes = 1_048_576,
+        PageCount = 256,
+        PageSize = 4096,
+        FreeListCount = 12,
+        WalSizeBytes = 65_536,
+        FileSizeBytes = 1_114_112
+    },
+    new TenantSizeReportRecord
+    {
+        TenantId = "tenant-456",
+        TenantName = "Globex Inc",
+        DatabasePath = "/data/tenants/tenant-456.db",
+        SizeBytes = 2_097_152,
+        PageCount = 512,
+        PageSize = 4096,
+        FreeListCount = 4,
+        WalSizeBytes = 131_072,
+        FileSizeBytes = 2_228_224
+    }
+};
+
+// Sort largest-first using the built-in comparison
+records.Sort((a, b) => b.CompareTo(a));
+
+// Render a fixed-width text table
+Console.WriteLine(TenantSizeReportRecord.GetTextTableHeader());
+foreach (TenantSizeReportRecord record in records)
+{
+    Console.WriteLine(record.ToTextTableRow());
+}
+Console.WriteLine(TenantSizeReportRecord.GetTextTableFooter());
+
+// Or produce a full summary report across all tenants
+string summary = TenantSizeReportRecord.GetSummaryReport(records);
+Console.WriteLine(summary);
+```
+
 
