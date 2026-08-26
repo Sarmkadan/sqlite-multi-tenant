@@ -110,4 +110,6 @@ public sealed class TenantDatabase {
     /// Checks if the database has encryption enabled
     /// </summary>
     public bool IsEncrypted => !string.IsNullOrEmpty(EncryptionKey);
+
+    public override string ToString() => $"TenantDatabase {{ DatabaseId = {DatabaseId}, TenantId = {TenantId}, Name = {Name}, FilePath = {FilePath}, SizeBytes = {SizeBytes}, CreatedAt = {CreatedAt} }}";
 }
