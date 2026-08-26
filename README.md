@@ -698,4 +698,46 @@ string summary = TenantSizeReportRecord.GetSummaryReport(records);
 Console.WriteLine(summary);
 ```
 
+## TenantIntegrityCheckResult
+
+The `TenantIntegrityCheckResult` model captures the outcome of an SQLite `PRAGMA integrity_check` executed against a single tenant database. It identifies the tenant via `TenantId` and `TenantName`, reports whether the database passed the check through `IsOk`, and exposes diagnostics via `Error` and the raw SQLite output in `IntegrityOutput`. Every result is stamped with `CheckedAt`, so integrity history can be tracked over time.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Example 1: Record a successful integrity check
+var okResult = new TenantIntegrityCheckResult
+{
+    TenantId = "tenant-123",
+    TenantName = "Acme Corp",
+    IsOk = true,
+    Error = null,
+    IntegrityOutput = "ok",
+    CheckedAt = DateTime.UtcNow
+};
+
+// Example 2: Record a failed check with SQLite's diagnostic output
+var failedResult = new TenantIntegrityCheckResult
+{
+    TenantId = "tenant-456",
+    TenantName = "Globex Inc",
+    IsOk = false,
+    Error = null,
+    IntegrityOutput = "*** in database main ***\nPage 3: never used",
+    CheckedAt = DateTime.UtcNow
+};
+
+// Report the outcomes
+Console.WriteLine($"{okResult.TenantName} ({okResult.TenantId}): {(okResult.IsOk ? "OK" : "FAILED")} checked at {okResult.CheckedAt:u}");
+
+if (!failedResult.IsOk)
+{
+    Console.WriteLine($"Integrity problems detected for {failedResult.TenantName} ({failedResult.TenantId}):");
+    Console.WriteLine(failedResult.IntegrityOutput);
+}
+```
+
 
