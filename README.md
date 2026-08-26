@@ -783,3 +783,38 @@ Console.WriteLine($"Completed full maintenance on {fullResults.Count} tenant dat
 ```
 
 
+## TenantSizeReportService
+
+The `TenantSizeReportService` generates storage size reports for tenant SQLite databases. It collects page-based size figures (`SizeBytes`, `PageCount`, `PageSize`, `FreeListCount`) together with WAL and on-disk file sizes into a `TenantSizeReportRecord` per tenant, either for a single tenant or across all tenants in the system. Results can be rendered as a fixed-width text table via `GenerateTextTableReportAsync`, or combined into a full human-readable report with `GenerateCompleteReportAsync`.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Assume 'service' is an instance of TenantSizeReportService
+// Assume 'cancellationToken' is available
+
+// 1. Generate a size report for a single tenant database
+TenantSizeReportRecord record = await service.GenerateReportForTenantAsync("tenant-123", cancellationToken);
+Console.WriteLine($"{record.TenantName}: {record.SizeBytes} bytes ({record.PageCount} pages)");
+
+// 2. Generate size reports for every tenant database
+List<TenantSizeReportRecord> records = await service.GenerateReportForAllTenantsAsync(cancellationToken);
+records.Sort((a, b) => b.CompareTo(a));
+
+// 3. Render the collected records as a fixed-width text table
+string table = await service.GenerateTextTableReportAsync(cancellationToken);
+Console.WriteLine(table);
+
+// 4. Produce a complete report combining per-tenant details and summary totals
+string completeReport = await service.GenerateCompleteReportAsync(cancellationToken);
+Console.WriteLine(completeReport);
+```
+
+
