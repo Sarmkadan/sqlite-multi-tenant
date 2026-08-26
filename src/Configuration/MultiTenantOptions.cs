@@ -26,6 +26,9 @@ namespace SqliteMultiTenant.Configuration
         public int RateLimitRequestsPerMinute { get; set; } = 1000;
         public string EncryptionKeyPath { get; set; } = "./keys";
         public bool VerboseLogging { get; set; } = false;
+
+        public override string ToString() =>
+            $"MultiTenantOptions {{ BasePath = {BasePath}, MaxConnectionsPerTenant = {MaxConnectionsPerTenant}, DefaultMaxConnections = {DefaultMaxConnections}, MaxBackupCount = {MaxBackupCount}, BackupRetention = {BackupRetention}, EnableBackupScheduling = {EnableBackupScheduling} }}";
     }
 
     // Backup-specific configuration
