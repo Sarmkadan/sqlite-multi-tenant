@@ -196,6 +196,11 @@ public int PageSize { get; set; }
 public int TotalPages { get; set; }
 public bool HasPreviousPage => PageNumber > 1;
 public bool HasNextPage => PageNumber < TotalPages;
+
+public override string ToString()
+{
+return $"PaginatedResult {{ Items = {Items.Count}, TotalCount = {TotalCount}, PageNumber = {PageNumber}, PageSize = {PageSize}, TotalPages = {TotalPages} }}";
+}
 }
 
 /// <summary>
