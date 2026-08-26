@@ -116,6 +116,15 @@ namespace SqliteMultiTenant.Utilities
         }
 
         /// <summary>
+        /// Returns a string representation of the current pool state.
+        /// </summary>
+        /// <returns>A string containing the pool's available resources, total created, waiting requests, and max pool size.</returns>
+        public override string ToString()
+        {
+            return $"AsyncResourcePool {{ AvailableResources = {_pool.Count}, TotalCreated = {_totalCreated}, WaitingRequests = {(_semaphore.CurrentCount == 0 ? 1 : 0)}, MaxPoolSize = {_maxPoolSize} }}";
+        }
+
+        /// <summary>
         /// Clears the pool and disposes all currently available resources.
         /// </summary>
         /// <remarks>This method is thread-safe.</remarks>
