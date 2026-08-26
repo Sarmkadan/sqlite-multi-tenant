@@ -93,6 +93,8 @@ public sealed class ErrorHandlingMiddleware {
 
         return context.Response.WriteAsync(json);
     }
+
+    public override string ToString() => "ErrorHandlingMiddleware { _logger = <ILogger> }";
 }
 
 /// <summary>
