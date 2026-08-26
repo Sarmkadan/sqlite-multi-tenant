@@ -360,6 +360,15 @@ namespace SqliteMultiTenant.Monitoring
         /// Gets or sets the type name of the exception that occurred during the operation, if any. Can be null.
         /// </summary>
         public string ExceptionType { get; set; }
+
+        /// <summary>
+        /// Returns a string representation of the performance metric.
+        /// </summary>
+        /// <returns>A string representation of the performance metric.</returns>
+        public override string ToString()
+        {
+            return $"PerformanceMetric {{ OperationName = {OperationName}, ElapsedMilliseconds = {ElapsedMilliseconds}, TenantId = {TenantId}, Timestamp = {Timestamp}, IsSuccess = {IsSuccess}, ExceptionType = {ExceptionType} }}";
+        }
     }
 
     /// <summary>
