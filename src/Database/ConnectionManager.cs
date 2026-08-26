@@ -160,6 +160,23 @@ namespace SqliteMultiTenant.Database
             _disposed = true;
         }
 
+        public override string ToString()
+        {
+            int tenantCount = _pools.Count;
+            int totalAvailable = 0;
+            int totalTotal = 0;
+            int totalWaiting = 0;
+
+            foreach (var pool in _pools.Values)
+            {
+                totalAvailable += pool.AvailableCount;
+                totalTotal += pool.TotalCount;
+                totalWaiting += pool.WaitingCount;
+            }
+
+            return $"ConnectionManager {{ TenantCount = {tenantCount}, AvailableConnections = {totalAvailable}, TotalConnections = {totalTotal}, WaitingRequests = {totalWaiting} }}";
+        }
+
         private class ConnectionPool : IAsyncDisposable
         {
             private readonly string _connectionString;
