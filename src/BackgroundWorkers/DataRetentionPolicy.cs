@@ -30,6 +30,8 @@ namespace SqliteMultiTenant.BackgroundWorkers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        public override string ToString() => $"DataRetentionPolicy";
+
         /// <summary>
         /// Applies retention policy to a tenant's database.
         /// </summary>
@@ -302,6 +304,8 @@ namespace SqliteMultiTenant.BackgroundWorkers
         /// Gets or sets a value indicating whether to auto-execute the policy.
         /// </summary>
         public bool AutoExecute { get; set; }
+
+        public override string ToString() => $"RetentionPolicyConfig {{ TenantId = {TenantId}, Rules = {Rules}, AutoExecute = {AutoExecute} }}";
     }
 
     /// <summary>
