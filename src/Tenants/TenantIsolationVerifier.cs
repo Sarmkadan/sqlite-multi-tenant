@@ -340,6 +340,7 @@ namespace SqliteMultiTenant.Tenants
             // For now, return empty list as this would require additional instrumentation
 
             return suspicions;
+        public override string ToString() => $"TenantIsolationVerifier { TenantId = {TenantId}, IsIsolated = {IsIsolated}, AuditLogIsolationValid = {AuditLogIsolationValid}, ConnectionRestrictionValid = {ConnectionRestrictionValid}, QueryIsolationValid = {QueryIsolationValid}, VerifiedAt = {VerifiedAt} }";
         }
     }
 
@@ -377,7 +378,8 @@ namespace SqliteMultiTenant.Tenants
         /// Gets or sets the timestamp when the verification was performed.
         /// </summary>
         public DateTime VerifiedAt { get; set; }
-    }
+
+            }
 
     /// <summary>
     /// Represents a potential data leakage issue detected during database analysis.
