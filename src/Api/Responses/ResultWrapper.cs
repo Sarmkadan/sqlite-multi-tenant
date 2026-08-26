@@ -45,6 +45,8 @@ public sealed class Result<T> {
             Errors = errors
         };
     }
+
+    public override string ToString() => $"Result {{ Success = {Success}, Data = {Data}, Errors = {Errors}, Message = {Message}, Metadata = {Metadata} }}";
 }
 
 /// <summary>
