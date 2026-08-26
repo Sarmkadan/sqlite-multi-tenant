@@ -15,6 +15,8 @@ public sealed class CreateTenantRequest {
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string ContactEmail { get; set; } = string.Empty;
+
+    public override string ToString() => $"CreateTenantRequest {{ Name = {Name}, Description = {Description}, ContactEmail = {ContactEmail} }}";
 }
 
 /// <summary>
