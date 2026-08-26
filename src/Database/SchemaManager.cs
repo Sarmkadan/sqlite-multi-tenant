@@ -386,6 +386,9 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
                 MissingIndexes.Count == 0 &&
                 ExtraIndexes.Count == 0;
 
+            public override string ToString() => $"TableSchemaDiff {{ TableName = {TableName}, IsMissing = {IsMissing}, SourceColumns = {SourceColumns}, TargetColumns = {TargetColumns}, SourceIndexes = {SourceIndexes}, TargetIndexes = {TargetIndexes} }}";
+        }
+
         /// <summary>
         /// Schema comparison result for the entire database.
         /// </summary>
