@@ -340,7 +340,6 @@ namespace SqliteMultiTenant.Tenants
             // For now, return empty list as this would require additional instrumentation
 
             return suspicions;
-        public override string ToString() => $"TenantIsolationVerifier { TenantId = {TenantId}, IsIsolated = {IsIsolated}, AuditLogIsolationValid = {AuditLogIsolationValid}, ConnectionRestrictionValid = {ConnectionRestrictionValid}, QueryIsolationValid = {QueryIsolationValid}, VerifiedAt = {VerifiedAt} }";
         }
     }
 
@@ -379,7 +378,8 @@ namespace SqliteMultiTenant.Tenants
         /// </summary>
         public DateTime VerifiedAt { get; set; }
 
-            }
+        public override string ToString() => $"IsolationVerificationResult {{ TenantId = {TenantId}, IsIsolated = {IsIsolated}, AuditLogIsolationValid = {AuditLogIsolationValid}, ConnectionRestrictionValid = {ConnectionRestrictionValid}, QueryIsolationValid = {QueryIsolationValid}, VerifiedAt = {VerifiedAt} }}";
+    }
 
     /// <summary>
     /// Represents a potential data leakage issue detected during database analysis.
