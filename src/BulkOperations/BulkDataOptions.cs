@@ -8,8 +8,8 @@ namespace SqliteMultiTenant.BulkOperations;
 
 /// <summary>
 /// Global configuration for the async bulk import/export subsystem.
-/// Register via <c>services.Configure&lt;BulkDataOptions&gt;(config.GetSection("BulkData"))</c>
-/// or supply an <c>Action&lt;BulkDataOptions&gt;</c> to
+/// Register via <c>services.Configure<BulkDataOptions>(config.GetSection("BulkData"))</c>
+/// or supply an <c>Action<BulkDataOptions></c> to
 /// <see cref="BulkDataExtensions.AddBulkDataServices"/>.
 /// Individual operations can override these values through
 /// <see cref="ExportOptions"/> or <see cref="ImportOptions"/>.
@@ -65,4 +65,9 @@ public sealed class BulkDataOptions
     /// Must match the value in <c>MultiTenantOptions.BasePath</c>.
     /// </summary>
     public string BaseDatabasePath { get; set; } = "./databases";
+
+    public override string ToString()
+    {
+        return $"BulkDataOptions {{ DefaultBatchSize = {DefaultBatchSize}, MaxConcurrentTables = {MaxConcurrentTables}, MaxBufferSizeBytes = {MaxBufferSizeBytes}, OperationTimeout = {OperationTimeout}, PublishDomainEvents = {PublishDomainEvents}, EnableProgressReporting = {EnableProgressReporting} }}";
+    }
 }
