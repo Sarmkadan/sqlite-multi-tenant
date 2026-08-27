@@ -16,6 +16,11 @@ namespace SqliteMultiTenant.Tests.Validation
             public string? Phone { get; set; }
         }
 
+        public override string ToString()
+        {
+            return $"ValidationRuleBuilderTests {{ Name = none, Email = none, Age = none, Password = none, ConfirmPassword = none, Phone = none }}";
+        }
+
         private class ProductModel
         {
             public string? Title { get; set; }
