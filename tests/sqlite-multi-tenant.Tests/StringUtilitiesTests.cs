@@ -6,10 +6,22 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
+/// <summary>
+/// Contains unit tests for the <see cref="SqliteMultiTenant.Utilities.StringUtilities"/> class,
+/// testing all string manipulation and validation methods including hashing, truncation,
+/// case conversion, whitespace removal, sanitization, validation, and generation utilities.
+/// </summary>
 public class StringUtilitiesTests
 {
+    /// <summary>
+    /// Contains tests for the ComputeSha256Hash method of the StringUtilities class.
+    /// </summary>
     public class ComputeSha256HashTests
     {
+        /// <summary>
+        /// Tests that ComputeSha256Hash returns an empty string when given null or empty input.
+        /// </summary>
+        /// <param name="input">The input string to hash, which can be null or empty.</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -37,8 +49,15 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the ComputeMd5Hash method of the StringUtilities class.
+    /// </summary>
     public class ComputeMd5HashTests
     {
+        /// <summary>
+        /// Tests that ComputeMd5Hash returns an empty string when given null or empty input.
+        /// </summary>
+        /// <param name="input">The input string to hash, which can be null or empty.</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -51,6 +70,10 @@ public class StringUtilitiesTests
             result.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Tests that ComputeMd5Hash returns a non-empty 32-character hash for non-empty input strings.
+        /// </summary>
+        /// <param name="input">The input string to hash, which must be non-empty.</param>
         [Theory]
         [InlineData("hello")]
         [InlineData("test")]
@@ -66,8 +89,16 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the TruncateWithEllipsis method of the StringUtilities class.
+    /// </summary>
     public class TruncateWithEllipsisTests
     {
+        /// <summary>
+        /// Tests that TruncateWithEllipsis handles edge cases correctly (null, empty, and short strings).
+        /// </summary>
+        /// <param name="input">The input string to truncate.</param>
+        /// <param name="expected">The expected result after truncation.</param>
         [Theory]
         [InlineData(null, null)]
         [InlineData("", "")]
@@ -83,6 +114,11 @@ public class StringUtilitiesTests
             result.Should().Be(expected);
         }
 
+        /// <summary>
+        /// Tests that TruncateWithEllipsis truncates strings to the specified length when needed.
+        /// </summary>
+        /// <param name="input">The input string to truncate.</param>
+        /// <param name="maxLength">The maximum length allowed for the result.</param>
         [Theory]
         [InlineData("this is a very long string that needs to be truncated", 50)]
         [InlineData("this is a very long string that needs to be truncated", 25)]
@@ -101,6 +137,9 @@ public class StringUtilitiesTests
             }
         }
 
+        /// <summary>
+        /// Tests that TruncateWithEllipsis throws an ArgumentOutOfRangeException when maxLength is less than 3.
+        /// </summary>
         [Fact]
         public void TruncateWithEllipsis_ShouldThrowWhenMaxLengthLessThan3()
         {
@@ -112,8 +151,16 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the ToTitleCase method of the StringUtilities class.
+    /// </summary>
     public class ToTitleCaseTests
     {
+        /// <summary>
+        /// Tests that ToTitleCase converts strings to title case correctly, handling null and empty inputs.
+        /// </summary>
+        /// <param name="input">The input string to convert to title case.</param>
+        /// <param name="expected">The expected title-cased result.</param>
         [Theory]
         [InlineData(null, null)]
         [InlineData("", "")]
@@ -134,8 +181,16 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the ToSnakeCase method of the StringUtilities class.
+    /// </summary>
     public class ToSnakeCaseTests
     {
+        /// <summary>
+        /// Tests that ToSnakeCase converts strings to snake case correctly, handling null and empty inputs.
+        /// </summary>
+        /// <param name="input">The input string to convert to snake case.</param>
+        /// <param name="expected">The expected snake-cased result.</param>
         [Theory]
         [InlineData(null, null)]
         [InlineData("", "")]
@@ -157,8 +212,15 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the ToCamelCase method of the StringUtilities class.
+    /// </summary>
     public class ToCamelCaseTests
     {
+        /// <summary>
+        /// Tests that ToCamelCase returns the input unchanged for null or empty strings.
+        /// </summary>
+        /// <param name="input">The input string, which can be null or empty.</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -171,6 +233,10 @@ public class StringUtilitiesTests
             result.Should().Be(input);
         }
 
+        /// <summary>
+        /// Tests that ToCamelCase correctly converts snake_case strings to camelCase.
+        /// </summary>
+        /// <param name="input">The snake_case input string to convert.</param>
         [Theory]
         [InlineData("hello")]
         [InlineData("hello_world")]
@@ -186,8 +252,16 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the RemoveWhitespace method of the StringUtilities class.
+    /// </summary>
     public class RemoveWhitespaceTests
     {
+        /// <summary>
+        /// Tests that RemoveWhitespace removes all whitespace characters from strings, handling null and empty inputs.
+        /// </summary>
+        /// <param name="input">The input string from which to remove whitespace.</param>
+        /// <param name="expected">The expected result with all whitespace removed.</param>
         [Theory]
         [InlineData(null, null)]
         [InlineData("", "")]
@@ -207,8 +281,15 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the SanitizeForFilePath method of the StringUtilities class.
+    /// </summary>
     public class SanitizeForFilePathTests
     {
+        /// <summary>
+        /// Tests that SanitizeForFilePath returns the input unchanged for null or empty strings.
+        /// </summary>
+        /// <param name="input">The input string to sanitize, which can be null or empty.</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -221,6 +302,10 @@ public class StringUtilitiesTests
             result.Should().Be(input);
         }
 
+        /// <summary>
+        /// Tests that SanitizeForFilePath removes invalid file name characters from the input string.
+        /// </summary>
+        /// <param name="input">The input string containing potentially invalid file name characters.</param>
         [Theory]
         [InlineData("hello")]
         [InlineData("hello world")]
@@ -242,6 +327,9 @@ public class StringUtilitiesTests
         }
     }
 
+    /// <summary>
+    /// Contains tests for the SanitizeForHtml method of the StringUtilities class.
+    /// </summary>
     public class SanitizeForHtmlTests
     {
         [Theory]
