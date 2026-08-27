@@ -12,18 +12,28 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests.Tenants;
 
+/// <summary>
+/// Contains unit tests for the TenantQuotaEnforcer class.
+/// Tests cover quota checking, enforcement with auto-suspend, quota setting and retrieval, and scanning all tenants for quota usage.
+/// </summary>
 public class TenantQuotaEnforcerTests
 {
     private readonly ITenantService _tenantService;
     private readonly TenantQuotaEnforcer _enforcer;
     private const string TestTenantId = "test-tenant";
 
+    /// <summary>
+    /// Initializes a new instance of the TenantQuotaEnforcerTests class with a mocked tenant service and the enforcer under test.
+    /// </summary>
     public TenantQuotaEnforcerTests()
     {
         _tenantService = Substitute.For<ITenantService>();
         _enforcer = new TenantQuotaEnforcer(_tenantService);
     }
 
+    /// <summary>
+    /// Tests that CheckQuotaAsync returns a result indicating the tenant is under quota when its current size is below the configured quota.
+    /// </summary>
     [Fact]
     public async Task CheckQuotaAsync_UnderQuotaAllowed_ReturnsCorrectResult()
     {
@@ -57,6 +67,9 @@ public class TenantQuotaEnforcerTests
         result.IsNearQuota.Should().BeFalse(); // 40% < 90% warning threshold
     }
 
+    /// <summary>
+    /// Tests that CheckQuotaAsync returns a result indicating the tenant is over quota when its current size exactly matches the configured quota.
+    /// </summary>
     [Fact]
     public async Task CheckQuotaAsync_AtBoundaryQuota_ReturnsOverQuota()
     {
@@ -90,6 +103,9 @@ public class TenantQuotaEnforcerTests
         result.IsNearQuota.Should().BeFalse(); // Over quota takes precedence
     }
 
+    /// <summary>
+    /// Tests that CheckQuotaAsync returns a result indicating the tenant is over quota when its current size exceeds the configured quota.
+    /// </summary>
     [Fact]
     public async Task CheckQuotaAsync_OverQuotaRejected_ReturnsOverQuota()
     {
@@ -123,6 +139,9 @@ public class TenantQuotaEnforcerTests
         result.IsNearQuota.Should().BeFalse(); // Over quota takes precedence
     }
 
+    /// <summary>
+    /// Tests that CheckQuotaAsync returns a result with null quota and zero usage percent when no quota metadata is set on the tenant (unlimited quota).
+    /// </summary>
     [Fact]
     public async Task CheckQuotaAsync_UnlimitedQuota_ReturnsZeroUsage()
     {
@@ -156,6 +175,9 @@ public class TenantQuotaEnforcerTests
         result.IsNearQuota.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that CheckQuotaAsync returns a result indicating the tenant is near quota when its usage reaches the warning threshold.
+    /// </summary>
     [Fact]
     public async Task CheckQuotaAsync_NearQuotaWarning_ReturnsNearQuotaTrue()
     {
@@ -189,6 +211,9 @@ public class TenantQuotaEnforcerTests
         result.IsNearQuota.Should().BeTrue(); // At warning threshold
     }
 
+    /// <summary>
+    /// Tests that CheckQuotaAsync throws a TenantNotFoundException when the tenant service returns null for the requested tenant ID.
+    /// </summary>
     [Fact]
     public async Task CheckQuotaAsync_TenantNotFound_ThrowsTenantNotFoundException()
     {
@@ -204,6 +229,9 @@ public class TenantQuotaEnforcerTests
             .WithMessage($"Tenant with ID '{TestTenantId}' was not found.");
     }
 
+    /// <summary>
+    /// Tests that EnforceAsync calls SuspendTenantAsync on the tenant service when the tenant is over quota and auto-suspend is enabled.
+    /// </summary>
     [Fact]
     public async Task EnforceAsync_OverQuotaWithAutoSuspend_CallsSuspendTenant()
     {
@@ -233,6 +261,9 @@ public class TenantQuotaEnforcerTests
         result.IsOverQuota.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that EnforceAsync does not call SuspendTenantAsync on the tenant service when the tenant is over quota but auto-suspend is disabled.
+    /// </summary>
     [Fact]
     public async Task EnforceAsync_OverQuotaWithoutAutoSuspend_DoesNotCallSuspendTenant()
     {
@@ -262,6 +293,9 @@ public class TenantQuotaEnforcerTests
         result.IsOverQuota.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that SetQuotaAsync correctly stores the quota as tenant metadata when given a positive byte value.
+    /// </summary>
     [Fact]
     public async Task SetQuotaAsync_PositiveMaxBytes_SetsMetadataCorrectly()
     {
@@ -279,6 +313,9 @@ public class TenantQuotaEnforcerTests
             Arg.Any<CancellationToken>());
     }
 
+    /// <summary>
+    /// Tests that SetQuotaAsync throws an ArgumentException when given a non-positive byte value.
+    /// </summary>
     [Fact]
     public async Task SetQuotaAsync_NonPositiveMaxBytes_ThrowsArgumentException()
     {
@@ -293,6 +330,9 @@ public class TenantQuotaEnforcerTests
             .WithMessage("Quota must be positive (Parameter 'maxBytes')");
     }
 
+    /// <summary>
+    /// Tests that GetQuotaAsync returns the parsed quota value when the tenant has valid quota metadata.
+    /// </summary>
     [Fact]
     public async Task GetQuotaAsync_WithValidQuotaMetadata_ReturnsParsedValue()
     {
@@ -310,6 +350,9 @@ public class TenantQuotaEnforcerTests
         quota.Should().Be(2048L);
     }
 
+    /// <summary>
+    /// Tests that GetQuotaAsync returns null when the tenant exists but has no quota metadata set.
+    /// </summary>
     [Fact]
     public async Task GetQuotaAsync_WithMissingQuotaMetadata_ReturnsNull()
     {
@@ -327,6 +370,9 @@ public class TenantQuotaEnforcerTests
         quota.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that GetQuotaAsync returns null when the tenant's quota metadata cannot be parsed as a number.
+    /// </summary>
     [Fact]
     public async Task GetQuotaAsync_WithInvalidQuotaMetadata_ReturnsNull()
     {
@@ -344,6 +390,9 @@ public class TenantQuotaEnforcerTests
         quota.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that GetQuotaAsync returns null when the tenant service returns null for the requested tenant ID.
+    /// </summary>
     [Fact]
     public async Task GetQuotaAsync_TenantNotFound_ReturnsNull()
     {
@@ -358,6 +407,9 @@ public class TenantQuotaEnforcerTests
         quota.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that ScanAllAsync returns tenants that are near or over quota, sorted by usage percentage descending with over-quota tenants first.
+    /// </summary>
     [Fact]
     public async Task ScanAllAsync_ReturnsTenantsNearOrOverQuota_SortedByUsage()
     {
