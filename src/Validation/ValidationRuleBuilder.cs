@@ -299,6 +299,27 @@ namespace SqliteMultiTenant.Validation
 
         #endregion
 
+        public override string ToString()
+        {
+            string fieldName = "none";
+            string predicate = "not set";
+            string errorMessage = "none";
+
+            if (_rules != null && _rules.Count > 0)
+            {
+                var firstRule = _rules[0];
+                if (!string.IsNullOrEmpty(firstRule.FieldName))
+                    fieldName = firstRule.FieldName;
+
+                predicate = firstRule.Predicate != null ? "set" : "not set";
+
+                if (!string.IsNullOrEmpty(firstRule.ErrorMessage))
+                    errorMessage = firstRule.ErrorMessage;
+            }
+
+            return $"ValidationRuleBuilder {{ FieldName = {fieldName}, Predicate = {predicate}, ErrorMessage = {errorMessage}, IsValid = True, Errors = 0, FieldName = {(_rules != null ? _rules.Count : 0)} }}";
+        }
+
         private bool HasValue(object obj, string fieldName)
         {
             var value = GetPropertyValue(obj, fieldName);
