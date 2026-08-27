@@ -8,12 +8,21 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests.Security;
 
+/// <summary>
+/// Contains unit tests for the EncryptionService class.
+/// Tests cover encryption/decryption of strings and bytes, password hashing and verification,
+/// and various edge cases including empty/null inputs, invalid data, and wrong keys.
+/// </summary>
 public class EncryptionServiceTests
 {
     private readonly IConfiguration _config;
     private readonly ILogger<EncryptionService> _logger;
     private readonly IEncryptionService _encryptionService;
 
+    /// <summary>
+    /// Initializes a new instance of the EncryptionServiceTests class with test configuration,
+    /// mocked logger, and an EncryptionService instance using a test encryption key.
+    /// </summary>
     public EncryptionServiceTests()
     {
         _logger.LogInformation("Initializing EncryptionServiceTests");
@@ -32,6 +41,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("EncryptionService instance created");
     }
 
+    /// <summary>
+    /// Tests that Encrypt method encrypts a non-empty string and returns a non-empty Base64-encoded string.
+    /// </summary>
     [Fact]
     public void Encrypt_EncryptsNonEmptyString_ReturnsNonEmptyBase64String()
     {
@@ -49,6 +61,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test Encrypt with non-empty string completed");
     }
 
+    /// <summary>
+    /// Tests that Encrypt method returns an empty string when given an empty string input.
+    /// </summary>
     [Fact]
     public void Encrypt_EncryptsEmptyString_ReturnsEmptyString()
     {
@@ -62,6 +77,9 @@ public class EncryptionServiceTests
         cipherText.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that Encrypt method returns an empty string when given a null string input.
+    /// </summary>
     [Fact]
     public void Encrypt_EncryptsNullString_ReturnsEmptyString()
     {
@@ -75,6 +93,9 @@ public class EncryptionServiceTests
         cipherText.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that Decrypt method returns the original plain text when given valid cipher text produced by Encrypt.
+    /// </summary>
     [Fact]
     public void Decrypt_DecryptsValidCipherText_ReturnsOriginalPlainText()
     {
@@ -91,6 +112,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test Decrypt with valid cipher text completed");
     }
 
+    /// <summary>
+    /// Tests that Decrypt method returns an empty string when given an empty string input.
+    /// </summary>
     [Fact]
     public void Decrypt_DecryptsEmptyString_ReturnsEmptyString()
     {
@@ -104,6 +128,9 @@ public class EncryptionServiceTests
         plainText.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that Decrypt method returns an empty string when given a null string input.
+    /// </summary>
     [Fact]
     public void Decrypt_DecryptsNullString_ReturnsEmptyString()
     {
@@ -117,6 +144,9 @@ public class EncryptionServiceTests
         plainText.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that Decrypt method throws a FormatException when given a string that is not valid Base64.
+    /// </summary>
     [Fact]
     public void Decrypt_WithInvalidBase64String_ThrowsException()
     {
@@ -132,6 +162,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test Decrypt with invalid base64 string completed");
     }
 
+    /// <summary>
+    /// Tests that Decrypt method throws a CryptographicException when attempting to decrypt data encrypted with a different key.
+    /// </summary>
     [Fact]
     public void Decrypt_WithWrongKey_ThrowsException()
     {
@@ -157,6 +190,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test Decrypt with wrong key completed");
     }
 
+    /// <summary>
+    /// Tests that encrypting and then decrypting an ASCII string returns the original string (roundtrip).
+    /// </summary>
     [Fact]
     public void EncryptDecrypt_Roundtrip_WithAsciiString()
     {
@@ -171,6 +207,9 @@ public class EncryptionServiceTests
         decryptedText.Should().Be(plainText);
     }
 
+    /// <summary>
+    /// Tests that encrypting and then decrypting a Unicode string returns the original string (roundtrip).
+    /// </summary>
     [Fact]
     public void EncryptDecrypt_Roundtrip_WithUnicodeString()
     {
@@ -185,6 +224,9 @@ public class EncryptionServiceTests
         decryptedText.Should().Be(plainText);
     }
 
+    /// <summary>
+    /// Tests that encrypting and then decrypting a long string (10,000 characters) returns the original string (roundtrip).
+    /// </summary>
     [Fact]
     public void EncryptDecrypt_Roundtrip_WithLongString()
     {
@@ -200,6 +242,9 @@ public class EncryptionServiceTests
         decryptedText.Should().HaveLength(10000);
     }
 
+    /// <summary>
+    /// Tests that encrypting and then decrypting a string with special characters returns the original string (roundtrip).
+    /// </summary>
     [Fact]
     public void EncryptDecrypt_Roundtrip_WithSpecialCharacters()
     {
@@ -214,6 +259,9 @@ public class EncryptionServiceTests
         decryptedText.Should().Be(plainText);
     }
 
+    /// <summary>
+    /// Tests that EncryptBytes method encrypts a byte array and returns a non-empty byte array that differs from the input.
+    /// </summary>
     [Fact]
     public void EncryptBytes_EncryptsBytes_ReturnsNonEmptyBytes()
     {
@@ -230,6 +278,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test EncryptBytes completed");
     }
 
+    /// <summary>
+    /// Tests that DecryptBytes method returns the original byte array when given valid encrypted bytes produced by EncryptBytes.
+    /// </summary>
     [Fact]
     public void DecryptBytes_DecryptsBytes_ReturnsOriginalBytes()
     {
@@ -246,6 +297,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test DecryptBytes completed");
     }
 
+    /// <summary>
+    /// Tests that DecryptBytes method throws an InvalidOperationException when given invalid encrypted data.
+    /// </summary>
     [Fact]
     public void DecryptBytes_WithInvalidData_ThrowsException()
     {
@@ -261,6 +315,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test DecryptBytes with invalid data completed");
     }
 
+    /// <summary>
+    /// Tests that DecryptBytes method throws a CryptographicException when attempting to decrypt data encrypted with a different key.
+    /// </summary>
     [Fact]
     public void DecryptBytes_WithWrongKey_ThrowsException()
     {
@@ -286,6 +343,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test DecryptBytes with wrong key completed");
     }
 
+    /// <summary>
+    /// Tests that HashPassword method returns a non-empty Base64-encoded hash for a given password.
+    /// </summary>
     [Fact]
     public void HashPassword_ReturnsNonEmptyHash()
     {
@@ -302,6 +362,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test HashPassword completed");
     }
 
+    /// <summary>
+    /// Tests that HashPassword method returns a hash even when given an empty password.
+    /// </summary>
     [Fact]
     public void HashPassword_WithEmptyPassword_ReturnsHash()
     {
@@ -315,6 +378,9 @@ public class EncryptionServiceTests
         hash.Should().NotBeNullOrEmpty();
     }
 
+    /// <summary>
+    /// Tests that VerifyHash method returns true when verifying a password against its correct hash.
+    /// </summary>
     [Fact]
     public void VerifyHash_ReturnsTrue_ForCorrectPassword()
     {
@@ -331,6 +397,9 @@ public class EncryptionServiceTests
         _logger.LogInformation("Test VerifyHash with correct password completed");
     }
 
+    /// <summary>
+    /// Tests that VerifyHash method returns false when verifying an incorrect password against a hash.
+    /// </summary>
     [Fact]
     public void VerifyHash_ReturnsFalse_ForIncorrectPassword()
     {
@@ -346,6 +415,9 @@ public class EncryptionServiceTests
         isValid.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that VerifyHash method returns false when verifying an empty password against a hash.
+    /// </summary>
     [Fact]
     public void VerifyHash_ReturnsFalse_ForEmptyPassword()
     {
@@ -360,6 +432,9 @@ public class EncryptionServiceTests
         isValid.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that VerifyHash method returns false when verifying a password against an empty hash.
+    /// </summary>
     [Fact]
     public void VerifyHash_ReturnsFalse_ForEmptyHash()
     {
@@ -373,6 +448,9 @@ public class EncryptionServiceTests
         isValid.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that VerifyHash method returns false when verifying a null password against a hash.
+    /// </summary>
     [Fact]
     public void VerifyHash_ReturnsFalse_ForNullPassword()
     {
@@ -387,6 +465,9 @@ public class EncryptionServiceTests
         isValid.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that VerifyHash method returns false when verifying a password against a null hash.
+    /// </summary>
     [Fact]
     public void VerifyHash_ReturnsFalse_ForNullHash()
     {
@@ -400,6 +481,9 @@ public class EncryptionServiceTests
         isValid.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that encrypting and then decrypting a string with whitespace returns the original string (roundtrip).
+    /// </summary>
     [Fact]
     public void EncryptDecrypt_Roundtrip_WithWhitespaceString()
     {
@@ -414,6 +498,9 @@ public class EncryptionServiceTests
         decryptedText.Should().Be(plainText);
     }
 
+    /// <summary>
+    /// Tests that encrypting and then decrypting a string with newlines and tabs returns the original string (roundtrip).
+    /// </summary>
     [Fact]
     public void EncryptDecrypt_Roundtrip_WithNewlinesAndTabs()
     {
