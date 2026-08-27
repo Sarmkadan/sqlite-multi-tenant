@@ -8,11 +8,20 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests.Utilities
 {
+    /// <summary>
+    /// Tests for the <see cref="OperationRetryPolicy"/> class, verifying retry behavior
+    /// for transient and non-transient exceptions, custom configurations, and edge cases.
+    /// </summary>
     public class OperationRetryPolicyTests
     {
         private readonly ILogger<OperationRetryPolicy> _logger;
         private readonly OperationRetryPolicy _retryPolicy;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="OperationRetryPolicyTests"/> class
+        /// with a substitute logger and a retry policy configured for 3 retries,
+        /// 10ms initial delay, and 2.0 backoff multiplier.
+        /// </summary>
         public OperationRetryPolicyTests()
         {
             _logger = Substitute.For<ILogger<OperationRetryPolicy>>();
@@ -20,6 +29,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Initializing retry policy: MaxRetries={MaxRetries}, InitialDelayMs={InitialDelayMs}, BackoffMultiplier={BackoffMultiplier}", 3, 10, 2.0);
         }
 
+        /// <summary>
+        /// Verifies that when an operation succeeds on the first attempt, the retry policy
+        /// returns the result immediately without any retries.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithSuccessfulOperationOnFirstTry_ReturnsResultWithoutRetrying()
         {
@@ -43,6 +56,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithSuccessfulOperationOnFirstTry_ReturnsResultWithoutRetrying with result {Result} after {CallCount} attempt(s)", expectedResult, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when an operation fails once and then succeeds, the retry policy
+        /// retries exactly once and then returns the successful result.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithSuccessfulOperationAfterOneRetry_RetriesOnceThenSucceeds()
         {
@@ -72,6 +89,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithSuccessfulOperationAfterOneRetry_RetriesOnceThenSucceeds with result {Result} after {CallCount} attempts", expectedResult, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when an operation fails multiple times and then succeeds, the retry policy
+        /// retries the configured number of times (maxRetries-1) and then returns the successful result.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithSuccessfulOperationAfterMultipleRetries_RetriesMultipleTimesThenSucceeds()
         {
@@ -101,6 +122,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithSuccessfulOperationAfterMultipleRetries_RetriesMultipleTimesThenSucceeds with result {Result} after {CallCount} attempts", expectedResult, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when an operation fails for all retry attempts, the retry policy
+        /// throws the last exception encountered.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithExhaustedRetries_ThrowsLastException()
         {
@@ -125,6 +150,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithExhaustedRetries_ThrowsLastException after {CallCount} attempts", callCount);
         }
 
+        /// <summary>
+        /// Verifies that when an operation throws a non-transient exception, the retry policy
+        /// throws the exception immediately without any retries.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithNonTransientException_ThrowsImmediatelyWithoutRetry()
         {
@@ -150,6 +179,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithNonTransientException_ThrowsImmediatelyWithoutRetry after {CallCount} attempt(s)", callCount);
         }
 
+        /// <summary>
+        /// Verifies that when a void-returning operation succeeds on the first attempt, the retry policy
+        /// completes successfully without any retries.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithVoidReturningOperation_SucceedsOnFirstTry()
         {
@@ -171,6 +204,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithVoidReturningOperation_SucceedsOnFirstTry after {CallCount} attempt(s)", callCount);
         }
 
+        /// <summary>
+        /// Verifies that when a void-returning operation fails initially but succeeds after retries, the retry policy
+        /// retries the operation until it succeeds and then completes successfully.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithVoidReturningOperationAfterRetry_SucceedsAfterRetries()
         {
@@ -197,6 +234,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithVoidReturningOperationAfterRetry_SucceedsAfterRetries after {CallCount} attempts", callCount);
         }
 
+        /// <summary>
+        /// Verifies that when a void-returning operation fails for all retry attempts, the retry policy
+        /// throws the last exception encountered.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithVoidReturningOperationExhaustsRetries_ThrowsLastException()
         {
@@ -221,6 +262,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithVoidReturningOperationExhaustsRetries_ThrowsLastException after {CallCount} attempts", callCount);
         }
 
+        /// <summary>
+        /// Verifies that when a custom retry policy is configured with specific settings,
+        /// the policy uses those settings instead of the default ones.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithCustomRetryPolicyConfiguration_UsesCustomSettings()
         {
@@ -256,6 +301,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithCustomRetryPolicyConfiguration_UsesCustomSettings with result {Result} after {CallCount} attempts", result, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when an operation throws a SQLiteException with error code Busy (database locked),
+        /// the retry policy treats it as a transient exception and retries the operation.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithDatabaseLockedException_RetriesBecauseItIsTransient()
         {
@@ -283,6 +332,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithDatabaseLockedException_RetriesBecauseItIsTransient with result {Result} after {CallCount} attempts", result, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when an operation throws an InvalidOperationException with message "database is locked",
+        /// the retry policy treats it as a transient exception and retries the operation.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithInvalidOperationDatabaseLockedException_RetriesBecauseItIsTransient()
         {
@@ -310,6 +363,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithInvalidOperationDatabaseLockedException_RetriesBecauseItIsTransient with result {Result} after {CallCount} attempts", result, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when a null operation is passed to ExecuteAsync, the retry policy
+        /// throws an ArgumentNullException.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithNullOperation_ThrowsArgumentNullException()
         {
@@ -327,6 +384,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithNullOperation_ThrowsArgumentNullException");
         }
 
+        /// <summary>
+        /// Verifies that when a null void operation is passed to ExecuteAsync, the retry policy
+        /// throws an ArgumentNullException.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithNullVoidOperation_ThrowsArgumentNullException()
         {
@@ -344,6 +405,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithNullVoidOperation_ThrowsArgumentNullException");
         }
 
+        /// <summary>
+        /// Verifies that when a null operation name is passed to ExecuteAsync, the retry policy
+        /// uses the operation's type name as the operation name in logs.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithNullOperationName_UsesOperationTypeName()
         {
@@ -360,6 +425,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithNullOperationName_UsesOperationTypeName with result {Result}", result);
         }
 
+        /// <summary>
+        /// Verifies that when a retry policy is built using the RetryPolicyBuilder with specific settings,
+        /// the resulting policy is correctly configured with those settings.
+        /// </summary>
         [Fact]
         public async Task ExecuteAsync_WithRetryPolicyBuilder_BuildsCorrectlyConfiguredPolicy()
         {
@@ -395,6 +464,10 @@ namespace SqliteMultiTenant.Tests.Utilities
             _logger.LogInformation("Completed test: ExecuteAsync_WithRetryPolicyBuilder_BuildsCorrectlyConfiguredPolicy with result {Result} after {CallCount} attempts", result, callCount);
         }
 
+        /// <summary>
+        /// Verifies that when building a retry policy with a null logger using the RetryPolicyBuilder,
+        /// an InvalidOperationException is thrown with the message "Logger is required".
+        /// </summary>
         [Fact]
         public void RetryPolicyBuilder_WithNullLogger_ThrowsInvalidOperationException()
         {
