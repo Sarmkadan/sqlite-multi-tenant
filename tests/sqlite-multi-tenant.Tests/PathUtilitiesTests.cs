@@ -5,8 +5,14 @@ using System.IO;
 
 namespace SqliteMultiTenant.Tests.Utilities
 {
+    /// <summary>
+    /// Tests for the PathUtilities class.
+    /// </summary>
     public class PathUtilitiesTests
     {
+        /// <summary>
+        /// Tests that SafeCombinePath combines a base path and relative path correctly.
+        /// </summary>
         [Fact]
         public void SafeCombinePath_WithValidPaths_ReturnsCombinedPath()
         {
@@ -21,6 +27,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be(Path.GetFullPath(Path.Combine(basePath, relativePath)));
         }
 
+        /// <summary>
+        /// Tests that SafeCombinePath throws an ArgumentException when the base path is empty.
+        /// </summary>
         [Fact]
         public void SafeCombinePath_WithEmptyBasePath_ThrowsArgumentException()
         {
@@ -35,6 +44,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             act.Should().Throw<ArgumentException>();
         }
 
+        /// <summary>
+        /// Tests that SafeCombinePath throws an ArgumentException when the base path is null.
+        /// </summary>
         [Fact]
         public void SafeCombinePath_WithNullBasePath_ThrowsArgumentException()
         {
@@ -49,6 +61,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             act.Should().Throw<ArgumentException>();
         }
 
+        /// <summary>
+        /// Tests that SafeCombinePath returns the base path when the relative path is empty.
+        /// </summary>
         [Fact]
         public void SafeCombinePath_WithEmptyRelativePath_ReturnsBasePath()
         {
@@ -63,6 +78,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be(Path.GetFullPath(basePath));
         }
 
+        /// <summary>
+        /// Tests that SafeCombinePath throws an InvalidOperationException when the relative path attempts directory traversal.
+        /// </summary>
         [Fact]
         public void SafeCombinePath_WithPathTraversalAttempt_ThrowsInvalidOperationException()
         {
@@ -77,6 +95,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             act.Should().Throw<InvalidOperationException>();
         }
 
+        /// <summary>
+        /// Tests that SafeCreateDirectory creates a directory and returns true for a valid path.
+        /// </summary>
         [Fact]
         public void SafeCreateDirectory_WithValidPath_CreatesDirectoryAndReturnsTrue()
         {
@@ -94,6 +115,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that SafeCreateDirectory returns true when the directory already exists.
+        /// </summary>
         [Fact]
         public void SafeCreateDirectory_WithExistingDirectory_ReturnsTrue()
         {
@@ -111,6 +135,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that GetDirectorySizeBytes returns zero for an empty directory.
+        /// </summary>
         [Fact]
         public void GetDirectorySizeBytes_WithEmptyDirectory_ReturnsZero()
         {
@@ -128,6 +155,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that GetDirectorySizeBytes returns the correct size for a directory containing files.
+        /// </summary>
         [Fact]
         public void GetDirectorySizeBytes_WithFiles_ReturnsCorrectSize()
         {
@@ -150,6 +180,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that GetDirectorySizeBytes returns zero for a non-existent directory.
+        /// </summary>
         [Fact]
         public void GetDirectorySizeBytes_WithNonExistentDirectory_ReturnsZero()
         {
@@ -163,6 +196,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             size.Should().Be(0);
         }
 
+        /// <summary>
+        /// Tests that SafeDeleteDirectory deletes an existing directory and returns true.
+        /// </summary>
         [Fact]
         public void SafeDeleteDirectory_WithExistingDirectory_DeletesAndReturnsTrue()
         {
@@ -179,6 +215,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Exists(testPath).Should().BeFalse();
         }
 
+        /// <summary>
+        /// Tests that SafeDeleteDirectory returns true when the directory does not exist.
+        /// </summary>
         [Fact]
         public void SafeDeleteDirectory_WithNonExistentDirectory_ReturnsTrue()
         {
@@ -192,6 +231,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().BeTrue();
         }
 
+        /// <summary>
+        /// Tests that GetFilesRecursive returns a list of files in an existing directory.
+        /// </summary>
         [Fact]
         public void GetFilesRecursive_WithExistingDirectory_ReturnsFileList()
         {
@@ -216,6 +258,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that GetFilesRecursive returns filtered files when a search pattern is provided.
+        /// </summary>
         [Fact]
         public void GetFilesRecursive_WithSearchPattern_ReturnsFilteredFiles()
         {
@@ -243,6 +288,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that GetFilesRecursive returns an empty list for a non-existent directory.
+        /// </summary>
         [Fact]
         public void GetFilesRecursive_WithNonExistentDirectory_ReturnsEmptyList()
         {
@@ -256,6 +304,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             files.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Tests that NormalizePath converts mixed directory separators to the platform's separator.
+        /// </summary>
         [Fact]
         public void NormalizePath_WithMixedSeparators_ReturnsNormalizedPath()
         {
@@ -269,6 +320,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be($"folder{Path.DirectorySeparatorChar}subfolder{Path.DirectorySeparatorChar}file.txt");
         }
 
+        /// <summary>
+        /// Tests that NormalizePath returns the same value for null or empty input.
+        /// </summary>
         [Fact]
         public void NormalizePath_WithNullOrEmpty_ReturnsSameValue()
         {
@@ -281,6 +335,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             resultEmpty.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Tests that MakeRelativePath returns the relative path from base path to full path.
+        /// </summary>
         [Fact]
         public void MakeRelativePath_WithValidPaths_ReturnsRelativePath()
         {
@@ -295,6 +352,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be("projects" + Path.DirectorySeparatorChar + "project1" + Path.DirectorySeparatorChar + "file.txt");
         }
 
+        /// <summary>
+        /// Tests that MakeRelativePath returns the full path when an exception occurs during Uri creation.
+        /// </summary>
         [Fact]
         public void MakeRelativePath_WithException_ReturnsFullPath()
         {
@@ -312,6 +372,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Contain("file.txt");
         }
 
+        /// <summary>
+        /// Tests that FormatBytes returns "0 B" for zero bytes.
+        /// </summary>
         [Fact]
         public void FormatBytes_WithZeroBytes_ReturnsZeroB()
         {
@@ -322,6 +385,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be("0 B");
         }
 
+        /// <summary>
+        /// Tests that FormatBytes returns the byte count in bytes when less than one kilobyte.
+        /// </summary>
         [Fact]
         public void FormatBytes_WithBytesLessThanKB_ReturnsBytes()
         {
@@ -332,6 +398,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be("500 B");
         }
 
+        /// <summary>
+        /// Tests that FormatBytes returns "1 KB" for exactly 1024 bytes.
+        /// </summary>
         [Fact]
         public void FormatBytes_WithBytesEqualToKB_ReturnsOneKB()
         {
@@ -342,6 +411,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be("1 KB");
         }
 
+        /// <summary>
+        /// Tests that FormatBytes returns a formatted string for megabytes.
+        /// </summary>
         [Fact]
         public void FormatBytes_WithMegabytes_ReturnsFormattedMB()
         {
@@ -352,6 +424,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().MatchRegex(@"5(\.00)? MB");
         }
 
+        /// <summary>
+        /// Tests that IsDirectoryEmpty returns true for an empty directory.
+        /// </summary>
         [Fact]
         public void IsDirectoryEmpty_WithEmptyDirectory_ReturnsTrue()
         {
@@ -369,6 +444,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that IsDirectoryEmpty returns false for a non-empty directory.
+        /// </summary>
         [Fact]
         public void IsDirectoryEmpty_WithNonEmptyDirectory_ReturnsFalse()
         {
@@ -387,6 +465,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that IsDirectoryEmpty returns true for a non-existent directory.
+        /// </summary>
         [Fact]
         public void IsDirectoryEmpty_WithNonExistentDirectory_ReturnsTrue()
         {
@@ -400,6 +481,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().BeTrue();
         }
 
+        /// <summary>
+        /// Tests that CleanupOldFiles returns zero when no files are older than the specified age.
+        /// </summary>
         [Fact]
         public void CleanupOldFiles_WithNoOldFiles_ReturnsZero()
         {
@@ -418,6 +502,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that CleanupOldFiles returns the count of deleted files when old files exist.
+        /// </summary>
         [Fact]
         public void CleanupOldFiles_WithOldFiles_ReturnsCountOfDeletedFiles()
         {
@@ -446,6 +533,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             Directory.Delete(testPath, true);
         }
 
+        /// <summary>
+        /// Tests that GetExtensionWithoutDot returns the extension without the leading dot.
+        /// </summary>
         [Fact]
         public void GetExtensionWithoutDot_WithExtension_ReturnsExtensionWithoutDot()
         {
@@ -459,6 +549,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be("pdf");
         }
 
+        /// <summary>
+        /// Tests that GetExtensionWithoutDot returns the extension without the leading dot for multi-part extensions.
+        /// </summary>
         [Fact]
         public void GetExtensionWithoutDot_WithExtensionWithDot_ReturnsExtensionWithoutDot()
         {
@@ -472,6 +565,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().Be("gz");
         }
 
+        /// <summary>
+        /// Tests that GetExtensionWithoutDot returns an empty string when there is no extension.
+        /// </summary>
         [Fact]
         public void GetExtensionWithoutDot_WithoutExtension_ReturnsEmptyString()
         {
@@ -485,6 +581,9 @@ namespace SqliteMultiTenant.Tests.Utilities
             result.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Tests that GetExtensionWithoutDot returns the extension without the leading dot for hidden files.
+        /// </summary>
         [Fact]
         public void GetExtensionWithoutDot_WithHiddenFile_ReturnsExtensionWithoutDot()
         {
