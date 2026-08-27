@@ -6,10 +6,16 @@ using System.Collections.Generic;
 
 namespace SqliteMultiTenant.Tests.DataOperations
 {
+    /// <summary>
+    /// Contains unit tests for the InsertBuilder and UpdateBuilder classes.
+    /// </summary>
     public class InsertUpdateBuilderTests
     {
         #region InsertBuilder Tests
 
+        /// <summary>
+        /// Tests that inserting a single value produces the correct SQL query and parameter dictionary.
+        /// </summary>
         [Fact]
         public void InsertBuilder_SingleValue_BuildsCorrectQueryAndParameters()
         {
@@ -25,6 +31,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             parameters.Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "John Doe" } });
         }
 
+        /// <summary>
+        /// Tests that inserting multiple values produces the correct SQL query and parameter dictionary.
+        /// </summary>
         [Fact]
         public void InsertBuilder_MultipleValues_BuildsCorrectQueryAndParameters()
         {
@@ -47,6 +56,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that inserting values via multiple Value calls produces the correct SQL query and parameter dictionary.
+        /// </summary>
         [Fact]
         public void InsertBuilder_MultipleValueCalls_BuildsCorrectQueryAndParameters()
         {
@@ -69,6 +81,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that inserting a null value is stored as DBNull in the parameter dictionary.
+        /// </summary>
         [Fact]
         public void InsertBuilder_ValueWithNull_StoresAsDBNull()
         {
@@ -89,6 +104,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that building an insert with no values throws an InvalidOperationException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_NoValues_ThrowsInvalidOperationException()
         {
@@ -103,6 +121,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("No values specified for insert");
         }
 
+        /// <summary>
+        /// Tests that inserting values with special column names (spaces, hyphens, underscores) are properly quoted in the SQL query.
+        /// </summary>
         [Fact]
         public void InsertBuilder_SpecialColumnNames_QuotesColumnsCorrectly()
         {
@@ -125,6 +146,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that creating an InsertBuilder with an empty table name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_EmptyTableName_ThrowsArgumentException()
         {
@@ -136,6 +160,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Table name cannot be empty (Parameter 'tableName')");
         }
 
+        /// <summary>
+        /// Tests that creating an InsertBuilder with a null table name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_NullTableName_ThrowsArgumentException()
         {
@@ -147,6 +174,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Table name cannot be empty (Parameter 'tableName')");
         }
 
+        /// <summary>
+        /// Tests that creating an InsertBuilder with a whitespace-only table name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_WhitespaceTableName_ThrowsArgumentException()
         {
@@ -158,6 +188,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Table name cannot be empty (Parameter 'tableName')");
         }
 
+        /// <summary>
+        /// Tests that inserting a value with an empty column name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_EmptyColumnName_ThrowsArgumentException()
         {
@@ -172,6 +205,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Column cannot be empty (Parameter 'column')");
         }
 
+        /// <summary>
+        /// Tests that inserting a value with a null column name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_NullColumnName_ThrowsArgumentException()
         {
@@ -186,6 +222,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Column cannot be empty (Parameter 'column')");
         }
 
+        /// <summary>
+        /// Tests that inserting a value with a whitespace-only column name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void InsertBuilder_WhitespaceColumnName_ThrowsArgumentException()
         {
@@ -204,6 +243,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
 
         #region UpdateBuilder Tests
 
+        /// <summary>
+        /// Tests that updating a single set value produces the correct SQL query and parameter dictionary.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_SingleSetValue_BuildsCorrectQueryAndParameters()
         {
@@ -220,6 +262,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             parameters.Should().BeEquivalentTo(new Dictionary<string, object> { { "Name", "John Doe" } });
         }
 
+        /// <summary>
+        /// Tests that updating multiple set values produces the correct SQL query and parameter dictionary.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_MultipleSetValues_BuildsCorrectQueryAndParameters()
         {
@@ -243,6 +288,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that updating a set value with null is stored as DBNull in the parameter dictionary.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_SetWithNull_StoresAsDBNull()
         {
@@ -264,6 +312,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that building an update with no set values throws an InvalidOperationException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_NoSetValues_ThrowsInvalidOperationException()
         {
@@ -279,6 +330,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("No values specified for update");
         }
 
+        /// <summary>
+        /// Tests that building an update with no WHERE clause throws an InvalidOperationException for safety.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_NoWhereClause_ThrowsInvalidOperationException()
         {
@@ -294,6 +348,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("WHERE condition is required for safety");
         }
 
+        /// <summary>
+        /// Tests that updating with an empty WHERE clause throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_EmptyWhereClause_ThrowsArgumentException()
         {
@@ -309,6 +366,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Condition cannot be empty (Parameter 'condition')");
         }
 
+        /// <summary>
+        /// Tests that updating with a null WHERE clause throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_NullWhereClause_ThrowsArgumentException()
         {
@@ -324,6 +384,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Condition cannot be empty (Parameter 'condition')");
         }
 
+        /// <summary>
+        /// Tests that updating with a whitespace-only WHERE clause throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_WhitespaceWhereClause_ThrowsArgumentException()
         {
@@ -339,6 +402,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Condition cannot be empty (Parameter 'condition')");
         }
 
+        /// <summary>
+        /// Tests that updating values with special column names (spaces, hyphens) are properly quoted in the SQL query.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_SpecialColumnNames_QuotesColumnsCorrectly()
         {
@@ -360,6 +426,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
             });
         }
 
+        /// <summary>
+        /// Tests that creating an UpdateBuilder with an empty table name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_EmptyTableName_ThrowsArgumentException()
         {
@@ -371,6 +440,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Table name cannot be empty (Parameter 'tableName')");
         }
 
+        /// <summary>
+        /// Tests that creating an UpdateBuilder with a null table name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_NullTableName_ThrowsArgumentException()
         {
@@ -382,6 +454,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Table name cannot be empty (Parameter 'tableName')");
         }
 
+        /// <summary>
+        /// Tests that creating an UpdateBuilder with a whitespace-only table name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_WhitespaceTableName_ThrowsArgumentException()
         {
@@ -393,6 +468,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Table name cannot be empty (Parameter 'tableName')");
         }
 
+        /// <summary>
+        /// Tests that updating a set value with an empty column name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_EmptyColumnName_ThrowsArgumentException()
         {
@@ -407,6 +485,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Column cannot be empty (Parameter 'column')");
         }
 
+        /// <summary>
+        /// Tests that updating a set value with a null column name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_NullColumnName_ThrowsArgumentException()
         {
@@ -421,6 +502,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Column cannot be empty (Parameter 'column')");
         }
 
+        /// <summary>
+        /// Tests that updating a set value with a whitespace-only column name throws an ArgumentException.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_WhitespaceColumnName_ThrowsArgumentException()
         {
@@ -435,6 +519,9 @@ namespace SqliteMultiTenant.Tests.DataOperations
                 .WithMessage("Column cannot be empty (Parameter 'column')");
         }
 
+        /// <summary>
+        /// Tests that updating with a complex WHERE clause produces the correct SQL query and parameter dictionary.
+        /// </summary>
         [Fact]
         public void UpdateBuilder_ComplexWhereClause_BuildsCorrectQuery()
         {
