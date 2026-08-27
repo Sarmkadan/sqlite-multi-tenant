@@ -6,23 +6,41 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
+/// <summary>
+/// Tests for the <see cref="DataMapper"/> class, verifying property mapping behavior
+/// between source and target objects including null handling, case insensitivity,
+/// and collection mapping.
+/// </summary>
 public class DataMapperTests
 {
     private readonly ILogger<DataMapper> _logger;
     private readonly DataMapper _mapper;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DataMapperTests"/> class
+    /// with a substitute logger and a new DataMapper instance.
+    /// </summary>
     public DataMapperTests()
     {
         _logger = Substitute.For<ILogger<DataMapper>>();
         _mapper = new DataMapper(_logger);
     }
 
+    /// <summary>
+    /// Returns a string representation of this test class showing sample property values
+    /// from a SimpleSource object for debugging purposes.
+    /// </summary>
+    /// <returns>A formatted string containing Id, Name, and Value properties from a sample SimpleSource.</returns>
     public override string ToString()
     {
         var sample = new SimpleSource { Id = 1, Name = "Test Name", Value = 42.5 };
         return $"DataMapperTests {{ Id = {sample.Id}, Name = {sample.Name}, Value = {sample.Value}, Id = {sample.Id}, Name = {sample.Name}, Value = {sample.Value} }}";
     }
 
+    /// <summary>
+    /// Verifies that mapping a SimpleSource object to a SimpleTarget object
+    /// correctly copies all property values.
+    /// </summary>
     [Fact]
     public void Map_SimplePropertyMapping_ReturnsMappedObject()
     {
@@ -46,6 +64,10 @@ public class DataMapperTests
         _logger.LogInformation("Completed test {TestName}", nameof(Map_SimplePropertyMapping_ReturnsMappedObject));
         _logger.LogInformation("Completed test Map_SimplePropertyMapping_ReturnsMappedObject", nameof(Map_SimplePropertyMapping_ReturnsMappedObject));    }
 
+    /// <summary>
+    /// Verifies that mapping a null source object returns a new instance of the target type
+    /// with default property values.
+    /// </summary>
     [Fact]
     public void Map_NullSource_ReturnsNewInstance()
     {
@@ -57,6 +79,10 @@ public class DataMapperTests
         result.Should().BeOfType<SimpleTarget>();
         _logger.LogInformation("Completed test Map_NullSource_ReturnsNewInstance", nameof(Map_NullSource_ReturnsNewInstance));    }
 
+    /// <summary>
+    /// Verifies that when mapping to a target with extra properties not present in the source,
+    /// those extra properties are set to their default values while existing properties are mapped correctly.
+    /// </summary>
     [Fact]
     public void Map_MissingColumns_SkipsNonExistentProperties()
     {
@@ -75,6 +101,10 @@ public class DataMapperTests
         result.AnotherExtra.Should().BeNull();
         _logger.LogInformation("Completed test Map_MissingColumns_SkipsNonExistentProperties", nameof(Map_MissingColumns_SkipsNonExistentProperties));    }
 
+    /// <summary>
+    /// Verifies that null values in source properties are handled gracefully:
+    /// reference type properties remain null and value type properties get their default values.
+    /// </summary>
     [Fact]
     public void Map_NullValues_HandlesNullsGracefully()
     {
@@ -96,6 +126,9 @@ public class DataMapperTests
         result.Value.Should().Be(0); // Default for double
         _logger.LogInformation("Completed test Map_NullValues_HandlesNullsGracefully", nameof(Map_NullValues_HandlesNullsGracefully));    }
 
+    /// <summary>
+    /// Verifies that boolean property values are mapped correctly from source to target.
+    /// </summary>
     [Fact]
     public void Map_BoolPropertyMapping_WorksCorrectly()
     {
@@ -111,6 +144,10 @@ public class DataMapperTests
         _logger.LogInformation("Completed test Map_BoolPropertyMapping_WorksCorrectly", nameof(Map_BoolPropertyMapping_WorksCorrectly));    }
 
 
+    /// <summary>
+    /// Verifies that when mapping a list of source objects, each item is correctly mapped
+    /// to a corresponding target object in the result list.
+    /// </summary>
     [Fact]
     public void Map_ListMapping_MapsAllItemsInList()
     {
@@ -142,6 +179,9 @@ public class DataMapperTests
         results[2].Value.Should().Be(30.5);
         _logger.LogInformation("Completed test Map_ListMapping_MapsAllItemsInList", nameof(Map_ListMapping_MapsAllItemsInList));    }
 
+    /// <summary>
+    /// Verifies that mapping a null source list returns an empty list rather than null.
+    /// </summary>
     [Fact]
     public void Map_ListMapping_WithNullList_ReturnsEmptyList()
     {
@@ -153,6 +193,9 @@ public class DataMapperTests
         result.Should().BeEmpty();
         _logger.LogInformation("Completed test Map_ListMapping_WithNullList_ReturnsEmptyList", nameof(Map_ListMapping_WithNullList_ReturnsEmptyList));    }
 
+    /// <summary>
+    /// Verifies that mapping an empty source list returns an empty list.
+    /// </summary>
     [Fact]
     public void Map_ListMapping_WithEmptyList_ReturnsEmptyList()
     {
@@ -167,6 +210,10 @@ public class DataMapperTests
         result.Should().BeEmpty();
         _logger.LogInformation("Completed test Map_ListMapping_WithEmptyList_ReturnsEmptyList", nameof(Map_ListMapping_WithEmptyList_ReturnsEmptyList));    }
 
+    /// <summary>
+    /// Verifies that property name matching is case-insensitive during mapping:
+    /// source properties with different casing correctly map to target properties.
+    /// </summary>
     [Fact]
     public void Map_CaseInsensitivePropertyMatching_MapsCorrectly()
     {
@@ -183,6 +230,10 @@ public class DataMapperTests
         result.Value.Should().Be(99.9);
         _logger.LogInformation("Completed test Map_CaseInsensitivePropertyMatching_MapsCorrectly", nameof(Map_CaseInsensitivePropertyMatching_MapsCorrectly));    }
 
+    /// <summary>
+    /// Verifies that read-only properties (get-only) in the target object are skipped during mapping
+    /// and retain their default values.
+    /// </summary>
     [Fact]
     public void Map_ReadOnlyProperty_SkipsProperty()
     {
