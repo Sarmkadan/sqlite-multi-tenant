@@ -4,8 +4,14 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
+/// <summary>
+/// Tests for the <see cref="BackupException"/> extension methods.
+/// </summary>
 public class BackupExceptionExtensionsTests
 {
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsCreationFailure"/> returns true when the exception message indicates a creation failure.
+    /// </summary>
     [Fact]
     public void IsCreationFailure_WithCreationMessage_ShouldReturnTrue()
     {
@@ -19,6 +25,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsCreationFailure"/> returns false when the exception message does not indicate a creation failure.
+    /// </summary>
     [Fact]
     public void IsCreationFailure_WithNonCreationMessage_ShouldReturnFalse()
     {
@@ -32,6 +41,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsCreationFailure"/> returns true when the exception message indicates a creation failure (case-insensitive).
+    /// </summary>
     [Fact]
     public void IsCreationFailure_WithCaseInsensitiveCreationMessage_ShouldReturnTrue()
     {
@@ -45,6 +57,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsCreationFailure"/> throws <see cref="ArgumentNullException"/> when the exception is null.
+    /// </summary>
     [Fact]
     public void IsCreationFailure_WithNullException_ShouldThrowArgumentNullException()
     {
@@ -58,6 +73,9 @@ public class BackupExceptionExtensionsTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsVerificationFailure"/> returns true when the exception message indicates a verification failure.
+    /// </summary>
     [Fact]
     public void IsVerificationFailure_WithVerificationMessage_ShouldReturnTrue()
     {
@@ -71,6 +89,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsVerificationFailure"/> returns false when the exception message does not indicate a verification failure.
+    /// </summary>
     [Fact]
     public void IsVerificationFailure_WithNonVerificationMessage_ShouldReturnFalse()
     {
@@ -84,6 +105,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsVerificationFailure"/> returns true when the exception message indicates a verification failure (case-insensitive).
+    /// </summary>
     [Fact]
     public void IsVerificationFailure_WithCaseInsensitiveVerificationMessage_ShouldReturnTrue()
     {
@@ -97,6 +121,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsVerificationFailure"/> throws <see cref="ArgumentNullException"/> when the exception is null.
+    /// </summary>
     [Fact]
     public void IsVerificationFailure_WithNullException_ShouldThrowArgumentNullException()
     {
@@ -110,6 +137,9 @@ public class BackupExceptionExtensionsTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsRestoreFailure"/> returns true when the exception message indicates a restore failure.
+    /// </summary>
     [Fact]
     public void IsRestoreFailure_WithRestoreMessage_ShouldReturnTrue()
     {
@@ -123,6 +153,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsRestoreFailure"/> returns false when the exception message does not indicate a restore failure.
+    /// </summary>
     [Fact]
     public void IsRestoreFailure_WithNonRestoreMessage_ShouldReturnFalse()
     {
@@ -136,6 +169,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsRestoreFailure"/> returns true when the exception message indicates a restore failure (case-insensitive).
+    /// </summary>
     [Fact]
     public void IsRestoreFailure_WithCaseInsensitiveRestoreMessage_ShouldReturnTrue()
     {
@@ -149,6 +185,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsRestoreFailure"/> throws <see cref="ArgumentNullException"/> when the exception is null.
+    /// </summary>
     [Fact]
     public void IsRestoreFailure_WithNullException_ShouldThrowArgumentNullException()
     {
@@ -162,6 +201,9 @@ public class BackupExceptionExtensionsTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.GetErrorDetails"/> returns a formatted string containing the backup ID, database ID, and message for a valid exception.
+    /// </summary>
     [Fact]
     public void GetErrorDetails_WithValidException_ShouldReturnFormattedString()
     {
@@ -175,6 +217,9 @@ public class BackupExceptionExtensionsTests
         result.Should().Be("BackupId: backup-123, DatabaseId: db-456, Message: Test error message");
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.GetErrorDetails"/> includes an empty string for the backup ID when it is null.
+    /// </summary>
     [Fact]
     public void GetErrorDetails_WithNullBackupId_ShouldIncludeNullInOutput()
     {
@@ -188,6 +233,9 @@ public class BackupExceptionExtensionsTests
         result.Should().Be("BackupId: , DatabaseId: db-456, Message: Test error");
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.GetErrorDetails"/> includes an empty string for the database ID when it is null.
+    /// </summary>
     [Fact]
     public void GetErrorDetails_WithNullDatabaseId_ShouldIncludeNullInOutput()
     {
@@ -201,6 +249,9 @@ public class BackupExceptionExtensionsTests
         result.Should().Be("BackupId: backup-123, DatabaseId: , Message: Test error");
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.GetErrorDetails"/> returns a formatted string with empty backup ID, database ID, and message when all are empty strings.
+    /// </summary>
     [Fact]
     public void GetErrorDetails_WithEmptyStrings_ShouldReturnFormattedString()
     {
@@ -214,6 +265,9 @@ public class BackupExceptionExtensionsTests
         result.Should().Be("BackupId: , DatabaseId: , Message: ");
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.GetErrorDetails"/> throws <see cref="ArgumentNullException"/> when the exception is null.
+    /// </summary>
     [Fact]
     public void GetErrorDetails_WithNullException_ShouldThrowArgumentNullException()
     {
@@ -227,6 +281,9 @@ public class BackupExceptionExtensionsTests
         act.Should().Throw<ArgumentNullException>();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsCreationFailure"/> returns false when the exception message is empty.
+    /// </summary>
     [Fact]
     public void IsCreationFailure_WithEmptyMessage_ShouldReturnFalse()
     {
@@ -240,6 +297,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsVerificationFailure"/> returns false when the exception message is empty.
+    /// </summary>
     [Fact]
     public void IsVerificationFailure_WithEmptyMessage_ShouldReturnFalse()
     {
@@ -253,6 +313,9 @@ public class BackupExceptionExtensionsTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that <see cref="BackupException.IsRestoreFailure"/> returns false when the exception message is empty.
+    /// </summary>
     [Fact]
     public void IsRestoreFailure_WithEmptyMessage_ShouldReturnFalse()
     {
