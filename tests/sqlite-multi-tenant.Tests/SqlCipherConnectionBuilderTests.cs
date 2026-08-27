@@ -8,10 +8,17 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests.Security
 {
+    /// <summary>
+    /// Contains unit tests for the SqlCipherConnectionBuilder class.
+    /// Tests cover connection string building, encryption key application, and rekeying functionality.
+    /// </summary>
     public class SqlCipherConnectionBuilderTests
     {
         #region BuildConnectionString
 
+        /// <summary>
+        /// Tests that BuildConnectionString returns a connection string containing the expected database path and password when given valid parameters.
+        /// </summary>
         [Fact]
         public void BuildConnectionString_WithValidParameters_ReturnsExpectedString()
         {
@@ -27,6 +34,11 @@ namespace SqliteMultiTenant.Tests.Security
             connectionString.Should().Contain($"Password={key}");
         }
 
+        /// <summary>
+        /// Tests that BuildConnectionString throws an ArgumentException when the database path is null, empty, or whitespace.
+        /// </summary>
+        /// <param name="dbPath">The database path to test (null, empty, or whitespace).</param>
+        /// <param name="key">The encryption key (a valid, non-empty string).</param>
         [Theory]
         [InlineData(null, "validKey")]
         [InlineData("", "validKey")]
@@ -42,6 +54,11 @@ namespace SqliteMultiTenant.Tests.Security
                 .Where(e => e.ParamName == "databasePath");
         }
 
+        /// <summary>
+        /// Tests that BuildConnectionString throws an ArgumentException when the encryption key is null, empty, or whitespace.
+        /// </summary>
+        /// <param name="dbPath">The database path (a valid, non-empty string).</param>
+        /// <param name="key">The encryption key to test (null, empty, or whitespace).</param>
         [Theory]
         [InlineData("validPath.db", null)]
         [InlineData("validPath.db", "")]
@@ -61,6 +78,9 @@ namespace SqliteMultiTenant.Tests.Security
 
         #region ApplyEncryptionKeyAsync
 
+        /// <summary>
+        /// Tests that ApplyEncryptionKeyAsync executes without throwing when given a valid open connection and a non-empty key.
+        /// </summary>
         [Fact]
         public async Task ApplyEncryptionKeyAsync_WithValidConnection_ExecutesWithoutException()
         {
@@ -85,6 +105,9 @@ namespace SqliteMultiTenant.Tests.Security
             File.Delete(tempFile);
         }
 
+        /// <summary>
+        /// Tests that ApplyEncryptionKeyAsync throws an ArgumentNullException when the connection parameter is null.
+        /// </summary>
         [Fact]
         public async Task ApplyEncryptionKeyAsync_NullConnection_ThrowsArgumentNullException()
         {
@@ -96,6 +119,10 @@ namespace SqliteMultiTenant.Tests.Security
                 .Where(e => e.ParamName == "connection");
         }
 
+        /// <summary>
+        /// Tests that ApplyEncryptionKeyAsync throws an ArgumentException when the encryption key is null, empty, or whitespace.
+        /// </summary>
+        /// <param name="key">The encryption key to test (null, empty, or whitespace).</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
@@ -129,6 +156,9 @@ namespace SqliteMultiTenant.Tests.Security
 
         #region RekeyAsync
 
+        /// <summary>
+        /// Tests that RekeyAsync executes without throwing when given a valid open connection and a non-empty new key.
+        /// </summary>
         [Fact]
         public async Task RekeyAsync_WithValidConnection_ExecutesWithoutException()
         {
@@ -153,6 +183,9 @@ namespace SqliteMultiTenant.Tests.Security
             File.Delete(tempFile);
         }
 
+        /// <summary>
+        /// Tests that RekeyAsync throws an ArgumentNullException when the connection parameter is null.
+        /// </summary>
         [Fact]
         public async Task RekeyAsync_NullConnection_ThrowsArgumentNullException()
         {
@@ -164,6 +197,10 @@ namespace SqliteMultiTenant.Tests.Security
                 .Where(e => e.ParamName == "connection");
         }
 
+        /// <summary>
+        /// Tests that RekeyAsync throws an ArgumentException when the new encryption key is null, empty, or whitespace.
+        /// </summary>
+        /// <param name="newKey">The new encryption key to test (null, empty, or whitespace).</param>
         [Theory]
         [InlineData(null)]
         [InlineData("")]
