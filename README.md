@@ -931,6 +931,41 @@ services.AddTenantDatabaseMaintenanceService(options =>
 });
 ```
 
+## SqlCipherConnectionBuilderTests
+
+The `SqlCipherConnectionBuilderTests` class contains unit tests for the `SqlCipherConnectionBuilder` class, covering connection string building, encryption key application, and rekeying functionality.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Security;
+using System.Data.SQLite;
+using System.IO;
+using System.Threading.Tasks;
+
+// Example usage of SqlCipherConnectionBuilder
+var dbPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".db");
+var key = "my-secret-key";
+
+// Build a connection string
+var connectionString = SqlCipherConnectionBuilder.BuildConnectionString(dbPath, key);
+
+// Apply encryption key to a connection
+await using var connection = new SQLiteConnection(connectionString);
+await connection.OpenAsync();
+await SqlCipherConnectionBuilder.ApplyEncryptionKeyAsync(connection, key);
+await connection.CloseAsync();
+
+// Rekey the database
+await using var connection2 = new SQLiteConnection(connectionString);
+await connection2.OpenAsync();
+await SqlCipherConnectionBuilder.RekeyAsync(connection2, "new-key");
+await connection2.CloseAsync();
+
+// Clean up
+File.Delete(dbPath);
+```
+
 ## EventPublisherTests
 
 The `EventPublisherTests` class contains unit tests for the `EventPublisher` class, validating the publish-subscribe pattern implementation, handler registration mechanisms, and error handling scenarios. These tests demonstrate how to properly use the event publishing system in a multi-tenant SQLite environment.
