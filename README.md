@@ -1031,4 +1031,48 @@ string truncated = StringUtilities.TruncateWithEllipsis("This is a very long str
 string random = StringUtilities.GenerateRandomString(8); // 8-character alphanumeric string
 ```
 
+## PathUtilitiesTests
+
+The `PathUtilitiesTests` class contains unit tests for the `PathUtilities` class, covering file system path manipulation utilities including safe path combination, directory creation/deletion, file enumeration, path normalization, and byte formatting.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+using System.IO;
+
+// Example: Using path utilities for safe file system operations
+string basePath = "/home/user/documents";
+string relativePath = "projects/project1";
+
+// 1. Safely combine paths (prevents path traversal)
+string combinedPath = PathUtilities.SafeCombinePath(basePath, relativePath);
+// Returns: "/home/user/documents/projects/project1"
+
+// 2. Safely create a directory
+bool created = PathUtilities.SafeCreateDirectory(combinedPath);
+// Returns true if directory was created or already exists
+
+// 3. Get size of a directory
+long size = PathUtilities.GetDirectorySizeBytes(combinedPath);
+// Returns total size in bytes of all files in directory
+
+// 4. Get files recursively with filter
+var txtFiles = PathUtilities.GetFilesRecursive(combinedPath, "*.txt");
+// Returns list of .txt files in directory and subdirectories
+
+// 5. Normalize path separators
+string normalized = PathUtilities.NormalizePath("folder\\subfolder/file.txt");
+// Returns platform-specific path with correct separators
+
+// 6. Make a path relative
+string relative = PathUtilities.MakeRelativePath("/home/user", "/home/user/documents/file.txt");
+// Returns "documents/file.txt"
+
+// 7. Format byte count for display
+string formatted = PathUtilities.FormatBytes(1500);
+// Returns "1.46 KB"
+```
+
 
