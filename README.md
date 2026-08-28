@@ -818,3 +818,37 @@ Console.WriteLine(completeReport);
 ```
 
 
+## BackupVerificationResult
+
+The `BackupVerificationResult` model captures the outcome of a SQLite backup file integrity verification. It reports whether the backup passed the check via `IsValid`, exposes the raw SQLite integrity check message through `IntegrityCheckResult`, and records the file's physical characteristics (`FileSizeBytes`, `PageCount`, `PageSizeBytes`) together with the `VerifiedAt` timestamp. Failed verifications carry a diagnostic `ErrorMessage`, and the static `Success` and `Failed` factory methods make it easy to construct either outcome.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Example 1: Build a successful verification result
+var okResult = BackupVerificationResult.Success(
+    integrityResult: "ok",
+    fileSize: 1_114_112,
+    pageCount: 272,
+    pageSize: 4096);
+Console.WriteLine($"Valid: {okResult.IsValid}, Size: {okResult.FileSizeBytes} bytes, Verified at: {okResult.VerifiedAt:u}");
+
+// Example 2: Build a failed verification result
+var failedResult = BackupVerificationResult.Failed("Backup file is missing or corrupted");
+if (!failedResult.IsValid)
+{
+    Console.WriteLine($"Verification failed: {failedResult.ErrorMessage}");
+}
+
+// Example 3: Inspect a result's integrity details
+if (okResult.IsValid)
+{
+    Console.WriteLine($"Integrity: {okResult.IntegrityCheckResult}");
+    Console.WriteLine($"Pages: {okResult.PageCount} x {okResult.PageSizeBytes} bytes");
+}
+```
+
+
