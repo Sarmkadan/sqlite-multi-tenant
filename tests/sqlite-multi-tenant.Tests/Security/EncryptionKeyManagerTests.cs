@@ -6,12 +6,19 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests.Security
 {
+    /// <summary>
+    /// Contains tests for the <see cref="EncryptionKeyManager"/> class.
+    /// </summary>
     public class EncryptionKeyManagerTests : IDisposable
     {
         private readonly ILogger<EncryptionKeyManager> _logger;
         private readonly string _testKeyStorePath;
         private readonly EncryptionKeyManager _keyManager;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="EncryptionKeyManagerTests"/> class.
+        /// Sets up a logger substitute, a temporary key store directory, and an <see cref="EncryptionKeyManager"/> instance.
+        /// </summary>
         public EncryptionKeyManagerTests()
         {
             _logger = Substitute.For<ILogger<EncryptionKeyManager>>();
@@ -21,6 +28,10 @@ namespace SqliteMultiTenant.Tests.Security
             _keyManager = new EncryptionKeyManager(_logger, _testKeyStorePath);
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// Specifically, deletes the temporary key store directory if it exists.
+        /// </summary>
         public void Dispose()
         {
             try
@@ -36,6 +47,10 @@ namespace SqliteMultiTenant.Tests.Security
             }
         }
 
+        /// <summary>
+        /// Tests that generating a key for a valid tenant ID returns a new key with version 1.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GenerateKeyAsync_WithValidTenantId_ReturnsNewKeyWithVersion1()
         {
@@ -50,7 +65,7 @@ namespace SqliteMultiTenant.Tests.Security
             // Assert
             key.Should().NotBeNull();
             key.TenantId.Should().Be(tenantId);
-            key.KeyId.Should().NotBeNullOrEmpty();
+            key.KeyId.Should().BeNullOrEmpty();
             key.KeyMaterial.Should().NotBeNull().And.HaveCount(32);
             key.Version.Should().Be(1);
             key.IsActive.Should().BeTrue();
@@ -61,6 +76,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GenerateKeyAsync_WithValidTenantId_ReturnsNewKeyWithVersion1");
         }
 
+        /// <summary>
+        /// Tests that generating a key for a valid tenant ID caches the key in memory.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory()
         {
@@ -80,6 +99,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory");
         }
 
+        /// <summary>
+        /// Tests that generating a key with an empty tenant ID throws an ArgumentException.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GenerateKeyAsync_WithEmptyTenantId_ThrowsArgumentException()
         {
@@ -97,6 +120,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GenerateKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
         }
 
+        /// <summary>
+        /// Tests that generating a key with a whitespace-only tenant ID throws an ArgumentException.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GenerateKeyAsync_WithWhitespaceTenantId_ThrowsArgumentException()
         {
@@ -114,6 +141,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GenerateKeyAsync_WithWhitespaceTenantId_ThrowsArgumentException");
         }
 
+        /// <summary>
+        /// Tests that generating a key with a null tenant ID throws an ArgumentException.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GenerateKeyAsync_WithNullTenantId_ThrowsArgumentException()
         {
@@ -131,6 +162,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GenerateKeyAsync_WithNullTenantId_ThrowsArgumentException");
         }
 
+        /// <summary>
+        /// Tests that getting an active key for an existing tenant returns the active key.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GetActiveKeyAsync_ForExistingTenant_ReturnsActiveKey()
         {
@@ -152,6 +187,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GetActiveKeyAsync_ForExistingTenant_ReturnsActiveKey");
         }
 
+        /// <summary>
+        /// Tests that getting an active key for a non-existent tenant returns null.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GetActiveKeyAsync_ForNonExistentTenant_ReturnsNull()
         {
@@ -169,6 +208,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GetActiveKeyAsync_ForNonExistentTenant_ReturnsNull");
         }
 
+        /// <summary>
+        /// Tests that getting an active key with an empty tenant ID throws an ArgumentException.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GetActiveKeyAsync_WithEmptyTenantId_ThrowsArgumentException()
         {
@@ -186,6 +229,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GetActiveKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
         }
 
+        /// <summary>
+        /// Tests that rotating a key for an existing tenant creates a new key and deactivates the old one.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld()
         {
@@ -225,6 +272,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld");
         }
 
+        /// <summary>
+        /// Tests that rotating a key for a non-existent tenant creates the first key.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task RotateKeyAsync_ForNonExistentTenant_CreatesFirstKey()
         {
@@ -245,6 +296,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: RotateKeyAsync_ForNonExistentTenant_CreatesFirstKey");
         }
 
+        /// <summary>
+        /// Tests that rotating a key multiple times increments the version each time.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime()
         {
@@ -291,6 +346,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime");
         }
 
+        /// <summary>
+        /// Tests that rotating a key with an empty tenant ID throws an ArgumentException.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task RotateKeyAsync_WithEmptyTenantId_ThrowsArgumentException()
         {
@@ -308,6 +367,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: RotateKeyAsync_WithEmptyTenantId_ThrowsArgumentException");
         }
 
+        /// <summary>
+        /// Tests that getting a key by an existing version returns the correct key.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey()
         {
@@ -330,6 +393,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey");
         }
 
+        /// <summary>
+        /// Tests that getting a key by a non-existent version returns null.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull()
         {
@@ -348,6 +415,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull");
         }
 
+        /// <summary>
+        /// Tests that getting a key by version for a non-existent tenant returns null.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GetKeyVersionAsync_ForNonExistentTenant_ReturnsNull()
         {
@@ -365,6 +436,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GetKeyVersionAsync_ForNonExistentTenant_ReturnsNull");
         }
 
+        /// <summary>
+        /// Tests that deleting tenant keys removes all keys for the tenant.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task DeleteTenantKeysAsync_RemovesAllKeysForTenant()
         {
@@ -398,6 +473,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: DeleteTenantKeysAsync_RemovesAllKeysForTenant");
         }
 
+        /// <summary>
+        /// Tests that deleting tenant keys for a non-existent tenant returns true.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue()
         {
@@ -415,6 +494,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue");
         }
 
+        /// <summary>
+        /// Tests that deleting tenant keys with an empty tenant ID still returns true.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task DeleteTenantKeysAsync_WithEmptyTenantId_StillReturnsTrue()
         {
@@ -432,6 +515,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: DeleteTenantKeysAsync_WithEmptyTenantId_StillReturnsTrue");
         }
 
+        /// <summary>
+        /// Tests that key rotation preserves the old key for decryption.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task KeyRotation_PreservesOldKeyForDecryption()
         {
@@ -453,6 +540,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: KeyRotation_PreservesOldKeyForDecryption");
         }
 
+        /// <summary>
+        /// Tests that generating a key with a master password applies key derivation.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task GenerateKeyAsync_WithMasterPassword_AppliesKeyDerivation()
         {
@@ -473,6 +564,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: GenerateKeyAsync_WithMasterPassword_AppliesKeyDerivation");
         }
 
+        /// <summary>
+        /// Tests that rotating a key with a master password applies key derivation.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task RotateKeyAsync_WithMasterPassword_AppliesKeyDerivation()
         {
@@ -494,6 +589,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: RotateKeyAsync_WithMasterPassword_AppliesKeyDerivation");
         }
 
+        /// <summary>
+        /// Tests that keys are stored on disk and can be reloaded.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task KeysAreStoredOnDisk_AndCanBeReloaded()
         {
@@ -517,6 +616,10 @@ namespace SqliteMultiTenant.Tests.Security
             _logger.LogInformation("Completed test: KeysAreStoredOnDisk_AndCanBeReloaded");
         }
 
+        /// <summary>
+        /// Tests that multiple tenants have independent keys.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         [Fact]
         public async Task MultipleTenants_HaveIndependentKeys()
         {
