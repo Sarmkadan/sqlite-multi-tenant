@@ -4,8 +4,19 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests.Validation
 {
+    /// <summary>
+    /// Tests for the <see cref="ValidationRuleBuilder{T}"/> class.
+    /// </summary>
     public class ValidationRuleBuilderTests
     {
+        /// <summary>
+        /// Returns a string representation of the test instance with default values.
+        /// </summary>
+        public override string ToString()
+        {
+            return $"ValidationRuleBuilderTests {{ Name = none, Email = none, Age = none, Password = none, ConfirmPassword = none, Phone = none }}";
+        }
+
         private class TestModel
         {
             public string? Name { get; set; }
@@ -16,11 +27,6 @@ namespace SqliteMultiTenant.Tests.Validation
             public string? Phone { get; set; }
         }
 
-        public override string ToString()
-        {
-            return $"ValidationRuleBuilderTests {{ Name = none, Email = none, Age = none, Password = none, ConfirmPassword = none, Phone = none }}";
-        }
-
         private class ProductModel
         {
             public string? Title { get; set; }
@@ -28,6 +34,9 @@ namespace SqliteMultiTenant.Tests.Validation
             public int? Stock { get; set; }
         }
 
+        /// <summary>
+        /// Verifies that the Required rule passes when the specified property has a non-null, non-whitespace value.
+        /// </summary>
         [Fact]
         public void Required_WithValidValue_ReturnsValidResult()
         {
@@ -44,6 +53,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Required rule fails when the specified property is null.
+        /// </summary>
         [Fact]
         public void Required_WithNullValue_ReturnsInvalidResult()
         {
@@ -62,6 +74,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Name is required");
         }
 
+        /// <summary>
+        /// Verifies that the Required rule fails when the specified property contains only whitespace.
+        /// </summary>
         [Fact]
         public void Required_WithEmptyString_ReturnsInvalidResult()
         {
@@ -79,6 +94,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Name");
         }
 
+        /// <summary>
+        /// Verifies that the Required rule uses a custom error message when validation fails.
+        /// </summary>
         [Fact]
         public void Required_WithCustomMessage_ReturnsCustomErrorMessage()
         {
@@ -95,6 +113,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Name field cannot be empty");
         }
 
+        /// <summary>
+        /// Verifies that the StringLength rule passes when the property value is within the specified length range.
+        /// </summary>
         [Fact]
         public void StringLength_WithValidLength_ReturnsValidResult()
         {
@@ -111,6 +132,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the StringLength rule fails when the property value is shorter than the minimum length.
+        /// </summary>
         [Fact]
         public void StringLength_WithMinLengthViolation_ReturnsInvalidResult()
         {
@@ -129,6 +153,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Name must be at least 3 characters");
         }
 
+        /// <summary>
+        /// Verifies that the StringLength rule fails when the property value exceeds the maximum length.
+        /// </summary>
         [Fact]
         public void StringLength_WithMaxLengthViolation_ReturnsInvalidResult()
         {
@@ -147,6 +174,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Name must not exceed 10 characters");
         }
 
+        /// <summary>
+        /// Verifies that the StringLength rule fails when the property value is shorter than the minimum length (when both min and max are specified).
+        /// </summary>
         [Fact]
         public void StringLength_WithBothMinAndMax_ReturnsInvalidResult()
         {
@@ -164,6 +194,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Name");
         }
 
+        /// <summary>
+        /// Verifies that the Email rule passes when the property contains a valid email address.
+        /// </summary>
         [Fact]
         public void Email_WithValidEmail_ReturnsValidResult()
         {
@@ -180,6 +213,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Email rule fails when the property contains an invalid email address.
+        /// </summary>
         [Fact]
         public void Email_WithInvalidEmail_ReturnsInvalidResult()
         {
@@ -198,6 +234,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Email must be a valid email address");
         }
 
+        /// <summary>
+        /// Verifies that the Email rule passes when the property is null (null is considered valid).
+        /// </summary>
         [Fact]
         public void Email_WithNullEmail_ReturnsValidResult()
         {
@@ -214,6 +253,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Email rule passes when the property is an empty string (empty is considered valid).
+        /// </summary>
         [Fact]
         public void Email_WithEmptyEmail_ReturnsValidResult()
         {
@@ -230,6 +272,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Range rule passes when the numeric property value is within the specified range.
+        /// </summary>
         [Fact]
         public void Range_WithValidNumericValue_ReturnsValidResult()
         {
@@ -246,6 +291,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Range rule fails when the numeric property value is below the minimum allowed value.
+        /// </summary>
         [Fact]
         public void Range_WithValueBelowMinimum_ReturnsInvalidResult()
         {
@@ -264,6 +312,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Price must be between 10.00 and 100.00");
         }
 
+        /// <summary>
+        /// Verifies that the Range rule fails when the numeric property value is above the maximum allowed value.
+        /// </summary>
         [Fact]
         public void Range_WithValueAboveMaximum_ReturnsInvalidResult()
         {
@@ -281,6 +332,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Price");
         }
 
+        /// <summary>
+        /// Verifies that the Range rule with only a minimum value fails when the property value is below that minimum.
+        /// </summary>
         [Fact]
         public void Range_WithOnlyMinValue_ReturnsInvalidResultWhenBelow()
         {
@@ -299,6 +353,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Price must be at least 10.00");
         }
 
+        /// <summary>
+        /// Verifies that the Range rule with only a maximum value fails when the property value is above that maximum.
+        /// </summary>
         [Fact]
         public void Range_WithOnlyMaxValue_ReturnsInvalidResultWhenAbove()
         {
@@ -317,6 +374,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Price must not exceed 100.00");
         }
 
+        /// <summary>
+        /// Verifies that the Pattern rule passes when the property value matches the specified regular expression.
+        /// </summary>
         [Fact]
         public void Pattern_WithMatchingPattern_ReturnsValidResult()
         {
@@ -333,6 +393,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Pattern rule fails when the property value does not match the specified regular expression.
+        /// </summary>
         [Fact]
         public void Pattern_WithNonMatchingPattern_ReturnsInvalidResult()
         {
@@ -351,6 +414,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Phone does not match the required pattern");
         }
 
+        /// <summary>
+        /// Verifies that the Custom rule passes when the provided predicate returns true for the property value.
+        /// </summary>
         [Fact]
         public void Custom_WithPassingPredicate_ReturnsValidResult()
         {
@@ -367,6 +433,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the Custom rule fails when the provided predicate returns false for the property value.
+        /// </summary>
         [Fact]
         public void Custom_WithFailingPredicate_ReturnsInvalidResult()
         {
@@ -385,6 +454,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Name validation failed");
         }
 
+        /// <summary>
+        /// Verifies that the MustMatch rule passes when the two specified properties have equal values.
+        /// </summary>
         [Fact]
         public void MustMatch_WithMatchingValues_ReturnsValidResult()
         {
@@ -401,6 +473,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that the MustMatch rule fails when the two specified properties have different values.
+        /// </summary>
         [Fact]
         public void MustMatch_WithNonMatchingValues_ReturnsInvalidResult()
         {
@@ -419,6 +494,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].Message.Should().Be("Password and ConfirmPassword must match");
         }
 
+        /// <summary>
+        /// Verifies that validation passes when multiple rules are applied and all properties satisfy their respective rules.
+        /// </summary>
         [Fact]
         public void Validate_WithMultipleRules_AllPassing_ReturnsValidResult()
         {
@@ -437,6 +515,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that validation fails when multiple rules are applied and exactly one property fails its rule.
+        /// </summary>
         [Fact]
         public void Validate_WithMultipleRules_OneFailing_ReturnsInvalidResult()
         {
@@ -456,6 +537,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Email");
         }
 
+        /// <summary>
+        /// Verifies that validation returns all error messages when multiple rules are applied and multiple properties fail their respective rules.
+        /// </summary>
         [Fact]
         public void Validate_WithMultipleRules_MultipleFailing_ReturnsAllErrors()
         {
@@ -477,6 +561,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[2].FieldName.Should().Be("Age");
         }
 
+        /// <summary>
+        /// Verifies that validation fails when the object to validate is null.
+        /// </summary>
         [Fact]
         public void Validate_WithNullObject_ReturnsInvalidResult()
         {
@@ -494,6 +581,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Name");
         }
 
+        /// <summary>
+        /// Verifies that validation passes when rules are chained using fluent syntax and all properties satisfy their respective rules.
+        /// </summary>
         [Fact]
         public void Validate_WithChainedRules_ReturnsValidResult()
         {
@@ -513,6 +603,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors.Should().BeEmpty();
         }
 
+        /// <summary>
+        /// Verifies that validation fails when rules are chained using fluent syntax and exactly one property fails its rule.
+        /// </summary>
         [Fact]
         public void Validate_WithChainedRules_OneFailing_ReturnsInvalidResult()
         {
@@ -533,6 +626,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Email");
         }
 
+        /// <summary>
+        /// Verifies that validation fails when a required string property is null, even if other properties are present.
+        /// </summary>
         [Fact]
         public void Validate_WithNullStringField_ReturnsInvalidResult()
         {
@@ -551,6 +647,9 @@ namespace SqliteMultiTenant.Tests.Validation
             result.Errors[0].FieldName.Should().Be("Name");
         }
 
+        /// <summary>
+        /// Verifies that validation fails when a required string property contains only whitespace, even if other properties are present.
+        /// </summary>
         [Fact]
         public void Validate_WithEmptyStringField_ReturnsInvalidResult()
         {
