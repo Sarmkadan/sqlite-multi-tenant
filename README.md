@@ -1024,6 +1024,47 @@ int handlerCount = publisher.GetHandlerCount<UserCreatedEvent>();
 // handlerCount should be 1
 ```
 
+## BackupExceptionJsonExtensionsTests
+
+The `BackupExceptionJsonExtensionsTests` class contains unit tests for the JSON serialization and deserialization extension methods on the `BackupException` class. It verifies that `BackupException` instances can be serialized to JSON strings and handles edge cases such as null inputs and invalid JSON.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Exceptions;
+using SqliteMultiTenant.Extensions; // Assuming the extension methods are in this namespace
+using System;
+
+// Example: Serializing a BackupException to JSON
+var exception = new BackupException("Backup failed", "backup-123", "db-456");
+string json = exception.ToJson();
+Console.WriteLine($"Serialized JSON: {json}");
+
+// Example: Serializing with indentation
+string indentedJson = exception.ToJson(indented: true);
+Console.WriteLine($"Indented JSON:\n{indentedJson}");
+
+// Example: Deserialization throws NotSupportedException because BackupException lacks a parameterless constructor
+try
+{
+    var restored = BackupExceptionJsonExtensions.FromJson(json);
+}
+catch (NotSupportedException)
+{
+    Console.WriteLine("Deserialization not supported due to missing parameterless constructor in BackupException.");
+}
+
+// Example: Using TryFromJson also throws NotSupportedException
+try
+{
+    BackupExceptionJsonExtensions.TryFromJson(json, out var restored);
+}
+catch (NotSupportedException)
+{
+    Console.WriteLine("TryFromJson also throws NotSupportedException for the same reason.");
+}
+```
+
 ## StringUtilitiesTests
 
 The `StringUtilitiesTests` class contains unit tests for the `StringUtilities` class, covering string manipulation and validation methods including hashing, truncation, case conversion, whitespace removal, sanitization, validation, and generation utilities.
