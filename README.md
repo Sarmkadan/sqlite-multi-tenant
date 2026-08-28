@@ -1150,4 +1150,50 @@ public async Task LruCacheStrategy_EvictsLeastRecentlyUsed_WhenCacheIsFull()
 }
 ```
 
+## EncryptionServiceTests
+
+The `EncryptionServiceTests` class contains unit tests for the `EncryptionService` class.
+These tests cover encryption and decryption of strings and bytes, password hashing and verification, and various edge cases including empty/null inputs, invalid data, and wrong keys. These tests validate that the encryption service correctly handles both string and byte data, properly manages empty and null inputs, and throws appropriate exceptions for invalid inputs or incorrect keys.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Security;
+
+// Setup configuration with encryption key (must be 32 characters for AES-256)
+var config = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["Encryption:Key"] = "my-encryption-key-32-chars-long!!"
+    })
+    .Build();
+
+// Create logger (using null logger for simplicity)
+ILogger<EncryptionService> logger = NullLogger<EncryptionService>.Instance;
+
+// Create encryption service
+var encryptionService = new EncryptionService(config, logger);
+
+// Encrypt a string
+string plainText = "Hello, World!";
+string cipherText = encryptionService.Encrypt(plainText);
+Console.WriteLine($"Encrypted: {cipherText}");
+
+// Decrypt the string
+string decryptedText = encryptionService.Decrypt(cipherText);
+Console.WriteLine($"Decrypted: {decryptedText}");
+
+// Hash a password
+string password = "MySecurePassword123!";
+string hash = encryptionService.HashPassword(password);
+Console.WriteLine($"Hash: {hash}");
+
+// Verify the hash
+bool isValid = encryptionService.VerifyHash(password, hash);
+Console.WriteLine($"Password valid: {isValid}");
+```
+
 
