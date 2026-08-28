@@ -903,4 +903,32 @@ if (analyzeResult.Error != null)
 }
 ```
 
+## TenantDatabaseMaintenanceServiceExtensions
+
+The `TenantDatabaseMaintenanceServiceExtensions` class provides extension methods for registering the `TenantDatabaseMaintenanceService` with the .NET dependency injection container. It offers two overloads of `AddTenantDatabaseMaintenanceService`: one for simple registration with default options, and one that accepts an `Action<TenantDatabaseMaintenanceOptions>` to customize maintenance behavior such as which operations are enabled, the interval between runs, per-operation timeouts, and the degree of parallelism.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Services;
+
+// In Program.cs or Startup.cs
+var services = new ServiceCollection();
+
+// 1. Register with default options (vacuum, analyze, and optimize enabled)
+services.AddTenantDatabaseMaintenanceService();
+
+// 2. Register with custom configuration
+services.AddTenantDatabaseMaintenanceService(options =>
+{
+    options.EnableVacuum = true;
+    options.EnableAnalyze = true;
+    options.EnableOptimize = false;
+    options.IntervalHours = 12;          // Run maintenance every 12 hours
+    options.TimeoutSeconds = 120;        // 2 minutes per operation
+    options.DegreeOfParallelism = 2;     // Process two tenants in parallel
+});
+```
+
 
