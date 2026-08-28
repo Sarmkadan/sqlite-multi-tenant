@@ -989,4 +989,46 @@ int handlerCount = publisher.GetHandlerCount<UserCreatedEvent>();
 // handlerCount should be 1
 ```
 
+## StringUtilitiesTests
+
+The `StringUtilitiesTests` class contains unit tests for the `StringUtilities` class, covering string manipulation and validation methods including hashing, truncation, case conversion, whitespace removal, sanitization, validation, and generation utilities.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using System;
+
+// Example: Using various string utilities for data processing
+string userInput = "  Hello World!  ";
+string fileName = "my file:test*.txt";
+string email = "user@example.com";
+string url = "https://example.com/path";
+
+// 1. Remove whitespace
+string trimmed = StringUtilities.RemoveWhitespace(userInput); // "HelloWorld!"
+
+// 2. Sanitize for file paths
+string safeFileName = StringUtilities.SanitizeForFilePath(fileName); // "my_file_test_.txt"
+
+// 3. Validate email and URL
+bool isValidEmail = StringUtilities.IsValidEmail(email); // true
+bool isValidUrl = StringUtilities.IsValidUrl(url); // true
+
+// 4. Convert to different cases
+string snakeCase = StringUtilities.ToSnakeCase("helloWorld"); // "hello_world"
+string camelCase = StringUtilities.ToCamelCase("hello_world"); // "helloWorld"
+string titleCase = StringUtilities.ToTitleCase("hello world"); // "Hello World"
+
+// 5. Generate hashes
+string sha256Hash = StringUtilities.ComputeSha256Hash("test"); // Non-empty 64-char hex string
+string md5Hash = StringUtilities.ComputeMd5Hash("test"); // Non-empty 32-char hex string
+
+// 6. Truncate with ellipsis
+string truncated = StringUtilities.TruncateWithEllipsis("This is a very long string", 10); // "This is..."
+
+// 7. Generate random string
+string random = StringUtilities.GenerateRandomString(8); // 8-character alphanumeric string
+```
+
 
