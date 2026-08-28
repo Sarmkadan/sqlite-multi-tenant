@@ -851,4 +851,56 @@ if (okResult.IsValid)
 }
 ```
 
+## TenantMaintenanceResult
+
+The `TenantMaintenanceResult` model captures the outcome of a single tenant database maintenance operation. It identifies the tenant via `TenantId` and `TenantName`, records which `Operation` was performed (`VACUUM`, `ANALYZE`, etc.), and tracks timing through `StartedAt` and `CompletedAt`. It also reports the database file size before and after the operation (`SizeBeforeBytes`, `SizeAfterBytes`, and the optional `IntermediateSizeBytes`), with `Error` carrying a diagnostic message when the operation fails.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using System;
+
+// Example 1: Record a successful VACUUM operation
+var vacuumResult = new TenantMaintenanceResult
+{
+    TenantId = "tenant-123",
+    TenantName = "Acme Corp",
+    Operation = "VACUUM",
+    StartedAt = DateTime.UtcNow.AddSeconds(-3),
+    CompletedAt = DateTime.UtcNow,
+    SizeBeforeBytes = 1_048_576,
+    SizeAfterBytes = 524_288,
+    IntermediateSizeBytes = 524_288,
+    Error = null
+};
+
+// Example 2: Record a failed ANALYZE operation
+var analyzeResult = new TenantMaintenanceResult
+{
+    TenantId = "tenant-456",
+    TenantName = "Globex Inc",
+    Operation = "ANALYZE",
+    StartedAt = DateTime.UtcNow,
+    CompletedAt = null,
+    SizeBeforeBytes = 2_097_152,
+    SizeAfterBytes = 2_097_152,
+    IntermediateSizeBytes = null,
+    Error = "Database is locked"
+};
+
+// Report the outcomes
+Console.WriteLine($"{vacuumResult.TenantName} ({vacuumResult.TenantId}): {vacuumResult.Operation} started at {vacuumResult.StartedAt:u}");
+
+if (vacuumResult.CompletedAt.HasValue)
+{
+    Console.WriteLine($"Completed at {vacuumResult.CompletedAt:u}; size {vacuumResult.SizeBeforeBytes} -> {vacuumResult.SizeAfterBytes} bytes");
+}
+
+if (analyzeResult.Error != null)
+{
+    Console.WriteLine($"Operation failed for {analyzeResult.TenantName} ({analyzeResult.TenantId}): {analyzeResult.Error}");
+}
+```
+
 
