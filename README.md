@@ -1075,4 +1075,44 @@ string formatted = PathUtilities.FormatBytes(1500);
 // Returns "1.46 KB"
 ```
 
+## CacheStrategyTests
+
+The `CacheStrategyTests` class contains unit tests for the `LruCacheStrategy` and `TimeBasedCacheStrategy` classes, covering public policy decisions (eviction/expiry selection) with boundary values.
+
+### Usage Example
+
+Within the `CacheStrategyTests` class, the following test method verifies the LRU eviction policy:
+
+```csharp
+[Fact]
+public async Task LruCacheStrategy_EvictsLeastRecentlyUsed_WhenCacheIsFull()
+{
+    // Arrange
+    const int maxSize = 2;
+    _lruLoggerMock.LogInformation("Starting LruCacheStrategy eviction test with max size {MaxSize}", maxSize);
+    var cache = new LruCacheStrategy(_lruLoggerMock, maxSize);
+
+    // Fill cache to capacity
+    await cache.SetAsync("key1", "value1");
+    await cache.SetAsync("key2", "value2");
+
+    // Access key1 to make it recently used
+    await cache.GetAsync<string>("key1");
+
+    // Add third item - should evict key2 (least recently used)
+    await cache.SetAsync("key3", "value3");
+
+    // Assert
+    var value1 = await cache.GetAsync<string>("key1");
+    var value2 = await cache.GetAsync<string>("key2");
+    var value3 = await cache.GetAsync<string>("key3");
+
+    value1.Should().Be("value1"); // Should still exist (recently used)
+    value2.Should().BeNull();     // Should be evicted (LRU)
+    value3.Should().Be("value3"); // Should exist (just added)
+
+    _lruLoggerMock.LogInformation("Completed LruCacheStrategy eviction test; key1={Key1}, key2={Key2}, key3={Key3}", value1, value2, value3);
+}
+```
+
 
