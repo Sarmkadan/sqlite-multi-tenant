@@ -903,6 +903,72 @@ if (analyzeResult.Error != null)
 }
 ```
 
+## ValidationRuleBuilderTests
+
+The `ValidationRuleBuilderTests` class contains unit tests for the `ValidationRuleBuilder<T>` class, which provides a fluent interface for building validation rules for model properties. It supports validation rules such as Required, Email, StringLength, Range, Pattern, Custom, and MustMatch, allowing developers to compose complex validation logic in a readable, chainable manner.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+
+// Example model to validate
+public class UserModel
+{
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+    public int? Age { get; set; }
+    public string? Password { get; set; }
+    public string? ConfirmPassword { get; set; }
+    public string? Phone { get; set; }
+    public string? Title { get; set; }
+    public decimal? Price { get; set; }
+    public int? Stock { get; set; }
+}
+
+// Example usage of ValidationRuleBuilder
+var user = new UserModel 
+{ 
+    Name = "John Doe", 
+    Email = "john@example.com", 
+    Age = 30,
+    Password = "SecurePass123!",
+    ConfirmPassword = "SecurePass123!",
+    Phone = "123-456-7890",
+    Title = "Software Engineer",
+    Price = 29.99m,
+    Stock = 100
+};
+
+var builder = new ValidationRuleBuilder<UserModel>();
+builder.Required("Name")
+       .Required("Email")
+       .Email("Email")
+       .StringLength("Name", minLength: 2, maxLength: 50)
+       .Range("Age", minValue: 18, maxValue: 100)
+       .StringLength("Password", minLength: 8)
+       .MustMatch("Password", "ConfirmPassword")
+       .Pattern("Phone", @"^\d{3}-\d{3}-\d{4}$")
+       .Range("Price", minValue: 0.01m, maxValue: 1000m)
+       .Range("Stock", minValue: 0);
+
+var result = builder.Validate(user);
+
+if (result.IsValid)
+{
+    Console.WriteLine("Validation passed!");
+}
+else
+{
+    Console.WriteLine("Validation failed:");
+    foreach (var error in result.Errors)
+    {
+        Console.WriteLine($"- {error.FieldName}: {error.Message}");
+    }
+}
+```
+
 ## TenantDatabaseMaintenanceServiceExtensions
 
 The `TenantDatabaseMaintenanceServiceExtensions` class provides extension methods for registering the `TenantDatabaseMaintenanceService` with the .NET dependency injection container. It offers two overloads of `AddTenantDatabaseMaintenanceService`: one for simple registration with default options, and one that accepts an `Action<TenantDatabaseMaintenanceOptions>` to customize maintenance behavior such as which operations are enabled, the interval between runs, per-operation timeouts, and the degree of parallelism.
