@@ -931,4 +931,62 @@ services.AddTenantDatabaseMaintenanceService(options =>
 });
 ```
 
+## EventPublisherTests
+
+The `EventPublisherTests` class contains unit tests for the `EventPublisher` class, validating the publish-subscribe pattern implementation, handler registration mechanisms, and error handling scenarios. These tests demonstrate how to properly use the event publishing system in a multi-tenant SQLite environment.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Events;
+using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
+
+// Create an event publisher (typically via dependency injection)
+var logger = new Logger<EventPublisher>(new LoggerFactory());
+var publisher = new EventPublisher(logger);
+
+// Define a custom event
+public class UserCreatedEvent : DomainEvent
+{
+    public string UserId { get; set; }
+    public string Email { get; set; }
+    
+    public UserCreatedEvent() : base(nameof(UserCreatedEvent)) { }
+}
+
+// Define an event handler
+public class UserCreatedEventHandler : IEventHandler<UserCreatedEvent>
+{
+    public bool WasCalled { get; private set; }
+    public UserCreatedEvent? LastEvent { get; private set; }
+    
+    public Task HandleAsync(UserCreatedEvent @event, CancellationToken cancellationToken)
+    {
+        WasCalled = true;
+        LastEvent = @event;
+        // Process the user creation (e.g., send welcome email)
+        return Task.CompletedTask;
+    }
+}
+
+// Subscribe to the event
+var handler = new UserCreatedEventHandler();
+publisher.Subscribe(handler);
+
+// Publish an event
+var userCreatedEvent = new UserCreatedEvent
+{
+    UserId = "user-123",
+    Email = "user@example.com"
+};
+
+await publisher.PublishAsync(userCreatedEvent);
+
+// Check handler invocation count
+int handlerCount = publisher.GetHandlerCount<UserCreatedEvent>();
+// handlerCount should be 1
+```
+
 
