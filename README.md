@@ -1728,3 +1728,24 @@ tests.UpdateBuilder_MultipleSetValues_BuildsCorrectQueryAndParameters();
 tests.UpdateBuilder_SetWithNull_StoresAsDBNull();
 tests.UpdateBuilder_NoWhereClause_ThrowsInvalidOperationException();
 ```
+
+## RateLimiterTests
+
+The `RateLimiterTests` class is an xUnit test fixture that verifies requests are allowed or rejected according to their configured limits, expired windows are cleared, and identifiers maintain independent counts. It also covers reset and status behavior, reset-time calculations, statistics, null-logger initialization, removal of old requests, and thread safety under rapid concurrent requests; the asynchronous test methods can be discovered by xUnit or invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests;
+
+await new RateLimiterTests().CheckLimitAsync_WithRequestsUnderLimit_ShouldAllow();
+await new RateLimiterTests().CheckLimitAsync_WithRequestsOverLimit_ShouldReject();
+await new RateLimiterTests().CheckLimitAsync_AfterWindowExpires_ShouldResetCount();
+await new RateLimiterTests().CheckLimitAsync_WithDifferentIdentifiers_ShouldMaintainIndependentLimits();
+await new RateLimiterTests().ResetAsync_ShouldClearRateLimit();
+await new RateLimiterTests().GetStatusAsync_ForExistingIdentifier_ShouldReturnCorrectStatus();
+await new RateLimiterTests().GetStatisticsAsync_ShouldReturnValidStatistics();
+await new RateLimiterTests().CheckLimitAsync_MultipleRapidRequests_ShouldBeThreadSafe();
+
+new RateLimiterTests().Service_Initialization_WithNullLogger_ShouldNotThrow();
+```
