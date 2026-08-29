@@ -1769,3 +1769,35 @@ await tests.SetQuotaAsync_PositiveMaxBytes_SetsMetadataCorrectly();
 await tests.GetQuotaAsync_WithValidQuotaMetadata_ReturnsParsedValue();
 await tests.ScanAllAsync_ReturnsTenantsNearOrOverQuota_SortedByUsage();
 ```
+
+## BackupExceptionExtensionsTests
+
+The `BackupExceptionExtensionsTests` class is an xUnit test fixture that verifies backup exceptions are classified as creation, verification, or restore failures using case-insensitive message matching. It also covers empty messages, null-exception validation, and error-detail formatting for populated, null, and empty backup and database identifiers; its public test methods can be discovered by xUnit or invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests;
+
+var tests = new BackupExceptionExtensionsTests();
+
+tests.IsCreationFailure_WithCreationMessage_ShouldReturnTrue();
+tests.IsCreationFailure_WithNonCreationMessage_ShouldReturnFalse();
+tests.IsCreationFailure_WithCaseInsensitiveCreationMessage_ShouldReturnTrue();
+tests.IsCreationFailure_WithEmptyMessage_ShouldReturnFalse();
+
+tests.IsVerificationFailure_WithVerificationMessage_ShouldReturnTrue();
+tests.IsVerificationFailure_WithNonVerificationMessage_ShouldReturnFalse();
+tests.IsVerificationFailure_WithCaseInsensitiveVerificationMessage_ShouldReturnTrue();
+tests.IsVerificationFailure_WithEmptyMessage_ShouldReturnFalse();
+
+tests.IsRestoreFailure_WithRestoreMessage_ShouldReturnTrue();
+tests.IsRestoreFailure_WithNonRestoreMessage_ShouldReturnFalse();
+tests.IsRestoreFailure_WithCaseInsensitiveRestoreMessage_ShouldReturnTrue();
+tests.IsRestoreFailure_WithEmptyMessage_ShouldReturnFalse();
+
+tests.GetErrorDetails_WithValidException_ShouldReturnFormattedString();
+tests.GetErrorDetails_WithNullBackupId_ShouldIncludeNullInOutput();
+tests.GetErrorDetails_WithNullDatabaseId_ShouldIncludeNullInOutput();
+tests.GetErrorDetails_WithEmptyStrings_ShouldReturnFormattedString();
+```
