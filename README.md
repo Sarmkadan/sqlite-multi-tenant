@@ -1642,3 +1642,23 @@ await tests.RotateBackupsAsync_ShouldDeleteBackupsOlderThanMaxAge();
 await tests.RotateBackupsAsync_ShouldEnforceBothAgeAndCountLimits();
 await tests.RotateBackupsAsync_ShouldHandleNonExistentDirectory();
 ```
+
+## BulkInsertBuilderTests
+
+The `BulkInsertBuilderTests` class is an xUnit test fixture that verifies `BulkInsertBuilder` constructor validation, null argument handling, fluent record addition, and SQL generation for empty, single, and multiple records. It also checks how generated SQL handles null values and escapes special characters; the test methods are normally discovered by a test runner but can be invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests.Operations;
+
+var tests = new BulkInsertBuilderTests();
+
+tests.BulkInsertBuilder_GenerateSqlStatements_WithEmptyRecords_ReturnsEmptyString();
+tests.BulkInsertBuilder_GenerateSqlStatements_WithSingleRecord_GeneratesCorrectSql();
+tests.BulkInsertBuilder_GenerateSqlStatements_WithMultipleRecords_GeneratesCorrectSql();
+tests.BulkInsertBuilder_GenerateSqlStatements_WithNullValues_HandlesCorrectly();
+tests.BulkInsertBuilder_GenerateSqlStatements_WithSpecialCharactersInValues_EscapesCorrectly();
+tests.BulkInsertBuilder_AddRecord_ReturnsBuilderForFluentInterface();
+tests.BulkInsertBuilder_AddRecords_ReturnsBuilderForFluentInterface();
+```
