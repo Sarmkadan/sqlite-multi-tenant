@@ -1607,3 +1607,21 @@ string result = await retryPolicy.ExecuteAsync(operation, "TestOperation");
 
 // Result should be "Success" and attempt should be 3 (1 initial + 2 retries)
 ```
+
+## BatchProcessorConcurrencyTests
+
+The `BatchProcessorConcurrencyTests` class verifies that batch processing preserves every item across sequential, concurrent, and very high-concurrency workloads. It also checks that empty inputs and result-free operations are handled correctly, while single, multiple, and all-item failures remain isolated and produce accurate statistics.
+
+### Usage Example
+
+The methods are normally discovered and run by xUnit, but they can also be invoked directly from asynchronous test harness code:
+
+```csharp
+using SqliteMultiTenant.Tests;
+
+var tests = new BatchProcessorConcurrencyTests();
+
+await tests.ProcessAsync_WithManyItems_ShouldPreserveAllItems();
+await tests.ProcessAsync_WithExceptionInOneBatch_ShouldNotCorruptOtherBatches();
+await tests.ProcessAsync_WithEmptyCollection_ShouldReturnEmptyResult();
+```
