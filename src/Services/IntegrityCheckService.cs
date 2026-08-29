@@ -74,7 +74,9 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         _logger.LogInformation("Starting integrity checks for {Count} tenants with parallelism {Parallelism}",
             tenantList.Count, maxDegreeOfParallelism);
 
-        return await CheckTenantsBatchAsync(tenantList, maxDegreeOfParallelism, cancellationToken);
+        var results = await CheckManyAsync(tenantList, maxDegreeOfParallelism, cancellationToken);
+        _logger.LogInformation("Completed integrity checks for {Count} tenants", results.Count);
+        return results;
     }
 
     /// <summary>
@@ -91,8 +93,10 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         _logger.LogInformation("Starting integrity checks for all {Count} tenants with parallelism {Parallelism}",
             tenants.Count, maxDegreeOfParallelism);
 
-        return await CheckTenantsBatchAsync(tenants.Select(t => t.TenantId).ToList(),
-            maxDegreeOfParallelism, cancellationToken);
+        var tenantIds = tenants.Select(t => t.TenantId).ToList();
+        var results = await CheckManyAsync(tenantIds, maxDegreeOfParallelism, cancellationToken);
+        _logger.LogInformation("Completed integrity checks for {Count} tenants", results.Count);
+        return results;
     }
 
     /// <summary>
@@ -109,8 +113,10 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         _logger.LogInformation("Starting integrity checks for {Count} active tenants with parallelism {Parallelism}",
             tenants.Count, maxDegreeOfParallelism);
 
-        return await CheckTenantsBatchAsync(tenants.Select(t => t.TenantId).ToList(),
-            maxDegreeOfParallelism, cancellationToken);
+        var tenantIds = tenants.Select(t => t.TenantId).ToList();
+        var results = await CheckManyAsync(tenantIds, maxDegreeOfParallelism, cancellationToken);
+        _logger.LogInformation("Completed integrity checks for {Count} tenants", results.Count);
+        return results;
     }
 
     /// <summary>
@@ -264,17 +270,20 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
     /// <summary>
     /// Executes integrity checks on a batch of tenants with configurable parallelism.
     /// </summary>
-    private async Task<List<TenantIntegrityCheckResult>> CheckTenantsBatchAsync(
-        IReadOnlyList<string> tenantIds,
+    private async Task<List<TenantIntegrityCheckResult>> CheckManyAsync(
+        IReadOnlyCollection<string> tenantIds,
         int maxDegreeOfParallelism,
         CancellationToken cancellationToken)
     {
+        // Validate and adjust maxDegreeOfParallelism to be at least 1
+        if (maxDegreeOfParallelism < 1)
+        {
+            maxDegreeOfParallelism = 1;
+        }
+
         var results = new List<TenantIntegrityCheckResult>(tenantIds.Count);
 
-        // Determine parallelism level
-        var parallelism = maxDegreeOfParallelism <= 1 ? 1 : maxDegreeOfParallelism;
-
-        if (parallelism <= 1)
+        if (maxDegreeOfParallelism <= 1)
         {
             // Sequential processing
             foreach (var tenantId in tenantIds)
@@ -307,7 +316,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
             var options = new ParallelOptions
             {
                 CancellationToken = cancellationToken,
-                MaxDegreeOfParallelism = parallelism
+                MaxDegreeOfParallelism = maxDegreeOfParallelism
             };
 
             var tenantTasks = tenantIds.Select(async tenantId =>
@@ -334,7 +343,6 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
             results.AddRange(tenantTasks.Select(t => t.Result));
         }
 
-        _logger.LogInformation("Completed integrity checks for {Count} tenants", results.Count);
         return results;
     }
 }
