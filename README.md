@@ -1749,3 +1749,23 @@ await new RateLimiterTests().CheckLimitAsync_MultipleRapidRequests_ShouldBeThrea
 
 new RateLimiterTests().Service_Initialization_WithNullLogger_ShouldNotThrow();
 ```
+
+## TenantQuotaEnforcerTests
+
+The `TenantQuotaEnforcerTests` class is an xUnit test fixture that verifies tenant quota checks for under-quota, boundary, over-quota, unlimited, near-quota, and missing-tenant scenarios. It also covers automatic suspension during enforcement, quota metadata validation and retrieval, and sorted scanning of tenants near or over their quotas; its public asynchronous test methods can be discovered by xUnit or invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests.Tenants;
+
+var tests = new TenantQuotaEnforcerTests();
+
+await tests.CheckQuotaAsync_UnderQuotaAllowed_ReturnsCorrectResult();
+await tests.CheckQuotaAsync_AtBoundaryQuota_ReturnsOverQuota();
+await tests.CheckQuotaAsync_NearQuotaWarning_ReturnsNearQuotaTrue();
+await tests.EnforceAsync_OverQuotaWithAutoSuspend_CallsSuspendTenant();
+await tests.SetQuotaAsync_PositiveMaxBytes_SetsMetadataCorrectly();
+await tests.GetQuotaAsync_WithValidQuotaMetadata_ReturnsParsedValue();
+await tests.ScanAllAsync_ReturnsTenantsNearOrOverQuota_SortedByUsage();
+```
