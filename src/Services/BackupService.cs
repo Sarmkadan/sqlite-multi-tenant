@@ -34,6 +34,10 @@ public sealed class BackupService : IBackupService {
         {
             return await _repository.GetByIdAsync(backupId, cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError("Error retrieving backup {BackupId}: {Message}", backupId, ex.Message);
@@ -49,6 +53,10 @@ public sealed class BackupService : IBackupService {
         try
         {
             return await _repository.GetByDatabaseAsync(databaseId, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -66,6 +74,10 @@ public sealed class BackupService : IBackupService {
         {
             return await _repository.GetCompletedBackupsAsync(databaseId, cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError("Error retrieving completed backups: {Message}", ex.Message);
@@ -81,6 +93,10 @@ public sealed class BackupService : IBackupService {
         try
         {
             return await _repository.GetLatestBackupAsync(databaseId, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -120,6 +136,10 @@ public sealed class BackupService : IBackupService {
             _logger.LogInformation("Backup created: {BackupId}", backup.BackupId);
             return createdBackup;
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError("Error creating backup: {Message}", ex.Message);
@@ -142,6 +162,10 @@ public sealed class BackupService : IBackupService {
             await _repository.UpdateAsync(backup, cancellationToken);
             _logger.LogInformation("Backup completed: {BackupId} ({SizeBytes} bytes in {DurationMs}ms)", backupId, sizeBytes, durationMs);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError("Error marking backup as completed: {Message}", ex.Message);
@@ -163,6 +187,10 @@ public sealed class BackupService : IBackupService {
             backup.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(backup, cancellationToken);
             _logger.LogError("Backup failed: {BackupId} - {ErrorMessage}", backupId, errorMessage);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -228,6 +256,10 @@ public sealed class BackupService : IBackupService {
 
             return verificationResult;
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (SQLiteException ex)
         {
             _logger.LogError("SQLite error verifying backup {BackupId}: {Message}", backupId, ex.Message);
@@ -260,6 +292,10 @@ public sealed class BackupService : IBackupService {
             await _repository.UpdateAsync(backup, cancellationToken);
             _logger.LogInformation("Backup expiration set: {BackupId} -> {ExpirationDate}", backupId, expirationDate);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError("Error setting backup expiration: {Message}", ex.Message);
@@ -272,6 +308,10 @@ public sealed class BackupService : IBackupService {
         try
         {
             return await _repository.GetExpiredBackupsAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -288,6 +328,10 @@ public sealed class BackupService : IBackupService {
         try
         {
             return await _repository.GetCountByDatabaseAsync(databaseId, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -309,6 +353,10 @@ public sealed class BackupService : IBackupService {
 
             await _repository.DeleteAsync(backupId, cancellationToken);
             _logger.LogInformation("Backup deleted: {BackupId}", backupId);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -334,6 +382,10 @@ public sealed class BackupService : IBackupService {
             backup.AddTag(tag);
             await _repository.UpdateAsync(backup, cancellationToken);
             _logger.LogInformation("Tag added to backup: {BackupId} -> {Tag}", backupId, tag);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
