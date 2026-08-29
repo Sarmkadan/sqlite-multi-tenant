@@ -72,6 +72,8 @@ int itemCount = helper.ExecuteInTenantContext(tenantId, () => {
 ```
 
 
+## RateLimitingMiddlewareValidation
+
 The `RateLimitingMiddlewareValidation` class provides validation utilities for rate limiting middleware components in multi-tenant SQLite environments. It offers methods to validate rate limiting configurations, middleware instances, and related rate limiting data structures, ensuring proper rate limit enforcement and configuration correctness.
 
 ### Usage Example
@@ -167,10 +169,10 @@ try
         maxBurst: 200,
         windowSize: TimeSpan.FromMinutes(1)
     );
-    
+
     // Validate configuration before use
     RateLimitingMiddlewareValidation.EnsureValid(rateLimitingMiddleware);
-    
+
     Console.WriteLine("Rate limiting middleware is properly configured and ready to use.");
 }
 catch (ArgumentException ex)
@@ -283,6 +285,7 @@ if (result is OkObjectResult filteredResult && filteredResult.Value is ApiRespon
 // Example 6: Get a setting with custom parsing
 result = controller.GetSettingAs<DateTime>("last_backup", (value, type) => DateTime.Parse(value));
 ```
+```
 
 
 ## ReportGeneratorJsonExtensions
@@ -316,6 +319,8 @@ else
     Console.WriteLine("Failed to deserialize performance metrics.");
 }
 ```
+```
+
 
 ## StringUtilitiesJsonExtensions
 
@@ -351,6 +356,8 @@ Console.WriteLine($"JSON with Hash: {jsonWithHash}");
 string jsonWithSnakeCase = originalValue.ToJsonWithSnakeCase();
 Console.WriteLine($"JSON with SnakeCase: {jsonWithSnakeCase}");
 ```
+```
+
 
 ## TenantIsolationEnforcementTests
 
@@ -369,6 +376,104 @@ using System.IO;
 using System.Threading.Tasks;
 using Xunit;
 
+/* 
+ * Example 1: Verify connection-per-tenant isolation
+ */
+public async Task TestConnectionPerTenantIsolation()
+{
+    // Create separate database files for each tenant
+    var pathA = Path.Combine(Path.GetTempPath(), $"tenant_a_{Guid.NewGuid():N}.db");
+    var pathB = Path.Combine(Path.GetTempPath(), $"tenant_b_{Guid.NewGuid():N}.db");
+    
+    // Create documents table in each tenant's database
+    await CreateDocumentsTableAsync(Conn(pathA));
+    await CreateDocumentsTableAsync(Conn(pathB));
+    
+    // Insert tenant-specific data
+    await InsertDocumentAsync(Conn(pathA), 1, "tenant-a", "A-invoice.pdf");
+    await InsertDocumentAsync(Conn(pathB), 1, "tenant-b", "B-invoice.pdf");
+    
+    // Tenant A can only see its own data
+    var tenantAData = await ReadTitlesForTenantAsync(Conn(pathA), "tenant-a");
+    Assert.Contains("A-invoice.pdf", tenantAData);
+    Assert.DoesNotContain("B-invoice.pdf", tenantAData);
+    
+    // Tenant B can only see its own data
+    var tenantBData = await ReadTitlesForTenantAsync(Conn(pathB), "tenant-b");
+    Assert.Contains("B-invoice.pdf", tenantBData);
+    Assert.DoesNotContain("A-invoice.pdf", tenantBData);
+}
+
+/* 
+ * Example 2: Verify shared-schema isolation
+ */
+public async Task TestSharedSchemaIsolation()
+{
+    var sharedPath = Path.Combine(Path.GetTempPath(), $"shared_{Guid.NewGuid():N}.db");
+    await CreateDocumentsTableAsync(Conn(sharedPath));
+    
+    // Insert data for multiple tenants in the same database
+    await InsertDocumentAsync(Conn(sharedPath), 1, "tenant-1", "Document 1");
+    await InsertDocumentAsync(Conn(sharedPath), 2, "tenant-2", "Document 2");
+    
+    // Each tenant only sees its own rows when querying with TenantId filter
+    var tenant1Data = await ReadTitlesForTenantAsync(Conn(sharedPath), "tenant-1");
+    Assert.Contains("Document 1", tenant1Data);
+    Assert.DoesNotContain("Document 2", tenant1Data);
+    
+    var tenant2Data = await ReadTitlesForTenantAsync(Conn(sharedPath), "tenant-2");
+    Assert.Contains("Document 2", tenant2Data);
+    Assert.DoesNotContain("Document 1", tenant2Data);
+}
+
+// Helper methods
+private static string Conn(string path) => $"Data Source={path};Version=3;";
+
+private static async Task CreateDocumentsTableAsync(string connectionString)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = @"
+        CREATE TABLE IF NOT EXISTS Documents (
+            Id INTEGER PRIMARY KEY,
+            TenantId TEXT NOT NULL,
+            Title TEXT NOT NULL
+        );";
+    await cmd.ExecuteNonQueryAsync();
+}
+
+private static async Task InsertDocumentAsync(string connectionString, int id, string tenantId, string title)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "INSERT INTO Documents (Id, TenantId, Title) VALUES (@id, @tid, @title)";
+    cmd.Parameters.AddWithValue("@id", id);
+    cmd.Parameters.AddWithValue("@tid", tenantId);
+    cmd.Parameters.AddWithValue("@title", title);
+    await cmd.ExecuteNonQueryAsync();
+}
+
+private static async Task System.Collections.Generic.List<string> ReadTitlesForTenantAsync(string connectionString, string tenantId)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "SELECT Title FROM Documents WHERE TenantId = @tid ORDER BY Id";
+    cmd.Parameters.AddWithValue("@tid", tenantId);
+    
+    var titles = new System.Collections.Generic.List<string>();
+    using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        titles.Add(reader.GetString(0));
+    }
+    return titles;
+}
+```
+
+
 ## TenantNameValidatorTestsExtensions
 
 The `TenantNameValidatorTestsExtensions` class provides extension methods for testing tenant name validation logic. It includes methods to verify that tenant names are correctly converted to tenant IDs and to validate both valid and invalid tenant name scenarios.
@@ -404,40 +509,7 @@ foreach (var (tenantName, expectedTenantId) in validMappings)
 }
 ```
 
-## TenantNameValidatorTestsExtensions
 
-The `TenantNameValidatorTestsExtensions` class provides extension methods for testing tenant name validation logic. It includes methods to verify that tenant names are correctly converted to tenant IDs and to validate both valid and invalid tenant name scenarios.
-
-### Usage Example
-
-```csharp
-using SqliteMultiTenant.Validation;
-using System;
-using System.Linq;
-
-// Example 1: Test that a valid tenant name generates the expected tenant ID
-"MyTenant".ShouldGenerateTenantId("mytenant");
-
-// Example 2: Verify that a tenant name is considered valid
-"valid-tenant-name".ShouldBeValidTenantId();
-
-// Example 3: Verify that an invalid tenant name produces the expected error
-"INVALID tenant!".ShouldBeInvalidTenantIdWithError("Tenant name contains invalid characters");
-
-// Example 4: Get all invalid tenant IDs with their expected errors
-var invalidTenantIds = TenantNameValidatorTestsExtensions.GetInvalidTenantIds();
-foreach (var (tenantId, expectedError) in invalidTenantIds)
-{
-    Console.WriteLine($"Tenant ID: {tenantId}, Expected Error: {expectedError}");
-}
-
-// Example 5: Get all valid tenant name mappings with their expected tenant IDs
-var validMappings = TenantNameValidatorTestsExtensions.GetValidTenantNameMappings();
-foreach (var (tenantName, expectedTenantId) in validMappings)
-{
-    Console.WriteLine($"Tenant Name: {tenantName} -> Tenant ID: {expectedTenantId}");
-}
-```
 
 // Example 1: Verify connection-per-tenant isolation
 public async Task TestConnectionPerTenantIsolation()
@@ -532,6 +604,138 @@ private static async Task System.Collections.Generic.List<string> ReadTitlesForT
 }
 ```
 
+
+## TenantNameValidatorTestsExtensions
+
+The `TenantNameValidatorTestsExtensions` class provides extension methods for testing tenant name validation logic. It includes methods to verify that tenant names are correctly converted to tenant IDs and to validate both valid and invalid tenant name scenarios.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+using System;
+using System.Linq;
+
+// Example 1: Test that a valid tenant name generates the expected tenant ID
+"MyTenant".ShouldGenerateTenantId("mytenant");
+
+// Example 2: Verify that a tenant name is considered valid
+"valid-tenant-name".ShouldBeValidTenantId();
+
+// Example 3: Verify that an invalid tenant name produces the expected error
+"INVALID tenant!".ShouldBeInvalidTenantIdWithError("Tenant name contains invalid characters");
+
+// Example 4: Get all invalid tenant IDs with their expected errors
+var invalidTenantIds = TenantNameValidatorTestsExtensions.GetInvalidTenantIds();
+foreach (var (tenantId, expectedError) in invalidTenantIds)
+{
+    Console.WriteLine($"Tenant ID: {tenantId}, Expected Error: {expectedError}");
+}
+
+// Example 5: Get all valid tenant name mappings with their expected tenant IDs
+var validMappings = TenantNameValidatorTestsExtensions.GetValidTenantNameMappings();
+foreach (var (tenantName, expectedTenantId) in validMappings)
+{
+    Console.WriteLine($"Tenant Name: {tenantName} -> Tenant ID: {expectedTenantId}");
+}
+```
+
+
+
+// Example 1: Verify connection-per-tenant isolation
+public async Task TestConnectionPerTenantIsolation()
+{
+    // Create separate database files for each tenant
+    var pathA = Path.Combine(Path.GetTempPath(), $"tenant_a_{Guid.NewGuid():N}.db");
+    var pathB = Path.Combine(Path.GetTempPath(), $"tenant_b_{Guid.NewGuid():N}.db");
+    
+    // Create documents table in each tenant's database
+    await CreateDocumentsTableAsync(Conn(pathA));
+    await CreateDocumentsTableAsync(Conn(pathB));
+    
+    // Insert tenant-specific data
+    await InsertDocumentAsync(Conn(pathA), 1, "tenant-a", "A-invoice.pdf");
+    await InsertDocumentAsync(Conn(pathB), 1, "tenant-b", "B-invoice.pdf");
+    
+    // Tenant A can only see its own data
+    var tenantAData = await ReadTitlesForTenantAsync(Conn(pathA), "tenant-a");
+    Assert.Contains("A-invoice.pdf", tenantAData);
+    Assert.DoesNotContain("B-invoice.pdf", tenantAData);
+    
+    // Tenant B can only see its own data
+    var tenantBData = await ReadTitlesForTenantAsync(Conn(pathB), "tenant-b");
+    Assert.Contains("B-invoice.pdf", tenantBData);
+    Assert.DoesNotContain("A-invoice.pdf", tenantBData);
+}
+
+// Example 2: Verify shared-schema isolation
+public async Task TestSharedSchemaIsolation()
+{
+    var sharedPath = Path.Combine(Path.GetTempPath(), $"shared_{Guid.NewGuid():N}.db");
+    await CreateDocumentsTableAsync(Conn(sharedPath));
+    
+    // Insert data for multiple tenants in the same database
+    await InsertDocumentAsync(Conn(sharedPath), 1, "tenant-1", "Document 1");
+    await InsertDocumentAsync(Conn(sharedPath), 2, "tenant-2", "Document 2");
+    
+    // Each tenant only sees its own rows when querying with TenantId filter
+    var tenant1Data = await ReadTitlesForTenantAsync(Conn(sharedPath), "tenant-1");
+    Assert.Contains("Document 1", tenant1Data);
+    Assert.DoesNotContain("Document 2", tenant1Data);
+    
+    var tenant2Data = await ReadTitlesForTenantAsync(Conn(sharedPath), "tenant-2");
+    Assert.Contains("Document 2", tenant2Data);
+    Assert.DoesNotContain("Document 1", tenant2Data);
+}
+
+// Helper methods
+private static string Conn(string path) => $"Data Source={path};Version=3;";
+
+private static async Task CreateDocumentsTableAsync(string connectionString)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = @"
+        CREATE TABLE IF NOT EXISTS Documents (
+            Id INTEGER PRIMARY KEY,
+            TenantId TEXT NOT NULL,
+            Title TEXT NOT NULL
+        );";
+    await cmd.ExecuteNonQueryAsync();
+}
+
+private static async Task InsertDocumentAsync(string connectionString, int id, string tenantId, string title)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "INSERT INTO Documents (Id, TenantId, Title) VALUES (@id, @tid, @title)";
+    cmd.Parameters.AddWithValue("@id", id);
+    cmd.Parameters.AddWithValue("@tid", tenantId);
+    cmd.Parameters.AddWithValue("@title", title);
+    await cmd.ExecuteNonQueryAsync();
+}
+
+private static async Task System.Collections.Generic.List<string> ReadTitlesForTenantAsync(string connectionString, string tenantId)
+{
+    using var conn = new SQLiteConnection(connectionString);
+    await conn.OpenAsync();
+    using var cmd = conn.CreateCommand();
+    cmd.CommandText = "SELECT Title FROM Documents WHERE TenantId = @tid ORDER BY Id";
+    cmd.Parameters.AddWithValue("@tid", tenantId);
+    
+    var titles = new System.Collections.Generic.List<string>();
+    using var reader = await cmd.ExecuteReaderAsync();
+    while (await reader.ReadAsync())
+    {
+        titles.Add(reader.GetString(0));
+    }
+    return titles;
+}
+```
+
+
 ## DataValidatorExtensions
 
 The `DataValidatorExtensions` class provides a comprehensive set of extension methods for validating various data types and collections. It includes validation methods for strings, collections, and common data formats like phone numbers, dates, times, IP addresses, and credit cards. These validators help ensure data integrity by checking length constraints, format validity, and value ranges.
@@ -594,7 +798,7 @@ if (!emailValidation.IsValid)
 {
     throw new ArgumentException($"Invalid email: {string.Join(", ", emailValidation.Errors)}");
 }
-
+```
 
 
 ## TenantSettingsEdgeCaseTestsExtensions
@@ -641,6 +845,8 @@ bool? nullableBool = testInstance.GetNullableValue<bool>(boolSettings);
 // 8. Create a collection of settings for batch testing
 IReadOnlyList<TenantSettings> settingsCollection = testInstance.CreateSettingsCollection(count: 5);
 ```
+```
+
 
 ## TenantSizeReportRecord
 
@@ -697,6 +903,8 @@ Console.WriteLine(TenantSizeReportRecord.GetTextTableFooter());
 string summary = TenantSizeReportRecord.GetSummaryReport(records);
 Console.WriteLine(summary);
 ```
+```
+
 
 ## TenantIntegrityCheckResult
 
@@ -739,6 +947,8 @@ if (!failedResult.IsOk)
     Console.WriteLine(failedResult.IntegrityOutput);
 }
 ```
+```
+
 
 ## TenantDatabaseMaintenanceService
 
@@ -781,6 +991,7 @@ TenantMaintenanceResult fullResult = await service.PerformFullMaintenanceAsync("
 List<TenantMaintenanceResult> fullResults = await service.PerformFullMaintenanceOnAllAsync(cancellationToken);
 Console.WriteLine($"Completed full maintenance on {fullResults.Count} tenant databases.");
 ```
+```
 
 
 ## TenantSizeReportService
@@ -816,6 +1027,7 @@ Console.WriteLine(table);
 string completeReport = await service.GenerateCompleteReportAsync(cancellationToken);
 Console.WriteLine(completeReport);
 ```
+```
 
 
 ## BackupVerificationResult
@@ -850,6 +1062,8 @@ if (okResult.IsValid)
     Console.WriteLine($"Pages: {okResult.PageCount} x {okResult.PageSizeBytes} bytes");
 }
 ```
+```
+
 
 ## TenantMaintenanceResult
 
@@ -902,6 +1116,8 @@ if (analyzeResult.Error != null)
     Console.WriteLine($"Operation failed for {analyzeResult.TenantName} ({analyzeResult.TenantId}): {analyzeResult.Error}");
 }
 ```
+```
+
 
 ## ValidationRuleBuilderTests
 
@@ -968,6 +1184,8 @@ else
     }
 }
 ```
+```
+
 
 ## TenantDatabaseMaintenanceServiceExtensions
 
@@ -996,6 +1214,8 @@ services.AddTenantDatabaseMaintenanceService(options =>
     options.DegreeOfParallelism = 2;     // Process two tenants in parallel
 });
 ```
+```
+
 
 ## SqlCipherConnectionBuilderTests
 
@@ -1031,6 +1251,8 @@ await connection2.CloseAsync();
 // Clean up
 File.Delete(dbPath);
 ```
+```
+
 
 ## EventPublisherTests
 
@@ -1089,6 +1311,8 @@ await publisher.PublishAsync(userCreatedEvent);
 int handlerCount = publisher.GetHandlerCount<UserCreatedEvent>();
 // handlerCount should be 1
 ```
+```
+
 
 ## BackupExceptionJsonExtensionsTests
 
@@ -1130,6 +1354,8 @@ catch (NotSupportedException)
     Console.WriteLine("TryFromJson also throws NotSupportedException for the same reason.");
 }
 ```
+```
+
 
 ## StringUtilitiesTests
 
@@ -1172,6 +1398,8 @@ string truncated = StringUtilities.TruncateWithEllipsis("This is a very long str
 // 7. Generate random string
 string random = StringUtilities.GenerateRandomString(8); // 8-character alphanumeric string
 ```
+```
+
 
 ## PathUtilitiesTests
 
@@ -1216,6 +1444,8 @@ string relative = PathUtilities.MakeRelativePath("/home/user", "/home/user/docum
 string formatted = PathUtilities.FormatBytes(1500);
 // Returns "1.46 KB"
 ```
+```
+
 
 ## CacheStrategyTests
 
@@ -1256,6 +1486,8 @@ public async Task LruCacheStrategy_EvictsLeastRecentlyUsed_WhenCacheIsFull()
     _lruLoggerMock.LogInformation("Completed LruCacheStrategy eviction test; key1={Key1}, key2={Key2}, key3={Key3}", value1, value2, value3);
 }
 ```
+```
+
 
 ## EncryptionServiceTests
 
@@ -1302,5 +1534,41 @@ Console.WriteLine($"Hash: {hash}");
 bool isValid = encryptionService.VerifyHash(password, hash);
 Console.WriteLine($"Password valid: {isValid}");
 ```
+```
 
 
+## DataMapperTests
+
+The `DataMapperTests` class contains unit tests for the `DataMapper` class, verifying its ability to map properties between source and target objects, including handling nulls, case insensitivity, and collections.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Utilities;
+using Microsoft.Extensions.Logging.Abstractions;
+using System;
+
+// Define simple source and target types for demonstration
+public class Source
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public double? Value { get; set; }
+}
+
+public class Target
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public double Value { get; set; }
+}
+
+// Example usage
+var source = new Source { Id = 1, Name = "Test", Value = 42.5 };
+var mapper = new DataMapper(NullLogger<DataMapper>.Instance);
+var target = mapper.Map<Source, Target>(source);
+
+// target.Id should be 1
+// target.Name should be "Test"
+// target.Value should be 42.5
+```
