@@ -1801,3 +1801,26 @@ tests.GetErrorDetails_WithNullBackupId_ShouldIncludeNullInOutput();
 tests.GetErrorDetails_WithNullDatabaseId_ShouldIncludeNullInOutput();
 tests.GetErrorDetails_WithEmptyStrings_ShouldReturnFormattedString();
 ```
+
+## TenantNotFoundExceptionTests
+
+The `TenantNotFoundExceptionTests` class is an xUnit test fixture that verifies each `TenantNotFoundException` constructor preserves the expected message, tenant ID, and inner exception. It covers null, empty, whitespace-padded, special-character, and long tenant IDs, as well as custom messages; its public test methods are normally discovered by xUnit but can also be invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests;
+
+var tests = new TenantNotFoundExceptionTests();
+
+tests.Constructor_WithTenantId_ShouldSetMessageAndTenantId();
+tests.Constructor_WithNullTenantId_ShouldSetMessageAndNullTenantId();
+tests.Constructor_WithEmptyTenantId_ShouldSetMessageAndEmptyTenantId();
+tests.Constructor_WithTenantIdAndInnerException_ShouldSetProperties();
+tests.Constructor_WithNullTenantIdAndInnerException_ShouldSetProperties();
+tests.Constructor_WithMessageTenantIdAndInnerException_ShouldSetAllProperties();
+tests.Constructor_WithCustomMessageNullTenantIdAndNullInnerException_ShouldSetProperties();
+tests.Constructor_WithWhitespaceTenantId_ShouldSetMessageAndTenantId();
+tests.Constructor_WithSpecialCharactersInTenantId_ShouldSetMessageAndTenantId();
+tests.Constructor_WithLongTenantId_ShouldSetMessageAndTenantId();
+```
