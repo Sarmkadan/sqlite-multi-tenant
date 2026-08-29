@@ -1851,3 +1851,28 @@ tests.ToJson_ProducesValidJson();
 tests.ToJson_ProducesCamelCaseJson();
 tests.ToJson_FromJson_JsonIsValid();
 ```
+
+## EncryptionKeyManagerTests
+
+The `EncryptionKeyManagerTests` class is an xUnit test fixture that verifies tenant encryption keys can be generated, cached, retrieved by active status or version, rotated, and deleted. It also covers version increments, deactivation of previous keys, missing tenants, and invalid tenant IDs; xUnit normally discovers its public test methods, while a test harness can invoke them directly and dispose the fixture to remove its temporary key store.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests.Security;
+
+using var tests = new EncryptionKeyManagerTests();
+
+await tests.GenerateKeyAsync_WithValidTenantId_ReturnsNewKeyWithVersion1();
+await tests.GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory();
+await tests.GenerateKeyAsync_WithEmptyTenantId_ThrowsArgumentException();
+await tests.GetActiveKeyAsync_ForExistingTenant_ReturnsActiveKey();
+await tests.GetActiveKeyAsync_ForNonExistentTenant_ReturnsNull();
+await tests.RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld();
+await tests.RotateKeyAsync_ForNonExistentTenant_CreatesFirstKey();
+await tests.RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime();
+await tests.GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey();
+await tests.GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull();
+await tests.DeleteTenantKeysAsync_RemovesAllKeysForTenant();
+await tests.DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue();
+```
