@@ -1625,3 +1625,20 @@ await tests.ProcessAsync_WithManyItems_ShouldPreserveAllItems();
 await tests.ProcessAsync_WithExceptionInOneBatch_ShouldNotCorruptOtherBatches();
 await tests.ProcessAsync_WithEmptyCollection_ShouldReturnEmptyResult();
 ```
+
+## BackupRotationManagerTests
+
+The `BackupRotationManagerTests` class verifies that backup rotation enforces count and age limits, including the cutoff-date boundary and same-day backups. It also covers empty or missing directories, an exact count limit, combined retention rules, and zero-valued policy settings. The methods are xUnit tests and can be discovered by a test runner or invoked directly from asynchronous test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests.BackgroundWorkers;
+
+var tests = new BackupRotationManagerTests();
+
+await tests.RotateBackupsAsync_ShouldKeepExactlyMaxBackupCount_WhenExceedingCount();
+await tests.RotateBackupsAsync_ShouldDeleteBackupsOlderThanMaxAge();
+await tests.RotateBackupsAsync_ShouldEnforceBothAgeAndCountLimits();
+await tests.RotateBackupsAsync_ShouldHandleNonExistentDirectory();
+```
