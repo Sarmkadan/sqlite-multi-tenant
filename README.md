@@ -1682,3 +1682,28 @@ tests.GetMigrationDetails_WithNonNullMigrationIdAndVersion_ShouldReturnFormatted
 tests.GetMigrationDetails_WithBothNullMigrationIdAndVersion_ShouldReturnNullForBoth();
 tests.GetMigrationDetails_FromExecutionFailedException_ShouldReturnCorrectDetails();
 ```
+
+## MigrationExceptionTests
+
+The `MigrationExceptionTests` class is an xUnit test fixture that verifies `MigrationException` constructors preserve messages, migration identifiers, versions, and inner exceptions. It also covers the `ExecutionFailed`, `RollbackFailed`, `NotFound`, and `AlreadyApplied` factory methods, including empty identifiers, empty versions, and null values; its public test methods are normally discovered by xUnit but can also be invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests;
+
+var tests = new MigrationExceptionTests();
+
+tests.Constructor_WithMessage_ShouldSetMessage();
+tests.Constructor_WithMessageAndInnerException_ShouldSetProperties();
+tests.Constructor_WithAllParameters_ShouldSetAllProperties();
+tests.Constructor_WithNullVersion_ShouldHandleNullVersion();
+tests.ExecutionFailed_ShouldCreateProperException();
+tests.ExecutionFailed_WithEmptyMigrationId_ShouldCreateException();
+tests.RollbackFailed_ShouldCreateProperException();
+tests.RollbackFailed_WithNullInnerException_ShouldCreateException();
+tests.NotFound_ShouldCreateProperException();
+tests.NotFound_WithEmptyMigrationId_ShouldCreateException();
+tests.AlreadyApplied_ShouldCreateProperException();
+tests.AlreadyApplied_WithEmptyVersion_ShouldCreateException();
+```
