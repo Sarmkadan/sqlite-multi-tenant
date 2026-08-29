@@ -1572,3 +1572,38 @@ var target = mapper.Map<Source, Target>(source);
 // target.Name should be "Test"
 // target.Value should be 42.5
 ```
+
+## OperationRetryPolicyTests
+
+The `OperationRetryPolicyTests` class contains unit tests for the `OperationRetryPolicy` class, verifying retry behavior for transient and non-transient exceptions, custom configurations, and edge cases such as null operations and exhausted retries.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using SqliteMultiTenant.Utilities;
+using System;
+using System.Threading.Tasks;
+
+// Create a logger substitute and retry policy with 3 retries, 10ms initial delay, 2.0 backoff multiplier
+var logger = Substitute.For<ILogger<OperationRetryPolicy>>();
+var retryPolicy = new OperationRetryPolicy(logger, maxRetries: 3, initialDelayMs: 10, backoffMultiplier: 2.0);
+
+// Define an operation that fails twice then succeeds
+int attempt = 0;
+Task<string> operation()
+{
+    attempt++;
+    if (attempt < 3)
+    {
+        throw new TimeoutException("Simulated timeout");
+    }
+    return Task.FromResult("Success");
+}
+
+// Execute the operation with retry policy
+string result = await retryPolicy.ExecuteAsync(operation, "TestOperation");
+
+// Result should be "Success" and attempt should be 3 (1 initial + 2 retries)
+```
