@@ -1824,3 +1824,30 @@ tests.Constructor_WithWhitespaceTenantId_ShouldSetMessageAndTenantId();
 tests.Constructor_WithSpecialCharactersInTenantId_ShouldSetMessageAndTenantId();
 tests.Constructor_WithLongTenantId_ShouldSetMessageAndTenantId();
 ```
+
+## EncryptionKeyManagerJsonExtensionsTests
+
+The `EncryptionKeyManagerJsonExtensionsTests` class is an xUnit test fixture that verifies `EncryptionKeyManager` JSON serialization produces valid compact or indented JSON and uses camel-case naming. It also covers round-trip parsing, null arguments, empty or malformed input, and the non-throwing `TryFromJson` failure path; xUnit discovers these public methods automatically, but a test harness can invoke them directly.
+
+### Usage Example
+
+```csharp
+var tests = new EncryptionKeyManagerJsonExtensionsTests();
+
+tests.ToJson_WithValidKeyManager_ReturnsJsonString();
+tests.ToJson_WithIndentedTrue_ReturnsJson();
+tests.ToJson_WithIndentedFalse_ReturnsCompactJson();
+tests.ToJson_WithNullValue_ThrowsArgumentNullException();
+
+tests.FromJson_WithEmptyOrWhitespaceJson_ReturnsNull(" ");
+tests.FromJson_WithNullJson_ThrowsArgumentNullException();
+tests.FromJson_WithInvalidJson_ThrowsException();
+
+tests.TryFromJson_WithEmptyOrWhitespaceJson_ReturnsFalseAndNull("\t");
+tests.TryFromJson_WithInvalidJson_ReturnsFalseAndNull();
+tests.TryFromJson_WithNullJson_ThrowsArgumentNullException();
+
+tests.ToJson_ProducesValidJson();
+tests.ToJson_ProducesCamelCaseJson();
+tests.ToJson_FromJson_JsonIsValid();
+```
