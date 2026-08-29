@@ -1662,3 +1662,23 @@ tests.BulkInsertBuilder_GenerateSqlStatements_WithSpecialCharactersInValues_Esca
 tests.BulkInsertBuilder_AddRecord_ReturnsBuilderForFluentInterface();
 tests.BulkInsertBuilder_AddRecords_ReturnsBuilderForFluentInterface();
 ```
+
+## MigrationExceptionExtensionsTests
+
+The `MigrationExceptionExtensionsTests` class is an xUnit test fixture that verifies migration exceptions can be classified as execution failures or already-applied versions regardless of message casing. It also checks migration-detail formatting for populated, null, and empty identifiers and versions, along with null-exception argument validation; the public test methods are normally discovered by xUnit but can also be invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests;
+
+var tests = new MigrationExceptionExtensionsTests();
+
+tests.IsExecutionFailure_WithExecutionFailedMessage_ShouldReturnTrue();
+tests.IsExecutionFailure_WithNonExecutionFailedMessage_ShouldReturnFalse();
+tests.IsVersionAlreadyApplied_WithAlreadyAppliedMessage_ShouldReturnTrue();
+tests.IsVersionAlreadyApplied_WithNonAlreadyAppliedMessage_ShouldReturnFalse();
+tests.GetMigrationDetails_WithNonNullMigrationIdAndVersion_ShouldReturnFormattedString();
+tests.GetMigrationDetails_WithBothNullMigrationIdAndVersion_ShouldReturnNullForBoth();
+tests.GetMigrationDetails_FromExecutionFailedException_ShouldReturnCorrectDetails();
+```
