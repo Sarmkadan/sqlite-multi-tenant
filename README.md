@@ -1707,3 +1707,24 @@ tests.NotFound_WithEmptyMigrationId_ShouldCreateException();
 tests.AlreadyApplied_ShouldCreateProperException();
 tests.AlreadyApplied_WithEmptyVersion_ShouldCreateException();
 ```
+
+## InsertUpdateBuilderTests
+
+The `InsertUpdateBuilderTests` class is an xUnit test fixture that verifies insert and update builders generate the expected SQL and parameter collections for single, multiple, and null values. It also checks identifier quoting, validates table, column, and `WHERE` inputs, and ensures incomplete statements cannot be built; the methods are normally discovered by xUnit but can also be invoked directly from test harness code.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Tests.DataOperations;
+
+var tests = new InsertUpdateBuilderTests();
+
+tests.InsertBuilder_SingleValue_BuildsCorrectQueryAndParameters();
+tests.InsertBuilder_MultipleValues_BuildsCorrectQueryAndParameters();
+tests.InsertBuilder_ValueWithNull_StoresAsDBNull();
+tests.InsertBuilder_SpecialColumnNames_QuotesColumnsCorrectly();
+tests.UpdateBuilder_SingleSetValue_BuildsCorrectQueryAndParameters();
+tests.UpdateBuilder_MultipleSetValues_BuildsCorrectQueryAndParameters();
+tests.UpdateBuilder_SetWithNull_StoresAsDBNull();
+tests.UpdateBuilder_NoWhereClause_ThrowsInvalidOperationException();
+```
