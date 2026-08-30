@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -122,6 +123,46 @@ public sealed class TenantQuotaEnforcer
         }
 
         return result;
+    }
+
+    /// <summary>Checks quota usage for all tenants with bounded parallelism, ordered by usage percentage descending.</summary>
+    public async Task<List<QuotaCheckResult>> CheckAllTenantsAsync(
+        int maxDegreeOfParallelism = 4,
+        CancellationToken cancellationToken = default)
+    {
+        if (maxDegreeOfParallelism < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(maxDegreeOfParallelism),
+                maxDegreeOfParallelism,
+                "Maximum degree of parallelism must be at least 1.");
+        }
+
+        var tenants = await _tenantService.GetAllTenantsAsync(cancellationToken);
+        var results = new ConcurrentBag<QuotaCheckResult>();
+
+        await Parallel.ForEachAsync(
+            tenants,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = maxDegreeOfParallelism,
+                CancellationToken = cancellationToken
+            },
+            async (tenant, token) =>
+            {
+                results.Add(await CheckQuotaAsync(tenant.TenantId, token));
+            });
+
+        return results
+            .OrderByDescending(result => result.UsagePercent)
+            .ToList();
+    }
+
+    /// <summary>Returns all tenants whose current usage meets or exceeds their configured quota.</summary>
+    public async Task<List<QuotaCheckResult>> GetTenantsOverQuotaAsync(CancellationToken cancellationToken = default)
+    {
+        var results = await CheckAllTenantsAsync(cancellationToken: cancellationToken);
+        return results.Where(result => result.IsOverQuota).ToList();
     }
 
     /// <summary>Scans all active tenants and returns results for tenants that are near or over quota, worst first.</summary>
