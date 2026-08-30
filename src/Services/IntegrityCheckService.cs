@@ -19,6 +19,10 @@ namespace SqliteMultiTenant.Services;
 /// </summary>
 public sealed class IntegrityCheckService : IIntegrityCheckService
 {
+    private const int DefaultMaxDegreeOfParallelism = 4;
+    private const int DefaultTimeoutSeconds = 60;
+    private const string IntegrityCheckPragma = "PRAGMA integrity_check;";
+
     private readonly ITenantService _tenantService;
     private readonly ILogger<IntegrityCheckService> _logger;
     private readonly TimeSpan _defaultTimeout;
@@ -29,7 +33,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
     {
         _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _defaultTimeout = TimeSpan.FromSeconds(60); // 1 minute per database for integrity check
+        _defaultTimeout = TimeSpan.FromSeconds(DefaultTimeoutSeconds); // 1 minute per database for integrity check
     }
 
     /// <summary>
@@ -64,7 +68,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
     /// <returns>List of integrity check results for all specified tenants.</returns>
     public async Task<List<TenantIntegrityCheckResult>> CheckTenantsIntegrityAsync(
         IEnumerable<string> tenantIds,
-        int maxDegreeOfParallelism = 4,
+        int maxDegreeOfParallelism = DefaultMaxDegreeOfParallelism,
         CancellationToken cancellationToken = default)
     {
         if (tenantIds is null)
@@ -86,7 +90,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of integrity check results for all tenants.</returns>
     public async Task<List<TenantIntegrityCheckResult>> CheckAllTenantsIntegrityAsync(
-        int maxDegreeOfParallelism = 4,
+        int maxDegreeOfParallelism = DefaultMaxDegreeOfParallelism,
         CancellationToken cancellationToken = default)
     {
         var tenants = await _tenantService.GetAllTenantsAsync(cancellationToken);
@@ -106,7 +110,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of integrity check results for active tenants only.</returns>
     public async Task<List<TenantIntegrityCheckResult>> CheckActiveTenantsIntegrityAsync(
-        int maxDegreeOfParallelism = 4,
+        int maxDegreeOfParallelism = DefaultMaxDegreeOfParallelism,
         CancellationToken cancellationToken = default)
     {
         var tenants = await _tenantService.GetActiveTenantsAsync(cancellationToken);
@@ -193,7 +197,7 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         await using var connection = new SQLiteConnection($"Data Source={tenant.DatabasePath};");
         await connection.OpenAsync(cancellationToken);
 
-        using var command = new SQLiteCommand("PRAGMA integrity_check;", connection);
+        using var command = new SQLiteCommand(IntegrityCheckPragma, connection);
         command.CommandTimeout = (int)_defaultTimeout.TotalSeconds;
 
         // Execute the command and read the result
