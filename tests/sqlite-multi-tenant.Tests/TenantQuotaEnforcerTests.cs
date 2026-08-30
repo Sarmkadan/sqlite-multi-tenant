@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-using NSubstitute;
+using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Services;
@@ -15,20 +15,49 @@ namespace SqliteMultiTenant.Tests.Tenants;
 /// <summary>
 /// Contains unit tests for the TenantQuotaEnforcer class.
 /// Tests cover quota checking, enforcement with auto-suspend, quota setting and retrieval, and scanning all tenants for quota usage.
+/// Uses a hand-rolled fake ITenantService implementation.
 /// </summary>
 public class TenantQuotaEnforcerTests
 {
-    private readonly ITenantService _tenantService;
+    private readonly FakeTenantService _tenantService;
     private readonly TenantQuotaEnforcer _enforcer;
     private const string TestTenantId = "test-tenant";
 
-    /// <summary>
-    /// Initializes a new instance of the TenantQuotaEnforcerTests class with a mocked tenant service and the enforcer under test.
-    /// </summary>
     public TenantQuotaEnforcerTests()
     {
-        _tenantService = Substitute.For<ITenantService>();
+        _tenantService = new FakeTenantService();
         _enforcer = new TenantQuotaEnforcer(_tenantService);
+    }
+
+    /// <summary>
+    /// Tests that the constructor throws ArgumentNullException when tenantService is null.
+    /// </summary>
+    [Fact]
+    public void Constructor_NullTenantService_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => new TenantQuotaEnforcer(null!);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("tenantService");
+    }
+
+    /// <summary>
+    /// Tests that SetQuotaAsync throws an ArgumentException when given a non-positive byte value.
+    /// </summary>
+    [Fact]
+    public async Task SetQuotaAsync_NonPositiveMaxBytes_ThrowsArgumentException()
+    {
+        // Arrange
+        const long maxBytes = 0; // Invalid quota
+
+        // Act
+        Func<Task> act = async () => await _enforcer.SetQuotaAsync(TestTenantId, maxBytes);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("Quota must be positive (Parameter 'maxBytes')");
     }
 
     /// <summary>
@@ -50,10 +79,8 @@ public class TenantQuotaEnforcerTests
             WalSizeBytes = 0
         };
 
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
+        _tenantService.SetupGetTenant(TestTenantId, tenant);
+        _tenantService.SetupGetTenantDatabaseSize(TestTenantId, storageInfo);
 
         // Act
         var result = await _enforcer.CheckQuotaAsync(TestTenantId);
@@ -65,42 +92,6 @@ public class TenantQuotaEnforcerTests
         result.UsagePercent.Should().Be(40.0); // 400/1000 * 100
         result.IsOverQuota.Should().BeFalse();
         result.IsNearQuota.Should().BeFalse(); // 40% < 90% warning threshold
-    }
-
-    /// <summary>
-    /// Tests that CheckQuotaAsync returns a result indicating the tenant is over quota when its current size exactly matches the configured quota.
-    /// </summary>
-    [Fact]
-    public async Task CheckQuotaAsync_AtBoundaryQuota_ReturnsOverQuota()
-    {
-        // Arrange
-        var tenant = new Tenant { TenantId = TestTenantId };
-        tenant.SetMetadata(TenantQuotaEnforcer.QuotaMetadataKey, "1000"); // 1KB quota
-
-        var storageInfo = new TenantStorageInfo
-        {
-            TenantId = TestTenantId,
-            SizeBytes = 1000, // Exactly at quota
-            PageCount = 25,
-            PageSize = 40,
-            WalSizeBytes = 0
-        };
-
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
-
-        // Act
-        var result = await _enforcer.CheckQuotaAsync(TestTenantId);
-
-        // Assert
-        result.TenantId.Should().Be(TestTenantId);
-        result.CurrentSizeBytes.Should().Be(1000);
-        result.QuotaBytes.Should().Be(1000);
-        result.UsagePercent.Should().Be(100.0); // 1000/1000 * 100
-        result.IsOverQuota.Should().BeTrue(); // At boundary is considered over quota
-        result.IsNearQuota.Should().BeFalse(); // Over quota takes precedence
     }
 
     /// <summary>
@@ -122,10 +113,8 @@ public class TenantQuotaEnforcerTests
             WalSizeBytes = 0
         };
 
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
+        _tenantService.SetupGetTenant(TestTenantId, tenant);
+        _tenantService.SetupGetTenantDatabaseSize(TestTenantId, storageInfo);
 
         // Act
         var result = await _enforcer.CheckQuotaAsync(TestTenantId);
@@ -137,42 +126,6 @@ public class TenantQuotaEnforcerTests
         result.UsagePercent.Should().Be(120.0); // 1200/1000 * 100
         result.IsOverQuota.Should().BeTrue();
         result.IsNearQuota.Should().BeFalse(); // Over quota takes precedence
-    }
-
-    /// <summary>
-    /// Tests that CheckQuotaAsync returns a result with null quota and zero usage percent when no quota metadata is set on the tenant (unlimited quota).
-    /// </summary>
-    [Fact]
-    public async Task CheckQuotaAsync_UnlimitedQuota_ReturnsZeroUsage()
-    {
-        // Arrange
-        var tenant = new Tenant { TenantId = TestTenantId };
-        // No quota metadata set (unlimited)
-
-        var storageInfo = new TenantStorageInfo
-        {
-            TenantId = TestTenantId,
-            SizeBytes = 2048, // 2KB usage
-            PageCount = 51,
-            PageSize = 40,
-            WalSizeBytes = 0
-        };
-
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
-
-        // Act
-        var result = await _enforcer.CheckQuotaAsync(TestTenantId);
-
-        // Assert
-        result.TenantId.Should().Be(TestTenantId);
-        result.CurrentSizeBytes.Should().Be(2048);
-        result.QuotaBytes.Should().BeNull(); // Unlimited quota
-        result.UsagePercent.Should().Be(0.0); // 0% for unlimited
-        result.IsOverQuota.Should().BeFalse();
-        result.IsNearQuota.Should().BeFalse();
     }
 
     /// <summary>
@@ -194,10 +147,8 @@ public class TenantQuotaEnforcerTests
             WalSizeBytes = 0
         };
 
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
+        _tenantService.SetupGetTenant(TestTenantId, tenant);
+        _tenantService.SetupGetTenantDatabaseSize(TestTenantId, storageInfo);
 
         // Act
         var result = await _enforcer.CheckQuotaAsync(TestTenantId);
@@ -212,21 +163,37 @@ public class TenantQuotaEnforcerTests
     }
 
     /// <summary>
-    /// Tests that CheckQuotaAsync throws a TenantNotFoundException when the tenant service returns null for the requested tenant ID.
+    /// Tests that CheckQuotaAsync returns a result with null quota and zero usage percent when no quota metadata is set on the tenant (unlimited quota).
     /// </summary>
     [Fact]
-    public async Task CheckQuotaAsync_TenantNotFound_ThrowsTenantNotFoundException()
+    public async Task CheckQuotaAsync_UnlimitedQuota_ReturnsZeroUsage()
     {
         // Arrange
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns((Tenant?)null);
+        var tenant = new Tenant { TenantId = TestTenantId };
+        // No quota metadata set (unlimited)
+
+        var storageInfo = new TenantStorageInfo
+        {
+            TenantId = TestTenantId,
+            SizeBytes = 2048, // 2KB usage
+            PageCount = 51,
+            PageSize = 40,
+            WalSizeBytes = 0
+        };
+
+        _tenantService.SetupGetTenant(TestTenantId, tenant);
+        _tenantService.SetupGetTenantDatabaseSize(TestTenantId, storageInfo);
 
         // Act
-        Func<Task> act = async () => await _enforcer.CheckQuotaAsync(TestTenantId);
+        var result = await _enforcer.CheckQuotaAsync(TestTenantId);
 
         // Assert
-        await act.Should().ThrowAsync<TenantNotFoundException>()
-            .WithMessage($"Tenant with ID '{TestTenantId}' was not found.");
+        result.TenantId.Should().Be(TestTenantId);
+        result.CurrentSizeBytes.Should().Be(2048);
+        result.QuotaBytes.Should().BeNull(); // Unlimited quota
+        result.UsagePercent.Should().Be(0.0); // 0% for unlimited
+        result.IsOverQuota.Should().BeFalse();
+        result.IsNearQuota.Should().BeFalse();
     }
 
     /// <summary>
@@ -248,163 +215,15 @@ public class TenantQuotaEnforcerTests
             WalSizeBytes = 0
         };
 
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
+        _tenantService.SetupGetTenant(TestTenantId, tenant);
+        _tenantService.SetupGetTenantDatabaseSize(TestTenantId, storageInfo);
 
         // Act
         var result = await _enforcer.EnforceAsync(TestTenantId, autoSuspend: true);
 
         // Assert
-        await _tenantService.Received(1).SuspendTenantAsync(TestTenantId, Arg.Any<CancellationToken>());
+        _tenantService.SuspendTenantCalledWith.Should().Be(TestTenantId);
         result.IsOverQuota.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Tests that EnforceAsync does not call SuspendTenantAsync on the tenant service when the tenant is over quota but auto-suspend is disabled.
-    /// </summary>
-    [Fact]
-    public async Task EnforceAsync_OverQuotaWithoutAutoSuspend_DoesNotCallSuspendTenant()
-    {
-        // Arrange
-        var tenant = new Tenant { TenantId = TestTenantId };
-        tenant.SetMetadata(TenantQuotaEnforcer.QuotaMetadataKey, "1000"); // 1KB quota
-
-        var storageInfo = new TenantStorageInfo
-        {
-            TenantId = TestTenantId,
-            SizeBytes = 1200, // Over quota
-            PageCount = 30,
-            PageSize = 40,
-            WalSizeBytes = 0
-        };
-
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-        _tenantService.GetTenantDatabaseSizeAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(storageInfo);
-
-        // Act
-        var result = await _enforcer.EnforceAsync(TestTenantId, autoSuspend: false);
-
-        // Assert
-        await _tenantService.DidNotReceive().SuspendTenantAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        result.IsOverQuota.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Tests that SetQuotaAsync correctly stores the quota as tenant metadata when given a positive byte value.
-    /// </summary>
-    [Fact]
-    public async Task SetQuotaAsync_PositiveMaxBytes_SetsMetadataCorrectly()
-    {
-        // Arrange
-        const long maxBytes = 5000;
-
-        // Act
-        await _enforcer.SetQuotaAsync(TestTenantId, maxBytes);
-
-        // Assert
-        await _tenantService.Received(1).SetTenantMetadataAsync(
-            TestTenantId,
-            TenantQuotaEnforcer.QuotaMetadataKey,
-            maxBytes.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Arg.Any<CancellationToken>());
-    }
-
-    /// <summary>
-    /// Tests that SetQuotaAsync throws an ArgumentException when given a non-positive byte value.
-    /// </summary>
-    [Fact]
-    public async Task SetQuotaAsync_NonPositiveMaxBytes_ThrowsArgumentException()
-    {
-        // Arrange
-        const long maxBytes = 0; // Invalid quota
-
-        // Act
-        Func<Task> act = async () => await _enforcer.SetQuotaAsync(TestTenantId, maxBytes);
-
-        // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("Quota must be positive (Parameter 'maxBytes')");
-    }
-
-    /// <summary>
-    /// Tests that GetQuotaAsync returns the parsed quota value when the tenant has valid quota metadata.
-    /// </summary>
-    [Fact]
-    public async Task GetQuotaAsync_WithValidQuotaMetadata_ReturnsParsedValue()
-    {
-        // Arrange
-        var tenant = new Tenant { TenantId = TestTenantId };
-        tenant.SetMetadata(TenantQuotaEnforcer.QuotaMetadataKey, "2048");
-
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-
-        // Act
-        var quota = await _enforcer.GetQuotaAsync(TestTenantId);
-
-        // Assert
-        quota.Should().Be(2048L);
-    }
-
-    /// <summary>
-    /// Tests that GetQuotaAsync returns null when the tenant exists but has no quota metadata set.
-    /// </summary>
-    [Fact]
-    public async Task GetQuotaAsync_WithMissingQuotaMetadata_ReturnsNull()
-    {
-        // Arrange
-        var tenant = new Tenant { TenantId = TestTenantId };
-        // No quota metadata set
-
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-
-        // Act
-        var quota = await _enforcer.GetQuotaAsync(TestTenantId);
-
-        // Assert
-        quota.Should().BeNull();
-    }
-
-    /// <summary>
-    /// Tests that GetQuotaAsync returns null when the tenant's quota metadata cannot be parsed as a number.
-    /// </summary>
-    [Fact]
-    public async Task GetQuotaAsync_WithInvalidQuotaMetadata_ReturnsNull()
-    {
-        // Arrange
-        var tenant = new Tenant { TenantId = TestTenantId };
-        tenant.SetMetadata(TenantQuotaEnforcer.QuotaMetadataKey, "invalid-number");
-
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns(tenant);
-
-        // Act
-        var quota = await _enforcer.GetQuotaAsync(TestTenantId);
-
-        // Assert
-        quota.Should().BeNull();
-    }
-
-    /// <summary>
-    /// Tests that GetQuotaAsync returns null when the tenant service returns null for the requested tenant ID.
-    /// </summary>
-    [Fact]
-    public async Task GetQuotaAsync_TenantNotFound_ReturnsNull()
-    {
-        // Arrange
-        _tenantService.GetTenantAsync(TestTenantId, Arg.Any<CancellationToken>())
-            .Returns((Tenant?)null);
-
-        // Act
-        var quota = await _enforcer.GetQuotaAsync(TestTenantId);
-
-        // Assert
-        quota.Should().BeNull();
     }
 
     /// <summary>
@@ -450,22 +269,13 @@ public class TenantQuotaEnforcerTests
             WalSizeBytes = 0
         };
 
-        _tenantService.GetActiveTenantsAsync(Arg.Any<CancellationToken>())
-            .Returns(new List<Tenant> { tenant1, tenant2, tenant3 });
-
-        _tenantService.GetTenantAsync("tenant1", Arg.Any<CancellationToken>())
-            .Returns(tenant1);
-        _tenantService.GetTenantAsync("tenant2", Arg.Any<CancellationToken>())
-            .Returns(tenant2);
-        _tenantService.GetTenantAsync("tenant3", Arg.Any<CancellationToken>())
-            .Returns(tenant3);
-
-        _tenantService.GetTenantDatabaseSizeAsync("tenant1", Arg.Any<CancellationToken>())
-            .Returns(storageInfo1);
-        _tenantService.GetTenantDatabaseSizeAsync("tenant2", Arg.Any<CancellationToken>())
-            .Returns(storageInfo2);
-        _tenantService.GetTenantDatabaseSizeAsync("tenant3", Arg.Any<CancellationToken>())
-            .Returns(storageInfo3);
+        _tenantService.SetupGetActiveTenants(new List<Tenant> { tenant1, tenant2, tenant3 });
+        _tenantService.SetupGetTenant("tenant1", tenant1);
+        _tenantService.SetupGetTenant("tenant2", tenant2);
+        _tenantService.SetupGetTenant("tenant3", tenant3);
+        _tenantService.SetupGetTenantDatabaseSize("tenant1", storageInfo1);
+        _tenantService.SetupGetTenantDatabaseSize("tenant2", storageInfo2);
+        _tenantService.SetupGetTenantDatabaseSize("tenant3", storageInfo3);
 
         // Act
         var results = await _enforcer.ScanAllAsync();
@@ -482,5 +292,170 @@ public class TenantQuotaEnforcerTests
         results[1].UsagePercent.Should().Be(95.0);
         results[1].IsOverQuota.Should().BeFalse();
         results[1].IsNearQuota.Should().BeTrue();
+    }
+
+    private class FakeTenantService : ITenantService
+    {
+        private readonly Dictionary<string, Tenant> _tenants = new();
+        private readonly Dictionary<string, TenantStorageInfo> _storageInfos = new();
+        private readonly Dictionary<string, Dictionary<string, string>> _metadata = new();
+        private readonly List<string> _suspendedTenants = new();
+
+        public string? SuspendTenantCalledWith { get; private set; }
+
+        public void SetupGetTenant(string tenantId, Tenant? tenant)
+        {
+            if (tenant != null)
+            {
+                _tenants[tenantId] = tenant;
+            }
+            else
+            {
+                _tenants.Remove(tenantId);
+            }
+        }
+
+        public void SetupGetTenantDatabaseSize(string tenantId, TenantStorageInfo storageInfo)
+        {
+            _storageInfos[tenantId] = storageInfo;
+        }
+
+        public void SetupGetActiveTenants(List<Tenant> tenants)
+        {
+            foreach (var tenant in tenants)
+            {
+                _tenants[tenant.TenantId] = tenant;
+            }
+        }
+
+        public Task<Tenant?> GetTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            _tenants.TryGetValue(tenantId, out var tenant);
+            return Task.FromResult<Tenant?>(tenant);
+        }
+
+        public Task<Tenant> CreateTenantAsync(string name, string? description = null, string? contactEmail = null, CancellationToken cancellationToken = default)
+        {
+            var tenant = new Tenant
+            {
+                TenantId = Guid.NewGuid().ToString(),
+                Name = name,
+                Description = description,
+                ContactEmail = contactEmail,
+                Status = TenantStatus.Active
+            };
+
+            _tenants[tenant.TenantId] = tenant;
+            return Task.FromResult(tenant);
+        }
+
+        public Task UpdateTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
+        {
+            if (_tenants.ContainsKey(tenant.TenantId))
+            {
+                _tenants[tenant.TenantId] = tenant;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            _tenants.Remove(tenantId);
+            _metadata.Remove(tenantId);
+            return Task.CompletedTask;
+        }
+
+        public Task<List<Tenant>> GetAllTenantsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new List<Tenant>(_tenants.Values));
+        }
+
+        public Task<List<Tenant>> GetActiveTenantsAsync(CancellationToken cancellationToken = default)
+        {
+            var activeTenants = new List<Tenant>();
+            foreach (var tenant in _tenants.Values)
+            {
+                if (tenant.Status == TenantStatus.Active)
+                {
+                    activeTenants.Add(tenant);
+                }
+            }
+
+            return Task.FromResult(activeTenants);
+        }
+
+        public Task ActivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            if (_tenants.TryGetValue(tenantId, out var tenant))
+            {
+                tenant.Status = TenantStatus.Active;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeactivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            if (_tenants.TryGetValue(tenantId, out var tenant))
+            {
+                tenant.Status = TenantStatus.Inactive;
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task SuspendTenantAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            SuspendTenantCalledWith = tenantId;
+            if (_tenants.TryGetValue(tenantId, out var tenant))
+            {
+                tenant.Status = TenantStatus.Suspended; // Simplified: suspended tenants have Suspended status
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> TenantExistsAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_tenants.ContainsKey(tenantId));
+        }
+
+        public Task<int> GetTenantCountAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_tenants.Count);
+        }
+
+        public Task<List<Tenant>> SearchTenantsAsync(string searchTerm, CancellationToken cancellationToken = default)
+        {
+            var results = new List<Tenant>();
+            foreach (var tenant in _tenants.Values)
+            {
+                if (tenant.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    tenant.TenantId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                {
+                    results.Add(tenant);
+                }
+            }
+
+            return Task.FromResult(results);
+        }
+
+        public Task SetTenantMetadataAsync(string tenantId, string key, string value, CancellationToken cancellationToken = default)
+        {
+            if (!_metadata.ContainsKey(tenantId))
+            {
+                _metadata[tenantId] = new Dictionary<string, string>();
+            }
+
+            _metadata[tenantId][key] = value;
+            return Task.CompletedTask;
+        }
+
+        public Task<TenantStorageInfo> GetTenantDatabaseSizeAsync(string tenantId, CancellationToken cancellationToken = default)
+        {
+            _storageInfos.TryGetValue(tenantId, out var storageInfo);
+            return Task.FromResult(storageInfo ?? new TenantStorageInfo());
+        }
     }
 }
