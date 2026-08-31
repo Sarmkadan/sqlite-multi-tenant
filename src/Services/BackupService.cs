@@ -40,7 +40,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error retrieving backup {BackupId}: {Message}", backupId, ex.Message);
+            _logger.LogError(ex, "Error retrieving backup {BackupId}", backupId);
             throw;
         }
     }
@@ -60,7 +60,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error retrieving backups for database {DatabaseId}: {Message}", databaseId, ex.Message);
+            _logger.LogError(ex, "Error retrieving backups for database {DatabaseId}", databaseId);
             throw;
         }
     }
@@ -80,7 +80,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error retrieving completed backups: {Message}", ex.Message);
+            _logger.LogError(ex, "Error retrieving completed backups");
             throw;
         }
     }
@@ -100,7 +100,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error retrieving latest backup: {Message}", ex.Message);
+            _logger.LogError(ex, "Error retrieving latest backup");
             throw;
         }
     }
@@ -142,7 +142,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error creating backup: {Message}", ex.Message);
+            _logger.LogError(ex, "Error creating backup");
             throw;
         }
     }
@@ -168,7 +168,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error marking backup as completed: {Message}", ex.Message);
+            _logger.LogError(ex, "Error marking backup as completed");
             throw;
         }
     }
@@ -194,7 +194,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error marking backup as failed: {Message}", ex.Message);
+            _logger.LogError(ex, "Error marking backup as failed");
             throw;
         }
     }
@@ -262,17 +262,17 @@ public sealed class BackupService : IBackupService {
         }
         catch (SQLiteException ex)
         {
-            _logger.LogError("SQLite error verifying backup {BackupId}: {Message}", backupId, ex.Message);
+            _logger.LogError(ex, "SQLite error verifying backup {BackupId}", backupId);
             return BackupVerificationResult.Failed($"SQLite error: {ex.Message}");
         }
         catch (FileNotFoundException ex)
         {
-            _logger.LogError("Backup file not found {BackupPath}: {Message}", backup?.BackupPath ?? "unknown", ex.Message);
+            _logger.LogError(ex, "Backup file not found {BackupPath}", backup?.BackupPath ?? "unknown");
             return BackupVerificationResult.Failed($"File not found: {ex.Message}");
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error verifying backup {BackupId}: {Message}", backupId, ex.Message);
+            _logger.LogError(ex, "Error verifying backup {BackupId}", backupId);
             return BackupVerificationResult.Failed($"Verification error: {ex.Message}");
         }
     }
@@ -298,7 +298,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error setting backup expiration: {Message}", ex.Message);
+            _logger.LogError(ex, "Error setting backup expiration");
             throw;
         }
     }
@@ -315,7 +315,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error retrieving expired backups: {Message}", ex.Message);
+            _logger.LogError(ex, "Error retrieving expired backups");
             throw;
         }
     }
@@ -335,7 +335,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error getting backup count: {Message}", ex.Message);
+            _logger.LogError(ex, "Error getting backup count");
             throw;
         }
     }
@@ -360,7 +360,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error deleting backup: {Message}", ex.Message);
+            _logger.LogError(ex, "Error deleting backup");
             throw;
         }
     }
@@ -389,7 +389,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error adding backup tag: {Message}", ex.Message);
+            _logger.LogError(ex, "Error adding backup tag");
             throw;
         }
     }
@@ -462,7 +462,7 @@ public sealed class BackupService : IBackupService {
         }
         catch (Exception ex)
         {
-            _logger.LogError("Backup failed for {Source}: {Message}", sourceDatabasePath, ex.Message);
+            _logger.LogError(ex, "Backup failed for {Source}", sourceDatabasePath);
             throw;
         }
     }
