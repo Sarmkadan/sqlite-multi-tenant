@@ -32,8 +32,20 @@ public sealed class TenantQuotaEnforcer
     public const string QuotaMetadataKey = "quota.maxBytes";
 
     private readonly ITenantService _tenantService;
+    private double _warningThreshold = 0.9;
     /// <summary>Fraction (0-1) of quota at which IsNearQuota becomes true. Default 0.9.</summary>
-    public double WarningThreshold { get; set; } = 0.9;
+    public double WarningThreshold
+    {
+        get => _warningThreshold;
+        set
+        {
+            if (value <= 0 || value > 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, "WarningThreshold must be between 0 and 1 (exclusive of 0, inclusive of 1).");
+            }
+            _warningThreshold = value;
+        }
+    }
 
     public TenantQuotaEnforcer(ITenantService tenantService)
     {
@@ -43,10 +55,17 @@ public sealed class TenantQuotaEnforcer
     /// <summary>Sets (or updates) the quota for a tenant via SetTenantMetadataAsync. maxBytes must be positive.</summary>
     public async Task SetQuotaAsync(string tenantId, long maxBytes, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(tenantId));
+        }
+
         if (maxBytes <= 0)
         {
             throw new ArgumentException("Quota must be positive", nameof(maxBytes));
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         await _tenantService.SetTenantMetadataAsync(
             tenantId,
@@ -58,6 +77,13 @@ public sealed class TenantQuotaEnforcer
     /// <summary>Reads the tenant's quota from metadata; null when absent or unparsable.</summary>
     public async Task<long?> GetQuotaAsync(string tenantId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(tenantId));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
         {
@@ -76,6 +102,13 @@ public sealed class TenantQuotaEnforcer
     /// <summary>Compares GetTenantDatabaseSizeAsync (use its TotalSizeBytes/size property) against the quota and returns a QuotaCheckResult. Throws TenantNotFoundException when the tenant does not exist.</summary>
     public async Task<QuotaCheckResult> CheckQuotaAsync(string tenantId, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(tenantId));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
         {
@@ -115,6 +148,13 @@ public sealed class TenantQuotaEnforcer
     /// <summary>Checks the quota and, when exceeded and autoSuspend is true, calls SuspendTenantAsync. Returns the check result.</summary>
     public async Task<QuotaCheckResult> EnforceAsync(string tenantId, bool autoSuspend = true, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(tenantId))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(tenantId));
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
         var result = await CheckQuotaAsync(tenantId, cancellationToken);
 
         if (autoSuspend && result.IsOverQuota)
@@ -137,6 +177,8 @@ public sealed class TenantQuotaEnforcer
                 maxDegreeOfParallelism,
                 "Maximum degree of parallelism must be at least 1.");
         }
+
+        cancellationToken.ThrowIfCancellationRequested();
 
         var tenants = await _tenantService.GetAllTenantsAsync(cancellationToken);
         var results = new ConcurrentBag<QuotaCheckResult>();
@@ -161,6 +203,8 @@ public sealed class TenantQuotaEnforcer
     /// <summary>Returns all tenants whose current usage meets or exceeds their configured quota.</summary>
     public async Task<List<QuotaCheckResult>> GetTenantsOverQuotaAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var results = await CheckAllTenantsAsync(cancellationToken: cancellationToken);
         return results.Where(result => result.IsOverQuota).ToList();
     }
@@ -168,6 +212,8 @@ public sealed class TenantQuotaEnforcer
     /// <summary>Scans all active tenants and returns results for tenants that are near or over quota, worst first.</summary>
     public async Task<List<QuotaCheckResult>> ScanAllAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var activeTenants = await _tenantService.GetActiveTenantsAsync(cancellationToken);
         var results = new List<QuotaCheckResult>();
 
