@@ -1918,3 +1918,24 @@ var (updateSql, updateParameters) = new UpdateBuilder("Users")
     .Build();
 updateParameters["id"] = 42;
 ```
+
+## TenantContextBuilder
+
+The `TenantContextBuilder` class provides a fluent API for configuring and validating a `TenantContext`, including its tenant identity, user identity, and allowed tenants. Call `Build()` to return the validated context, or `AsInvalid()` to explicitly invalidate the context under construction.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+
+var context = new TenantContextBuilder()
+    .WithTenantId("tenant-123")
+    .WithTenantName("Acme Corporation")
+    .WithUserId("user-456")
+    .WithAllowedTenants(new[] { "tenant-123", "tenant-789" })
+    .Build();
+
+var invalidBuilder = new TenantContextBuilder()
+    .WithTenantId("tenant-123")
+    .AsInvalid();
+```
