@@ -1876,3 +1876,45 @@ await tests.GetKeyVersionAsync_ForNonExistentVersion_ReturnsNull();
 await tests.DeleteTenantKeysAsync_RemovesAllKeysForTenant();
 await tests.DeleteTenantKeysAsync_ForNonExistentTenant_ReturnsTrue();
 ```
+
+## QueryBuilder
+
+The `QueryBuilder` class provides a fluent API for constructing parameterized SQLite `SELECT` statements, including filters, `IN` clauses, sorting, and pagination. It builds the SQL separately from its parameter values and can apply those values directly to a `SQLiteCommand`; the related `InsertBuilder` and `UpdateBuilder` classes build parameterized write statements.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using SqliteMultiTenant.DataOperations;
+
+var builder = new QueryBuilder("Users")
+    .Select("Id", "Name", "Email")
+    .Where("IsActive = @isActive", ("isActive", true))
+    .WhereIn("Role", new object[] { "Admin", "Editor" })
+    .OrderBy("Name", "ASC")
+    .Limit(25);
+
+string sql = builder.Build();
+
+using var connection = new SQLiteConnection(connectionString);
+using var command = new SQLiteCommand(sql, connection);
+builder.ApplyParameters(command);
+
+connection.Open();
+using var reader = command.ExecuteReader();
+```
+
+`InsertBuilder` and `UpdateBuilder` return the generated SQL together with their parameter dictionaries:
+
+```csharp
+var (insertSql, insertParameters) = new InsertBuilder("Users")
+    .Value("Name", "Ada")
+    .Value("Email", "ada@example.com")
+    .Build();
+
+var (updateSql, updateParameters) = new UpdateBuilder("Users")
+    .Set("Email", "ada.lovelace@example.com")
+    .Where("Id = @id")
+    .Build();
+updateParameters["id"] = 42;
+```
