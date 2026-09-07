@@ -1,141 +1,51 @@
-# RateLimiter
+# Rate Limiter
 
-Implements rate limiting to prevent abuse and DoS attacks. Supports sliding window algorithm with per-identifier tracking. Provides configurable rate limits and automatic cleanup of expired entries.
+## Overview
+The `RateLimiter` component provides a thread-safe mechanism to prevent abuse and Denial of Service (DoS) attacks by enforcing request limits per identifier (e.g., IP address or user ID). It implements a sliding window counter approach to track request timestamps and enforce limits within configurable time windows.
 
-## Algorithm
+## Configuration (`RateLimiterOptions`)
+Behavior is controlled via `RateLimiterOptions`, which exposes two primary configuration properties:
 
-The rate limiter uses a sliding window approach:
-- For each identifier, it maintains a list of request timestamps
-- When checking a request, it removes timestamps older than the window from the list
-- If the count of remaining timestamps is below the limit, the request is allowed and the current timestamp is added
-- Otherwise, the request is rejected
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `CleanupInterval` | `TimeSpan` | 5 minutes | Interval at which the background cleanup timer runs to purge expired buckets. |
+| `ExpirationTime` | `TimeSpan` | 1 hour | Time after which a bucket that has not been accessed is considered expired and removed from memory. |
 
-This implementation provides a more accurate rate limit than fixed window algorithms by preventing bursts at window boundaries.
+## Interface (`IRateLimiter`)
+The implementation adheres to the `IRateLimiter` contract, ensuring consistent behavior across the application. See [docs/IRateLimiter.md](IRateLimiter.md) for the full interface definition.
 
-## Cleanup Mechanism
-
-A timer periodically runs (default every 5 minutes) to remove buckets that haven't been accessed for the expiration time (default 1 hour). This prevents memory leaks from accumulating stale identifier data.
-
-## Public Methods
-
-### `RateLimiter(ILogger<RateLimiter> logger, RateLimiterOptions? options = null)`
-
-Creates a new rate limiter instance.
-
-- **Parameters**:
-  - `logger`: Logger instance for diagnostic information
-  - `options`: Optional configuration. If null, default options are used (CleanupInterval=5 minutes, ExpirationTime=1 hour)
-- **Exceptions**: None
-
-### `Task<RateLimitResult> CheckLimitAsync(string identifier, int maxRequests, TimeSpan window)`
-
-Checks if a request is allowed under the rate limit for the given identifier.
-
-- **Parameters**:
-  - `identifier`: Unique key to track (e.g., IP address, user ID, API key)
-  - `maxRequests`: Maximum number of requests allowed in the window
-  - `window`: Time span defining the rate limit window
-- **Return value**: `RateLimitResult` containing:
-  - `IsAllowed`: Boolean indicating if the request is permitted
-  - `CurrentCount`: Number of requests recorded for the identifier within the current window
-  - `MaxCount`: Configured maximum allowed requests in the window
-  - `ResetTime`: UTC time when the current window will expire and the count will be reset
-- **Exceptions**:
-  - `ArgumentException`: If identifier is null or empty
-- **Thread safety**: Safe for concurrent calls from multiple threads
-
-### `Task ResetAsync(string identifier)`
-
-Resets the rate limit for a specific identifier, removing its tracking data.
-
-- **Parameters**:
-  - `identifier`: The identifier to reset
-- **Return value**: Completes when the reset operation is finished
-- **Exceptions**:
-  - `ArgumentException`: If identifier is null or empty
-- **Thread safety**: Safe for concurrent calls
-
-### `Task<RateLimitStatus> GetStatusAsync(string identifier)`
-
-Gets the current rate limit status for an identifier.
-
-- **Parameters**:
-  - `identifier`: The identifier to check
-- **Return value**: `RateLimitStatus` containing:
-  - `Identifier`: The key being monitored
-  - `CurrentCount`: Number of requests recorded for this identifier in the active window
-  - `CreatedAt`: Timestamp when the bucket was first created
-  - `LastAccessedAt`: Timestamp of the most recent request
-- **Exceptions**:
-  - `ArgumentException`: If identifier is null or empty
-- **Thread safety**: Safe for concurrent calls
-
-### `Task<RateLimiterStatistics> GetStatisticsAsync()`
-
-Gets overall statistics about the rate limiter's usage.
-
-- **Return value**: `RateLimiterStatistics` containing:
-  - `ActiveBuckets`: Number of identifier buckets currently being tracked
-  - `TotalRequests`: Total number of requests across all buckets
-  - `OldestBucket`: Creation timestamp of the oldest bucket
-  - `NewestBucket`: Creation timestamp of the newest bucket
-  - `Timestamp`: When the statistics were collected
-- **Thread safety**: Safe for concurrent calls
-
-### `void Dispose()`
-
-Releases resources used by the rate limiter, stopping the cleanup timer.
-
-- **Exceptions**: None
-- **Thread safety**: Safe to call from any thread; subsequent method calls will throw `ObjectDisposedException`
-
-## Relation to IRateLimiter
-
-This class implements the `IRateLimiter` interface defined in [IRateLimiter.md](IRateLimiter.md). The interface provides the core contract for rate limiting operations, and this implementation fulfills all interface methods with the sliding window algorithm described above.
-
-## Relation to RateLimitingMiddleware
-
-The `RateLimiter` is used by the `RateLimitingMiddleware` ([see RateLimitingMiddleware.md](RateLimitingMiddleware.md)) to enforce rate limits per tenant in ASP.NET Core applications. The middleware extracts tenant identifiers from HTTP requests and delegates limit checking to this class.
-
-## Configuration (RateLimiterOptions)
-
-Behavior can be customized via the `RateLimiterOptions` class:
-
-### `CleanupInterval`
-- **Type**: `TimeSpan`
-- **Default**: 5 minutes (`TimeSpan.FromMinutes(5)`)
-- **Description**: Interval at which the cleanup timer runs to purge expired buckets
-
-### `ExpirationTime`
-- **Type**: `TimeSpan`
-- **Default**: 1 hour (`TimeSpan.FromHours(1)`)
-- **Description**: Time after which a bucket that has not been accessed is considered expired and removed
-
-These options have sensible defaults suitable for most applications but can be adjusted based on specific traffic patterns and memory constraints.
-
-## Usage Example
+## Public API & Signatures
+The `RateLimiter` class exposes the following public methods:
 
 ```csharp
-// Create limiter with default options
-var limiter = new RateLimiter(logger);
-
-// Check if a request from IP address is allowed
-var result = await limiter.CheckLimitAsync("192.168.1.1", 100, TimeSpan.FromMinutes(1));
-if (result.IsAllowed)
-{
-    // Process request
-}
-else
-{
-    // Return 429 Too Many Requests
-    // Suggest retry after: result.TimeUntilReset
-}
-
-// Periodic cleanup (handled automatically by internal timer)
-// Manual reset if needed
-await limiter.ResetAsync("192.168.1.1");
-
-// Get statistics
-var stats = await limiter.GetStatisticsAsync();
-logger.Info($"Active limiters: {stats.ActiveBuckets}, Total requests: {stats.TotalRequests}");
+public RateLimiter(ILogger<RateLimiter> logger, RateLimiterOptions? options = null)
+public Task<RateLimitResult> CheckLimitAsync(string identifier, int maxRequests, TimeSpan window)
+public Task ResetAsync(string identifier)
+public Task<RateLimitStatus> GetStatusAsync(string identifier)
+public Task<RateLimiterStatistics> GetStatisticsAsync()
+public void Dispose()
 ```
+
+### Method Details
+- **`CheckLimitAsync`**: Evaluates whether a request is allowed. Returns a `RateLimitResult` indicating allowance, current usage, and reset time.
+- **`ResetAsync`**: Clears all tracking data for a specific identifier.
+- **`GetStatusAsync`**: Retrieves the current state and request count for an identifier.
+- **`GetStatisticsAsync`**: Returns aggregate statistics about active buckets and total tracked requests.
+- **`Dispose`**: Cleans up the background cleanup timer.
+
+## Algorithm
+The rate limiter uses a **sliding window counter** approach backed by a `Dictionary<string, RateLimitBucket>` (`_buckets`). Each `RateLimitBucket` holds a `List<DateTime>` of request timestamps. The implementation visible in `RateLimiter.cs` follows these steps:
+
+1. **Thread Safety**: All public methods acquire a lock via `_semaphore.WaitAsync()` to prevent concurrent dictionary access issues.
+2. **Bucket Retrieval/Creation**: `CheckLimitAsync` looks up the identifier in `_buckets`. If missing, a new `RateLimitBucket` is instantiated with `CreatedAt` and `LastAccessedAt` set to `DateTime.UtcNow`.
+3. **Window Pruning**: Old requests are removed using `bucket.Requests.RemoveAll(r => r < windowStart)`, where `windowStart = now.Subtract(window)`.
+4. **Limit Check & Recording**: If `bucket.Requests.Count < maxRequests`, the request is allowed and `now` is added to the list. A `RateLimitResult` is returned with `IsAllowed`, `CurrentCount`, `MaxCount`, and `ResetTime`.
+5. **Background Cleanup**: The `Timer` callback `CleanupExpiredBuckets` runs every `CleanupInterval`. It iterates over `_buckets`, identifies keys where `now - kvp.Value.LastAccessedAt > expirationTime`, and removes them. This prevents memory leaks from stale identifiers.
+
+## Integration
+- **`IRateLimiter`**: The class implements the `IRateLimiter` interface, allowing dependency injection and polymorphic usage throughout the codebase.
+- **`RateLimitingMiddleware`**: The middleware consumes `IRateLimiter` to intercept incoming HTTP requests, apply limits, and return appropriate `429 Too Many Requests` responses or headers when thresholds are breached. See [docs/RateLimitingMiddleware.md](RateLimitingMiddleware.md) for middleware configuration and usage examples.
+
+## References
+- [IRateLimiter.md](IRateLimiter.md)
+- [RateLimitingMiddleware.md](RateLimitingMiddleware.md)
