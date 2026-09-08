@@ -56,6 +56,27 @@ namespace SqliteMultiTenant.Models
         }
 
         /// <summary>
+        /// Gets the setting value as a <see cref="double"/> using the invariant culture.
+        /// Returns <paramref name="defaultValue"/> if parsing fails.
+        /// </summary>
+        /// <param name="settings">The <see cref="TenantSettings"/> instance.</param>
+        /// <param name="defaultValue">The fallback double value.</param>
+        /// <returns>The double representation of the setting value.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="settings"/> is null.</exception>
+        public static double GetDouble(this TenantSettings settings, double defaultValue = 0d)
+        {
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
+
+            return double.TryParse(
+                settings.SettingValue,
+                System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowThousands,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double value)
+                ? value
+                : defaultValue;
+        }
+
+        /// <summary>
         /// Gets the setting value as a <see cref="bool"/>.
         /// Returns <paramref name="defaultValue"/> if conversion fails.
         /// </summary>
