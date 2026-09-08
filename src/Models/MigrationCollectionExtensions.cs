@@ -12,6 +12,20 @@ namespace SqliteMultiTenant.Models
     public static class MigrationCollectionExtensions
     {
         /// <summary>
+        /// Counts the migrations with the specified status.
+        /// </summary>
+        /// <param name="migrations">The source collection of migrations.</param>
+        /// <param name="status">The migration status to count.</param>
+        /// <returns>The number of migrations whose <c>Status</c> matches <paramref name="status"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="migrations"/> is <c>null</c>.</exception>
+        public static int CountByStatus(this IEnumerable<Migration> migrations, MigrationStatus status)
+        {
+            ArgumentNullException.ThrowIfNull(migrations);
+
+            return migrations.Count(migration => migration.Status == status);
+        }
+
+        /// <summary>
         /// Returns the migrations ordered by their <c>Version</c> property.
         /// </summary>
         /// <param name="migrations">The source collection of migrations.</param>
