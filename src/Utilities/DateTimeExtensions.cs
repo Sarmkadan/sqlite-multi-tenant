@@ -144,4 +144,13 @@ public static class DateTimeExtensions
     /// <returns>A new DateTime rounded down to the nearest minute.</returns>
     public static DateTime RoundDownToMinute(this DateTime dateTime) =>
         dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerMinute));
+
+    /// <summary>
+    /// Truncates sub-second ticks, rounding down to the nearest whole second.
+    /// Preserves the original <see cref="DateTime.Kind"/> so timezone semantics are unchanged.
+    /// </summary>
+    /// <param name="dateTime">The date and time to truncate.</param>
+    /// <returns>A new DateTime with sub-second ticks dropped, keeping the same <see cref="DateTime.Kind"/>.</returns>
+    public static DateTime TruncateToSeconds(this DateTime dateTime) =>
+        new(dateTime.Ticks - dateTime.Ticks % TimeSpan.TicksPerSecond, dateTime.Kind);
 }
