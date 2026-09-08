@@ -204,4 +204,15 @@ public static class StringExtensions
         Array.Reverse(chars);
         return new string(chars);
     }
+
+    /// <summary>
+    /// Compares two strings for equality, ignoring case.
+    /// </summary>
+    /// <param name="value">The first string to compare.</param>
+    /// <param name="other">The second string to compare.</param>
+    /// <returns>True if the strings are equal ignoring case, false otherwise.</returns>
+    public static bool EqualsIgnoreCase(this string? value, string? other)
+    {
+        return string.Equals(value, other, StringComparison.OrdinalIgnoreCase);
+    }
 }
