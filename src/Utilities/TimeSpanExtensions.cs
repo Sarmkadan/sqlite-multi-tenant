@@ -64,5 +64,27 @@ namespace SqliteMultiTenant.Utilities
         {
             return ts <= tolerance;
         }
+
+        /// <summary>
+        /// Restricts the <see cref="TimeSpan"/> to the specified inclusive range.
+        /// </summary>
+        /// <param name="ts">The time span to restrict.</param>
+        /// <param name="min">The minimum allowed value.</param>
+        /// <param name="max">The maximum allowed value.</param>
+        /// <returns>The time span bounded to the inclusive range from <paramref name="min"/> to <paramref name="max"/>.</returns>
+        /// <exception cref="ArgumentException"><paramref name="min"/> is greater than <paramref name="max"/>.</exception>
+        public static TimeSpan Clamp(this TimeSpan ts, TimeSpan min, TimeSpan max)
+        {
+            if (min > max)
+                throw new ArgumentException("Minimum value cannot be greater than maximum value.", nameof(min));
+
+            if (ts < min)
+                return min;
+
+            if (ts > max)
+                return max;
+
+            return ts;
+        }
     }
 }
