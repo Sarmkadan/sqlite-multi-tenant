@@ -36,6 +36,22 @@ namespace SqliteMultiTenant.Models
         }
 
         /// <summary>
+        /// Determines whether <see cref="TenantContext.ContextData"/> contains the specified key.
+        /// </summary>
+        /// <param name="context">The tenant context.</param>
+        /// <param name="key">The key to locate.</param>
+        /// <returns><c>true</c> if the context data contains the key; otherwise, <c>false</c>.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="context"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentException"><paramref name="key"/> is <c>null</c>, empty, or consists only of white-space characters.</exception>
+        public static bool HasContextData(this TenantContext context, string key)
+        {
+            ArgumentNullException.ThrowIfNull(context);
+            ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+            return context.ContextData?.ContainsKey(key) == true;
+        }
+
+        /// <summary>
         /// Sets a value in <see cref="TenantContext.ContextData"/> only if the key is not already present.
         /// </summary>
         /// <param name="context">The tenant context.</param>
