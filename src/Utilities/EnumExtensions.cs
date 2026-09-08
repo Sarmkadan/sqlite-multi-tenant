@@ -96,6 +96,20 @@ public static class EnumExtensions
         => !string.IsNullOrWhiteSpace(value) && Enum.TryParse<T>(value, ignoreCase: true, out _);
 
     /// <summary>
+    /// Determines whether an enum value matches any of the specified candidates.
+    /// </summary>
+    /// <param name="value">The enum value to check.</param>
+    /// <param name="candidates">The candidate values to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="value"/> matches a candidate; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="candidates"/> is <see langword="null"/>.</exception>
+    public static bool IsOneOf<T>(this T value, params T[] candidates) where T : struct, Enum
+    {
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        return candidates.Contains(value, EqualityComparer<T>.Default);
+    }
+
+    /// <summary>
     /// Converts enum to its description attribute if available.
     /// Falls back to display name if no description attribute.
     /// </summary>
