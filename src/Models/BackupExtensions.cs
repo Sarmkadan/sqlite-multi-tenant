@@ -60,6 +60,20 @@ public static class BackupExtensions
     }
 
     /// <summary>
+    /// Determines whether the backup was created more than the specified age ago
+    /// </summary>
+    /// <param name="backup">The backup instance</param>
+    /// <param name="age">The age threshold to compare against</param>
+    /// <exception cref="ArgumentNullException"><paramref name="backup"/> is <see langword="null"/></exception>
+    /// <returns>True if the backup creation timestamp is earlier than the age threshold, otherwise false</returns>
+    public static bool IsOlderThan(this Backup backup, TimeSpan age)
+    {
+        ArgumentNullException.ThrowIfNull(backup);
+
+        return backup.CreatedAt < DateTime.UtcNow - age;
+    }
+
+    /// <summary>
     /// Gets the human-readable size of the backup
     /// </summary>
     /// <param name="backup">The backup instance</param>
