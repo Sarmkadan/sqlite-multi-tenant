@@ -263,4 +263,30 @@ public static class CollectionExtensions
         var secondKeys = second.Select(keySelector).ToHashSet();
         return first.Where(x => secondKeys.Contains(keySelector(x)));
     }
+
+    /// <summary>
+    /// Splits the sequence into two lists in a single pass: one for elements that match the predicate and one for those that do not.
+    /// </summary>
+    /// <param name="source">The source sequence. Cannot be null.</param>
+    /// <param name="predicate">The function to test each element for a condition. Cannot be null.</param>
+    /// <returns>A tuple where the first element is a list of items that match the predicate and the second element is a list of items that do not match.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="source"/> or <paramref name="predicate"/> is null.</exception>
+    public static (List<T> Matches, List<T> NonMatches) Partition<T>(this IEnumerable<T> source, Func<T, bool> predicate)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(predicate);
+
+        var matches = new List<T>();
+        var nonMatches = new List<T>();
+
+        foreach (var item in source)
+        {
+            if (predicate(item))
+                matches.Add(item);
+            else
+                nonMatches.Add(item);
+        }
+
+        return (matches, nonMatches);
+    }
 }
