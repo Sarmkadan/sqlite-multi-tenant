@@ -16,6 +16,27 @@ namespace SqliteMultiTenant.Utilities;
 public static class ValidationExtensions
 {
     /// <summary>
+    /// Determines whether a string is non-empty and contains only hexadecimal characters.
+    /// </summary>
+    /// <param name="value">The string to validate.</param>
+    /// <returns><see langword="true"/> if the string contains only characters in the ranges 0-9, a-f, or A-F; otherwise, <see langword="false"/>.</returns>
+    public static bool IsValidHexString(this string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        foreach (var character in value)
+        {
+            if (!((character >= '0' && character <= '9') ||
+                  (character >= 'a' && character <= 'f') ||
+                  (character >= 'A' && character <= 'F')))
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Validates email address format using RFC 5322 simplified pattern.
     /// More permissive than strict RFC but catches obvious errors.
     /// </summary>
