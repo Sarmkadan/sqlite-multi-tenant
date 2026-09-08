@@ -150,6 +150,25 @@ public static class FileSystemExtensions
     }
 
     /// <summary>
+    /// Determines whether a file path has the specified extension, ignoring case.
+    /// </summary>
+    /// <param name="filePath">The file path whose extension to check.</param>
+    /// <param name="extension">The extension to match, with or without a leading period.</param>
+    /// <returns>True if the file path has the specified extension; otherwise false.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="filePath"/> or <paramref name="extension"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="filePath"/> or <paramref name="extension"/> is empty or whitespace.</exception>
+    public static bool HasExtension(this string filePath, string extension)
+    {
+        ArgumentNullException.ThrowIfNull(filePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        ArgumentNullException.ThrowIfNull(extension);
+        ArgumentException.ThrowIfNullOrWhiteSpace(extension);
+
+        var normalizedExtension = extension[0] == '.' ? extension : $".{extension}";
+        return Path.GetExtension(filePath).Equals(normalizedExtension, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Gets all files in a directory with a specific extension (recursive).
     /// Returns empty list if directory doesn't exist or error occurs.
     /// </summary>
