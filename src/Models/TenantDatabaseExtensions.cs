@@ -26,6 +26,19 @@ public static class TenantDatabaseExtensions
     }
 
     /// <summary>
+    /// Gets the database size in megabytes.
+    /// </summary>
+    /// <param name="database">The tenant database.</param>
+    /// <returns>The database size in megabytes.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="database"/> is <c>null</c>.</exception>
+    public static double GetSizeInMegabytes(this TenantDatabase database)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+
+        return database.SizeBytes / (1024d * 1024d);
+    }
+
+    /// <summary>
     /// Gets the database size in a human-readable format.
     /// </summary>
     /// <param name="database">The tenant database.</param>
