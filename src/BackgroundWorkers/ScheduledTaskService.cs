@@ -32,6 +32,11 @@ public interface IScheduledTaskService
 
 public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
 {
+    private const int PollIntervalMs = 1000;
+    private const int BackoffMultiplierBase = 2;
+    private const int MaxBackoffExponent = 5;
+    private static readonly TimeSpan MaxBackoff = TimeSpan.FromHours(24);
+
     private readonly Dictionary<string, ScheduledTask> _tasks;
     private readonly Dictionary<string, CancellationTokenSource> _cancellationTokens;
     private readonly ILogger<ScheduledTaskService> _logger;
@@ -285,7 +290,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
                 }
 
                 // Check every second
-                await Task.Delay(1000, cancellationToken);
+                await Task.Delay(PollIntervalMs, cancellationToken);
             }
         }
         catch (OperationCanceledException)
@@ -371,11 +376,10 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
         // But cap at reasonable maximum to avoid excessive delays
         if (task.FailureCount > 0)
         {
-            var backoffFactor = Math.Pow(2, Math.Min(task.FailureCount - 1, 5)); // Cap at 2^5 = 32x
+            var backoffFactor = Math.Pow(BackoffMultiplierBase, Math.Min(task.FailureCount - 1, MaxBackoffExponent)); // Cap at 2^5 = 32x
             var backoffInterval = baseInterval.TotalSeconds * backoffFactor;
-            var maxBackoff = TimeSpan.FromHours(24); // Maximum 24 hours backoff
 
-            return TimeSpan.FromSeconds(Math.Min(backoffInterval, maxBackoff.TotalSeconds));
+            return TimeSpan.FromSeconds(Math.Min(backoffInterval, MaxBackoff.TotalSeconds));
         }
 
         return baseInterval;
