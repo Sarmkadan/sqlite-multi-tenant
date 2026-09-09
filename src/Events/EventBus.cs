@@ -31,8 +31,11 @@ public sealed class EventBus : IEventBus {
 /// Initializes a new instance of the <see cref="EventBus"/> class.
 /// </summary>
 /// <param name="logger">The logger instance for recording operational events and errors.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is <see langword="null"/>.</exception>
 public EventBus(ILogger<EventBus> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+
         _logger = logger;
         _subscribers = new Dictionary<Type, List<Delegate>>();
         _semaphore = new SemaphoreSlim(1);
@@ -43,8 +46,11 @@ public EventBus(ILogger<EventBus> logger)
     /// Publishes an event to all registered subscribers.
     /// Executes handlers in parallel with error isolation.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is <see langword="null"/>.</exception>
     public async Task PublishAsync<T>(T @event, CancellationToken cancellationToken = default) where T : DomainEvent
     {
+        ArgumentNullException.ThrowIfNull(@event);
+
         try
         {
             var eventType = typeof(T);
@@ -85,8 +91,11 @@ public EventBus(ILogger<EventBus> logger)
     /// Registers an event handler for a specific event type.
     /// Handlers are called when events of that type are published.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
     public async Task SubscribeAsync<T>(Func<T, Task> handler) where T : DomainEvent
     {
+        ArgumentNullException.ThrowIfNull(handler);
+
         try
         {
             await _semaphore.WaitAsync();
@@ -111,8 +120,11 @@ public EventBus(ILogger<EventBus> logger)
     /// <summary>
     /// Unregisters an event handler.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is <see langword="null"/>.</exception>
     public async Task UnsubscribeAsync<T>(Func<T, Task> handler) where T : DomainEvent
     {
+        ArgumentNullException.ThrowIfNull(handler);
+
         try
         {
             await _semaphore.WaitAsync();
@@ -164,8 +176,12 @@ public sealed class DeadLetterQueue {
     /// <summary>
     /// Enqueues a failed event to the dead letter queue.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> or <paramref name="exception"/> is <see langword="null"/>.</exception>
     public async Task EnqueueAsync<T>(T @event, Exception exception) where T : DomainEvent
     {
+        ArgumentNullException.ThrowIfNull(@event);
+        ArgumentNullException.ThrowIfNull(exception);
+
         try
         {
             await _semaphore.WaitAsync();
@@ -211,8 +227,11 @@ public sealed class DeadLetterQueue {
     /// <summary>
     /// Removes a failed event from the queue.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="failedEventId"/> is <see langword="null"/>, empty, or consists only of white-space characters.</exception>
     public async Task<bool> RemoveAsync(string failedEventId)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(failedEventId);
+
         try
         {
             await _semaphore.WaitAsync();
