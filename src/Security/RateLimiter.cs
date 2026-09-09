@@ -15,8 +15,26 @@ namespace SqliteMultiTenant.Security;
 /// </summary>
 public interface IRateLimiter
 {
+    /// <summary>
+    /// Checks if a request is allowed under the rate limit.
+    /// Uses token bucket algorithm.
+    /// </summary>
+    /// <param name="identifier">The identifier to check (e.g., IP address or user ID).</param>
+    /// <param name="maxRequests">Maximum number of requests allowed in the time window.</param>
+    /// <param name="window">The time window for the rate limit.</param>
+    /// <returns>A <see cref="RateLimitResult"/> indicating whether the request is allowed and current usage.</returns>
     Task<RateLimitResult> CheckLimitAsync(string identifier, int maxRequests, TimeSpan window);
+    /// <summary>
+    /// Resets the rate limit for an identifier.
+    /// </summary>
+    /// <param name="identifier">The identifier to reset.</param>
+    /// <returns>A task representing the reset operation.</returns>
     Task ResetAsync(string identifier);
+    /// <summary>
+    /// Gets the current rate limit status for an identifier.
+    /// </summary>
+    /// <param name="identifier">The identifier to get status for.</param>
+    /// <returns>A <see cref="RateLimitStatus"/> containing current rate limit information.</returns>
     Task<RateLimitStatus> GetStatusAsync(string identifier);
 }
 
@@ -166,6 +184,7 @@ public sealed class RateLimiter : IRateLimiter
     /// <summary>
     /// Gets statistics about rate limiting.
     /// </summary>
+    /// <returns>A <see cref="RateLimiterStatistics"/> containing rate limiter statistics.</returns>
     public async Task<RateLimiterStatistics> GetStatisticsAsync()
     {
         try
@@ -222,37 +241,106 @@ public sealed class RateLimiter : IRateLimiter
     }
 }
 
+/// <summary>
+/// Represents a rate limit bucket for tracking requests.
+/// </summary>
 public sealed class RateLimitBucket
 {
+    /// <summary>
+    /// Gets or sets the identifier for this bucket (e.g., IP address or user ID).
+    /// </summary>
     public string Identifier { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the timestamp when this bucket was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp when this bucket was last accessed.
+    /// </summary>
     public DateTime LastAccessedAt { get; set; }
+    /// <summary>
+    /// Gets or sets the list of request timestamps for this bucket.
+    /// </summary>
     public List<DateTime> Requests { get; set; } = new();
 }
 
+/// <summary>
+/// Represents the result of a rate limit check.
+/// </summary>
 public sealed class RateLimitResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the request is allowed.
+    /// </summary>
     public bool IsAllowed { get; set; }
+    /// <summary>
+    /// Gets or sets the current number of requests made.
+    /// </summary>
     public int CurrentCount { get; set; }
+    /// <summary>
+    /// Gets or sets the maximum number of requests allowed in the window.
+    /// </summary>
     public int MaxCount { get; set; }
+    /// <summary>
+    /// Gets or sets the time when the rate limit will reset.
+    /// </summary>
     public DateTime ResetTime { get; set; }
+    /// <summary>
+    /// Gets the number of remaining requests allowed in the current window.
+    /// </summary>
     public int RemainingRequests => Math.Max(0, MaxCount - CurrentCount);
+    /// <summary>
+    /// Gets the time span until the rate limit resets.
+    /// </summary>
     public TimeSpan TimeUntilReset => ResetTime - DateTime.UtcNow;
 }
 
+/// <summary>
+/// Represents the current rate limit status for an identifier.
+/// </summary>
 public sealed class RateLimitStatus
 {
+    /// <summary>
+    /// Gets or sets the identifier for this status (e.g., IP address or user ID).
+    /// </summary>
     public string Identifier { get; set; } = string.Empty;
+    /// <summary>
+    /// Gets or sets the current number of requests made.
+    /// </summary>
     public int CurrentCount { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp when this bucket was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp when this bucket was last accessed.
+    /// </summary>
     public DateTime LastAccessedAt { get; set; }
 }
 
+/// <summary>
+/// Represents statistics about the rate limiter.
+/// </summary>
 public sealed class RateLimiterStatistics
 {
+    /// <summary>
+    /// Gets or sets the number of active rate limit buckets.
+    /// </summary>
     public int ActiveBuckets { get; set; }
+    /// <summary>
+    /// Gets or sets the total number of requests across all buckets.
+    /// </summary>
     public int TotalRequests { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp of the oldest bucket.
+    /// </summary>
     public DateTime OldestBucket { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp of the newest bucket.
+    /// </summary>
     public DateTime NewestBucket { get; set; }
+    /// <summary>
+    /// Gets or sets the timestamp when these statistics were collected.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
