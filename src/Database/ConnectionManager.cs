@@ -206,10 +206,27 @@ namespace SqliteMultiTenant.Database
             private readonly ConcurrentBag<SQLiteConnection> _availableConnections;
             private int _totalConnections;
 
+            /// <summary>
+            /// Gets the number of connections currently available for reuse in the pool.
+            /// </summary>
             public int AvailableCount => _availableConnections.Count;
+
+            /// <summary>
+            /// Gets the total number of connections currently tracked by the pool.
+            /// </summary>
             public int TotalCount => _totalConnections;
+
+            /// <summary>
+            /// Gets a value indicating whether the pool is at capacity and new requests may be waiting.
+            /// </summary>
             public int WaitingCount => _semaphore.CurrentCount == 0 ? 1 : 0;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="ConnectionPool"/> class.
+            /// </summary>
+            /// <param name="connectionString">The connection string for the SQLite database.</param>
+            /// <param name="maxConnections">The maximum number of connections allowed in the pool.</param>
+            /// <param name="logger">The logger used for pool operations.</param>
             public ConnectionPool(string connectionString, int maxConnections, ILogger<ConnectionManager> logger)
             {
                 _connectionString = connectionString;
@@ -220,6 +237,12 @@ namespace SqliteMultiTenant.Database
                 _totalConnections = 0;
             }
 
+            /// <summary>
+            /// Retrieves an open connection from the pool or creates a new one if the pool is exhausted.
+            /// Blocks until a connection is available or the cancellation token is triggered.
+            /// </summary>
+            /// <param name="cancellationToken">Token to monitor for cancellation requests.</param>
+            /// <returns>An open <see cref="SQLiteConnection"/>.</returns>
             public async Task<SQLiteConnection> GetConnectionAsync(CancellationToken cancellationToken)
             {
                 await _semaphore.WaitAsync(cancellationToken);
@@ -243,6 +266,10 @@ namespace SqliteMultiTenant.Database
                 return connection;
             }
 
+            /// <summary>
+            /// Returns a connection to the pool for reuse. Disposes the connection if it is not in an open state.
+            /// </summary>
+            /// <param name="connection">The connection to release.</param>
             public async Task ReleaseConnectionAsync(SQLiteConnection connection)
             {
                 if (connection?.State == System.Data.ConnectionState.Open)
@@ -258,6 +285,9 @@ namespace SqliteMultiTenant.Database
                 _semaphore.Release();
             }
 
+            /// <summary>
+            /// Disposes all available connections in the pool and releases the semaphore.
+            /// </summary>
             public async ValueTask DisposeAsync()
             {
                 while (_availableConnections.TryTake(out var connection))
@@ -268,6 +298,9 @@ namespace SqliteMultiTenant.Database
                 _semaphore?.Dispose();
             }
 
+            /// <summary>
+            /// Synchronously disposes the pool by awaiting <see cref="DisposeAsync"/>.
+            /// </summary>
             public void Dispose() => DisposeAsync().GetAwaiter().GetResult();
         }
     }
