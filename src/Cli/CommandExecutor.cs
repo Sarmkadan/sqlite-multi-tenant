@@ -21,6 +21,16 @@ public sealed class CommandExecutor
     private readonly ILogger<CommandExecutor> _logger;
     private readonly Formatters.OutputFormatter _formatter;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandExecutor"/> class.
+    /// </summary>
+    /// <param name="tenantService">The service used to manage tenants.</param>
+    /// <param name="backupService">The service used to manage backups.</param>
+    /// <param name="migrationService">The service used to manage database migrations.</param>
+    /// <param name="healthService">The service used to perform health checks.</param>
+    /// <param name="connectionManager">The manager used to obtain database connections.</param>
+    /// <param name="logger">The logger used to record command execution events.</param>
+    /// <param name="formatter">The formatter used to produce command output.</param>
     public CommandExecutor(
         Services.ITenantService tenantService,
         Services.IBackupService backupService,
@@ -479,9 +489,23 @@ public sealed class CommandExecutor
     }
 }
 
+/// <summary>
+/// Represents the outcome of executing a command.
+/// </summary>
 public sealed class CommandResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the command completed successfully.
+    /// </summary>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message produced by the command.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets the process exit code corresponding to the command outcome.
+    /// </summary>
     public int ExitCode => Success ? 0 : 1;
 }
