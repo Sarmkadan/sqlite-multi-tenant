@@ -13,20 +13,44 @@ namespace SqliteMultiTenant.Operations;
 /// </summary>
 public interface IBatchProcessor
 {
+    /// <summary>
+    /// Processes items concurrently and collects the results and errors.
+    /// </summary>
+    /// <typeparam name="TItem">The type of item to process.</typeparam>
+    /// <typeparam name="TResult">The type of result produced for each item.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="operation">The asynchronous operation to perform on each item.</param>
+    /// <param name="maxConcurrency">The maximum number of operations to run concurrently.</param>
+    /// <returns>A task containing the results and errors from the batch.</returns>
     Task<BatchProcessResult<TResult>> ProcessAsync<TItem, TResult>(
         IEnumerable<TItem> items,
         Func<TItem, Task<TResult>> operation,
         int maxConcurrency = 4);
 
+    /// <summary>
+    /// Processes items concurrently and collects any errors.
+    /// </summary>
+    /// <typeparam name="TItem">The type of item to process.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="operation">The asynchronous operation to perform on each item.</param>
+    /// <param name="maxConcurrency">The maximum number of operations to run concurrently.</param>
+    /// <returns>A task containing the outcome of the batch.</returns>
     Task<BatchProcessResult<object>> ProcessAsync<TItem>(
         IEnumerable<TItem> items,
         Func<TItem, Task> operation,
         int maxConcurrency = 4);
 }
 
+/// <summary>
+/// Processes batches concurrently while isolating errors for individual items.
+/// </summary>
 public sealed class BatchProcessor : IBatchProcessor {
     private readonly ILogger<BatchProcessor> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchProcessor"/> class.
+    /// </summary>
+    /// <param name="logger">The logger used to record batch processing activity.</param>
     public BatchProcessor(ILogger<BatchProcessor> logger)
     {
         _logger = logger;
@@ -35,6 +59,13 @@ public sealed class BatchProcessor : IBatchProcessor {
     /// <summary>
     /// Processes items in a batch with result transformation.
     /// </summary>
+    /// <typeparam name="TItem">The type of item to process.</typeparam>
+    /// <typeparam name="TResult">The type of result produced for each item.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="operation">The asynchronous operation to perform on each item.</param>
+    /// <param name="maxConcurrency">The maximum number of operations to run concurrently.</param>
+    /// <returns>A task containing the results and errors from the batch.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="operation"/> is <see langword="null"/>.</exception>
     public async Task<BatchProcessResult<TResult>> ProcessAsync<TItem, TResult>(
         IEnumerable<TItem> items,
         Func<TItem, Task<TResult>> operation,
@@ -88,6 +119,12 @@ public sealed class BatchProcessor : IBatchProcessor {
     /// <summary>
     /// Processes items without result transformation.
     /// </summary>
+    /// <typeparam name="TItem">The type of item to process.</typeparam>
+    /// <param name="items">The items to process.</param>
+    /// <param name="operation">The asynchronous operation to perform on each item.</param>
+    /// <param name="maxConcurrency">The maximum number of operations to run concurrently.</param>
+    /// <returns>A task containing the outcome of the batch.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="items"/> or <paramref name="operation"/> is <see langword="null"/>.</exception>
     public async Task<BatchProcessResult<object>> ProcessAsync<TItem>(
         IEnumerable<TItem> items,
         Func<TItem, Task> operation,
@@ -139,19 +176,56 @@ public sealed class BatchProcessor : IBatchProcessor {
     }
 }
 
+/// <summary>
+/// Contains the successful results and errors produced by a batch operation.
+/// </summary>
+/// <typeparam name="T">The type of each successful result.</typeparam>
 public sealed class BatchProcessResult<T> {
+    /// <summary>
+    /// Gets or sets the successful results.
+    /// </summary>
     public List<T> SuccessfulResults { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the errors encountered while processing items.
+    /// </summary>
     public List<BatchErrorItem> Errors { get; set; } = new();
+
+    /// <summary>
+    /// Gets the number of successfully processed items.
+    /// </summary>
     public int SuccessCount => SuccessfulResults.Count;
+
+    /// <summary>
+    /// Gets the number of items that failed processing.
+    /// </summary>
     public int ErrorCount => Errors.Count;
+
+    /// <summary>
+    /// Gets the total number of processed items.
+    /// </summary>
     public int TotalCount => SuccessCount + ErrorCount;
+
+    /// <summary>
+    /// Gets the proportion of processed items that succeeded.
+    /// </summary>
     public double SuccessRate => TotalCount > 0 ? (double)SuccessCount / TotalCount : 0;
 
+    /// <summary>
+    /// Adds a successful result to the batch outcome.
+    /// </summary>
+    /// <param name="itemId">The identifier of the processed item.</param>
+    /// <param name="result">The result produced for the item.</param>
     public void AddSuccess(string itemId, T result)
     {
         SuccessfulResults.Add(result);
     }
 
+    /// <summary>
+    /// Adds an error to the batch outcome.
+    /// </summary>
+    /// <param name="itemId">The identifier of the item that failed.</param>
+    /// <param name="exception">The exception raised while processing the item.</param>
     public void AddError(string itemId, Exception exception)
     {
         Errors.Add(new BatchErrorItem
@@ -163,6 +237,10 @@ public sealed class BatchProcessResult<T> {
         });
     }
 
+    /// <summary>
+    /// Returns a summary of the batch outcome.
+    /// </summary>
+    /// <returns>A string containing the success count, error count, and success rate.</returns>
     public override string ToString()
     {
         return $"BatchProcessResult: {SuccessCount} success, {ErrorCount} errors, " +
@@ -170,9 +248,27 @@ public sealed class BatchProcessResult<T> {
     }
 }
 
+/// <summary>
+/// Describes an error encountered while processing a batch item.
+/// </summary>
 public sealed class BatchErrorItem {
+    /// <summary>
+    /// Gets or sets the identifier of the item that failed.
+    /// </summary>
     public string ItemId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the type name of the exception.
+    /// </summary>
     public string Exception { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the exception message.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the exception stack trace, if available.
+    /// </summary>
     public string? StackTrace { get; set; }
 }
