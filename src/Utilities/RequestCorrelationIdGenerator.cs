@@ -37,11 +37,10 @@ namespace SqliteMultiTenant.Utilities
         /// Sets the current correlation ID.
         /// </summary>
         /// <param name="correlationId">The correlation ID to set.</param>
-        /// <exception cref="ArgumentException">Thrown when the correlation ID is empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when the correlation ID is null, empty, or whitespace.</exception>
         public static void SetCorrelationId(string correlationId)
         {
-            if (string.IsNullOrWhiteSpace(correlationId))
-                throw new ArgumentException("Correlation ID cannot be empty", nameof(correlationId));
+            ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
 
             _currentCorrelationId.Value = correlationId;
 
@@ -101,8 +100,11 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         /// <param name="tenantId">The tenant ID.</param>
         /// <returns>A disposable scope that restores the previous correlation ID when disposed.</returns>
+        /// <exception cref="ArgumentException">Thrown when the tenant ID is null, empty, or whitespace.</exception>
         public static IDisposable CreateScope(string tenantId)
         {
+            ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+
             var correlationId = GenerateCorrelationId();
             var previousId = _currentCorrelationId.Value;
 
