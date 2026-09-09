@@ -18,6 +18,11 @@ namespace SqliteMultiTenant.Utilities
 /// </summary>
     public class DatabaseUtilities
     {
+        private const string PageCountPragma = "PRAGMA page_count";
+        private const string PageSizePragma = "PRAGMA page_size";
+        private const string TableInfoPragmaFormat = "PRAGMA table_info({0})";
+        private const int DefaultBusyTimeoutMs = 5000;
+        private const long BytesPerUnit = 1024;
         /// <summary>
         /// Configures optimal SQLite database settings for multi-tenant performance.
         /// Enables foreign keys, WAL journal mode, sets appropriate synchronous level, cache size,
@@ -36,15 +41,15 @@ namespace SqliteMultiTenant.Utilities
 
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = @"
+                command.CommandText = string.Format(@"
                     PRAGMA foreign_keys = ON;
                     PRAGMA journal_mode = WAL;
                     PRAGMA synchronous = NORMAL;
                     PRAGMA cache_size = 10000;
                     PRAGMA temp_store = MEMORY;
                     PRAGMA query_only = OFF;
-                    PRAGMA busy_timeout = 5000;
-                ";
+                    PRAGMA busy_timeout = {0};
+                ", DefaultBusyTimeoutMs);
 
                 await command.ExecuteNonQueryAsync();
             }
@@ -167,14 +172,14 @@ namespace SqliteMultiTenant.Utilities
                 // Get page count
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "PRAGMA page_count";
+                    command.CommandText = PageCountPragma;
                     stats.PageCount = (long)await command.ExecuteScalarAsync();
                 }
 
                 // Get page size
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "PRAGMA page_size";
+                    command.CommandText = PageSizePragma;
                     stats.PageSize = (long)await command.ExecuteScalarAsync();
                 }
 
@@ -231,7 +236,7 @@ namespace SqliteMultiTenant.Utilities
             {
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"PRAGMA table_info({tableName})";
+                    command.CommandText = string.Format(TableInfoPragmaFormat, tableName);
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -267,7 +272,7 @@ namespace SqliteMultiTenant.Utilities
             {
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"PRAGMA table_info({tableName})";
+                    command.CommandText = string.Format(TableInfoPragmaFormat, tableName);
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -296,10 +301,10 @@ namespace SqliteMultiTenant.Utilities
             double len = bytes;
             int order = 0;
 
-            while (len >= 1024 && order < sizes.Length - 1)
+            while (len >= BytesPerUnit && order < sizes.Length - 1)
             {
                 order++;
-                len = len / 1024;
+                len = len / BytesPerUnit;
             }
 
             return $"{len:0.##} {sizes[order]}";
