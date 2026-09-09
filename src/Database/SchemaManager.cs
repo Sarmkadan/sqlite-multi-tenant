@@ -20,6 +20,8 @@ namespace SqliteMultiTenant.Database
     /// </summary>
     public sealed class SchemaManager : IEquatable<SchemaManager>
     {
+        private const string TableInfoPragmaFormat = "PRAGMA table_info({0})\n";
+
         private readonly ILogger<SchemaManager> _logger;
         private readonly string _connectionString;
 
@@ -275,7 +277,7 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
             {
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = $"PRAGMA table_info({tableName})\n";
+                    command.CommandText = string.Format(TableInfoPragmaFormat, tableName);
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {
@@ -548,7 +550,7 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
 
                     using (var command = connection.CreateCommand())
                     {
-                        command.CommandText = $"PRAGMA table_info({tableName})\n";
+                        command.CommandText = string.Format(TableInfoPragmaFormat, tableName);
 
                         using (var reader = await command.ExecuteReaderAsync())
                         {
