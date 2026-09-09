@@ -16,14 +16,21 @@ using SqliteMultiTenant.Exceptions;
 
 namespace SqliteMultiTenant.Database
 {
-    // Manages connection pooling and lifecycle for per-tenant SQLite databases
-    // Implements connection reuse to minimize resource overhead and improve performance
+    /// <summary>
+    /// Manages connection pooling and lifecycle for per-tenant SQLite databases.
+    /// Implements connection reuse to minimize resource overhead and improve performance.
+    /// </summary>
     public sealed class ConnectionManager : IDisposable {
         private readonly ConcurrentDictionary<string, ConnectionPool> _pools;
         private readonly ILogger<ConnectionManager> _logger;
         private readonly int _maxConnectionsPerPool;
         private bool _disposed;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConnectionManager"/> class.
+        /// </summary>
+        /// <param name="logger">The logger used for connection manager operations.</param>
+        /// <param name="maxConnectionsPerPool">The maximum number of connections allowed per tenant pool.</param>
         public ConnectionManager(ILogger<ConnectionManager> logger, int maxConnectionsPerPool = 10)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -74,6 +81,9 @@ namespace SqliteMultiTenant.Database
         /// </param>
         /// <param name="cancellationToken">Cancellation token for the async operation.</param>
         /// <returns>An open, decrypted SQLite connection bound to the tenant database.</returns>
+        /// <exception cref="ObjectDisposedException">Thrown when the connection manager has been disposed.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="tenantId"/> or <paramref name="connectionString"/> is null or empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="encryptionKey"/> is empty or whitespace.</exception>
         public async Task<SQLiteConnection> GetEncryptedConnectionAsync(
             string tenantId,
             string connectionString,
@@ -128,7 +138,10 @@ namespace SqliteMultiTenant.Database
             }
         }
 
-        // Gets current pool statistics for monitoring
+        /// <summary>
+        /// Gets current pool statistics for monitoring.
+        /// </summary>
+        /// <returns>A dictionary mapping tenant IDs to their pool statistics.</returns>
         public Dictionary<string, PoolStatistics> GetPoolStatistics()
         {
             var stats = new Dictionary<string, PoolStatistics>();
@@ -253,9 +266,24 @@ namespace SqliteMultiTenant.Database
     }
 
     public sealed class PoolStatistics {
+        /// <summary>
+        /// The unique identifier of the tenant.
+        /// </summary>
         public string TenantId { get; set; }
+
+        /// <summary>
+        /// The number of available connections in the pool for the tenant.
+        /// </summary>
         public int AvailableConnections { get; set; }
+
+        /// <summary>
+        /// The total number of connections created in the pool for the tenant.
+        /// </summary>
         public int TotalConnections { get; set; }
+
+        /// <summary>
+        /// Returns 1 if there are no available connections in the pool (indicating that requests may be waiting), otherwise 0.
+        /// </summary>
         public int WaitingRequests { get; set; }
     }
 }
