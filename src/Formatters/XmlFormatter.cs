@@ -162,10 +162,10 @@ public sealed class XmlExportFormatter {
             return text;
 
         return text
-            .Replace("&", "&")
-            .Replace("<", "<")
-            .Replace(">", ">")
-            .Replace("\"", """)
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;")
             .Replace("'", "&apos;");
     }
 }
