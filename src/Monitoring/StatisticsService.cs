@@ -19,12 +19,20 @@ public interface IStatisticsService
     Task<TrendAnalysis> AnalyzeTrendAsync(string metricName, TimeSpan period);
 }
 
+/// <summary>
+/// Implements statistics collection and analysis functionality.
+/// Thread-safe service for recording system events and generating metrics.
+/// </summary>
 public sealed class StatisticsService : IStatisticsService {
     private readonly List<SystemEvent> _events;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<StatisticsService> _logger;
     private const int MaxEventsInMemory = 10000;
 
+    /// <summary>
+    /// Initializes a new instance of the StatisticsService class.
+    /// </summary>
+    /// <param name="logger">The logger instance for diagnostic logging.</param>
     public StatisticsService(ILogger<StatisticsService> logger)
     {
         _logger = logger;
@@ -213,42 +221,162 @@ public sealed class StatisticsService : IStatisticsService {
     }
 }
 
+/// <summary>
+/// Represents a system event with associated metrics and metadata.
+/// </summary>
 public sealed class SystemEvent {
+    /// <summary>
+    /// Unique identifier for the event.
+    /// </summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Type or category of the event (e.g., "Request", "Error", "Metric").
+    /// </summary>
     public string EventType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Numeric value associated with the event (e.g., response time, count).
+    /// </summary>
     public double Value { get; set; }
+
+    /// <summary>
+    /// Optional duration of the event if applicable.
+    /// </summary>
     public TimeSpan? Duration { get; set; }
+
+    /// <summary>
+    /// Timestamp when the event occurred (UTC).
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Additional key-value pairs for event metadata.
+    /// </summary>
     public Dictionary<string, string> Tags { get; set; } = new();
 }
 
+/// <summary>
+/// Contains statistical data for a specific time period.
+/// </summary>
 public sealed class SystemStatistics {
+    /// <summary>
+    /// The time period for which statistics are collected.
+    /// </summary>
     public TimeSpan Period { get; set; }
+
+    /// <summary>
+    /// The start time of the period (UTC).
+    /// </summary>
     public DateTime StartTime { get; set; }
+
+    /// <summary>
+    /// The end time of the period (UTC).
+    /// </summary>
     public DateTime EndTime { get; set; }
+
+    /// <summary>
+    /// Total number of events in the period.
+    /// </summary>
     public int TotalEvents { get; set; }
+
+    /// <summary>
+    /// Breakdown of events by type (event type -> count).
+    /// </summary>
     public Dictionary<string, int> EventTypeBreakdown { get; set; } = new();
+
+    /// <summary>
+    /// Average response time in milliseconds for events with duration.
+    /// </summary>
     public double AverageResponseTime { get; set; }
+
+    /// <summary>
+    /// Maximum number of events recorded in any single second within the period.
+    /// </summary>
     public int PeakEventCount { get; set; }
 }
 
+/// <summary>
+/// Represents an aggregated metric over a time interval.
+/// </summary>
 public sealed class AggregatedMetric {
+    /// <summary>
+    /// The timestamp of the aggregation interval (start of the interval).
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// The average value of the metric in the interval.
+    /// </summary>
     public double Value { get; set; }
+
+    /// <summary>
+    /// The number of samples in the interval.
+    /// </summary>
     public int Count { get; set; }
+
+    /// <summary>
+    /// The minimum value of the metric in the interval.
+    /// </summary>
     public double Min { get; set; }
+
+    /// <summary>
+    /// The maximum value of the metric in the interval.
+    /// </>
     public double Max { get; set; }
 }
 
+/// <summary>
+/// Contains the result of a trend analysis for a metric over a time period.
+/// </summary>
 public sealed class TrendAnalysis {
+    /// <summary>
+    /// The name of the metric that was analyzed.
+    /// </summary>
     public string MetricName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The time period over which the trend was analyzed.
+    /// </summary>
     public TimeSpan Period { get; set; }
+
+    /// <summary>
+    /// The number of data points in the analysis.
+    /// </summary>
     public int DataPoints { get; set; }
+
+    /// <summary>
+    /// The average value of the metric over the period.
+    /// </summary>
     public double AverageValue { get; set; }
+
+    /// <summary>
+    /// The minimum value of the metric over the period.
+    /// </summary>
     public double MinValue { get; set; }
+
+    /// <summary>
+    /// The maximum value of the metric over the period.
+    /// </summary>
     public double MaxValue { get; set; }
+
+    /// <summary>
+    /// The direction of the trend (e.g., "Upward", "Downward", "Stable").
+    /// </summary>
     public string TrendDirection { get; set; } = "Stable";
+
+    /// <summary>
+    /// The strength of the trend (absolute value of the slope).
+    /// </summary>
     public double TrendStrength { get; set; }
+
+    /// <summary>
+    /// The volatility (standard deviation) of the metric values.
+    /// </summary>
     public double Volatility { get; set; }
+
+    /// <summary>
+    /// The timestamp when the analysis was performed (UTC).
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
