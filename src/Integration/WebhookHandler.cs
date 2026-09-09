@@ -68,6 +68,9 @@ public sealed class WebhookDelivery {
 /// Webhook handler implementation with HTTP delivery and retry logic.
 /// </summary>
 public sealed class WebhookHandler : IWebhookHandler {
+    private static readonly TimeSpan DefaultWebhookTimeout = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan DefaultRetryDelay = TimeSpan.FromSeconds(2);
+
     private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookHandler> _logger;
     private readonly Dictionary<string, WebhookHandlerSubscription> _subscriptions = new();
@@ -108,7 +111,7 @@ public sealed class WebhookHandler : IWebhookHandler {
                 }
 
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(TimeSpan.FromSeconds(30)); // 30-second timeout
+                cts.CancelAfter(DefaultWebhookTimeout);
 
                 var response = await _httpClient.PostAsync(delivery.Url, content, cts.Token);
 
@@ -142,8 +145,7 @@ public sealed class WebhookHandler : IWebhookHandler {
 
             if (delivery.RetryCount <= delivery.MaxRetries)
             {
-                // Exponential backoff: 2s * 2^(retry-1)
-                var delayMs = (int)(2000 * Math.Pow(2, delivery.RetryCount - 1));
+                var delayMs = (int)(DefaultRetryDelay.TotalMilliseconds * Math.Pow(2, delivery.RetryCount - 1));
                 _logger.LogInformation(
                     "Retrying webhook delivery in {ms}ms [DeliveryId: {deliveryId}]",
                     delayMs,
