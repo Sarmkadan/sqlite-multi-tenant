@@ -20,6 +20,9 @@ namespace SqliteMultiTenant.Api.Controllers;
 [Route("api/databases")]
 public sealed class DatabaseController : ControllerBase {
     private const string BaseDatabasePath = "./databases";
+        private const string QuickCheckPragma = "PRAGMA quick_check";
+        private const string IntegrityCheckPragma = "PRAGMA integrity_check";
+        private const string TableInfoPragmaFormat = "PRAGMA table_info(\"{0}\")";
 
     private readonly ILogger<DatabaseController> _logger;
 
@@ -73,7 +76,7 @@ public sealed class DatabaseController : ControllerBase {
 
                 using (var command = connection.CreateCommand())
                 {
-                    command.CommandText = "PRAGMA quick_check";
+                    command.CommandText = QuickCheckPragma;
                     var quickCheckResult = Convert.ToString(command.ExecuteScalar());
                     isCorrupted = !string.Equals(quickCheckResult, "ok", StringComparison.OrdinalIgnoreCase);
                 }
@@ -185,7 +188,7 @@ public sealed class DatabaseController : ControllerBase {
                 await connection.OpenAsync();
 
                 await using var command = connection.CreateCommand();
-                command.CommandText = "PRAGMA integrity_check";
+                command.CommandText = IntegrityCheckPragma;
 
                 await using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -257,7 +260,7 @@ public sealed class DatabaseController : ControllerBase {
                     var columns = new List<ColumnSchema>();
                     using (var command = connection.CreateCommand())
                     {
-                        command.CommandText = $"PRAGMA table_info(\"{tableName}\")";
+                        command.CommandText = string.Format(TableInfoPragmaFormat, tableName);
                         using var reader = command.ExecuteReader();
                         while (reader.Read())
                         {
