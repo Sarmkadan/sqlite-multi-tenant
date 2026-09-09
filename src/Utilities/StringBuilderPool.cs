@@ -20,8 +20,11 @@ namespace SqliteMultiTenant.Utilities
         /// </summary>
         /// <param name="capacity">Initial capacity for the StringBuilder. If 0, uses default capacity.</param>
         /// <returns>A StringBuilder instance.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">If <paramref name="capacity"/> is negative.</exception>
         public static StringBuilder Rent(int capacity = 0)
         {
+            ArgumentOutOfRangeException.ThrowIfNegative(capacity);
+
             lock (_pool)
             {
                 if (_pool.Count > 0)
@@ -45,10 +48,10 @@ namespace SqliteMultiTenant.Utilities
         /// Returns a StringBuilder instance to the pool for reuse.
         /// </summary>
         /// <param name="sb">The StringBuilder to return to the pool.</param>
+        /// <exception cref="ArgumentNullException">If <paramref name="sb"/> is null.</exception>
         public static void Return(StringBuilder sb)
         {
-            if (sb == null)
-                return;
+            ArgumentNullException.ThrowIfNull(sb);
 
             lock (_pool)
             {
