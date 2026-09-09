@@ -14,6 +14,10 @@ public sealed class CommandParser {
     private readonly Dictionary<string, CommandHandler> _commands;
     private readonly ILogger<CommandParser> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommandParser"/> class.
+    /// </summary>
+    /// <param name="logger">The logger used to record command parsing activity.</param>
     public CommandParser(ILogger<CommandParser> logger)
     {
         _logger = logger;
@@ -91,6 +95,8 @@ public sealed class CommandParser {
     /// Parses command-line arguments and returns a parsed command object.
     /// Validates all required arguments and returns helpful error messages.
     /// </summary>
+    /// <param name="args">The command-line arguments to parse.</param>
+    /// <returns>A result describing the parsed command or any help or error information.</returns>
     public ParsedCommand Parse(string[] args)
     {
         _logger.LogInformation("Parse called with {ArgumentCount} arguments", args.Length);
@@ -199,25 +205,87 @@ public sealed class CommandParser {
     }
 }
 
+/// <summary>
+/// Describes a top-level command and its available subcommands.
+/// </summary>
 public sealed class CommandHandler {
+    /// <summary>
+    /// Gets or sets the command name.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the command description.
+    /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the subcommands available for the command.
+    /// </summary>
     public Subcommand[]? Subcommands { get; set; }
 }
 
+/// <summary>
+/// Describes a subcommand and the arguments it requires.
+/// </summary>
 public sealed class Subcommand {
+    /// <summary>
+    /// Gets or sets the subcommand name.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the subcommand description.
+    /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the names of the required positional arguments.
+    /// </summary>
     public string[] RequiredArgs { get; set; } = [];
 }
 
+/// <summary>
+/// Represents the result of parsing command-line arguments.
+/// </summary>
 public sealed class ParsedCommand {
+    /// <summary>
+    /// Gets or sets a value indicating whether parsing succeeded.
+    /// </summary>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parsed top-level command name.
+    /// </summary>
     public string MainCommand { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the parsed subcommand name.
+    /// </summary>
     public string Subcommand { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the positional arguments supplied to the subcommand.
+    /// </summary>
     public List<string> Arguments { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the description of the parsed subcommand.
+    /// </summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the help or error message associated with the result.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the result represents a help command.
+    /// </summary>
     public bool IsHelpCommand { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the result represents an error.
+    /// </summary>
     public bool IsErrorCommand { get; set; }
 }
