@@ -18,13 +18,23 @@ public sealed class BackupRepository : IBackupRepository {
     private readonly string _connectionString;
     private readonly ILogger<BackupRepository> _logger;
 
-    public BackupRepository(string connectionString, ILogger<BackupRepository> logger)
+    /// <summary>
+/// Initializes a new instance of the <see cref="BackupRepository"/> class.
+/// </summary>
+/// <param name="connectionString">The connection string for the SQLite database.</param>
+/// <param name="logger">The logger instance for logging messages.</param>
+public BackupRepository(string connectionString, ILogger<BackupRepository> logger)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         InitializeDatabase();
     }
 
+    /// <summary>
+    /// Retrieves all backups ordered by creation time descending.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A list of all backups.</returns>
     public async Task<List<Backup>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -57,6 +67,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves a backup by its unique identifier.
+    /// </summary>
+    /// <param name="backupId">The unique identifier of the backup to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The backup if found; otherwise, null.</returns>
     public async Task<Backup?> GetByIdAsync(string backupId, CancellationToken cancellationToken = default)
     {
         try
@@ -84,6 +100,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all backups for a specific database ordered by creation time descending.
+    /// </summary>
+    /// <param name="databaseId">The unique identifier of the database.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A list of backups for the specified database.</returns>
     public async Task<List<Backup>> GetByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -118,6 +140,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all completed backups for a specific database ordered by creation time descending.
+    /// </summary>
+    /// <param name="databaseId">The unique identifier of the database.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A list of completed backups for the specified database.</returns>
     public async Task<List<Backup>> GetCompletedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -153,6 +181,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all verified backups for a specific database ordered by creation time descending.
+    /// </summary>
+    /// <param name="databaseId">The unique identifier of the database.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A list of verified backups for the specified database.</returns>
     public async Task<List<Backup>> GetVerifiedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -187,6 +221,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all failed backups for a specific database ordered by creation time descending.
+    /// </summary>
+    /// <param name="databaseId">The unique identifier of the database.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A list of failed backups for the specified database.</returns>
     public async Task<List<Backup>> GetFailedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -222,6 +262,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves the most recent backup for a specific database.
+    /// </summary>
+    /// <param name="databaseId">The unique identifier of the database.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The latest backup if found; otherwise, null.</returns>
     public async Task<Backup?> GetLatestBackupAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -251,6 +297,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Adds a new backup to the repository.
+    /// </summary>
+    /// <param name="backup">The backup entity to add.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The added backup entity.</returns>
     public async Task<Backup> AddAsync(Backup backup, CancellationToken cancellationToken = default)
     {
         try
@@ -282,6 +334,11 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Updates an existing backup in the repository.
+    /// </summary>
+    /// <param name="backup">The backup entity to update.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     public async Task UpdateAsync(Backup backup, CancellationToken cancellationToken = default)
     {
         try
@@ -315,6 +372,11 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Deletes a backup from the repository by its unique identifier.
+    /// </summary>
+    /// <param name="backupId">The unique identifier of the backup to delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
     public async Task DeleteAsync(string backupId, CancellationToken cancellationToken = default)
     {
         try
@@ -336,6 +398,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Determines whether a backup with the specified identifier exists.
+    /// </summary>
+    /// <param name="backupId">The unique identifier of the backup to check.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>true if the backup exists; otherwise, false.</returns>
     public async Task<bool> ExistsAsync(string backupId, CancellationToken cancellationToken = default)
     {
         try
@@ -358,6 +426,12 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Gets the number of backups for a specific database.
+    /// </summary>
+    /// <param name="databaseId">The unique identifier of the database.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The count of backups for the specified database.</returns>
     public async Task<int> GetCountByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -380,6 +454,11 @@ public sealed class BackupRepository : IBackupRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all expired backups ordered by expiration time ascending.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A list of expired backups.</returns>
     public async Task<List<Backup>> GetExpiredBackupsAsync(CancellationToken cancellationToken = default)
     {
         try
