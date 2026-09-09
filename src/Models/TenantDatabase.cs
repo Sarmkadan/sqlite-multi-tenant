@@ -78,6 +78,11 @@ public sealed class TenantDatabase {
     public ICollection<Backup> Backups { get; set; } = new List<Backup>();
 
     /// <summary>
+    /// Indicates whether the database has encryption enabled.
+    /// </summary>
+    public bool IsEncrypted => !string.IsNullOrEmpty(EncryptionKey);
+
+    /// <summary>
     /// Validates the database entity
     /// </summary>
     /// <param name="errors">The list of validation errors, if any.</param>
@@ -125,6 +130,7 @@ public sealed class TenantDatabase {
     /// <summary>
     /// Updates the database size
     /// </summary>
+    /// <param name="newSizeBytes">The new size of the database in bytes.</param>
     public void UpdateSize(long newSizeBytes)
     {
         if (newSizeBytes >= 0)
@@ -155,11 +161,6 @@ public sealed class TenantDatabase {
             ActiveConnectionCount--;
         }
     }
-
-    /// <summary>
-    /// Checks if the database has encryption enabled
-    /// </summary>
-    public bool IsEncrypted => !string.IsNullOrEmpty(EncryptionKey);
 
     public override string ToString() => $"TenantDatabase {{ DatabaseId = {DatabaseId}, TenantId = {TenantId}, Name = {Name}, FilePath = {FilePath}, SizeBytes = {SizeBytes}, CreatedAt = {CreatedAt} }}";
 }
