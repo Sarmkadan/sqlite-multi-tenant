@@ -58,6 +58,10 @@ public sealed class RequestMetrics {
 /// In-memory metrics collection with thread-safe aggregation.
 /// </summary>
 public sealed class MetricsService : IMetricsService {
+    private const double PercentFactor = 100;
+    private const double MillisecondsPerSecond = 1000.0;
+    private const string MetricPrefix = "sqlite_multi_tenant_";
+
     private readonly ILogger<MetricsService> _logger;
     private long _totalRequests;
     private long _totalErrors;
@@ -224,21 +228,21 @@ public sealed class MetricsService : IMetricsService {
         report.AppendLine("HTTP Requests:");
         report.AppendLine($"  Total: {snapshot.TotalRequests}");
         report.AppendLine($"  Errors: {snapshot.TotalErrors}");
-        report.AppendLine($"  Error Rate: {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * 100 : 0):F2}%");
+        report.AppendLine($"  Error Rate: {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * PercentFactor : 0):F2}%");
         report.AppendLine($"  Avg Response Time: {snapshot.AverageResponseTimeMs:F2}ms");
         report.AppendLine();
 
         report.AppendLine("Backups:");
         report.AppendLine($"  Total: {snapshot.TotalBackups}");
         report.AppendLine($"  Failed: {snapshot.FailedBackups}");
-        report.AppendLine($"  Success Rate: {(snapshot.TotalBackups > 0 ? (double)(snapshot.TotalBackups - snapshot.FailedBackups) / snapshot.TotalBackups * 100 : 0):F2}%");
+        report.AppendLine($"  Success Rate: {(snapshot.TotalBackups > 0 ? (double)(snapshot.TotalBackups - snapshot.FailedBackups) / snapshot.TotalBackups * PercentFactor : 0):F2}%");
         report.AppendLine($"  Total Data Backed Up: {snapshot.TotalBackupBytes / 1_000_000_000:F2}GB");
         report.AppendLine();
 
         report.AppendLine("Migrations:");
         report.AppendLine($"  Total: {snapshot.TotalMigrations}");
         report.AppendLine($"  Failed: {snapshot.FailedMigrations}");
-        report.AppendLine($"  Success Rate: {(snapshot.TotalMigrations > 0 ? (double)(snapshot.TotalMigrations - snapshot.FailedMigrations) / snapshot.TotalMigrations * 100 : 0):F2}%");
+        report.AppendLine($"  Success Rate: {(snapshot.TotalMigrations > 0 ? (double)(snapshot.TotalMigrations - snapshot.FailedMigrations) / snapshot.TotalMigrations * PercentFactor : 0):F2}%");
 
         return report.ToString();
     }
@@ -255,49 +259,49 @@ public sealed class MetricsService : IMetricsService {
         var builder = new System.Text.StringBuilder();
 
         // Global counters (no tenant label)
-        builder.AppendLine("# HELP sqlite_multi_tenant_requests_total Total number of HTTP requests processed");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_requests_total counter");
-        builder.AppendLine($"sqlite_multi_tenant_requests_total {snapshot.TotalRequests}");
+        builder.AppendLine($"# HELP {MetricPrefix}requests_total Total number of HTTP requests processed");
+        builder.AppendLine($"# TYPE {MetricPrefix}requests_total counter");
+        builder.AppendLine($"{MetricPrefix}requests_total {snapshot.TotalRequests}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_errors_total Total number of errors encountered");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_errors_total counter");
-        builder.AppendLine($"sqlite_multi_tenant_errors_total {snapshot.TotalErrors}");
+        builder.AppendLine($"# HELP {MetricPrefix}errors_total Total number of errors encountered");
+        builder.AppendLine($"# TYPE {MetricPrefix}errors_total counter");
+        builder.AppendLine($"{MetricPrefix}errors_total {snapshot.TotalErrors}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_error_rate Error rate as a percentage (0-100)");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_error_rate gauge");
-        builder.AppendLine($"sqlite_multi_tenant_error_rate {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * 100 : 0)}");
+        builder.AppendLine($"# HELP {MetricPrefix}error_rate Error rate as a percentage (0-100)");
+        builder.AppendLine($"# TYPE {MetricPrefix}error_rate gauge");
+        builder.AppendLine($"{MetricPrefix}error_rate {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * PercentFactor : 0)}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_request_duration_seconds Average request duration in seconds");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_request_duration_seconds gauge");
-        builder.AppendLine($"sqlite_multi_tenant_request_duration_seconds {snapshot.AverageResponseTimeMs / 1000.0}");
+        builder.AppendLine($"# HELP {MetricPrefix}request_duration_seconds Average request duration in seconds");
+        builder.AppendLine($"# TYPE {MetricPrefix}request_duration_seconds gauge");
+        builder.AppendLine($"{MetricPrefix}request_duration_seconds {snapshot.AverageResponseTimeMs / MillisecondsPerSecond}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_backups_total Total number of backup operations");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_backups_total counter");
-        builder.AppendLine($"sqlite_multi_tenant_backups_total {snapshot.TotalBackups}");
+        builder.AppendLine($"# HELP {MetricPrefix}backups_total Total number of backup operations");
+        builder.AppendLine($"# TYPE {MetricPrefix}backups_total counter");
+        builder.AppendLine($"{MetricPrefix}backups_total {snapshot.TotalBackups}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_backups_failed_total Total number of failed backup operations");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_backups_failed_total counter");
-        builder.AppendLine($"sqlite_multi_tenant_backups_failed_total {snapshot.FailedBackups}");
+        builder.AppendLine($"# HELP {MetricPrefix}backups_failed_total Total number of failed backup operations");
+        builder.AppendLine($"# TYPE {MetricPrefix}backups_failed_total counter");
+        builder.AppendLine($"{MetricPrefix}backups_failed_total {snapshot.FailedBackups}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_backup_size_bytes Total bytes backed up across all operations");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_backup_size_bytes counter");
-        builder.AppendLine($"sqlite_multi_tenant_backup_size_bytes {snapshot.TotalBackupBytes}");
+        builder.AppendLine($"# HELP {MetricPrefix}backup_size_bytes Total bytes backed up across all operations");
+        builder.AppendLine($"# TYPE {MetricPrefix}backup_size_bytes counter");
+        builder.AppendLine($"{MetricPrefix}backup_size_bytes {snapshot.TotalBackupBytes}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_migrations_total Total number of database migrations performed");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_migrations_total counter");
-        builder.AppendLine($"sqlite_multi_tenant_migrations_total {snapshot.TotalMigrations}");
+        builder.AppendLine($"# HELP {MetricPrefix}migrations_total Total number of database migrations performed");
+        builder.AppendLine($"# TYPE {MetricPrefix}migrations_total counter");
+        builder.AppendLine($"{MetricPrefix}migrations_total {snapshot.TotalMigrations}");
         builder.AppendLine();
 
-        builder.AppendLine("# HELP sqlite_multi_tenant_migrations_failed_total Total number of failed database migrations");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_migrations_failed_total counter");
-        builder.AppendLine($"sqlite_multi_tenant_migrations_failed_total {snapshot.FailedMigrations}");
+        builder.AppendLine($"# HELP {MetricPrefix}migrations_failed_total Total number of failed database migrations");
+        builder.AppendLine($"# TYPE {MetricPrefix}migrations_failed_total counter");
+        builder.AppendLine($"{MetricPrefix}migrations_failed_total {snapshot.FailedMigrations}");
         builder.AppendLine();
 
         // Per-tenant metrics (with tenant_id label)
@@ -305,24 +309,24 @@ public sealed class MetricsService : IMetricsService {
         {
             var tenantId = tenantContext.TenantId;
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_tenant_requests_total Total requests for tenant");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_tenant_requests_total counter");
-            builder.AppendLine($"sqlite_multi_tenant_tenant_requests_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {snapshot.TotalRequests}");
+            builder.AppendLine($"# HELP {MetricPrefix}tenant_requests_total Total requests for tenant");
+            builder.AppendLine($"# TYPE {MetricPrefix}tenant_requests_total counter");
+            builder.AppendLine($"{MetricPrefix}tenant_requests_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {snapshot.TotalRequests}");
             builder.AppendLine();
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_tenant_errors_total Total errors for tenant");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_tenant_errors_total counter");
-            builder.AppendLine($"sqlite_multi_tenant_tenant_errors_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {snapshot.TotalErrors}");
+            builder.AppendLine($"# HELP {MetricPrefix}tenant_errors_total Total errors for tenant");
+            builder.AppendLine($"# TYPE {MetricPrefix}tenant_errors_total counter");
+            builder.AppendLine($"{MetricPrefix}tenant_errors_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {snapshot.TotalErrors}");
             builder.AppendLine();
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_tenant_error_rate Error rate for tenant as a percentage (0-100)");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_tenant_error_rate gauge");
-            builder.AppendLine($"sqlite_multi_tenant_tenant_error_rate{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * 100 : 0)}");
+            builder.AppendLine($"# HELP {MetricPrefix}tenant_error_rate Error rate for tenant as a percentage (0-100)");
+            builder.AppendLine($"# TYPE {MetricPrefix}tenant_error_rate gauge");
+            builder.AppendLine($"{MetricPrefix}tenant_error_rate{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {(snapshot.TotalRequests > 0 ? (double)snapshot.TotalErrors / snapshot.TotalRequests * PercentFactor : 0)}");
             builder.AppendLine();
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_tenant_request_duration_seconds Average request duration for tenant in seconds");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_tenant_request_duration_seconds gauge");
-            builder.AppendLine($"sqlite_multi_tenant_tenant_request_duration_seconds{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {snapshot.AverageResponseTimeMs / 1000.0}");
+            builder.AppendLine($"# HELP {MetricPrefix}tenant_request_duration_seconds Average request duration for tenant in seconds");
+            builder.AppendLine($"# TYPE {MetricPrefix}tenant_request_duration_seconds gauge");
+            builder.AppendLine($"{MetricPrefix}tenant_request_duration_seconds{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\"}} {snapshot.AverageResponseTimeMs / MillisecondsPerSecond}");
             builder.AppendLine();
         }
 
@@ -333,19 +337,19 @@ public sealed class MetricsService : IMetricsService {
             var metrics = endpointMetric.Value;
             var tenantId = tenantContext?.TenantId ?? "global";
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_endpoint_requests_total Total requests for endpoint");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_endpoint_requests_total counter");
-            builder.AppendLine($"sqlite_multi_tenant_endpoint_requests_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",endpoint=\"{EscapePrometheusLabel(endpoint)}\"}} {metrics.RequestCount}");
+            builder.AppendLine($"# HELP {MetricPrefix}endpoint_requests_total Total requests for endpoint");
+            builder.AppendLine($"# TYPE {MetricPrefix}endpoint_requests_total counter");
+            builder.AppendLine($"{MetricPrefix}endpoint_requests_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",endpoint=\"{EscapePrometheusLabel(endpoint)}\"}} {metrics.RequestCount}");
             builder.AppendLine();
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_endpoint_errors_total Total errors for endpoint");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_endpoint_errors_total counter");
-            builder.AppendLine($"sqlite_multi_tenant_endpoint_errors_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",endpoint=\"{EscapePrometheusLabel(endpoint)}\"}} {metrics.ErrorCount}");
+            builder.AppendLine($"# HELP {MetricPrefix}endpoint_errors_total Total errors for endpoint");
+            builder.AppendLine($"# TYPE {MetricPrefix}endpoint_errors_total counter");
+            builder.AppendLine($"{MetricPrefix}endpoint_errors_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",endpoint=\"{EscapePrometheusLabel(endpoint)}\"}} {metrics.ErrorCount}");
             builder.AppendLine();
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_endpoint_request_duration_seconds Average request duration for endpoint in seconds");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_endpoint_request_duration_seconds gauge");
-            builder.AppendLine($"sqlite_multi_tenant_endpoint_request_duration_seconds{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",endpoint=\"{EscapePrometheusLabel(endpoint)}\"}} {metrics.AverageResponseTimeMs / 1000.0}");
+            builder.AppendLine($"# HELP {MetricPrefix}endpoint_request_duration_seconds Average request duration for endpoint in seconds");
+            builder.AppendLine($"# TYPE {MetricPrefix}endpoint_request_duration_seconds gauge");
+            builder.AppendLine($"{MetricPrefix}endpoint_request_duration_seconds{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",endpoint=\"{EscapePrometheusLabel(endpoint)}\"}} {metrics.AverageResponseTimeMs / MillisecondsPerSecond}");
             builder.AppendLine();
         }
 
@@ -356,17 +360,17 @@ public sealed class MetricsService : IMetricsService {
             var count = errorCount.Value;
             var tenantId = tenantContext?.TenantId ?? "global";
 
-            builder.AppendLine("# HELP sqlite_multi_tenant_errors_by_type_total Total errors by error type");
-            builder.AppendLine("# TYPE sqlite_multi_tenant_errors_by_type_total counter");
-            builder.AppendLine($"sqlite_multi_tenant_errors_by_type_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",error_type=\"{EscapePrometheusLabel(errorType)}\"}} {count}");
+            builder.AppendLine($"# HELP {MetricPrefix}errors_by_type_total Total errors by error type");
+            builder.AppendLine($"# TYPE {MetricPrefix}errors_by_type_total counter");
+            builder.AppendLine($"{MetricPrefix}errors_by_type_total{{tenant_id=\"{EscapePrometheusLabel(tenantId)}\",error_type=\"{EscapePrometheusLabel(errorType)}\"}} {count}");
             builder.AppendLine();
         }
 
         // Build info metric
-        builder.AppendLine("# HELP sqlite_multi_tenant_build_info Build information and version");
-        builder.AppendLine("# TYPE sqlite_multi_tenant_build_info gauge");
+        builder.AppendLine($"# HELP {MetricPrefix}build_info Build information and version");
+        builder.AppendLine($"# TYPE {MetricPrefix}build_info gauge");
         var version = System.Reflection.Assembly.GetExecutingAssembly()?.GetName().Version?.ToString() ?? "unknown";
-        builder.AppendLine($"sqlite_multi_tenant_build_info{{version=\"{EscapePrometheusLabel(version)}\",captured_at=\"{DateTime.UtcNow:O}\"}} 1");
+        builder.AppendLine($"{MetricPrefix}build_info{{version=\"{EscapePrometheusLabel(version)}\",captured_at=\"{DateTime.UtcNow:O}\"}} 1");
         builder.AppendLine();
 
         return builder.ToString();
