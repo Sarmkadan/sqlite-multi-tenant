@@ -18,6 +18,11 @@ public sealed class TenantRepository : ITenantRepository {
     private readonly string _connectionString;
     private readonly ILogger<TenantRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the TenantRepository class.
+    /// </summary>
+    /// <param name="connectionString">The connection string for the SQLite database.</param>
+    /// <param name="logger">The logger instance for logging messages.</param>
     public TenantRepository(string connectionString, ILogger<TenantRepository> logger)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
@@ -25,6 +30,12 @@ public sealed class TenantRepository : ITenantRepository {
         InitializeDatabase();
     }
 
+    /// <summary>
+    /// Retrieves a tenant by its unique identifier.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the tenant if found, otherwise null.</returns>
     public async Task<Tenant?> GetByIdAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         try
@@ -51,6 +62,12 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves a tenant by its name.
+    /// </summary>
+    /// <param name="name">The name of the tenant to retrieve.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the tenant if found, otherwise null.</returns>
     public async Task<Tenant?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
     {
         try
@@ -77,6 +94,11 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all tenants.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of all tenants.</returns>
     public async Task<List<Tenant>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -107,11 +129,22 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all active tenants.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of active tenants.</returns>
     public async Task<List<Tenant>> GetActiveTenantsAsync(CancellationToken cancellationToken = default)
     {
         return await GetByStatusAsync((int)TenantStatus.Active, cancellationToken);
     }
 
+    /// <summary>
+    /// Retrieves tenants by their status.
+    /// </summary>
+    /// <param name="status">The status value to filter tenants by.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of tenants with the specified status.</returns>
     public async Task<List<Tenant>> GetByStatusAsync(int status, CancellationToken cancellationToken = default)
     {
         try
@@ -145,6 +178,12 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Adds a new tenant to the repository.
+    /// </summary>
+    /// <param name="tenant">The tenant to add.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the added tenant.</returns>
     public async Task<Tenant> AddAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         try
@@ -185,6 +224,12 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Updates an existing tenant in the repository.
+    /// </summary>
+    /// <param name="tenant">The tenant with updated information.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task UpdateAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         try
@@ -225,6 +270,12 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Deletes a tenant from the repository by its unique identifier.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public async Task DeleteAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         try
@@ -246,6 +297,12 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Checks if a tenant with the specified unique identifier exists.
+    /// </summary>
+    /// <param name="tenantId">The unique identifier of the tenant to check.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains true if the tenant exists, otherwise false.</returns>
     public async Task<bool> ExistsAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         try
@@ -268,6 +325,11 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Gets the total number of tenants in the repository.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains the total number of tenants.</returns>
     public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -288,6 +350,12 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Searches for tenants by name or contact email.
+    /// </summary>
+    /// <param name="searchTerm">The term to search for in tenant names or contact emails.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of tenants matching the search term.</returns>
     public async Task<List<Tenant>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default)
     {
         try
@@ -321,6 +389,13 @@ public sealed class TenantRepository : ITenantRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves a paged list of tenants.
+    /// </summary>
+    /// <param name="pageNumber">The page number to retrieve (1-based index).</param>
+    /// <param name="pageSize">The number of tenants per page.</param>
+    /// <param name="cancellationToken">A token to cancel the operation (optional).</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of tenants for the specified page.</returns>
     public async Task<List<Tenant>> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         try
