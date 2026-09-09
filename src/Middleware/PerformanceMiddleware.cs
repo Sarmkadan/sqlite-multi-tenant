@@ -21,6 +21,12 @@ public sealed class PerformanceMiddleware {
     private readonly long _slowRequestThresholdMs;
     private readonly PerformanceMonitor _monitor;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PerformanceMiddleware"/> class.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">The logger instance.</param>
+    /// <param name="slowRequestThresholdMs">The threshold in milliseconds for a request to be considered slow. Defaults to 1000ms.</param>
     public PerformanceMiddleware(
         RequestDelegate next,
         ILogger<PerformanceMiddleware> logger,
@@ -36,6 +42,11 @@ _next = next;
             _monitor = new PerformanceMonitor();
     }
 
+    /// <summary>
+    /// Processes an HTTP request to measure its performance.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         var stopwatch = Stopwatch.StartNew();
@@ -104,12 +115,38 @@ _next = next;
     }
 }
 
+/// <summary>
+/// Contains metrics for a single HTTP request.
+/// </summary>
 public sealed class RequestMetrics {
+    /// <summary>
+    /// Gets or sets the HTTP method of the request.
+    /// </summary>
     public string Method { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the path of the request.
+    /// </summary>
     public string Path { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the HTTP status code of the response.
+    /// </summary>
     public int StatusCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the elapsed time of the request in milliseconds.
+    /// </summary>
     public long ElapsedMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory used by the request in kilobytes.
+    /// </summary>
     public long MemoryUsedKb { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when the request was processed.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
 
@@ -185,8 +222,17 @@ public sealed class PerformanceStats {
     public int ErrorCount { get; set; }
 }
 
+/// <summary>
+/// Extension methods for PerformanceMiddleware.
+/// </summary>
 public static class PerformanceMiddlewareExtensions
 {
+    /// <summary>
+    /// Adds the PerformanceMiddleware to the pipeline.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <param name="slowRequestThresholdMs">The threshold in milliseconds for a request to be considered slow. Defaults to 1000ms.</param>
+    /// <returns>The application builder.</returns>
     public static IApplicationBuilder UsePerformanceTracking(
         this IApplicationBuilder app,
         long slowRequestThresholdMs = 1000)
