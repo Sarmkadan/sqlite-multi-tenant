@@ -12,6 +12,9 @@ namespace SqliteMultiTenant.Utilities;
 /// </summary>
 public static class PathUtilities
 {
+    private const int RetryDelayBaseMs = 100;
+    private const int BytesPerUnit = 1024;
+
     /// <summary>
     /// Safely combines paths and resolves any relative path traversal attempts.
     /// Prevents directory traversal attacks using ".." sequences.
@@ -133,7 +136,7 @@ public static class PathUtilities
                 catch (IOException) when (attempts < retryCount - 1)
                 {
                     attempts++;
-                    System.Threading.Thread.Sleep(100 * attempts);
+                    System.Threading.Thread.Sleep(RetryDelayBaseMs * attempts);
                 }
             }
 
@@ -241,10 +244,10 @@ public static class PathUtilities
         double len = bytes;
         int order = 0;
 
-        while (len >= 1024 && order < sizes.Length - 1)
+        while (len >= BytesPerUnit && order < sizes.Length - 1)
         {
             order++;
-            len = len / 1024;
+            len = len / BytesPerUnit;
         }
 
         return $"{len:0.##} {sizes[order]}";
