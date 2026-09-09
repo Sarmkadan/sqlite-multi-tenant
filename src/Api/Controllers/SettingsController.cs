@@ -32,6 +32,7 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Gets all application settings.
     /// </summary>
+    /// <returns>A dictionary containing all setting key-value pairs.</returns>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<Dictionary<string, object>>), StatusCodes.Status200OK)]
     public IActionResult GetAllSettings()
@@ -54,6 +55,8 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Gets a specific setting by key.
     /// </summary>
+    /// <param name="key">The key of the setting to retrieve.</param>
+    /// <returns>The setting value and type information if found; otherwise, a 404 Not Found response.</returns>
     [HttpGet("{key}")]
     [ProducesResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
     public IActionResult GetSetting(string key)
@@ -87,6 +90,9 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Sets a configuration value.
     /// </summary>
+    /// <param name="key">The key of the setting to set.</param>
+    /// <param name="request">The setting value to apply.</param>
+    /// <returns>The updated setting value and type information.</returns>
     [HttpPost("{key}")]
     [ProducesResponseType(typeof(ApiResponse<SettingValue>), StatusCodes.Status200OK)]
     public IActionResult SetSetting(string key, [FromBody] SetSettingRequest request)
@@ -121,6 +127,8 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Updates multiple settings atomically.
     /// </summary>
+    /// <param name="settings">A dictionary of setting keys and values to update.</param>
+    /// <returns>The result of the batch update operation including counts and any errors.</returns>
     [HttpPost("batch")]
     [ProducesResponseType(typeof(ApiResponse<BatchSettingUpdateResult>), StatusCodes.Status200OK)]
     public IActionResult UpdateBatchSettings([FromBody] Dictionary<string, object> settings)
@@ -169,6 +177,8 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Removes a setting by key.
     /// </summary>
+    /// <param name="key">The key of the setting to remove.</param>
+    /// <returns>A success message indicating the setting was removed.</returns>
     [HttpDelete("{key}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public IActionResult RemoveSetting(string key)
@@ -192,6 +202,8 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Checks if a setting exists.
     /// </summary>
+    /// <param name="key">The key of the setting to check.</param>
+    /// <returns>HTTP 200 if the setting exists; otherwise, HTTP 404.</returns>
     [HttpHead("{key}")]
     public IActionResult CheckSetting(string key)
     {
@@ -207,6 +219,7 @@ public sealed class SettingsController : ControllerBase {
     /// <summary>
     /// Gets application information.
     /// </summary>
+    /// <returns>Application name, version, start time, uptime, and current timestamp.</returns>
     [HttpGet("app/info")]
     [ProducesResponseType(typeof(ApiResponse<AppInfo>), StatusCodes.Status200OK)]
     public IActionResult GetAppInfo()
@@ -237,28 +250,92 @@ public sealed class SettingsController : ControllerBase {
     }
 }
 
+/// <summary>
+/// Represents a request to set a configuration value.
+/// </summary>
 public sealed class SetSettingRequest {
+    /// <summary>
+    /// The value to set for the configuration key.
+    /// </summary>
     public object? Value { get; set; }
 }
 
+/// <summary>
+/// Represents a setting value along with its key and type information.
+/// </summary>
 public sealed class SettingValue {
+    /// <summary>
+    /// The key of the setting.
+    /// </summary>
     public string Key { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The value of the setting.
+    /// </summary>
     public object? Value { get; set; }
+
+    /// <summary>
+    /// The .NET type name of the setting value.
+    /// </summary>
     public string Type { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Represents the result of a batch settings update operation.
+/// </summary>
 public sealed class BatchSettingUpdateResult {
+    /// <summary>
+    /// The number of settings that were successfully updated.
+    /// </summary>
     public int UpdatedCount { get; set; }
+
+    /// <summary>
+    /// The number of settings that failed to update.
+    /// </summary>
     public int FailedCount { get; set; }
+
+    /// <summary>
+    /// The total number of settings attempted to update.
+    /// </summary>
     public int TotalCount { get; set; }
+
+    /// <summary>
+    /// A list of error messages for any settings that failed to update.
+    /// </summary>
     public List<string> Errors { get; set; } = new();
+
+    /// <summary>
+    /// The timestamp when the batch update operation completed.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
 
+/// <summary>
+/// Represents application information including name, version, and runtime statistics.
+/// </summary>
 public sealed class AppInfo {
+    /// <summary>
+    /// The name of the application.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The version of the application.
+    /// </summary>
     public string Version { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The start time of the application process.
+    /// </summary>
     public DateTime StartTime { get; set; }
+
+    /// <summary>
+    /// The amount of time the application has been running.
+    /// </summary>
     public TimeSpan Uptime { get; set; }
+
+    /// <summary>
+    /// The timestamp when this information was generated.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
