@@ -50,7 +50,11 @@ namespace SqliteMultiTenant.Operations
             _batchSize = batchSize > 0 ? batchSize : 1000;
         }
 
-        // Adds a record to the bulk insert
+        /// <summary>
+        /// Adds a record to the bulk insert operation.
+        /// </summary>
+        /// <param name="record">The record to insert, keyed by column name.</param>
+        /// <returns>The current builder instance.</returns>
         public BulkInsertBuilder AddRecord(Dictionary<string, object> record)
         {
             if (record is null) throw new ArgumentNullException(nameof(record));
@@ -59,7 +63,11 @@ namespace SqliteMultiTenant.Operations
             return this;
         }
 
-        // Adds multiple records
+        /// <summary>
+        /// Adds multiple records to the bulk insert operation.
+        /// </summary>
+        /// <param name="records">The records to insert, each keyed by column name.</param>
+        /// <returns>The current builder instance.</returns>
         public BulkInsertBuilder AddRecords(IEnumerable<Dictionary<string, object>> records)
         {
             if (records is null) throw new ArgumentNullException(nameof(records));
@@ -68,7 +76,10 @@ namespace SqliteMultiTenant.Operations
             return this;
         }
 
-        // Executes the bulk insert in batches
+        /// <summary>
+        /// Executes the bulk insert operation in batches.
+        /// </summary>
+        /// <returns>A task containing the result of the bulk insert operation.</returns>
         public async Task<BulkInsertResult> ExecuteAsync()
         {
             var result = new BulkInsertResult { TotalRecords = _records.Count };
@@ -158,7 +169,10 @@ namespace SqliteMultiTenant.Operations
             return insertedCount;
         }
 
-        // Generates SQL INSERT statements without executing
+        /// <summary>
+        /// Builds SQL insert statements for the configured records without executing them.
+        /// </summary>
+        /// <returns>The generated SQL insert statements, or an empty string when no columns are available.</returns>
         public string GenerateSqlStatements()
         {
             var sql = new StringBuilder();
@@ -192,15 +206,35 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
+    /// <summary>
+    /// Represents the result of a bulk insert operation.
+    /// </summary>
     public sealed class BulkInsertResult
     {
+        /// <summary>
+        /// Gets or sets the total number of records included in the operation.
+        /// </summary>
         public int TotalRecords { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of records successfully inserted.
+        /// </summary>
         public int InsertedRecords { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the operation completed successfully.
+        /// </summary>
         public bool IsSuccessful { get; set; }
+
+        /// <summary>
+        /// Gets or sets the error message associated with the operation.
+        /// </summary>
         public string Error { get; set; }
     }
 
-    // Builder for bulk update operations
+    /// <summary>
+    /// Builds and executes bulk update operations.
+    /// </summary>
     public sealed class BulkUpdateBuilder
     {
         private readonly SQLiteConnection _connection;
@@ -209,6 +243,13 @@ namespace SqliteMultiTenant.Operations
         private readonly string _whereClause;
         private readonly List<KeyValuePair<string, object>> _updates;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BulkUpdateBuilder"/> class.
+        /// </summary>
+        /// <param name="connection">The SQLite database connection to use for the update operation.</param>
+        /// <param name="logger">The logger used to record operation details and errors.</param>
+        /// <param name="tableName">The name of the table to update.</param>
+        /// <param name="whereClause">The SQL condition used to select rows for updating.</param>
         public BulkUpdateBuilder(SQLiteConnection connection, ILogger<BulkUpdateBuilder> logger,
             string tableName, string whereClause)
         {
@@ -219,14 +260,22 @@ namespace SqliteMultiTenant.Operations
             _updates = new List<KeyValuePair<string, object>>();
         }
 
-        // Adds an update
+        /// <summary>
+        /// Adds a column value assignment to the bulk update operation.
+        /// </summary>
+        /// <param name="column">The name of the column to update.</param>
+        /// <param name="value">The value to assign to the column.</param>
+        /// <returns>The current builder instance.</returns>
         public BulkUpdateBuilder Set(string column, object value)
         {
             _updates.Add(new KeyValuePair<string, object>(column, value));
             return this;
         }
 
-        // Executes the bulk update
+        /// <summary>
+        /// Executes the configured bulk update operation.
+        /// </summary>
+        /// <returns>A task containing the result of the bulk update operation.</returns>
         public async Task<BulkUpdateResult> ExecuteAsync()
         {
             var result = new BulkUpdateResult();
@@ -269,10 +318,24 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
+    /// <summary>
+    /// Represents the result of a bulk update operation.
+    /// </summary>
     public sealed class BulkUpdateResult
     {
+        /// <summary>
+        /// Gets or sets the number of rows affected by the operation.
+        /// </summary>
         public int AffectedRows { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the operation completed successfully.
+        /// </summary>
         public bool IsSuccessful { get; set; }
+
+        /// <summary>
+        /// Gets or sets the error message associated with the operation.
+        /// </summary>
         public string Error { get; set; }
     }
 }
