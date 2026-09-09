@@ -10,28 +10,78 @@ namespace SqliteMultiTenant.Models;
 /// Represents a database associated with a tenant
 /// </summary>
 public sealed class TenantDatabase {
+    /// <summary>
+    /// The unique identifier for the database.
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+    /// <summary>
+    /// The identifier of the tenant that owns this database.
+    /// </summary>
     public string TenantId { get; set; } = string.Empty;
+    /// <summary>
+    /// The name of the database.
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// The file system path to the database file.
+    /// </summary>
     public string FilePath { get; set; } = string.Empty;
+    /// <summary>
+    /// The size of the database in bytes.
+    /// </summary>
     public long SizeBytes { get; set; }
+    /// <summary>
+    /// The date and time when the database was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// The date and time when the database was last updated.
+    /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// The date and time of the last backup performed on the database.
+    /// </summary>
     public DateTime? LastBackupAt { get; set; }
+    /// <summary>
+    /// The version of the database schema.
+    /// </summary>
     public int SchemaVersion { get; set; } = 1;
+    /// <summary>
+    /// Indicates whether the database is read-only.
+    /// </summary>
     public bool IsReadOnly { get; set; }
+    /// <summary>
+    /// The number of active connections to the database.
+    /// </summary>
     public int ActiveConnectionCount { get; set; }
+    /// <summary>
+    /// The encryption key used to encrypt the database (if any).
+    /// </summary>
     public string? EncryptionKey { get; set; }
+    /// <summary>
+    /// Indicates whether the database requires encryption.
+    /// </summary>
     public bool RequiresEncryption { get; set; }
 
     // Navigation properties
+    /// <summary>
+    /// The tenant that owns this database.
+    /// </summary>
     public Tenant? Tenant { get; set; }
+    /// <summary>
+    /// The collection of migrations applied to this database.
+    /// </summary>
     public ICollection<Migration> Migrations { get; set; } = new List<Migration>();
+    /// <summary>
+    /// The collection of backups for this database.
+    /// </summary>
     public ICollection<Backup> Backups { get; set; } = new List<Backup>();
 
     /// <summary>
     /// Validates the database entity
     /// </summary>
+    /// <param name="errors">The list of validation errors, if any.</param>
+    /// <returns>True if the database entity is valid; otherwise, false.</returns>
     public bool Validate(out List<string> errors)
     {
         errors = new List<string>();
