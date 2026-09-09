@@ -19,8 +19,11 @@ public sealed class TenantValidator {
     /// Validates create tenant request.
     /// Checks required fields, email format, name length.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> is null.</exception>
     public Dictionary<string, string> ValidateCreateRequest(CreateTenantRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var errors = new Dictionary<string, string>();
 
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -40,8 +43,11 @@ public sealed class TenantValidator {
     /// Validates update tenant request.
     /// All fields are optional, validates only provided fields.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> is null.</exception>
     public Dictionary<string, string> ValidateUpdateRequest(UpdateTenantRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var errors = new Dictionary<string, string>();
 
         if (!string.IsNullOrWhiteSpace(request.Name))
@@ -85,8 +91,11 @@ public sealed class MigrationValidator {
     /// Validates migration creation request.
     /// Checks version format, script content, naming conventions.
     /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="request"/> is null.</exception>
     public Dictionary<string, string> ValidateMigrationRequest(Api.Requests.CreateMigrationRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+
         var errors = new Dictionary<string, string>();
 
         if (string.IsNullOrWhiteSpace(request.Version))
