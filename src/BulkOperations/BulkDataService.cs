@@ -32,6 +32,16 @@ public sealed class BulkDataService : IBulkDataService
     /// <summary>
     /// Initialises a new <see cref="BulkDataService"/> with all required dependencies.
     /// </summary>
+    /// <param name="exporter">The component used to serialize table data for export.</param>
+    /// <param name="importer">The component used to deserialize and import table data.</param>
+    /// <param name="batchProcessor">The processor used to run table operations with bounded concurrency.</param>
+    /// <param name="eventBus">The event bus used to publish bulk operation lifecycle events.</param>
+    /// <param name="logger">The logger used to record bulk operation activity.</param>
+    /// <param name="options">The configuration options for bulk data operations.</param>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="exporter"/>, <paramref name="importer"/>, <paramref name="batchProcessor"/>,
+    /// <paramref name="eventBus"/>, <paramref name="logger"/>, or <paramref name="options"/> is <see langword="null"/>.
+    /// </exception>
     public BulkDataService(
         DataExporter exporter,
         DataImporter importer,
