@@ -160,6 +160,9 @@ namespace SqliteMultiTenant.Database
             return stats;
         }
 
+        /// <summary>
+        /// Releases all resources used by the <see cref="ConnectionManager"/>.
+        /// </summary>
         public void Dispose()
         {
             if (_disposed) return;
@@ -173,6 +176,10 @@ namespace SqliteMultiTenant.Database
             _disposed = true;
         }
 
+        /// <summary>
+        /// Returns a string representation of the connection manager showing pooled connection statistics.
+        /// </summary>
+        /// <returns>A formatted string with tenant count and connection pool totals.</returns>
         public override string ToString()
         {
             int tenantCount = _pools.Count;
