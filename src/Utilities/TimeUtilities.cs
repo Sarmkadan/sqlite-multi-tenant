@@ -12,6 +12,15 @@ namespace SqliteMultiTenant.Utilities;
 /// </summary>
 public static class TimeUtilities
 {
+    private const int BusinessHoursStart = 9;
+    private const int BusinessHoursEnd = 17;
+    private const int SecondsInMinute = 60;
+    private const int MinutesInHour = 60;
+    private const int HoursInDay = 24;
+    private const int DaysInWeek = 7;
+    private const int DaysInMonth = 30;
+    private const int DaysInYear = 365;
+
     /// <summary>
     /// Formats a timespan as a human-readable string.
     /// Example: "2 days, 3 hours, 45 minutes"
@@ -44,25 +53,34 @@ public static class TimeUtilities
         var now = DateTime.UtcNow;
         var span = now - dateTime;
 
-        if (span.TotalSeconds < 60)
+        if (span.TotalSeconds < SecondsInMinute)
             return "just now";
 
-        if (span.TotalMinutes < 60)
+        if (span.TotalMinutes < MinutesInHour)
             return $"{(int)span.TotalMinutes} minute{(span.TotalMinutes != 1 ? "s" : "")} ago";
 
-        if (span.TotalHours < 24)
+        if (span.TotalHours < HoursInDay)
             return $"{(int)span.TotalHours} hour{(span.TotalHours != 1 ? "s" : "")} ago";
 
-        if (span.TotalDays < 7)
-            return $"{(int)span.TotalDays} day{(span.TotalDays != 1 ? "s" : "")} ago";
+        if (span.TotalDays < DaysInWeek)
+        {
+            int weeks = (int)(span.TotalDays / DaysInWeek);
+            return $"{weeks} week{(weeks != 1 ? "s" : "")} ago";
+        }
 
-        if (span.TotalDays < 30)
-            return $"{(int)(span.TotalDays / 7)} week{(span.TotalDays / 7 != 1 ? "s" : "")} ago";
+        if (span.TotalDays < DaysInMonth)
+        {
+            int months = (int)(span.TotalDays / DaysInMonth);
+            return $"{months} month{(months != 1 ? "s" : "")} ago";
+        }
 
-        if (span.TotalDays < 365)
-            return $"{(int)(span.TotalDays / 30)} month{(span.TotalDays / 30 != 1 ? "s" : "")} ago";
+        if (span.TotalDays < DaysInYear)
+        {
+            int years = (int)(span.TotalDays / DaysInYear);
+            return $"{years} year{(years != 1 ? "s" : "")} ago";
+        }
 
-        return $"{(int)(span.TotalDays / 365)} year{(span.TotalDays / 365 != 1 ? "s" : "")} ago";
+        return $"{(int)(span.TotalDays / DaysInYear)} year{(span.TotalDays / DaysInYear != 1 ? "s" : "")} ago";
     }
 
     /// <summary>
@@ -219,7 +237,7 @@ public static class TimeUtilities
 
     /// <summary>
     /// Checks if two DateTime values are on the same day.
-    /// </summary>
+    /// </>
     public static bool IsSameDay(DateTime date1, DateTime date2)
     {
         return date1.Date == date2.Date;
@@ -232,8 +250,8 @@ public static class TimeUtilities
     {
         return dateTime.DayOfWeek != DayOfWeek.Saturday &&
                dateTime.DayOfWeek != DayOfWeek.Sunday &&
-               dateTime.Hour >= 9 &&
-               dateTime.Hour < 17;
+               dateTime.Hour >= BusinessHoursStart &&
+               dateTime.Hour < BusinessHoursEnd;
     }
 
     /// <summary>
