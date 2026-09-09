@@ -18,6 +18,11 @@ public sealed class MigrationRepository : IMigrationRepository {
     private readonly string _connectionString;
     private readonly ILogger<MigrationRepository> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MigrationRepository"/> class.
+    /// </summary>
+    /// <param name="connectionString">The connection string for the SQLite database.</param>
+    /// <param name="logger">The logger instance used for logging.</param>
     public MigrationRepository(string connectionString, ILogger<MigrationRepository> logger)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
@@ -25,6 +30,11 @@ public sealed class MigrationRepository : IMigrationRepository {
         InitializeDatabase();
     }
 
+    /// <summary>
+    /// Retrieves all migrations from the database asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A list of all migrations.</returns>
     public async Task<List<Migration>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -57,6 +67,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves a migration by its identifier asynchronously.
+    /// </summary>
+    /// <param name="migrationId">The unique identifier of the migration.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The migration with the specified identifier, or null if not found.</returns>
     public async Task<Migration?> GetByIdAsync(string migrationId, CancellationToken cancellationToken = default)
     {
         try
@@ -84,6 +100,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all migrations for a specific database asynchronously.
+    /// </summary>
+    /// <param name="databaseId">The identifier of the database.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A list of migrations for the specified database.</returns>
     public async Task<List<Migration>> GetByDatabaseAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -118,6 +140,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all pending migrations for a specific database asynchronously.
+    /// </summary>
+    /// <param name="databaseId">The identifier of the database.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A list of pending migrations for the specified database.</returns>
     public async Task<List<Migration>> GetPendingMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -153,6 +181,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all applied migrations for a specific database asynchronously.
+    /// </summary>
+    /// <param name="databaseId">The identifier of the database.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A list of applied migrations for the specified database.</returns>
     public async Task<List<Migration>> GetAppliedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -188,6 +222,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all failed migrations for a specific database asynchronously.
+    /// </summary>
+    /// <param name="databaseId">The identifier of the database.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A list of failed migrations for the specified database.</returns>
     public async Task<List<Migration>> GetFailedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         try
@@ -223,6 +263,13 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves a migration by its version for a specific database asynchronously.
+    /// </summary>
+    /// <param name="databaseId">The identifier of the database.</param>
+    /// <param name="version">The version of the migration to retrieve.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The migration with the specified version, or null if not found.</returns>
     public async Task<Migration?> GetByVersionAsync(string databaseId, string version, CancellationToken cancellationToken = default)
     {
         try
@@ -251,6 +298,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Adds a new migration to the database asynchronously.
+    /// </summary>
+    /// <param name="migration">The migration to add.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>The added migration.</returns>
     public async Task<Migration> AddAsync(Migration migration, CancellationToken cancellationToken = default)
     {
         try
@@ -282,6 +335,11 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Updates an existing migration in the database asynchronously.
+    /// </summary>
+    /// <param name="migration">The migration to update.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
     public async Task UpdateAsync(Migration migration, CancellationToken cancellationToken = default)
     {
         try
@@ -378,6 +436,12 @@ public sealed class MigrationRepository : IMigrationRepository {
         }
     }
 
+    /// <summary>
+    /// Retrieves all migrations for a specific database in execution order asynchronously.
+    /// </summary>
+    /// <param name="databaseId">The identifier of the database.</param>
+    /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
+    /// <returns>A list of migrations for the specified database, ordered by execution order.</returns>
     public async Task<List<Migration>> GetOrderedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         return await GetByDatabaseAsync(databaseId, cancellationToken);
