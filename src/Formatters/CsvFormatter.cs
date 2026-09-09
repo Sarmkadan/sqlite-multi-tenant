@@ -19,8 +19,19 @@ public sealed class CsvExportFormatter {
     private readonly bool _includeHeader;
     private readonly ILogger<CsvExportFormatter> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CsvExportFormatter"/> class.
+    /// </summary>
+    /// <param name="logger">The logger used to record formatting activity.</param>
+    /// <param name="delimiter">The delimiter used to separate CSV values.</param>
+    /// <param name="includeHeader">Whether to include a header row.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="delimiter"/> is <see langword="null"/> or empty.</exception>
     public CsvExportFormatter(ILogger<CsvExportFormatter> logger, string delimiter = ",", bool includeHeader = true)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentException.ThrowIfNullOrEmpty(delimiter);
+
         _delimiter = delimiter;
         _includeHeader = includeHeader;
         _logger = logger;
