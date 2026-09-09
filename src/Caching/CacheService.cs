@@ -31,6 +31,8 @@ public interface ICacheService
 /// Thread-safe via underlying MemoryCache synchronization.
 /// </summary>
 public sealed class CacheService : ICacheService {
+    private static readonly TimeSpan DefaultSlidingExpiration = TimeSpan.FromHours(1);
+
     private readonly IMemoryCache _cache;
     private readonly ILogger<CacheService> _logger;
     private readonly ConcurrentDictionary<string, DateTime> _keyTimestamps;
@@ -80,7 +82,7 @@ public sealed class CacheService : ICacheService {
         else
         {
             // Default 1-hour expiration
-            cacheOptions.SlidingExpiration = TimeSpan.FromHours(1);
+            cacheOptions.SlidingExpiration = DefaultSlidingExpiration;
         }
 
         _cache.Set(key, value, cacheOptions);
