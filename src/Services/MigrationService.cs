@@ -19,12 +19,26 @@ public sealed class MigrationService : IMigrationService {
     private readonly ILogger<MigrationService> _logger;
     private readonly Random _random = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MigrationService"/> class.
+    /// </summary>
+    /// <param name="repository">The repository used to persist and retrieve migrations.</param>
+    /// <param name="logger">The logger used to record migration operations.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="repository"/> or <paramref name="logger"/> is <see langword="null"/>.</exception>
     public MigrationService(IMigrationRepository repository, ILogger<MigrationService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Retrieves a migration by its identifier.
+    /// </summary>
+    /// <param name="migrationId">The migration identifier.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The migration when found; otherwise, <see langword="null"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="migrationId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<Migration?> GetMigrationAsync(string migrationId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
@@ -41,6 +55,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Retrieves all migrations for a database in execution order.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The ordered migrations for the database.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<List<Migration>> GetDatabaseMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -57,6 +79,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Retrieves the pending migrations for a database.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The pending migrations for the database.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<List<Migration>> GetPendingMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -73,6 +103,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Retrieves the applied migrations for a database.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The applied migrations for the database.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<List<Migration>> GetAppliedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -89,6 +127,19 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Creates and persists a migration definition.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="version">The migration version.</param>
+    /// <param name="name">The migration name.</param>
+    /// <param name="upScript">The SQL script used to apply the migration.</param>
+    /// <param name="downScript">The optional SQL script used to roll back the migration.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The persisted migration.</returns>
+    /// <exception cref="ArgumentException">A required string argument is empty or consists only of white-space characters, or the migration fails validation.</exception>
+    /// <exception cref="MigrationException">A migration with the specified version already exists.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<Migration> CreateMigrationAsync(string databaseId, string version, string name, string upScript, string? downScript = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -140,6 +191,15 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Marks a migration as started by the specified executor.
+    /// </summary>
+    /// <param name="migrationId">The migration identifier.</param>
+    /// <param name="executedBy">The user or process starting the migration.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>A result indicating whether the migration was found and started.</returns>
+    /// <exception cref="ArgumentException"><paramref name="migrationId"/> or <paramref name="executedBy"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<MigrationResult> ExecuteMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
@@ -166,6 +226,15 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Rolls back a migration when it is eligible for rollback.
+    /// </summary>
+    /// <param name="migrationId">The migration identifier.</param>
+    /// <param name="executedBy">The user or process requesting the rollback.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>A result indicating whether the migration was rolled back.</returns>
+    /// <exception cref="ArgumentException"><paramref name="migrationId"/> or <paramref name="executedBy"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<MigrationResult> RollbackMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
@@ -195,6 +264,15 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Marks a migration as completed and records its execution time.
+    /// </summary>
+    /// <param name="migrationId">The migration identifier.</param>
+    /// <param name="executionTimeMs">The migration execution time, in milliseconds.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>A result indicating whether the migration was found and updated.</returns>
+    /// <exception cref="ArgumentException"><paramref name="migrationId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<MigrationResult> MarkMigrationAsCompletedAsync(string migrationId, long executionTimeMs, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
@@ -218,6 +296,15 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Marks a migration as failed and records the failure message.
+    /// </summary>
+    /// <param name="migrationId">The migration identifier.</param>
+    /// <param name="errorMessage">The message describing the migration failure.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>A failure result containing the supplied error message, or a not-found failure result.</returns>
+    /// <exception cref="ArgumentException"><paramref name="migrationId"/> or <paramref name="errorMessage"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<MigrationResult> MarkMigrationAsFailedAsync(string migrationId, string errorMessage, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
@@ -244,6 +331,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Gets the number of migrations associated with a database.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The number of migrations associated with the database.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<int> GetMigrationCountAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -260,6 +355,15 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Determines whether a migration version has been applied to a database.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="version">The migration version.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns><see langword="true"/> when the migration exists and is completed; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> or <paramref name="version"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<bool> IsMigrationAppliedAsync(string databaseId, string version, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -280,6 +384,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Retrieves the failed migrations for a database.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>The failed migrations for the database.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> is empty or consists only of white-space characters.</exception>
+    /// <exception cref="OperationCanceledException">The operation is canceled.</exception>
     public async Task<List<Migration>> GetFailedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -296,6 +408,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Applies all pending migrations to a database while isolating individual migration failures.
+    /// </summary>
+    /// <param name="databaseId">The database identifier.</param>
+    /// <param name="executedBy">The user or process applying the migrations.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>A batch result describing the migrations attempted and their outcomes.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseId"/> or <paramref name="executedBy"/> is empty or consists only of white-space characters.</exception>
     public async Task<Models.MigrationBatchResult> ApplyMigrationsWithFaultIsolationAsync(string databaseId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -335,6 +455,14 @@ public sealed class MigrationService : IMigrationService {
         }
     }
 
+    /// <summary>
+    /// Applies pending migrations to multiple databases while isolating failures by database and migration.
+    /// </summary>
+    /// <param name="databaseIds">The database identifiers to process.</param>
+    /// <param name="executedBy">The user or process applying the migrations.</param>
+    /// <param name="cancellationToken">A token used to cancel the asynchronous operation.</param>
+    /// <returns>A batch result containing the outcome for each database.</returns>
+    /// <exception cref="ArgumentException"><paramref name="databaseIds"/> is <see langword="null"/> or empty, or <paramref name="executedBy"/> is empty or consists only of white-space characters.</exception>
     public async Task<Models.MigrationBatchResult> ApplyMigrationsToMultipleDatabasesAsync(
         List<string> databaseIds,
         string executedBy,
