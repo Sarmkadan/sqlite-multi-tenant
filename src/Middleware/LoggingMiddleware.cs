@@ -16,6 +16,9 @@ namespace SqliteMultiTenant.Middleware;
 /// Implements structured logging for ELK/Datadog integration.
 /// </summary>
 public sealed class LoggingMiddleware {
+    private const long SlowRequestThresholdMs = 5000;
+    private const int ClientErrorStatusCodeThreshold = 400;
+
     private readonly RequestDelegate _next;
     private readonly ILogger<LoggingMiddleware> _logger;
 
@@ -77,7 +80,7 @@ public sealed class LoggingMiddleware {
                 };
 
                 // Log slow requests (> 5 seconds)
-                if (stopwatch.ElapsedMilliseconds > 5000)
+                if (stopwatch.ElapsedMilliseconds > SlowRequestThresholdMs)
                 {
                     _logger.LogWarning(
                         "Slow HTTP Response: {Method} {Path} | StatusCode: {StatusCode} | Duration: {Duration}ms",
@@ -86,7 +89,7 @@ public sealed class LoggingMiddleware {
                         context.Response.StatusCode,
                         stopwatch.ElapsedMilliseconds);
                 }
-                else if (context.Response.StatusCode >= 400)
+                else if (context.Response.StatusCode >= ClientErrorStatusCodeThreshold)
                 {
                     _logger.LogWarning(
                         "HTTP Response: {Method} {Path} | StatusCode: {StatusCode} | Duration: {Duration}ms",
