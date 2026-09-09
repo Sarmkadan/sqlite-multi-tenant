@@ -26,6 +26,9 @@ public interface IHttpClientService
 /// HTTP client service implementation with retry and timeout policies.
 /// </summary>
 public sealed class HttpClientService : IHttpClientService {
+    private const int RetryBaseDelayMs = 1000;
+    private const int ServerErrorStatusCodeThreshold = 500;
+
     private readonly HttpClient _httpClient;
     private readonly ILogger<HttpClientService> _logger;
     private readonly HttpClientOptions _options;
@@ -131,7 +134,7 @@ public sealed class HttpClientService : IHttpClientService {
                     retryCount++;
                     if (retryCount <= _options.MaxRetries)
                     {
-                        var delayMs = (int)Math.Pow(2, retryCount - 1) * 1000;
+                        var delayMs = (int)Math.Pow(2, retryCount - 1) * RetryBaseDelayMs;
                         _logger.LogWarning(
                             "Transient error {status}, retrying in {ms}ms [Attempt {retry}/{max}]",
                             response.StatusCode,
@@ -152,7 +155,7 @@ public sealed class HttpClientService : IHttpClientService {
                 if (retryCount <= _options.MaxRetries)
                 {
                     _logger.LogWarning(ex, "Request timeout, retrying [Attempt {retry}/{max}]", retryCount, _options.MaxRetries);
-                    await Task.Delay(1000 * retryCount);
+                    await Task.Delay(RetryBaseDelayMs * retryCount);
                 }
                 else
                 {
@@ -185,7 +188,7 @@ public sealed class HttpClientService : IHttpClientService {
     {
         return statusCode == System.Net.HttpStatusCode.RequestTimeout ||
                statusCode == System.Net.HttpStatusCode.TooManyRequests ||
-               (int)statusCode >= 500;
+               (int)statusCode >= ServerErrorStatusCodeThreshold;
     }
 }
 
