@@ -11,15 +11,32 @@ namespace SqliteMultiTenant.Exceptions;
 /// </summary>
 public sealed class DatabaseAccessException : MultiTenantException
 {
+    /// <summary>
+    /// Gets the identifier of the database associated with the access exception, if available.
+    /// </summary>
     public string? DatabaseId { get; }
+
+    /// <summary>
+    /// Gets the type of database operation that failed.
+    /// </summary>
     public string? OperationType { get; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DatabaseAccessException"/> class with a specified error message.
+    /// </summary>
+    /// <param name="message">The message that describes the error.</param>
     public DatabaseAccessException(string message)
         : base(message)
     {
         ArgumentException.ThrowIfNullOrEmpty(message);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DatabaseAccessException"/> class with a specified error message
+    /// and a reference to the inner exception that is the cause of this exception.
+    /// </summary>
+    /// <param name="message">The error message that explains the reason for the exception.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception.</param>
     public DatabaseAccessException(string message, Exception innerException)
         : base(message, innerException)
     {
@@ -27,6 +44,14 @@ public sealed class DatabaseAccessException : MultiTenantException
         ArgumentNullException.ThrowIfNull(innerException);
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DatabaseAccessException"/> class with a specified error message,
+    /// database identifier, operation type, and a reference to the inner exception that is the cause of this exception.
+    /// </summary>
+    /// <param name="message">The error message that explains the reason for the exception.</param>
+    /// <param name="databaseId">The identifier of the database associated with the access exception.</param>
+    /// <param name="operationType">The type of database operation that failed.</param>
+    /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
     public DatabaseAccessException(string message, string databaseId, string operationType, Exception? innerException = null)
         : base(message, innerException)
     {
