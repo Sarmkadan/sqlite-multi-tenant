@@ -108,8 +108,10 @@ throw;
 /// <summary>
 /// Bulk creates multiple entities.
 /// </summary>
+/// <exception cref="ArgumentNullException">Thrown when entities is null.</exception>
 public virtual async Task<int> BulkCreateAsync(IEnumerable<T> entities)
 {
+ArgumentNullException.ThrowIfNull(entities);
 int count = 0;
 
 try
@@ -133,8 +135,10 @@ throw;
 /// <summary>
 /// Bulk updates multiple entities.
 /// </summary>
+/// <exception cref="ArgumentNullException">Thrown when entities is null.</exception>
 public virtual async Task<int> BulkUpdateAsync(IEnumerable<T> entities)
 {
+ArgumentNullException.ThrowIfNull(entities);
 int count = 0;
 
 try
@@ -158,8 +162,10 @@ throw;
 /// <summary>
 /// Bulk deletes multiple entities by IDs.
 /// </summary>
+/// <exception cref="ArgumentNullException">Thrown when ids is null.</exception>
 public virtual async Task<int> BulkDeleteAsync(IEnumerable<string> ids)
 {
+ArgumentNullException.ThrowIfNull(ids);
 int count = 0;
 
 try
@@ -221,6 +227,7 @@ private bool _transactionStarted;
 
 public UnitOfWork(ILogger<UnitOfWork> logger)
 {
+ArgumentNullException.ThrowIfNull(logger);
 _logger = logger;
 _transactionStarted = false;
 }
