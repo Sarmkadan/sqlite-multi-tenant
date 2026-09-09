@@ -19,12 +19,14 @@ public sealed class BackupService : IBackupService {
     private readonly IBackupRepository _repository;
     private readonly ILogger<BackupService> _logger;
 
+    /// <inheritdoc/>
     public BackupService(IBackupRepository repository, ILogger<BackupService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <inheritdoc/>
     public async Task<Backup?> GetBackupAsync(string backupId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -45,6 +47,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<List<Backup>> GetDatabaseBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -65,6 +68,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<List<Backup>> GetCompletedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -85,6 +89,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<Backup?> GetLatestBackupAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -105,6 +110,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<Backup> CreateBackupAsync(string databaseId, BackupType backupType, string createdBy, string? backupPath = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -147,6 +153,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task MarkBackupAsCompletedAsync(string backupId, long sizeBytes, long durationMs, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -173,6 +180,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task MarkBackupAsFailedAsync(string backupId, string errorMessage, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -199,6 +207,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<BackupVerificationResult> VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -277,6 +286,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task SetBackupExpirationAsync(string backupId, DateTime expirationDate, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -303,6 +313,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<List<Backup>> GetExpiredBackupsAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -320,6 +331,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task<int> GetBackupCountAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
@@ -340,6 +352,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task DeleteBackupAsync(string backupId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -365,6 +378,7 @@ public sealed class BackupService : IBackupService {
         }
     }
 
+    /// <inheritdoc/>
     public async Task AddBackupTagAsync(string backupId, string tag, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(backupId))
@@ -403,6 +417,7 @@ public sealed class BackupService : IBackupService {
         return Path.Combine(backupDir, $"{databaseId}_{timestamp}{TenantConstants.BackupFileExtension}");
     }
 
+    /// <inheritdoc/>
     public async Task BackupWithProgressAsync(
         string sourceDatabasePath,
         string destinationPath,
