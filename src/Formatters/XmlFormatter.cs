@@ -19,8 +19,15 @@ public sealed class XmlExportFormatter {
     private readonly bool _includeDeclaration;
     private readonly ILogger<XmlExportFormatter> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="XmlExportFormatter"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="includeDeclaration">Whether to include the XML declaration.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public XmlExportFormatter(ILogger<XmlExportFormatter> logger, bool includeDeclaration = true)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger.LogInformation("Initializing XmlExportFormatter with {IncludeDeclaration} and logger {Logger}", includeDeclaration, logger);
         _includeDeclaration = includeDeclaration;
         _logger = logger;
@@ -30,8 +37,14 @@ public sealed class XmlExportFormatter {
     /// Formats an object or collection as XML.
     /// Creates root element and recursively builds nested XML structure.
     /// </summary>
+    /// <param name="data">The data to format.</param>
+    /// <param name="rootName">The name of the root element.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="rootName"/> is null or whitespace.</exception>
+    /// <typeparam name="T">The type of the data.</typeparam>
+    /// <returns>The formatted XML string.</returns>
     public string Format<T>(T? data, string rootName = "root") where T : class
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(rootName);
         try
         {
             if (data is null)
@@ -149,10 +162,10 @@ public sealed class XmlExportFormatter {
             return text;
 
         return text
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;")
-            .Replace("\"", "&quot;")
+            .Replace("&", "&")
+            .Replace("<", "<")
+            .Replace(">", ">")
+            .Replace("\"", """)
             .Replace("'", "&apos;");
     }
 }
