@@ -25,6 +25,13 @@ public sealed class AdminController : ControllerBase {
     private readonly TenantQuotaEnforcer _tenantQuotaEnforcer;
     private readonly ILogger<AdminController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AdminController"/> class.
+    /// </summary>
+    /// <param name="healthCheckService">The health check service.</param>
+    /// <param name="metricsService">The metrics service.</param>
+    /// <param name="tenantQuotaEnforcer">The tenant quota enforcer.</param>
+    /// <param name="logger">The logger.</param>
     public AdminController(
         HealthCheckService healthCheckService,
         MetricsService metricsService,
@@ -41,6 +48,7 @@ public sealed class AdminController : ControllerBase {
     /// Performs comprehensive system health checks.
     /// Verifies database connectivity, file system access, and service status.
     /// </summary>
+    /// <returns>An IActionResult containing the health check response.</returns>
     [HttpGet("health")]
     [ProducesResponseType(typeof(ApiResponse<HealthCheckResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetHealthAsync()
@@ -73,6 +81,7 @@ public sealed class AdminController : ControllerBase {
     /// Retrieves current system metrics and performance statistics.
     /// Includes CPU usage, memory consumption, database connection counts, etc.
     /// </summary>
+    /// <returns>An IActionResult containing the system metrics response.</returns>
     [HttpGet("metrics")]
     [ProducesResponseType(typeof(ApiResponse<SystemMetrics>), StatusCodes.Status200OK)]
     public IActionResult GetMetrics()
@@ -105,6 +114,7 @@ public sealed class AdminController : ControllerBase {
     /// Retrieves a comprehensive metrics dashboard.
     /// Includes system performance, request metrics, and backup/migration statistics.
     /// </summary>
+    /// <returns>An IActionResult containing the metrics dashboard response.</returns>
     [HttpGet("dashboard")]
     [ProducesResponseType(typeof(ApiResponse<MetricsSnapshot>), StatusCodes.Status200OK)]
     public IActionResult GetMetricsDashboard()
@@ -127,6 +137,7 @@ public sealed class AdminController : ControllerBase {
     /// Clears system caches to free memory or force data refresh.
     /// Returns information about what was cleared and memory freed.
     /// </summary>
+    /// <returns>An IActionResult containing the cache clear result.</returns>
     [HttpPost("cache/clear")]
     [ProducesResponseType(typeof(ApiResponse<CacheClearResult>), StatusCodes.Status200OK)]
     public IActionResult ClearCache()
@@ -160,6 +171,7 @@ public sealed class AdminController : ControllerBase {
     /// Forces garbage collection to optimize memory usage.
     /// Should be used sparingly as it impacts performance.
     /// </summary>
+    /// <returns>An IActionResult indicating the result of the garbage collection operation.</returns>
     [HttpPost("gc/collect")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public IActionResult ForceGarbageCollection()
@@ -184,6 +196,7 @@ public sealed class AdminController : ControllerBase {
     /// Gets diagnostic information about the running system.
     /// Includes .NET version, OS info, and application version.
     /// </summary>
+    /// <returns>An IActionResult containing the diagnostics information response.</returns>
     [HttpGet("diagnostics")]
     [ProducesResponseType(typeof(ApiResponse<DiagnosticsInfo>), StatusCodes.Status200OK)]
     public IActionResult GetDiagnostics()
@@ -216,6 +229,8 @@ public sealed class AdminController : ControllerBase {
     /// Retrieves a comprehensive quota report for all tenants.
     /// Aggregates per-tenant storage usage and quota information.
     /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>An IActionResult containing the tenant quota report response.</returns>
     [HttpGet("quotas")]
     [ProducesResponseType(typeof(ApiResponse<TenantQuotaSummaryReport>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetTenantQuotaReportAsync(CancellationToken cancellationToken = default)
