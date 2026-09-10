@@ -41,6 +41,11 @@ private string _havingClause;
         private int? _limit;
         private int? _offset;
 
+        /// <summary>
+        /// Initializes a new instance of the QueryBuilder class for the specified table.
+        /// </summary>
+        /// <param name="tableName">The name of the table to query.</param>
+        /// <exception cref="ArgumentException">Thrown when tableName is empty or whitespace.</exception>
         public QueryBuilder(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
@@ -55,7 +60,11 @@ private string _havingClause;
         _groupBy = new List<string>();
         }
 
-        // Selects specific columns (if empty, selects all)
+        /// <summary>
+        /// Appends a SELECT clause with the specified columns. If no columns are specified, all columns are selected.
+        /// </summary>
+        /// <param name="columns">The columns to select.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder Select(params string[] columns)
         {
             if (columns.Length > 0)
@@ -64,7 +73,12 @@ private string _havingClause;
             return this;
         }
 
-        // Adds a WHERE condition
+        /// <summary>
+        /// Appends a WHERE condition to the query.
+        /// </summary>
+        /// <param name="condition">The condition string (e.g., "Age > @age").</param>
+        /// <param name="parameters">The parameters for the condition.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder Where(string condition, params (string name, object value)[] parameters)
         {
             if (string.IsNullOrWhiteSpace(condition))
@@ -78,7 +92,12 @@ private string _havingClause;
             return this;
         }
 
-        // Adds AND condition to existing WHERE
+        /// <summary>
+        /// Appends an AND condition to the existing WHERE clause.
+        /// </summary>
+        /// <param name="condition">The condition string to append with AND.</param>
+        /// <param name="parameters">The parameters for the condition.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder And(string condition, params (string name, object value)[] parameters)
         {
             if (string.IsNullOrWhiteSpace(condition))
@@ -94,36 +113,46 @@ private string _havingClause;
             return this;
         }
 
-    // Adds WHERE IN condition with parameterized values
-    public QueryBuilder WhereIn(string column, IEnumerable<object> values)
-    {
-        if (string.IsNullOrWhiteSpace(column))
-            throw new ArgumentException("Column cannot be empty", nameof(column));
-
-        if (values == null)
-            throw new ArgumentNullException(nameof(values));
-
-        var valuesList = values.ToList();
-        if (valuesList.Count == 0)
-            throw new ArgumentException("Values collection cannot be empty", nameof(values));
-
-        var paramNames = new List<string>();
-        foreach (var value in valuesList)
+    /// <summary>
+        /// Appends a WHERE IN condition with the specified column and values.
+        /// </summary>
+        /// <param name="column">The column name to check.</param>
+        /// <param name="values">The values to check for in the column.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
+        public QueryBuilder WhereIn(string column, IEnumerable<object> values)
         {
-            var paramName = $"p_{column}_{_parameters.Count}";
-            paramNames.Add(paramName);
-            _parameters.Add((paramName, value ?? DBNull.Value));
+            if (string.IsNullOrWhiteSpace(column))
+                throw new ArgumentException("Column cannot be empty", nameof(column));
+
+            if (values == null)
+                throw new ArgumentNullException(nameof(values));
+
+            var valuesList = values.ToList();
+            if (valuesList.Count == 0)
+                throw new ArgumentException("Values collection cannot be empty", nameof(values));
+
+            var paramNames = new List<string>();
+            foreach (var value in valuesList)
+            {
+                var paramName = $"p_{column}_{_parameters.Count}";
+                paramNames.Add(paramName);
+                _parameters.Add((paramName, value ?? DBNull.Value));
+            }
+
+            var placeholders = string.Join(", ", paramNames.Select(p => $"@{p}"));
+            _whereClause = !string.IsNullOrEmpty(_whereClause)
+                ? "(" + _whereClause + ") AND ([" + column + "] IN (" + placeholders + "))"
+                : "[" + column + "] IN (" + placeholders + ")";
+
+            return this;
         }
 
-        var placeholders = string.Join(", ", paramNames.Select(p => $"@{p}"));
-        _whereClause = !string.IsNullOrEmpty(_whereClause)
-            ? "(" + _whereClause + ") AND ([" + column + "] IN (" + placeholders + "))"
-            : "[" + column + "] IN (" + placeholders + ")";
-
-        return this;
-    }
-
-        // Adds OR condition to existing WHERE
+        /// <summary>
+        /// Appends an OR condition to the existing WHERE clause.
+        /// </summary>
+        /// <param name="condition">The condition string to append with OR.</param>
+        /// <param name="parameters">The parameters for the condition.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder Or(string condition, params (string name, object value)[] parameters)
         {
             if (string.IsNullOrWhiteSpace(condition))
@@ -139,7 +168,12 @@ private string _havingClause;
             return this;
         }
 
-        // Adds INNER JOIN clause
+        /// <summary>
+        /// Appends an INNER JOIN clause to the query.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join condition (e.g., "Users.Id = Orders.UserId").</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder InnerJoin(string table, string condition)
         {
             if (string.IsNullOrWhiteSpace(table) || string.IsNullOrWhiteSpace(condition))
@@ -149,7 +183,12 @@ private string _havingClause;
             return this;
         }
 
-        // Adds LEFT JOIN clause
+        /// <summary>
+        /// Appends a LEFT JOIN clause to the query.
+        /// </summary>
+        /// <param name="table">The table to join.</param>
+        /// <param name="condition">The join condition (e.g., "Users.Id = Orders.UserId").</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder LeftJoin(string table, string condition)
         {
             if (string.IsNullOrWhiteSpace(table) || string.IsNullOrWhiteSpace(condition))
@@ -159,7 +198,12 @@ private string _havingClause;
             return this;
         }
 
-        // Adds ORDER BY clause
+        /// <summary>
+        /// Appends an ORDER BY clause to the query.
+        /// </summary>
+        /// <param name="column">The column to order by.</param>
+        /// <param name="direction">The direction (ASC or DESC). Default is ASC.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder OrderBy(string column, string direction = "ASC")
         {
             if (string.IsNullOrWhiteSpace(column))
@@ -173,18 +217,26 @@ private string _havingClause;
             return this;
         }
 
-// Adds GROUP BY clause
-public QueryBuilder GroupBy(params string[] columns)
-{
-    if (columns == null || columns.Length == 0)
-        throw new ArgumentException("At least one column must be specified", nameof(columns));
+/// <summary>
+        /// Appends a GROUP BY clause with the specified columns.
+        /// </summary>
+        /// <param name="columns">The columns to group by.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
+        public QueryBuilder GroupBy(params string[] columns)
+        {
+            if (columns == null || columns.Length == 0)
+                throw new ArgumentException("At least one column must be specified", nameof(columns));
 
-    _groupBy.AddRange(columns);
-    return this;
-}
+            _groupBy.AddRange(columns);
+            return this;
+        }
 
 
-        // Adds LIMIT clause
+        /// <summary>
+        /// Appends a LIMIT clause to the query.
+        /// </summary>
+        /// <param name="limit">The maximum number of rows to return.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder Limit(int limit)
         {
             if (limit <= 0)
@@ -194,20 +246,29 @@ public QueryBuilder GroupBy(params string[] columns)
             return this;
         }
 
-// Adds HAVING clause
-public QueryBuilder Having(string condition, params (string name, object value)[] parameters)
-{
-    if (string.IsNullOrWhiteSpace(condition))
-        throw new ArgumentException("Condition cannot be empty", nameof(condition));
+/// <summary>
+        /// Appends a HAVING clause to the query.
+        /// </summary>
+        /// <param name="condition">The condition string (e.g., "COUNT(*) > @count").</param>
+        /// <param name="parameters">The parameters for the condition.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
+        public QueryBuilder Having(string condition, params (string name, object value)[] parameters)
+        {
+            if (string.IsNullOrWhiteSpace(condition))
+                throw new ArgumentException("Condition cannot be empty", nameof(condition));
 
-    _havingClause = condition;
-    if (parameters.Length > 0)
-        _parameters.AddRange(parameters);
-    return this;
-}
+            _havingClause = condition;
+            if (parameters.Length > 0)
+                _parameters.AddRange(parameters);
+            return this;
+        }
 
 
-        // Adds OFFSET clause
+        /// <summary>
+        /// Appends an OFFSET clause to the query.
+        /// </summary>
+        /// <param name="offset">The number of rows to skip.</param>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder Offset(int offset)
         {
             if (offset < 0)
@@ -322,6 +383,11 @@ if (!string.IsNullOrEmpty(_havingClause))
         private readonly string _tableName;
         private readonly Dictionary<string, object> _values;
 
+        /// <summary>
+        /// Initializes a new instance of the InsertBuilder class for the specified table.
+        /// </summary>
+        /// <param name="tableName">The name of the table to insert into.</param>
+        /// <exception cref="ArgumentException">Thrown when tableName is empty or whitespace.</exception>
         public InsertBuilder(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
@@ -331,7 +397,12 @@ if (!string.IsNullOrEmpty(_havingClause))
             _values    = new Dictionary<string, object>();
         }
 
-        // Adds a column-value pair
+        /// <summary>
+        /// Adds a column-value pair to the insert.
+        /// </summary>
+        /// <param name="column">The column name.</param>
+        /// <param name="value">The value for the column.</param>
+        /// <returns>The current InsertBuilder instance for method chaining.</returns>
         public InsertBuilder Value(string column, object value)
         {
             if (string.IsNullOrWhiteSpace(column))
@@ -341,7 +412,10 @@ if (!string.IsNullOrEmpty(_havingClause))
             return this;
         }
 
-        // Builds INSERT statement
+        /// <summary>
+        /// Builds the INSERT statement and returns the query and parameters.
+        /// </summary>
+        /// <returns>A tuple containing the SQL query and the parameters dictionary.</returns>
         public (string query, Dictionary<string, object> parameters) Build()
         {
             if (_values.Count == 0)
