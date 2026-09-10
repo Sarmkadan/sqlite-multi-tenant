@@ -10,19 +10,55 @@ namespace SqliteMultiTenant.Models;
 /// Represents configuration settings for a tenant
 /// </summary>
 public sealed class TenantSettings {
+    /// <summary>
+    /// Unique identifier for the setting
+    /// </summary>
     public string SettingId { get; set; } = string.Empty;
+    /// <summary>
+    /// Identifier of the tenant this setting belongs to
+    /// </summary>
     public string TenantId { get; set; } = string.Empty;
+    /// <summary>
+    /// Key or name of the setting
+    /// </summary>
     public string SettingKey { get; set; } = string.Empty;
+    /// <summary>
+    /// Value of the setting
+    /// </summary>
     public string SettingValue { get; set; } = string.Empty;
+    /// <summary>
+    /// Optional description of the setting
+    /// </summary>
     public string? Description { get; set; }
+    /// <summary>
+    /// Data type of the setting value (e.g., string, int, bool)
+    /// </summary>
     public string? DataType { get; set; }
+    /// <summary>
+    /// Indicates if the setting value is encrypted
+    /// </summary>
     public bool IsEncrypted { get; set; }
+    /// <summary>
+    /// Timestamp when the setting was created
+    /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// Timestamp when the setting was last updated
+    /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>
+    /// User who last modified the setting
+    /// </summary>
     public string? LastModifiedBy { get; set; }
+    /// <summary>
+    /// Indicates if the setting is active
+    /// </summary>
     public bool IsActive { get; set; } = true;
 
     // Navigation properties
+    /// <summary>
+    /// Navigation property to the tenant this setting belongs to
+    /// </summary>
     public Tenant? Tenant { get; set; }
 
     /// <summary>
