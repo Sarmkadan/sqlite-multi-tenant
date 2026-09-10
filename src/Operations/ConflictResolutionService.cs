@@ -12,11 +12,17 @@ using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Operations
 {
-    // Handles data conflict resolution in multi-tenant scenarios
-    // Useful for merge operations, data synchronization, and concurrent updates
+    /// <summary>
+    /// Handles data conflict resolution in multi-tenant scenarios
+    /// Useful for merge operations, data synchronization, and concurrent updates
+    /// </summary>
     public sealed class ConflictResolutionService {
         private readonly ILogger<ConflictResolutionService> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the ConflictResolutionService class
+        /// </summary>
+        /// <param name="logger">The logger instance</param>
         public ConflictResolutionService(ILogger<ConflictResolutionService> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -28,7 +34,12 @@ namespace SqliteMultiTenant.Operations
             return $"ConflictResolutionService {{ Field = {nameof(DataConflict.Field)}, ConflictType = {nameof(DataConflict.ConflictType)}, LocalValue = {nameof(DataConflict.LocalValue)}, RemoteValue = {nameof(DataConflict.RemoteValue)}, IsSuccessful = {nameof(ConflictResolutionResult.IsSuccessful)}, Error = {nameof(ConflictResolutionResult.Error)} }}";
         }
 
-        // Detects conflicts between two data versions
+        /// <summary>
+        /// Detects conflicts between two data versions
+        /// </summary>
+        /// <param name="localVersion">The local version of the data</param>
+        /// <param name="remoteVersion">The remote version of the data</param>
+        /// <returns>A ConflictDetectionResult containing any detected conflicts</returns>
         public ConflictDetectionResult DetectConflicts(Dictionary<string, object> localVersion,
             Dictionary<string, object> remoteVersion)
         {
@@ -80,7 +91,12 @@ namespace SqliteMultiTenant.Operations
             return result;
         }
 
-        // Resolves conflicts using a specified strategy
+        /// <summary>
+        /// Resolves conflicts using a specified strategy
+        /// </summary>
+        /// <param name="conflicts">The conflicts to resolve</param>
+        /// <param name="strategy">The resolution strategy to apply</param>
+        /// <returns>A ConflictResolutionResult containing the resolved values</returns>
         public async Task<ConflictResolutionResult> ResolveConflictsAsync(
             ConflictDetectionResult conflicts, ConflictResolutionStrategy strategy)
         {
@@ -123,7 +139,15 @@ namespace SqliteMultiTenant.Operations
             return result;
         }
 
-        // Applies conflict resolutions to database
+        /// <summary>
+        /// Applies conflict resolutions to database
+        /// </summary>
+        /// <param name="connection">The SQLite connection</param>
+        /// <param name="tableName">The name of the table to update</param>
+        /// <param name="keyColumn">The name of the key column</param>
+        /// <param name="keyValue">The value of the key</param>
+        /// <param name="resolution">The conflict resolution result</param>
+        /// <returns>True if the resolution was applied successfully; otherwise, false</returns>
         public async Task<bool> ApplyResolutionAsync(SQLiteConnection connection,
             string tableName, string keyColumn, object keyValue,
             ConflictResolutionResult resolution)
@@ -206,10 +230,24 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
+    /// <summary>
+    /// Represents the result of conflict detection
+    /// </summary>
     public sealed class ConflictDetectionResult {
+        /// <summary>
+        /// Gets the list of detected conflicts
+        /// </summary>
         public List<DataConflict> Conflicts { get; } = new List<DataConflict>();
+
+        /// <summary>
+        /// Gets a value indicating whether any conflicts were detected
+        /// </summary>
         public bool HasConflicts => Conflicts.Count > 0;
 
+        /// <summary>
+        /// Adds a conflict to the detection result
+        /// </summary>
+        /// <param name="conflict">The conflict to add</param>
         public void AddConflict(DataConflict conflict)
         {
             if (conflict is not null)
@@ -219,33 +257,105 @@ namespace SqliteMultiTenant.Operations
         }
     }
 
+    /// <summary>
+    /// Represents a data conflict between local and remote values
+    /// </summary>
     public sealed class DataConflict {
+        /// <summary>
+        /// Gets or sets the name of the field in conflict
+        /// </summary>
         public string Field { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type of conflict
+        /// </summary>
         public ConflictType ConflictType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the local value
+        /// </summary>
         public object LocalValue { get; set; }
+
+        /// <summary>
+        /// Gets or sets the remote value
+        /// </summary>
         public object RemoteValue { get; set; }
     }
 
+    /// <summary>
+    /// Specifies the type of conflict detected
+    /// </summary>
     public enum ConflictType
     {
+        /// <summary>
+        /// Indicates that the local and remote values are different
+        /// </summary>
         ValueDifference,
+
+        /// <summary>
+        /// Indicates that the field was created in the remote version
+        /// </summary>
         CreatedRemotely,
+
+        /// <summary>
+        /// Indicates that the field was deleted in the remote version
+        /// </summary>
         DeletedRemotely,
+
+        /// <summary>
+        /// Indicates that the field was modified in both versions
+        /// </summary>
         ModifiedBoth
     }
 
+    /// <summary>
+    /// Specifies the strategy to use for resolving conflicts
+    /// </summary>
     public enum ConflictResolutionStrategy
     {
+        /// <summary>
+        /// Prefer the local value when resolving conflicts
+        /// </summary>
         PreferLocal,
+
+        /// <summary>
+        /// Prefer the remote value when resolving conflicts
+        /// </summary>
         PreferRemote,
+
+        /// <summary>
+        /// Keep both values by concatenating them with a separator
+        /// </summary>
         KeepBoth,
+
+        /// <summary>
+        /// Discard both values, setting the field to null
+        /// </summary>
         DiscardBoth,
+
+        /// <summary>
+        /// Merge the values using a default merge strategy (average for numbers, concatenation for strings)
+        /// </summary>
         Merge
     }
 
+    /// <summary>
+    /// Represents the result of conflict resolution
+    /// </summary>
     public sealed class ConflictResolutionResult {
+        /// <summary>
+        /// Gets the dictionary of resolved field values
+        /// </summary>
         public Dictionary<string, object> ResolvedValues { get; } = new Dictionary<string, object>();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the resolution was successful
+        /// </summary>
         public bool IsSuccessful { get; set; }
+
+        /// <summary>
+        /// Gets or sets the error message if the resolution failed
+        /// </summary>
         public string Error { get; set; }
     }
 }
