@@ -27,6 +27,7 @@ private readonly List<string> _arguments;
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="args"/> is null.</exception>
 public CommandLineParser(params string[] args)
 {
+ArgumentNullException.ThrowIfNull(args);
 _arguments = new List<string>(args ?? []);
 _commands = new Dictionary<string, CommandDefinition>();
 }
@@ -39,12 +40,13 @@ _commands = new Dictionary<string, CommandDefinition>();
 /// <param name="handler">The action to execute when this command is invoked.</param>
 /// <param name="aliases">Optional aliases for this command.</param>
 /// <returns>The current <see cref="CommandLineParser"/> instance for method chaining.</returns>
-/// <exception cref="ArgumentException">Thrown when the command name is null or whitespace.</exception>
+/// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="handler"/> is null.</exception>
 public CommandLineParser RegisterCommand(string name, string description,
 Action<LegacyParsedCommand> handler, params string[] aliases)
 {
-if (string.IsNullOrWhiteSpace(name))
-throw new ArgumentException("Command name cannot be empty", nameof(name));
+ArgumentException.ThrowIfNullOrWhiteSpace(name);
+ArgumentNullException.ThrowIfNull(handler);
 
 var command = new CommandDefinition
 {
@@ -71,9 +73,11 @@ return this;
 /// <param name="description">A description of what the flag does.</param>
 /// <param name="shortName">Optional short name (single character) for the flag.</param>
 /// <returns>The current <see cref="CommandLineParser"/> instance for method chaining.</returns>
+/// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
 /// <exception cref="InvalidOperationException">Thrown when no command has been registered yet.</exception>
 public CommandLineParser RegisterFlag(string name, string description, char? shortName = null)
 {
+ArgumentException.ThrowIfNullOrWhiteSpace(name);
 if (!_commands.Any())
 throw new InvalidOperationException("Register a command first");
 
@@ -96,10 +100,12 @@ return this;
 /// <param name="shortName">Optional short name (single character) for the option.</param>
 /// <param name="required">Whether this option is required when the command is invoked.</param>
 /// <returns>The current <see cref="CommandLineParser"/> instance for method chaining.</returns>
+/// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
 /// <exception cref="InvalidOperationException">Thrown when no command has been registered yet.</exception>
 public CommandLineParser RegisterOption(string name, string description,
 char? shortName = null, bool required = false)
 {
+ArgumentException.ThrowIfNullOrWhiteSpace(name);
 if (!_commands.Any())
 throw new InvalidOperationException("Register a command first");
 
