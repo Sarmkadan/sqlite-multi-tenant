@@ -19,4 +19,9 @@ public sealed class RateLimiterOptions
     /// Default is 1 hour.
     /// </summary>
     public TimeSpan ExpirationTime { get; set; } = TimeSpan.FromHours(1);
+
+    public override string ToString()
+    {
+        return $"RateLimiterOptions {{ CleanupInterval = {CleanupInterval}, ExpirationTime = {ExpirationTime} }}";
+    }
 }
