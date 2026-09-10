@@ -23,7 +23,8 @@ private readonly List<string> _arguments;
 /// <summary>
 /// Initializes a new instance of the <see cref="CommandLineParser"/> class with the specified command-line arguments.
 /// </summary>
-/// <param name="args">The command-line arguments to parse. Can be null, in which case an empty array is used.</param>
+/// <param name="args">The command-line arguments to parse. Must not be null.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="args"/> is null.</exception>
 public CommandLineParser(params string[] args)
 {
 _arguments = new List<string>(args ?? []);
