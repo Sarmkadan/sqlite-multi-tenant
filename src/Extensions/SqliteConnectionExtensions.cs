@@ -6,8 +6,8 @@ public static class SqliteConnectionExtensions
 {
     public static bool TableExists(SQLiteConnection conn, string tableName)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
-        if (string.IsNullOrWhiteSpace(tableName)) throw new ArgumentException("Value cannot be null or whitespace.", nameof(tableName));
+        ArgumentNullException.ThrowIfNull(conn);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
         using var cmd = new SQLiteCommand("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = @tableName;", conn);
         cmd.Parameters.AddWithValue("@tableName", tableName.Trim());
@@ -18,7 +18,7 @@ public static class SqliteConnectionExtensions
     // Existing long-returning version (kept for compatibility)
     public static long GetUserVersion(SQLiteConnection conn)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         using var cmd = new SQLiteCommand("PRAGMA user_version;", conn);
         var result = cmd.ExecuteScalar();
@@ -28,7 +28,7 @@ public static class SqliteConnectionExtensions
     // New int-returning overload
     public static int GetUserVersionInt(SQLiteConnection conn)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         using var cmd = new SQLiteCommand("PRAGMA user_version;", conn);
         var result = cmd.ExecuteScalar();
@@ -38,7 +38,7 @@ public static class SqliteConnectionExtensions
     // Existing long-version setter (kept for compatibility)
     public static void SetUserVersion(SQLiteConnection conn, long version)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         using var cmd = new SQLiteCommand("PRAGMA user_version = @version;", conn);
         cmd.Parameters.AddWithValue("@version", version);
@@ -48,7 +48,7 @@ public static class SqliteConnectionExtensions
     // New int-version setter
     public static void SetUserVersion(SQLiteConnection conn, int version)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         using var cmd = new SQLiteCommand("PRAGMA user_version = @version;", conn);
         cmd.Parameters.AddWithValue("@version", version);
@@ -57,7 +57,7 @@ public static class SqliteConnectionExtensions
 
     public static long GetPageCount(SQLiteConnection conn)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         using var cmd = new SQLiteCommand("PRAGMA page_count;", conn);
         var result = cmd.ExecuteScalar();
@@ -66,7 +66,7 @@ public static class SqliteConnectionExtensions
 
     public static long GetFreelistCount(SQLiteConnection conn)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         using var cmd = new SQLiteCommand("PRAGMA freelist_count;", conn);
         var result = cmd.ExecuteScalar();
@@ -75,7 +75,7 @@ public static class SqliteConnectionExtensions
 
     public static IReadOnlyList<string> GetTableNames(SQLiteConnection conn)
     {
-        if (conn == null) throw new ArgumentNullException(nameof(conn));
+        ArgumentNullException.ThrowIfNull(conn);
 
         var tables = new List<string>();
         using var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name;", conn);
