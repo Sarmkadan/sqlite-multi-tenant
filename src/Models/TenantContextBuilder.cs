@@ -6,8 +6,15 @@ public sealed class TenantContextBuilder
 {
     private readonly TenantContext _context = new();
 
-    public TenantContextBuilder WithTenantId(string tenantId)
+    /// <summary>
+/// Sets the tenant ID.
+/// </summary>
+/// <param name="tenantId">The tenant ID.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="tenantId"/> is null.</exception>
+/// <returns>This builder instance.</returns>
+public TenantContextBuilder WithTenantId(string tenantId)
     {
+        ArgumentNullException.ThrowIfNull(tenantId);
         _context.TenantId = tenantId;
         return this;
     }
@@ -66,8 +73,15 @@ public sealed class TenantContextBuilder
         return this;
     }
 
-    public TenantContextBuilder WithAllowedTenants(IEnumerable<string> allowedTenants)
+    /// <summary>
+/// Sets the allowed tenants.
+/// </summary>
+/// <param name="allowedTenants">The allowed tenants.</param>
+/// <exception cref="ArgumentNullException">Thrown when <paramref name="allowedTenants"/> is null.</exception>
+/// <returns>This builder instance.</returns>
+public TenantContextBuilder WithAllowedTenants(IEnumerable<string> allowedTenants)
     {
+        ArgumentNullException.ThrowIfNull(allowedTenants);
         foreach (var tenant in allowedTenants)
         {
             _context.AllowedTenants.Add(tenant);
