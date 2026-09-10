@@ -61,7 +61,7 @@ private string _havingClause;
         }
 
         /// <summary>
-        /// Appends a SELECT clause with the specified columns. If no columns are specified, all columns are selected.
+        /// Appends a SELECT clause with the specified columns, or SELECT * if none are provided.
         /// </summary>
         /// <param name="columns">The columns to select.</param>
         /// <returns>The current QueryBuilder instance for method chaining.</returns>
@@ -74,7 +74,7 @@ private string _havingClause;
         }
 
         /// <summary>
-        /// Appends a WHERE condition to the query.
+        /// Appends a WHERE clause with the specified condition and parameters.
         /// </summary>
         /// <param name="condition">The condition string (e.g., "Age > @age").</param>
         /// <param name="parameters">The parameters for the condition.</param>
@@ -113,8 +113,8 @@ private string _havingClause;
             return this;
         }
 
-    /// <summary>
-        /// Appends a WHERE IN condition with the specified column and values.
+        /// <summary>
+        /// Appends a WHERE IN condition for the specified column and values.
         /// </summary>
         /// <param name="column">The column name to check.</param>
         /// <param name="values">The values to check for in the column.</param>
@@ -199,7 +199,7 @@ private string _havingClause;
         }
 
         /// <summary>
-        /// Appends an ORDER BY clause to the query.
+        /// Appends an ORDER BY clause for the specified column and direction.
         /// </summary>
         /// <param name="column">The column to order by.</param>
         /// <param name="direction">The direction (ASC or DESC). Default is ASC.</param>
@@ -217,7 +217,7 @@ private string _havingClause;
             return this;
         }
 
-/// <summary>
+        /// <summary>
         /// Appends a GROUP BY clause with the specified columns.
         /// </summary>
         /// <param name="columns">The columns to group by.</param>
@@ -233,7 +233,7 @@ private string _havingClause;
 
 
         /// <summary>
-        /// Appends a LIMIT clause to the query.
+        /// Appends a LIMIT clause to restrict the number of returned rows.
         /// </summary>
         /// <param name="limit">The maximum number of rows to return.</param>
         /// <returns>The current QueryBuilder instance for method chaining.</returns>
@@ -246,8 +246,8 @@ private string _havingClause;
             return this;
         }
 
-/// <summary>
-        /// Appends a HAVING clause to the query.
+        /// <summary>
+        /// Appends a HAVING clause with the specified condition and parameters.
         /// </summary>
         /// <param name="condition">The condition string (e.g., "COUNT(*) > @count").</param>
         /// <param name="parameters">The parameters for the condition.</param>
@@ -265,7 +265,7 @@ private string _havingClause;
 
 
         /// <summary>
-        /// Appends an OFFSET clause to the query.
+        /// Appends an OFFSET clause to skip a specified number of rows.
         /// </summary>
         /// <param name="offset">The number of rows to skip.</param>
         /// <returns>The current QueryBuilder instance for method chaining.</returns>
@@ -278,7 +278,10 @@ private string _havingClause;
             return this;
         }
 
-        // Builds the final SQL query string
+        /// <summary>
+        /// Appends all configured clauses to form the complete SQL query string.
+        /// </summary>
+        /// <returns>The final constructed SQL query string.</returns>
         public string Build()
         {
             _query.Clear();
@@ -345,7 +348,10 @@ if (!string.IsNullOrEmpty(_havingClause))
             return _query.ToString();
         }
 
-        // Applies parameters to a command
+        /// <summary>
+        /// Appends parameters to the provided SQLiteCommand.
+        /// </summary>
+        /// <param name="command">The SQLiteCommand to apply parameters to.</param>
         public void ApplyParameters(SQLiteCommand command)
         {
             if (command is null)
@@ -355,7 +361,10 @@ if (!string.IsNullOrEmpty(_havingClause))
                 command.Parameters.AddWithValue($"@{param.name}", param.value ?? DBNull.Value);
         }
 
-        // Resets the builder for reuse
+        /// <summary>
+        /// Clears all configured clauses and parameters to allow reuse.
+        /// </summary>
+        /// <returns>The current QueryBuilder instance for method chaining.</returns>
         public QueryBuilder Reset()
         {
             _query.Clear();
@@ -398,7 +407,7 @@ if (!string.IsNullOrEmpty(_havingClause))
         }
 
         /// <summary>
-        /// Adds a column-value pair to the insert.
+        /// Appends a column-value pair to the insert statement.
         /// </summary>
         /// <param name="column">The column name.</param>
         /// <param name="value">The value for the column.</param>
@@ -413,7 +422,7 @@ if (!string.IsNullOrEmpty(_havingClause))
         }
 
         /// <summary>
-        /// Builds the INSERT statement and returns the query and parameters.
+        /// Appends an INSERT INTO clause with the specified columns and parameterized values.
         /// </summary>
         /// <returns>A tuple containing the SQL query and the parameters dictionary.</returns>
         public (string query, Dictionary<string, object> parameters) Build()
@@ -457,6 +466,11 @@ if (!string.IsNullOrEmpty(_havingClause))
         private readonly Dictionary<string, object> _values;
         private string _whereClause;
 
+        /// <summary>
+        /// Initializes a new instance of the UpdateBuilder class for the specified table.
+        /// </summary>
+        /// <param name="tableName">The name of the table to update.</param>
+        /// <exception cref="ArgumentException">Thrown when tableName is empty or whitespace.</exception>
         public UpdateBuilder(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
@@ -466,7 +480,12 @@ if (!string.IsNullOrEmpty(_havingClause))
             _values    = new Dictionary<string, object>();
         }
 
-        // Sets a column value
+        /// <summary>
+        /// Appends a SET clause with the specified column-value pair.
+        /// </summary>
+        /// <param name="column">The column name.</param>
+        /// <param name="value">The value for the column.</param>
+        /// <returns>The current UpdateBuilder instance for method chaining.</returns>
         public UpdateBuilder Set(string column, object value)
         {
             if (string.IsNullOrWhiteSpace(column))
@@ -476,7 +495,11 @@ if (!string.IsNullOrEmpty(_havingClause))
             return this;
         }
 
-        // Sets WHERE condition
+        /// <summary>
+        /// Appends a WHERE clause to the update statement.
+        /// </summary>
+        /// <param name="condition">The condition string.</param>
+        /// <returns>The current UpdateBuilder instance for method chaining.</returns>
         public UpdateBuilder Where(string condition)
         {
             if (string.IsNullOrWhiteSpace(condition))
@@ -486,7 +509,10 @@ if (!string.IsNullOrEmpty(_havingClause))
             return this;
         }
 
-        // Builds UPDATE statement
+        /// <summary>
+        /// Appends an UPDATE clause with the specified SET values and WHERE condition.
+        /// </summary>
+        /// <returns>A tuple containing the SQL query and the parameters dictionary.</returns>
         public (string query, Dictionary<string, object> parameters) Build()
         {
             if (_values.Count == 0)
