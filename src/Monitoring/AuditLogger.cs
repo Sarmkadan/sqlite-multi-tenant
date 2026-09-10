@@ -27,6 +27,7 @@ public sealed class AuditLogger : IAuditLogger {
 
     public AuditLogger(ILogger<AuditLogger> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
         _entries = new List<AuditLogEntry>();
         _semaphore = new SemaphoreSlim(1);
@@ -35,8 +36,11 @@ public sealed class AuditLogger : IAuditLogger {
     /// <summary>
     /// Logs an audit entry for a system operation or change.
     /// </summary>
+    /// <param name="entry">The audit log entry to log.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="entry"/> is null.</exception>
     public async Task LogAsync(AuditLogEntry entry)
     {
+        ArgumentNullException.ThrowIfNull(entry);
         try
         {
             await _semaphore.WaitAsync();
@@ -62,8 +66,11 @@ public sealed class AuditLogger : IAuditLogger {
     /// <summary>
     /// Retrieves audit log entries matching the specified filter criteria.
     /// </summary>
+    /// <param name="filter">The filter criteria.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="filter"/> is null.</exception>
     public async Task<List<AuditLogEntry>> GetEntriesAsync(AuditLogFilter filter)
     {
+        ArgumentNullException.ThrowIfNull(filter);
         try
         {
             await _semaphore.WaitAsync();
@@ -105,8 +112,11 @@ public sealed class AuditLogger : IAuditLogger {
     /// <summary>
     /// Gets the count of audit log entries matching the filter.
     /// </summary>
+    /// <param name="filter">The filter criteria.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="filter"/> is null.</exception>
     public async Task<int> GetEntryCountAsync(AuditLogFilter filter)
     {
+        ArgumentNullException.ThrowIfNull(filter);
         try
         {
             await _semaphore.WaitAsync();
