@@ -20,7 +20,7 @@ public static class ConnectionPoolingExtensions
     /// Registers <see cref="IConnectionPoolManager"/> as a singleton in the DI container.
     /// </summary>
     /// <remarks>
-    /// Uses <see cref="ServiceCollectionDescriptorExtensions.TryAddSingleton{TService}(IServiceCollection)"/> 
+    /// Uses <see cref="ServiceCollectionDescriptorExtensions.TryAddSingleton{TService}(IServiceCollection)"/>
     /// so that calling this method more than once (e.g. from a test host and the real host) does
     /// not register duplicate services or reset options that were already configured.
     /// </remarks>
