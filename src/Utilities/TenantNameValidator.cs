@@ -164,7 +164,7 @@ namespace SqliteMultiTenant.Utilities
     /// <summary>
     /// Represents the result of a validation operation.
     /// </summary>
-    public sealed class ValidationResult 
+    public sealed class ValidationResult
     {
         /// <summary>
         /// Gets or sets a value indicating whether the validation was successful.
