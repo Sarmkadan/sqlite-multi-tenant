@@ -74,9 +74,8 @@ public sealed class TenantValidator {
         var errors = new Dictionary<string, string>();
 
         // In production, implement repository query
-        // var exists = await _tenantRepository.ExistsByNameAsync(tenantName);
-        // if (exists && tenantId != excludeTenantId)
-        //     errors.Add("Name", "Tenant name already exists");
+        // Check if tenant name already exists (excluding current tenant when updating)
+        // errors.Add("Name", "Tenant name already exists");
 
         return errors;
     }
