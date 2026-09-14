@@ -320,7 +320,7 @@ namespace SqliteMultiTenant.Tenants
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = @"
-SELECT COUNT(*) FROM sqlite_master 
+SELECT COUNT(*) FROM sqlite_master
 WHERE type='table' AND name IN ('Tenants', 'AuditLog')";
 
                         var count = (long)await command.ExecuteScalarAsync();
