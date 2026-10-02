@@ -78,7 +78,7 @@ public static class TenantContextJsonExtensions
             value = JsonSerializer.Deserialize<TenantContext>(json, _jsonOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return false;
         }
@@ -107,16 +107,16 @@ internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
 
         var context = new TenantContext
         {
-            TenantId = root.GetProperty("tenantId").GetString() ?? string.Empty,
-            TenantName = root.GetProperty("tenantName").GetString(),
-            UserId = root.GetProperty("userId").GetString(),
-            UserEmail = root.GetProperty("userEmail").GetString(),
-            EstablishedAt = root.GetProperty("establishedAt").GetDateTime(),
-            CreatedAt = root.GetProperty("createdAt").GetDateTime(),
-            RequestId = root.GetProperty("requestId").GetString(),
-            ConnectionId = root.GetProperty("connectionId").GetString(),
-            DatabasePath = root.GetProperty("databasePath").GetString(),
-            IsValid = root.GetProperty("isValid").GetBoolean()
+            TenantId = root.TryGetProperty("tenantId", out var tid) ? tid.GetString() ?? string.Empty : string.Empty,
+            TenantName = root.TryGetProperty("tenantName", out var tn) ? tn.GetString() : null,
+            UserId = root.TryGetProperty("userId", out var uid) ? uid.GetString() : null,
+            UserEmail = root.TryGetProperty("userEmail", out var ue) ? ue.GetString() : null,
+            EstablishedAt = root.TryGetProperty("establishedAt", out var ea) ? ea.GetDateTime() : default,
+            CreatedAt = root.TryGetProperty("createdAt", out var ca) ? ca.GetDateTime() : default,
+            RequestId = root.TryGetProperty("requestId", out var ri) ? ri.GetString() : null,
+            ConnectionId = root.TryGetProperty("connectionId", out var ci) ? ci.GetString() : null,
+            DatabasePath = root.TryGetProperty("databasePath", out var dp) ? dp.GetString() : null,
+            IsValid = root.TryGetProperty("isValid", out var iv) && iv.GetBoolean()
         };
 
         if (root.TryGetProperty("contextData", out var contextDataElement) &&
@@ -182,7 +182,16 @@ internal sealed class TenantContextJsonConverter : JsonConverter<TenantContext>
         if (value.ContextData is { Count: > 0 })
         {
             writer.WritePropertyName("contextData");
-            JsonSerializer.Serialize(writer, value.ContextData, options);
+            writer.WriteStartObject();
+            foreach (var kvp in value.ContextData)
+            {
+                writer.WritePropertyName(kvp.Key);
+                if (kvp.Value is null)
+                    writer.WriteNullValue();
+                else
+                    JsonSerializer.Serialize(writer, kvp.Value, kvp.Value.GetType(), options);
+            }
+            writer.WriteEndObject();
         }
 
         writer.WriteBoolean("isValid", value.IsValid);

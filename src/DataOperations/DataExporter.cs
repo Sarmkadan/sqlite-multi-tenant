@@ -21,16 +21,12 @@ namespace SqliteMultiTenant.DataOperations
     public sealed class DataExporter {
         private readonly ILogger<DataExporter> _logger;
 
+        [System.Text.Json.Serialization.JsonConstructor]
+        public DataExporter() : this(Microsoft.Extensions.Logging.Abstractions.NullLogger<DataExporter>.Instance) { }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DataExporter"/> class.
         /// </summary>
-        /// <param name="logger">
-        /// The <see cref="ILogger{DataExporter}"/> used to record diagnostic information
-        /// and errors that occur during export operations.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="logger"/> is <c>null</c>.
-        /// </exception>
         public DataExporter(ILogger<DataExporter> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

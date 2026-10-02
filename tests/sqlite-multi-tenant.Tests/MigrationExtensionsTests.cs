@@ -92,9 +92,6 @@ namespace SqliteMultiTenant.Tests
             var result = MigrationExtensions.GetAgeInDays(migration);
 
             // Assert
-            Assert.Equal(2, result); // Truncated? Actually TotalDays returns double, but we expect 2.5? Wait implementation returns double, not truncated.
-            // Actually implementation returns (DateTime.UtcNow - migration.CreatedAt).TotalDays as double.
-            // So we should expect approximately 2.5.
             Assert.InRange(result, 2.4, 2.6);
         }
 
@@ -215,7 +212,7 @@ namespace SqliteMultiTenant.Tests
             var result = MigrationExtensions.GetStatusCounts(migrations);
 
             // Assert
-            Assert.Empty(result);
+            Assert.All(result.Values, count => Assert.Equal(0, count));
         }
 
         [Fact]

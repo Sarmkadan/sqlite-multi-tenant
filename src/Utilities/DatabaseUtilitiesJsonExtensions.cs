@@ -58,14 +58,20 @@ namespace SqliteMultiTenant.Utilities
 		/// <param name="json">The JSON representation of the utilities.</param>
 		/// <param name="value">When this method returns, contains the deserialized value if the operation succeeded; otherwise, <see langword="null"/>.</param>
 		/// <returns><see langword="true"/> if deserialization succeeded; otherwise, <see langword="false"/>.</returns>
-		public static bool TryFromJson(string json, out DatabaseUtilities? value)
+		public static bool TryFromJson(string? json, out DatabaseUtilities? value)
 		{
+			if (string.IsNullOrWhiteSpace(json))
+			{
+				value = null;
+				return false;
+			}
+
 			try
 			{
 				value = FromJson(json);
-				return true;
+				return value is not null;
 			}
-			catch (JsonException)
+			catch (Exception)
 			{
 				value = null;
 				return false;

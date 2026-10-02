@@ -108,10 +108,9 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public void CreateScope_HappyPath()
         {
-            var context = new TenantContext { TenantId = "tenant1" };
-            var scope = _helper.CreateScope(context.TenantId);
+            var scope = _helper.CreateScope("tenant1");
             Assert.NotNull(scope);
-            Assert.Equal(context, _helper.GetTenantContext());
+            Assert.Equal("tenant1", _helper.GetTenantContext()?.TenantId);
             scope.Dispose();
             Assert.Null(_helper.GetTenantContext());
         }

@@ -20,6 +20,11 @@ public static class StringUtilitiesJsonExtensions
         WriteIndented = false,
     };
 
+    private static readonly JsonSerializerOptions PascalOptions = new()
+    {
+        WriteIndented = false,
+    };
+
     /// <summary>
     /// Serializes a string to JSON with optional sanitization for safe HTML output.
     /// </summary>
@@ -72,7 +77,7 @@ public static class StringUtilitiesJsonExtensions
             value = JsonSerializer.Deserialize<string>(json, DefaultOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;
@@ -94,8 +99,8 @@ public static class StringUtilitiesJsonExtensions
         var data = new { Value = value, Hash = hash };
 
         var options = indented
-            ? new JsonSerializerOptions(DefaultOptions) { WriteIndented = true }
-            : DefaultOptions;
+            ? new JsonSerializerOptions(PascalOptions) { WriteIndented = true }
+            : PascalOptions;
 
         return JsonSerializer.Serialize(data, options);
     }
@@ -115,8 +120,8 @@ public static class StringUtilitiesJsonExtensions
         var data = new { Original = value, SnakeCase = snakeCase };
 
         var options = indented
-            ? new JsonSerializerOptions(DefaultOptions) { WriteIndented = true }
-            : DefaultOptions;
+            ? new JsonSerializerOptions(PascalOptions) { WriteIndented = true }
+            : PascalOptions;
 
         return JsonSerializer.Serialize(data, options);
     }

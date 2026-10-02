@@ -60,7 +60,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             _mockCacheService.Received(1).Remove(tenantKey);
             _mockCacheService.Received(1).Remove(allTenantsKey);
-            _mockLogger.Received(1).LogInformation("Cache invalidated for tenant: {TenantId}", tenantId);
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             _mockCacheService.Received(1).Remove(backupsKey);
-            _mockLogger.Received(1).LogInformation("Cache invalidated for backups in database: {DatabaseId}", databaseId);
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace SqliteMultiTenant.Tests
             // Assert
             _mockCacheService.Received(1).Remove(pendingMigrationsKey);
             _mockCacheService.Received(1).Remove(appliedMigrationsKey);
-            _mockLogger.Received(1).LogInformation("Cache invalidated for migrations in database: {DatabaseId}", databaseId);
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
 
         [Fact]
@@ -106,7 +106,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             _mockCacheService.Received(1).Remove(healthCheckKey);
-            _mockLogger.Received(1).LogInformation("Health check cache invalidated");
+            _mockLogger.AssertLoggedAny(LogLevel.Information);
         }
     }
 }

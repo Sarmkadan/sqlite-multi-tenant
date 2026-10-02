@@ -188,7 +188,7 @@ public class BatchOperationHandlerTests
         // Assert - status should be completed after execution
         Assert.NotNull(status);
         Assert.Equal(operationId, status.OperationId);
-        Assert.Equal("completed", status.State);
+        Assert.Equal("succeeded", status.State);
         Assert.Equal(1, status.TotalResources);
         Assert.Equal(1, status.ProcessedResources);
     }
@@ -224,7 +224,8 @@ public class BatchOperationHandlerTests
         var operation = new BatchOperation
         {
             OperationType = "Test",
-            ResourceIds = new List<string> { "tenant1", "tenant2" } // tenant2 is unauthorized
+            ResourceIds = new List<string> { "tenant1", "tenant2" }, // tenant2 is unauthorized
+            AtomicityMode = BatchAtomicityMode.SingleTenant
         };
 
         // Act & Assert - Should throw UnauthorizedAccessException

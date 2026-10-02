@@ -36,7 +36,7 @@ public static class ReflectionExtensionsJsonExtensions
             WriteIndented = indented
         };
 
-        return JsonSerializer.Serialize(type, options);
+        return type.FullName ?? type.Name;
     }
 
     /// <summary>
@@ -48,9 +48,10 @@ public static class ReflectionExtensionsJsonExtensions
     /// <param name="json">The JSON string containing the type data.</param>
     /// <returns>The deserialized Type, or null if the JSON is empty or deserialization fails.</returns>
     /// <exception cref="ArgumentException">Thrown if json is null or whitespace.</exception>
-    public static Type? FromJson(string json)
+    public static Type? FromJson(string? json)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
 
         try
         {
@@ -69,16 +70,20 @@ public static class ReflectionExtensionsJsonExtensions
     /// <param name="value">When this method returns, contains the deserialized Type if the operation succeeded; otherwise, null.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
     /// <exception cref="ArgumentException">Thrown if json is null or whitespace.</exception>
-    public static bool TryFromJson(string json, out Type? value)
+    public static bool TryFromJson(string? json, out Type? value)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            value = null;
+            return false;
+        }
 
         try
         {
             value = FromJson(json);
             return value is not null;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

@@ -31,8 +31,8 @@ public sealed class DataValidator {
         ArgumentException.ThrowIfNullOrEmpty(fieldName);
         if (string.IsNullOrWhiteSpace(value))
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
-        else if (maxLength.HasValue && value.Length > maxLength)
-            _errors.Add(new ValidationError(fieldName, $"{fieldName} must not exceed {maxLength} characters"));
+        else if (maxLength.HasValue && value.Length >= maxLength)
+            throw new ArgumentException($"{fieldName} must not exceed {maxLength} characters", fieldName);
         _logger.LogInformation("Exiting RequireString for {FieldName}", fieldName);
         return this;
     }
@@ -47,8 +47,7 @@ public sealed class DataValidator {
         if (!value.HasValue)
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (value < minValue || value > maxValue)
-            _errors.Add(new ValidationError(fieldName,
-                $"{fieldName} must be between {minValue} and {maxValue}"));
+            throw new ArgumentException($"{fieldName} must be between {minValue} and {maxValue}", fieldName);
         _logger.LogInformation("Exiting RequireRange for {FieldName}", fieldName);
         return this;
     }
@@ -63,7 +62,7 @@ public sealed class DataValidator {
         if (string.IsNullOrWhiteSpace(email))
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (!IsValidEmail(email))
-            _errors.Add(new ValidationError(fieldName, $"{fieldName} must be a valid email address"));
+            throw new ArgumentException($"{fieldName} must be a valid email address", fieldName);
         _logger.LogInformation("Exiting RequireValidEmail for {FieldName}", fieldName);
         return this;
     }
@@ -79,7 +78,7 @@ public sealed class DataValidator {
             _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
         else if (!Uri.TryCreate(url, UriKind.Absolute, out var result) ||
                  (result.Scheme != Uri.UriSchemeHttp && result.Scheme != Uri.UriSchemeHttps))
-            _errors.Add(new ValidationError(fieldName, $"{fieldName} must be a valid HTTP(S) URL"));
+            throw new ArgumentException($"{fieldName} must be a valid HTTP(S) URL", fieldName);
         _logger.LogInformation("Exiting RequireValidUrl for {FieldName}", fieldName);
         return this;
     }
@@ -91,8 +90,8 @@ public sealed class DataValidator {
     {
         _logger.LogInformation("Entering RequireValidGuid for {FieldName} with guid {Guid}", fieldName, guid);
         ArgumentException.ThrowIfNullOrEmpty(fieldName);
-        if (string.IsNullOrWhiteSpace(guid) || !Guid.TryParse(guid, out _))
-            _errors.Add(new ValidationError(fieldName, $"{fieldName} must be a valid GUID"));
+        if (!string.IsNullOrWhiteSpace(guid) && !Guid.TryParse(guid, out _))
+            throw new ArgumentException($"{fieldName} must be a valid GUID", fieldName);
         _logger.LogInformation("Exiting RequireValidGuid for {FieldName}", fieldName);
         return this;
     }
@@ -109,7 +108,7 @@ public sealed class DataValidator {
         if (!string.IsNullOrWhiteSpace(value))
         {
             if (!Regex.IsMatch(value, pattern))
-                _errors.Add(new ValidationError(fieldName, message));
+                throw new ArgumentException(message, fieldName);
         }
         _logger.LogInformation("Exiting RequirePattern for {FieldName}", fieldName);
         return this;
@@ -124,8 +123,10 @@ public sealed class DataValidator {
         ArgumentNullException.ThrowIfNull(predicate);
         ArgumentException.ThrowIfNullOrEmpty(fieldName);
         ArgumentException.ThrowIfNullOrEmpty(message);
-        if (!predicate(value))
-            _errors.Add(new ValidationError(fieldName, message));
+        if (value is null)
+            _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
+        else if (!predicate(value))
+            throw new ArgumentException(message, fieldName);
         _logger.LogInformation("Exiting Require for {FieldName}", fieldName);
         return this;
     }
@@ -137,8 +138,10 @@ public sealed class DataValidator {
     {
         _logger.LogInformation("Entering RequireNotEmpty for {FieldName} with collection {Collection}", fieldName, collection);
         ArgumentException.ThrowIfNullOrEmpty(fieldName);
-        if (collection is null || !collection.Any())
-            _errors.Add(new ValidationError(fieldName, $"{fieldName} must contain at least one item"));
+        if (collection is null)
+            _errors.Add(new ValidationError(fieldName, $"{fieldName} is required"));
+        else if (!collection.Any())
+            throw new ArgumentException($"{fieldName} must contain at least one item", fieldName);
         _logger.LogInformation("Exiting RequireNotEmpty for {FieldName}", fieldName);
         return this;
     }

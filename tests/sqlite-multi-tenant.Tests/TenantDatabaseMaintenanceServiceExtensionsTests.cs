@@ -82,7 +82,9 @@ namespace SqliteMultiTenant.Tests
 
             // Verify configuration was applied by building service provider and resolving options
             var serviceProvider = services.BuildServiceProvider();
-            var options = serviceProvider.GetService<TenantDatabaseMaintenanceOptions>();
+            var optionsAccessor = serviceProvider.GetService<Microsoft.Extensions.Options.IOptions<TenantDatabaseMaintenanceOptions>>();
+            Assert.NotNull(optionsAccessor);
+            var options = optionsAccessor!.Value;
             Assert.NotNull(options);
             Assert.Equal(vacuumEnabled, options.EnableVacuum);
             Assert.Equal(analyzeEnabled, options.EnableAnalyze);

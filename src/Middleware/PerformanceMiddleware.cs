@@ -63,6 +63,7 @@ _next = next;
                 await _next(context);
 
                 // Copy response back to original
+                responseBody.Seek(0, SeekOrigin.Begin);
                 await responseBody.CopyToAsync(originalBodyStream);
             }
         }
@@ -91,8 +92,8 @@ _next = next;
             context.Items["RequestMetrics"] = requestMetrics;
 
             // Add performance headers to response
-            context.Response.Headers.Add("X-Response-Time-Ms", stopwatch.ElapsedMilliseconds.ToString());
-            context.Response.Headers.Add("X-Memory-Used-Kb", memoryUsedKb.ToString());
+            context.Response.Headers["X-Response-Time-Ms"] = stopwatch.ElapsedMilliseconds.ToString();
+            context.Response.Headers["X-Memory-Used-Kb"] = memoryUsedKb.ToString();
         }
     }
 

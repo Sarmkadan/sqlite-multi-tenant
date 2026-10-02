@@ -76,7 +76,7 @@ public static class CorrelationIdMiddlewareJsonExtensions
             value = JsonSerializer.Deserialize<CorrelationIdMiddleware>(json, _jsonSerializerOptions);
             return value is not null;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return false;
         }

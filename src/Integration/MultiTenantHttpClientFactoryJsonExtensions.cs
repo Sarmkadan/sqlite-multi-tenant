@@ -89,7 +89,7 @@ namespace SqliteMultiTenant.Integration
                 value = JsonSerializer.Deserialize<MultiTenantHttpClientFactory>(json, _jsonSerializerOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return false;
             }

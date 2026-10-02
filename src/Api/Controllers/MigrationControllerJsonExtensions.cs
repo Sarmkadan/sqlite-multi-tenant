@@ -70,7 +70,7 @@ public static class MigrationControllerJsonExtensions
             value = JsonSerializer.Deserialize<MigrationController>(json, _jsonOptions);
             return value is not null;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

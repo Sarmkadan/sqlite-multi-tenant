@@ -42,7 +42,6 @@ public sealed class EncryptionService : IEncryptionService {
     /// </summary>
     public string Encrypt(string plainText)
     {
-        ArgumentException.ThrowIfNullOrEmpty(plainText);
         try
         {
             if (string.IsNullOrEmpty(plainText))
@@ -63,7 +62,6 @@ public sealed class EncryptionService : IEncryptionService {
     /// </summary>
     public string Decrypt(string cipherText)
     {
-        ArgumentException.ThrowIfNullOrEmpty(cipherText);
         try
         {
             if (string.IsNullOrEmpty(cipherText))

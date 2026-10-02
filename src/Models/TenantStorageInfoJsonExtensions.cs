@@ -69,7 +69,7 @@ public static class TenantStorageInfoJsonExtensions
             value = JsonSerializer.Deserialize<TenantStorageInfo>(json, _jsonOptions)!;
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null!;
             return false;

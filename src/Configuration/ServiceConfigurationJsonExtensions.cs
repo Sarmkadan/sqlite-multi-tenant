@@ -61,7 +61,7 @@ public static class ServiceConfigurationJsonExtensions
         {
             return JsonSerializer.Deserialize<AppConfiguration>(json, _jsonSerializerOptions);
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return null;
         }
@@ -83,7 +83,7 @@ public static class ServiceConfigurationJsonExtensions
             value = JsonSerializer.Deserialize<AppConfiguration>(json, _jsonSerializerOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

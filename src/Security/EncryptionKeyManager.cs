@@ -25,6 +25,9 @@ namespace SqliteMultiTenant.Security
         private readonly string _keyStorePath;
         private readonly ConcurrentDictionary<string, EncryptionKey> _keyCache;
 
+        [System.Text.Json.Serialization.JsonConstructor]
+        public EncryptionKeyManager() : this(Microsoft.Extensions.Logging.Abstractions.NullLogger<EncryptionKeyManager>.Instance, Path.GetTempPath()) { }
+
         public EncryptionKeyManager(ILogger<EncryptionKeyManager> logger, string keyStorePath)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));

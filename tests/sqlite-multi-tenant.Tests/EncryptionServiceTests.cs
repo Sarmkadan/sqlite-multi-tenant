@@ -25,7 +25,7 @@ public class EncryptionServiceTests
     /// </summary>
     public EncryptionServiceTests()
     {
-        _logger.LogInformation("Initializing EncryptionServiceTests");
+        _logger = Substitute.For<ILogger<EncryptionService>>();
         _config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -33,12 +33,7 @@ public class EncryptionServiceTests
             }!)
             .Build();
 
-        _logger.LogInformation("Creating configuration for EncryptionServiceTests");
-        _logger = Substitute.For<ILogger<EncryptionService>>();
-
-        _logger.LogInformation("Creating EncryptionService instance");
         _encryptionService = new EncryptionService(_config, _logger);
-        _logger.LogInformation("EncryptionService instance created");
     }
 
     /// <summary>

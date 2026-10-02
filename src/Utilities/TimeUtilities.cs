@@ -107,7 +107,7 @@ public static class TimeUtilities
     /// </summary>
     public static DateTime GetEndOfDay(DateTime dateTime)
     {
-        return dateTime.Date.AddDays(1).AddTicks(-1);
+        return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, 23, 59, 59, 999);
     }
 
     /// <summary>
@@ -127,7 +127,8 @@ public static class TimeUtilities
     /// </summary>
     public static DateTime GetEndOfWeek(DateTime dateTime)
     {
-        return GetStartOfWeek(dateTime).AddDays(7).AddTicks(-1);
+        var sunday = GetStartOfWeek(dateTime).AddDays(6);
+        return new DateTime(sunday.Year, sunday.Month, sunday.Day, 23, 59, 59, 999);
     }
 
     /// <summary>
@@ -143,7 +144,8 @@ public static class TimeUtilities
     /// </summary>
     public static DateTime GetEndOfMonth(DateTime dateTime)
     {
-        return GetStartOfMonth(dateTime).AddMonths(1).AddTicks(-1);
+        var lastDay = DateTime.DaysInMonth(dateTime.Year, dateTime.Month);
+        return new DateTime(dateTime.Year, dateTime.Month, lastDay, 23, 59, 59, 999);
     }
 
     /// <summary>

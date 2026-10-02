@@ -67,7 +67,7 @@ namespace SqliteMultiTenant.Utilities
                 value = FromJson(json);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;

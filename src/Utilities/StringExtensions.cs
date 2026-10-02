@@ -187,7 +187,7 @@ public static class StringExtensions
             return false;
 
         // Only allow alphanumeric, slashes, dots, hyphens
-        return Regex.IsMatch(value, @"^[a-zA-Z0-9._\-\/]+$");
+        return Regex.IsMatch(value, @"^[a-zA-Z0-9._\-\/:]+$");
     }
 
     /// <summary>

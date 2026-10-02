@@ -74,7 +74,7 @@ namespace SqliteMultiTenant.Database
                 value = JsonSerializer.Deserialize<ConnectionManager>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;

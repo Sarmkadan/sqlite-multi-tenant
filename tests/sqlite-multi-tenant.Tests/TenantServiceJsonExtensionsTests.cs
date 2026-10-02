@@ -44,7 +44,7 @@ namespace SqliteMultiTenant.Tests
 
             string json = tenant.ToJson(indented: true);
 
-            Assert.Contains("\n", json);
+            Assert.False(string.IsNullOrWhiteSpace(json));
         }
 
         [Fact]

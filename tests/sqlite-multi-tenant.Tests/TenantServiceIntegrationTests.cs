@@ -53,11 +53,9 @@ namespace SqliteMultiTenant.Tests
     /// </summary>
     public TenantServiceIntegrationTests()
             {
-                _logger.LogInformation("Starting initialization of TenantServiceIntegrationTests");
+                _logger = NullLogger<TenantService>.Instance;
                 _dbPath = Path.Combine(Path.GetTempPath(), $"tenant_service_tests_{Guid.NewGuid():N}.db");
                 _connectionString = $"Data Source={_dbPath};Version=3;";
-
-                _logger = NullLogger<TenantService>.Instance;
                 _tenantRepository = new TenantRepository(_connectionString, NullLogger<TenantRepository>.Instance); // Use concrete repository for integration
 
                 SeedData();

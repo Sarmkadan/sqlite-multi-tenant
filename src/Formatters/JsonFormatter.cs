@@ -23,7 +23,7 @@ public sealed class JsonExportFormatter {
 /// <param name="logger">The logger used for error reporting.</param>
 /// <param name="prettyPrint">Whether to format the JSON with indentation.</param>
 /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint = true)
+public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
@@ -54,9 +54,10 @@ public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint
         }
         catch (Exception ex)
         {
-            _logger.LogError("JSON formatting error: {Message}", ex.Message);
+            var innerMsg = ex.InnerException?.Message ?? ex.Message;
+            _logger.LogError("JSON formatting error: {Message}", innerMsg);
             return JsonSerializer.Serialize(
-                new { error = "Serialization failed", message = ex.Message },
+                new { error = innerMsg },
                 _options);
         }
     }
@@ -67,9 +68,8 @@ public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint
     /// <param name="json">The JSON string to parse.</param>
     /// <returns>The deserialized object, or null if parsing fails or input is null/whitespace.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> is null.</exception>
-    public T? Parse<T>(string json) where T : class
+    public T? Parse<T>(string? json) where T : class
     {
-        ArgumentNullException.ThrowIfNull(json);
         try
         {
             if (string.IsNullOrWhiteSpace(json))
@@ -77,10 +77,15 @@ public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint
 
             return JsonSerializer.Deserialize<T>(json, _options);
         }
+        catch (JsonException ex)
+        {
+            _logger.LogError("JSON parsing error: {Message}", ex.Message);
+            throw new FormatException($"Invalid JSON: {ex.Message}", ex);
+        }
         catch (Exception ex)
         {
             _logger.LogError("JSON parsing error: {Message}", ex.Message);
-            return null;
+            throw;
         }
     }
 

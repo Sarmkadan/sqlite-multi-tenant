@@ -66,7 +66,7 @@ public static class TenantServiceJsonExtensions
             value = JsonSerializer.Deserialize<TenantService>(json, _jsonOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

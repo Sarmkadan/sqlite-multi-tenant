@@ -95,7 +95,7 @@ public static class MigrationJsonExtensions
             result = JsonSerializer.Deserialize<Migration>(json, _jsonOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return false;
         }

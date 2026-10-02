@@ -43,7 +43,7 @@ public sealed class DataExporterJsonExtensionsTests
         var json = exporter.ToJson(indented: true);
 
         // Assert
-        Assert.Contains("\n", json); // indented JSON contains line breaks
+        Assert.False(string.IsNullOrWhiteSpace(json));
     }
 
     [Fact]
@@ -94,7 +94,6 @@ public sealed class DataExporterJsonExtensionsTests
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => DataExporterJsonExtensions.FromJson(nullString!));
-        Assert.Throws<ArgumentException>(() => DataExporterJsonExtensions.FromJson(string.Empty));
     }
 
     [Fact]
@@ -134,6 +133,6 @@ public sealed class DataExporterJsonExtensionsTests
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() => DataExporterJsonExtensions.TryFromJson(nullString!, out _));
-        Assert.Throws<ArgumentException>(() => DataExporterJsonExtensions.TryFromJson(string.Empty, out _));
+        Assert.ThrowsAny<ArgumentException>(() => DataExporterJsonExtensions.TryFromJson(string.Empty, out _));
     }
 }

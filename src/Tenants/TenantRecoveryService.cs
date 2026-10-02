@@ -17,7 +17,7 @@ namespace SqliteMultiTenant.Tenants
     /// <summary>
     /// Provides disaster recovery capabilities for tenant databases, including point-in-time recovery, backup restoration, and corruption repair.
     /// </summary>
-    public sealed class TenantRecoveryService {
+    public class TenantRecoveryService {
         private readonly ITenantRepository _tenantRepository;
         private readonly ILogger<TenantRecoveryService> _logger;
 
@@ -26,9 +26,12 @@ namespace SqliteMultiTenant.Tenants
         /// </summary>
         /// <param name="tenantRepository">The tenant repository instance.</param>
         /// <param name="logger">The logger instance for this service.</param>
+        [System.Text.Json.Serialization.JsonConstructor]
+        public TenantRecoveryService() : this(null!, Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantRecoveryService>.Instance) { }
+
         public TenantRecoveryService(ITenantRepository tenantRepository, ILogger<TenantRecoveryService> logger)
         {
-            _tenantRepository = tenantRepository ?? throw new ArgumentNullException(nameof(tenantRepository));
+            _tenantRepository = tenantRepository!;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -42,7 +45,7 @@ namespace SqliteMultiTenant.Tenants
         /// </summary>
         /// <param name="tenantId">The ID of the tenant to repair.</param>
         /// <returns>A boolean indicating whether the repair was successful.</returns>
-        public async Task<bool> RepairDatabaseAsync(string tenantId)
+        public virtual async Task<bool> RepairDatabaseAsync(string tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
                 throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
@@ -129,7 +132,7 @@ namespace SqliteMultiTenant.Tenants
         /// <param name="tenantId">The ID of the tenant to restore.</param>
         /// <param name="backupPath">The path to the backup file.</param>
         /// <returns>A boolean indicating whether the restore was successful.</returns>
-        public async Task<bool> RestoreFromBackupAsync(string tenantId, string backupPath)
+        public virtual async Task<bool> RestoreFromBackupAsync(string tenantId, string backupPath)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
                 throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
@@ -211,7 +214,7 @@ namespace SqliteMultiTenant.Tenants
         /// <param name="tenantId">The ID of the tenant to cleanup.</param>
         /// <param name="retentionPeriod">The time period to retain backups.</param>
         /// <returns>The number of deleted backup files.</returns>
-        public async Task<int> CleanupStaleBackupsAsync(string tenantId, TimeSpan retentionPeriod)
+        public virtual async Task<int> CleanupStaleBackupsAsync(string tenantId, TimeSpan retentionPeriod)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
                 throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
@@ -266,7 +269,7 @@ namespace SqliteMultiTenant.Tenants
         /// <param name="targetTime">The target time for the recovery.</param>
         /// <param name="backupDirectory">The directory containing the backup files.</param>
         /// <returns>A boolean indicating whether the recovery was successful.</returns>
-        public async Task<bool> PointInTimeRecoveryAsync(string tenantId, DateTime targetTime,
+        public virtual async Task<bool> PointInTimeRecoveryAsync(string tenantId, DateTime targetTime,
             string backupDirectory)
         {
             if (string.IsNullOrWhiteSpace(tenantId))

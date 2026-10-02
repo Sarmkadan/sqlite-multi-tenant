@@ -82,7 +82,7 @@ namespace SqliteMultiTenant.Operations
 				value = JsonSerializer.Deserialize<BulkInsertBuilder>(json, _jsonOptions);
 				return true;
 			}
-			catch (JsonException)
+			catch (Exception)
 			{
 				return false;
 			}

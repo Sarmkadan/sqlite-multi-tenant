@@ -45,9 +45,10 @@ public static class DateTimeExtensionsJsonExtensions
     /// <returns>The deserialized DateTime value, or null if the JSON is empty or invalid.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="json"/> is null or whitespace.</exception>
     /// <exception cref="JsonException">Thrown if the JSON cannot be deserialized as a DateTime.</exception>
-    public static DateTime? FromJson(string json)
+    public static DateTime? FromJson(string? json)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(json));
 
         return JsonSerializer.Deserialize<DateTime>(json, _options);
     }
@@ -60,14 +61,17 @@ public static class DateTimeExtensionsJsonExtensions
     /// <param name="value">When this method returns, contains the deserialized value if the operation succeeded; otherwise, null.</param>
     /// <returns>True if deserialization succeeded; otherwise, false.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="json"/> is null or whitespace.</exception>
-    public static bool TryFromJson(string json, out DateTime? value)
+    public static bool TryFromJson(string? json, out DateTime? value)
     {
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(json));
+
         try
         {
             value = FromJson(json);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

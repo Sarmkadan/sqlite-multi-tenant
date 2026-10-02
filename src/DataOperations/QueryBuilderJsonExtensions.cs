@@ -76,7 +76,7 @@ public static bool TryFromJson(string json, out QueryBuilder? value)
         value = JsonSerializer.Deserialize<QueryBuilder>(json, _jsonOptions);
         return true;
     }
-    catch (JsonException)
+    catch (Exception)
     {
         return false;
     }
