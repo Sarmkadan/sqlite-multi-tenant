@@ -93,7 +93,7 @@ public sealed class BulkExportStartedEventValidationTests
     {
         BulkExportStartedEvent? evt = null;
 
-        Assert.Throws<NullReferenceException>(() => evt.IsValid());
+        Assert.Throws<ArgumentNullException>(() => evt.IsValid());
     }
 
     [Fact]

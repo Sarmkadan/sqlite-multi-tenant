@@ -65,7 +65,7 @@ namespace SqliteMultiTenant.Tests.Security
             // Assert
             key.Should().NotBeNull();
             key.TenantId.Should().Be(tenantId);
-            key.KeyId.Should().BeNullOrEmpty();
+            key.KeyId.Should().NotBeNullOrEmpty();
             key.KeyMaterial.Should().NotBeNull().And.HaveCount(32);
             key.Version.Should().Be(1);
             key.IsActive.Should().BeTrue();

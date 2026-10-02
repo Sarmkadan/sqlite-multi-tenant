@@ -48,9 +48,10 @@ namespace SqliteMultiTenant.DataOperations
         /// <returns>A deserialized <see cref="DataExporter"/> instance, or <see langword="null"/> if the JSON is empty or whitespace.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         /// <exception cref="JsonException">Thrown when the JSON is invalid or cannot be deserialized.</exception>
-        public static DataExporter? FromJson(string json)
+        public static DataExporter? FromJson(string? json)
         {
-            ArgumentException.ThrowIfNullOrEmpty(json);
+            if (json is null)
+                throw new ArgumentException("Value cannot be null.", nameof(json));
 
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -69,7 +70,8 @@ namespace SqliteMultiTenant.DataOperations
         /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
         public static bool TryFromJson(string json, out DataExporter? value)
         {
-            ArgumentException.ThrowIfNullOrEmpty(json);
+            if (json is null || json.Length == 0)
+                throw new ArgumentException("Value cannot be null or empty.", nameof(json));
 
             value = null;
 
@@ -78,7 +80,7 @@ namespace SqliteMultiTenant.DataOperations
                 value = FromJson(json);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return false;
             }

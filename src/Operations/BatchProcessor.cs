@@ -181,6 +181,8 @@ public sealed class BatchProcessor : IBatchProcessor {
 /// </summary>
 /// <typeparam name="T">The type of each successful result.</typeparam>
 public sealed class BatchProcessResult<T> {
+    private readonly object _lock = new();
+
     /// <summary>
     /// Gets or sets the successful results.
     /// </summary>
@@ -218,7 +220,10 @@ public sealed class BatchProcessResult<T> {
     /// <param name="result">The result produced for the item.</param>
     public void AddSuccess(string itemId, T result)
     {
-        SuccessfulResults.Add(result);
+        lock (_lock)
+        {
+            SuccessfulResults.Add(result);
+        }
     }
 
     /// <summary>
@@ -228,13 +233,16 @@ public sealed class BatchProcessResult<T> {
     /// <param name="exception">The exception raised while processing the item.</param>
     public void AddError(string itemId, Exception exception)
     {
-        Errors.Add(new BatchErrorItem
+        lock (_lock)
         {
-            ItemId = itemId,
-            Exception = exception.GetType().Name,
-            Message = exception.Message,
-            StackTrace = exception.StackTrace
-        });
+            Errors.Add(new BatchErrorItem
+            {
+                ItemId = itemId,
+                Exception = exception.GetType().Name,
+                Message = exception.Message,
+                StackTrace = exception.StackTrace
+            });
+        }
     }
 
     /// <summary>

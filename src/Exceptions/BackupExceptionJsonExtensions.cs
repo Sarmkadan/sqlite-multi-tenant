@@ -66,9 +66,14 @@ public static class BackupExceptionJsonExtensions
 
         try
         {
-            return JsonSerializer.Deserialize<BackupException>(json, SerializerOptions);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var message = root.TryGetProperty("message", out var m) ? m.GetString() ?? "" : "";
+            var backupId = root.TryGetProperty("backupId", out var b) ? b.GetString() : null;
+            var databaseId = root.TryGetProperty("databaseId", out var d) ? d.GetString() : null;
+            return new BackupException(message, backupId, databaseId);
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return null;
         }
@@ -96,10 +101,10 @@ public static class BackupExceptionJsonExtensions
 
         try
         {
-            result = JsonSerializer.Deserialize<BackupException>(json, SerializerOptions);
+            result = FromJson(json);
             return result is not null;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return false;
         }

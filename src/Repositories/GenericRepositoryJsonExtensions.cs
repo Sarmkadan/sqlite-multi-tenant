@@ -76,7 +76,7 @@ public static class GenericRepositoryJsonExtensions
             value = JsonSerializer.Deserialize<GenericRepository<T>>(json, _jsonOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

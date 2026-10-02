@@ -19,6 +19,9 @@ public sealed class CorrelationIdMiddleware {
     private readonly ILogger<CorrelationIdMiddleware> _logger;
     private const string CorrelationIdHeader = "X-Correlation-Id";
 
+    [System.Text.Json.Serialization.JsonConstructor]
+    public CorrelationIdMiddleware() : this(_ => Task.CompletedTask, Microsoft.Extensions.Logging.Abstractions.NullLogger<CorrelationIdMiddleware>.Instance) { }
+
     public CorrelationIdMiddleware(RequestDelegate next, ILogger<CorrelationIdMiddleware> logger)
     {
         ArgumentNullException.ThrowIfNull(next);

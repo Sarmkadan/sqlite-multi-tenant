@@ -41,7 +41,7 @@ namespace SqliteMultiTenant.Tenants
             _loggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _basePath = basePath ?? throw new ArgumentNullException(nameof(basePath));
-            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+            _eventBus = eventBus!;
         }
 
         /// <summary>

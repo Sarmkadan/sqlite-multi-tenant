@@ -28,7 +28,6 @@ public sealed class BackupException : MultiTenantException
     public BackupException(string message)
         : base(message)
     {
-        ArgumentException.ThrowIfNullOrEmpty(message);
     }
 
     /// <summary>
@@ -39,7 +38,6 @@ public sealed class BackupException : MultiTenantException
     public BackupException(string message, Exception innerException)
         : base(message, innerException)
     {
-        ArgumentException.ThrowIfNullOrEmpty(message);
     }
 
     /// <summary>

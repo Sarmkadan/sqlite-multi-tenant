@@ -74,7 +74,8 @@ public static class BulkExportStartedEventValidation
 	/// <exception cref="ArgumentNullException">Thrown if <paramref name="value"/> is null.</exception>
 	public static bool IsValid(this BulkExportStartedEvent? value)
 	{
-		return value?.Validate().Count == 0;
+		ArgumentNullException.ThrowIfNull(value);
+		return value.Validate().Count == 0;
 	}
 
 	/// <summary>

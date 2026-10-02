@@ -73,7 +73,7 @@ public sealed class MigrationJsonExtensionsTests
         json.Should().NotBeNullOrEmpty();
 
         // Parse the JSON back to verify properties
-        var parsed = JsonSerializer.Deserialize<Migration>(json);
+        var parsed = MigrationJsonExtensions.FromJson(json);
         parsed.Should().NotBeNull();
         parsed!.MigrationId.Should().Be(migration.MigrationId);
         parsed.DatabaseId.Should().Be(migration.DatabaseId);
@@ -110,7 +110,7 @@ public sealed class MigrationJsonExtensionsTests
         json.Should().NotBeNullOrEmpty();
 
         // Parse the JSON back to verify properties (ignoring formatting)
-        var parsed = JsonSerializer.Deserialize<Migration>(json);
+        var parsed = MigrationJsonExtensions.FromJson(json);
         parsed.Should().NotBeNull();
         parsed!.MigrationId.Should().Be(migration.MigrationId);
         parsed.DatabaseId.Should().Be(migration.DatabaseId);

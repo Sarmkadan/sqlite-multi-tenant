@@ -32,7 +32,8 @@ public static class FileSystemExtensions
             var basePath = Path.GetFullPath(allowedBasePath);
 
             // Ensure path is within allowed base directory
-            return Path.Combine(basePath, path).Equals(fullPath, StringComparison.OrdinalIgnoreCase);
+            return fullPath.StartsWith(basePath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                || fullPath.Equals(basePath, StringComparison.OrdinalIgnoreCase);
         }
         catch
         {

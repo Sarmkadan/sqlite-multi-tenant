@@ -30,8 +30,8 @@ namespace SqliteMultiTenant.Tests.Security
             var connectionString = SqlCipherConnectionBuilder.BuildConnectionString(dbPath, key);
 
             // Assert
-            connectionString.Should().Contain($"Data Source={dbPath}");
-            connectionString.Should().Contain($"Password={key}");
+            connectionString.Should().ContainEquivalentOf($"data source={dbPath}");
+            connectionString.Should().ContainEquivalentOf($"password={key}");
         }
 
         /// <summary>

@@ -67,9 +67,9 @@ namespace SqliteMultiTenant.Tests
         [Fact]
         public void GetDatabaseStats_NullOrWhiteSpace_ThrowsArgumentException()
         {
-            Assert.Throws<ArgumentException>(() => _controller.GetDatabaseStats(null!));
-            Assert.Throws<ArgumentException>(() => _controller.GetDatabaseStats(string.Empty));
-            Assert.Throws<ArgumentException>(() => _controller.GetDatabaseStats("   "));
+            Assert.ThrowsAny<ArgumentException>(() => _controller.GetDatabaseStats(null!));
+            Assert.ThrowsAny<ArgumentException>(() => _controller.GetDatabaseStats(string.Empty));
+            Assert.ThrowsAny<ArgumentException>(() => _controller.GetDatabaseStats("   "));
         }
 
         [Fact]
@@ -95,8 +95,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-            var error = notFoundResult.Value?.GetType().GetProperty("Error")?.GetValue(notFoundResult.Value);
-            Assert.NotNull(error);
+            var message = notFoundResult.Value?.GetType().GetProperty("Message")?.GetValue(notFoundResult.Value);
+            Assert.NotNull(message);
         }
 
         [Fact]
@@ -138,8 +138,8 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            var error = badRequest.Value?.GetType().GetProperty("Error")?.GetValue(badRequest.Value);
-            Assert.NotNull(error);
+            var message = badRequest.Value?.GetType().GetProperty("Message")?.GetValue(badRequest.Value);
+            Assert.NotNull(message);
         }
 
         [Fact]

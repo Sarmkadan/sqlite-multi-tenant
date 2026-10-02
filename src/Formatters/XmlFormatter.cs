@@ -28,9 +28,8 @@ public sealed class XmlExportFormatter {
     public XmlExportFormatter(ILogger<XmlExportFormatter> logger, bool includeDeclaration = true)
     {
         ArgumentNullException.ThrowIfNull(logger);
-        _logger.LogInformation("Initializing XmlExportFormatter with {IncludeDeclaration} and logger {Logger}", includeDeclaration, logger);
-        _includeDeclaration = includeDeclaration;
         _logger = logger;
+        _includeDeclaration = includeDeclaration;
     }
 
     /// <summary>
@@ -61,8 +60,9 @@ public sealed class XmlExportFormatter {
         }
         catch (Exception ex)
         {
-            _logger.LogError("XML formatting error: {Message}", ex.Message);
-            return $"<error>{EscapeXml(ex.Message)}</error>";
+            var innerMsg = ex.InnerException?.Message ?? ex.Message;
+            _logger.LogError("XML formatting error: {Message}", innerMsg);
+            return $"<error>{EscapeXml(innerMsg)}</error>";
         }
     }
 

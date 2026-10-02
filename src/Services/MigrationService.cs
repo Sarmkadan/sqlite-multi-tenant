@@ -282,7 +282,7 @@ public sealed class MigrationService : IMigrationService {
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
-                return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
+                throw new Exceptions.MigrationException($"Migration with ID '{migrationId}' was not found");
 
             migration.MarkAsCompleted(executionTimeMs);
             await _repository.UpdateAsync(migration, cancellationToken);

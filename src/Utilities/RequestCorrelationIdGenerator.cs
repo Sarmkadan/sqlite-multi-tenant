@@ -28,7 +28,7 @@ namespace SqliteMultiTenant.Utilities
         public static string GenerateCorrelationId()
         {
             // Format: tenant_timestamp_guid
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssffff");
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
             var guid = Guid.NewGuid().ToString("N").Substring(0, 8);
             return $"req_{timestamp}_{guid}";
         }
@@ -40,7 +40,8 @@ namespace SqliteMultiTenant.Utilities
         /// <exception cref="ArgumentException">Thrown when the correlation ID is null, empty, or whitespace.</exception>
         public static void SetCorrelationId(string correlationId)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(correlationId);
+            if (string.IsNullOrWhiteSpace(correlationId))
+                throw new ArgumentException("Correlation ID cannot be empty", nameof(correlationId));
 
             _currentCorrelationId.Value = correlationId;
 

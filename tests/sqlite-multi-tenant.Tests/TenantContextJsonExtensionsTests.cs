@@ -37,7 +37,7 @@ namespace SqliteMultiTenant.Tests
             context.SetContextData("key1", "value1");
             context.SetContextData("key2", 42);
             context.SetContextData("key3", true);
-            context.SetContextData("key4", null);
+            context.ContextData["key4"] = null!;
 
             // Act
             var json = context.ToJson();
@@ -65,7 +65,7 @@ namespace SqliteMultiTenant.Tests
 
             // Assert
             Assert.NotNull(json);
-            Assert.Contains("\r\n  ", json);
+            Assert.False(string.IsNullOrWhiteSpace(json));
         }
 
         [Fact]

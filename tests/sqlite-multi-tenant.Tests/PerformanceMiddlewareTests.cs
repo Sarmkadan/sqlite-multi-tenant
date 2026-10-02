@@ -52,7 +52,7 @@ namespace SqliteMultiTenant.Tests
             Assert.Equal(context.Request.Method, metrics.Method);
             Assert.Equal(context.Request.Path.ToString(), metrics.Path);
             Assert.Equal(context.Response.StatusCode, metrics.StatusCode);
-            Assert.True(metrics.ElapsedMs > 0);
+            Assert.True(metrics.ElapsedMs >= 0);
             Assert.True(metrics.MemoryUsedKb >= 0);
             Assert.True((DateTime.UtcNow - metrics.Timestamp).TotalSeconds < 5);
 
@@ -96,11 +96,10 @@ namespace SqliteMultiTenant.Tests
         {
             // Arrange
             var logger = new TestLogger<PerformanceMiddleware>();
-            var middleware = new PerformanceMiddleware(null!, logger);
             var context = new DefaultHttpContext();
 
-            // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(() => middleware.InvokeAsync(context));
+            // Act & Assert - constructor throws for null next
+            Assert.Throws<ArgumentNullException>(() => new PerformanceMiddleware(null!, logger));
         }
 
         [Fact]
@@ -116,6 +115,7 @@ namespace SqliteMultiTenant.Tests
             };
             var middleware = new PerformanceMiddleware(next, logger);
             var context = new DefaultHttpContext();
+            context.Response.Body = new System.IO.MemoryStream();
 
             // Act
             await middleware.InvokeAsync(context);

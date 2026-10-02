@@ -104,9 +104,13 @@ public static class MigrationExtensions
     {
         ArgumentNullException.ThrowIfNull(migrations);
 
-        return migrations
-            .GroupBy(m => m.Status)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var counts = Enum.GetValues<MigrationStatus>()
+            .ToDictionary(s => s, _ => 0);
+        foreach (var m in migrations)
+        {
+            counts[m.Status]++;
+        }
+        return counts;
     }
 
     /// <summary>

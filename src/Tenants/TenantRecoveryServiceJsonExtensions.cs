@@ -46,15 +46,16 @@ namespace SqliteMultiTenant.Tenants
         /// <param name="json">The JSON string to deserialize.</param>
         /// <returns>The deserialized service instance, or <see langword="null"/> if deserialization fails.</returns>
         /// <exception cref="ArgumentException"><paramref name="json"/> is <see langword="null"/>, empty, or whitespace.</exception>
-        public static TenantRecoveryService? FromJson(string json)
+        public static TenantRecoveryService? FromJson(string? json)
         {
-            ArgumentException.ThrowIfNullOrEmpty(json);
+            if (string.IsNullOrEmpty(json))
+                throw new ArgumentException("Value cannot be null or empty.", nameof(json));
 
             try
             {
                 return JsonSerializer.Deserialize<TenantRecoveryService>(json, _jsonOptions);
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return null;
             }
@@ -76,7 +77,7 @@ namespace SqliteMultiTenant.Tenants
                 value = JsonSerializer.Deserialize<TenantRecoveryService>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;

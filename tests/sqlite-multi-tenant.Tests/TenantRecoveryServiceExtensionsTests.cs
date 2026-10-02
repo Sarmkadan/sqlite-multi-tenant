@@ -20,7 +20,7 @@ namespace SqliteMultiTenant.Tests
         {
             _mockRepository = Substitute.For<ITenantRepository>();
             _mockLogger = Substitute.For<ILogger<TenantRecoveryService>>();
-            _service = new TenantRecoveryService(_mockRepository, _mockLogger);
+            _service = Substitute.ForPartsOf<TenantRecoveryService>(_mockRepository, _mockLogger);
         }
 
         [Fact]

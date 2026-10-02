@@ -380,8 +380,15 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
             operation.AtomicityMode,
             operation.ContinueOnError);
 
-        // Validate tenant authorization before processing
-        ValidateTenantAuthorization(operation.ResourceIds);
+        // Validate tenant authorization before processing (skip for cross-tenant)
+        if (operation.AtomicityMode != BatchAtomicityMode.CrossTenant)
+        {
+            var currentTenantId = _tenantContextHelper.GetCurrentTenantId();
+            if (!string.IsNullOrEmpty(currentTenantId))
+            {
+                ValidateTenantAuthorization(operation.ResourceIds);
+            }
+        }
 
         // Initialize status tracking
         var status = new BatchOperationStatus

@@ -79,7 +79,7 @@ namespace SqliteMultiTenant.Security
                 value = JsonSerializer.Deserialize<EncryptionKeyManager>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return false;
             }

@@ -21,12 +21,7 @@ public static class PathUtilities
     /// </summary>
     public static string SafeCombinePath(string basePath, string relativePath)
     {
-        // Guard clauses
         ArgumentException.ThrowIfNullOrEmpty(basePath);
-        ArgumentException.ThrowIfNullOrEmpty(relativePath);
-
-        if (string.IsNullOrEmpty(basePath))
-            throw new ArgumentException("Base path cannot be null or empty");
 
         if (string.IsNullOrEmpty(relativePath))
             return basePath;
@@ -201,12 +196,10 @@ public static class PathUtilities
     /// <summary>
     /// Normalizes path separators to current OS convention.
     /// </summary>
-    public static string NormalizePath(string path)
+    public static string NormalizePath(string? path)
     {
-        // Guard clause
-        ArgumentException.ThrowIfNullOrEmpty(path);
         if (string.IsNullOrEmpty(path))
-            return path;
+            return path!;
 
         return path.Replace('/', Path.DirectorySeparatorChar)
                    .Replace('\\', Path.DirectorySeparatorChar);

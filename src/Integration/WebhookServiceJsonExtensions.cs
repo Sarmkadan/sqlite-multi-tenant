@@ -74,7 +74,7 @@ public static class WebhookServiceJsonExtensions
             value = JsonSerializer.Deserialize<WebhookService>(json, _jsonSerializerOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = null;
             return false;

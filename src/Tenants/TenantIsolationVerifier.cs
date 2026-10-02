@@ -297,9 +297,9 @@ namespace SqliteMultiTenant.Tenants
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText =
-                        @"SELECT m.tbl_name, m.name
-                        FROM pragma_table_info(m.name) t, sqlite_master m
-                        WHERE m.type='table'";
+                        @"SELECT m.name AS tbl_name, t.name AS col_name
+                        FROM sqlite_master m, pragma_table_info(m.name) t
+                        WHERE m.type='table' AND m.name NOT LIKE 'sqlite_%'";
 
                     using (var reader = await command.ExecuteReaderAsync())
                     {

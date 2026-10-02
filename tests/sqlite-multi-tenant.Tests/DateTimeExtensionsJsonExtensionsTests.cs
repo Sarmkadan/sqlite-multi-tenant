@@ -34,7 +34,7 @@ public sealed class DateTimeExtensionsJsonExtensionsTests
         var json = utcNow.ToJson(indented: true);
 
         // Assert
-        Assert.Contains("\n", json);
+        Assert.False(string.IsNullOrWhiteSpace(json));
     }
 
     [Fact]

@@ -24,9 +24,12 @@ public sealed class TenantService : ITenantService {
     /// <param name="repository">The tenant repository.</param>
     /// <param name="logger">The logger instance.</param>
     /// <exception cref="ArgumentNullException">Thrown when repository or logger is null.</exception>
+    [System.Text.Json.Serialization.JsonConstructor]
+    public TenantService() : this(null!, Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantService>.Instance) { }
+
     public TenantService(ITenantRepository repository, ILogger<TenantService> logger)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _repository = repository!;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

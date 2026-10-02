@@ -42,8 +42,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -101,8 +101,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Debug,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -116,8 +116,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -131,8 +131,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Error,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -182,8 +182,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Information,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -197,8 +197,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Error,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -246,8 +246,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Information,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -261,8 +261,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Error,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -306,8 +306,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Information,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -321,8 +321,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -336,8 +336,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -385,8 +385,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Debug,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -400,8 +400,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Information,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -457,8 +457,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -475,8 +475,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -524,8 +524,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Information,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -539,8 +539,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -588,8 +588,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Information,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -603,8 +603,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Error,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -642,8 +642,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Debug,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 
@@ -657,8 +657,8 @@ public sealed class LoggingExtensionsTests
         _logger.Received(1).Log(
             LogLevel.Warning,
             Arg.Any<EventId>(),
-            Arg.Any<object[]>(),
-            null,
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
 

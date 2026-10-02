@@ -73,7 +73,7 @@ namespace SqliteMultiTenant.DataOperations
                 value = JsonSerializer.Deserialize<DataConsistencyChecker>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;

@@ -116,10 +116,10 @@ namespace SqliteMultiTenant.Utilities
                 return false;
             }
 
-            // If no expected tenant ID provided, just validate the context exists
             if (string.IsNullOrEmpty(expectedTenantId))
             {
-                return true;
+                _logger.LogWarning("Tenant context validation failed: expectedTenantId is null or empty");
+                return false;
             }
 
             // Use constant-time comparison to prevent timing side-channel attacks

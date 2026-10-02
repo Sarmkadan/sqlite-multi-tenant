@@ -69,7 +69,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
                 value = JsonSerializer.Deserialize<RetentionPolicyConfig>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;
@@ -122,7 +122,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
                 value = JsonSerializer.Deserialize<RetentionRule>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;
@@ -175,7 +175,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
                 value = JsonSerializer.Deserialize<RetentionResult>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;
@@ -228,7 +228,7 @@ namespace SqliteMultiTenant.BackgroundWorkers
                 value = JsonSerializer.Deserialize<RuleExecutionResult>(json, _jsonOptions);
                 return true;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;

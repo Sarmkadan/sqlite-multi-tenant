@@ -94,7 +94,7 @@ namespace SqliteMultiTenant.Monitoring
             {
                 return JsonSerializer.Deserialize<SystemHealthSummary>(json, _jsonOptions);
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return null;
             }
@@ -114,7 +114,7 @@ namespace SqliteMultiTenant.Monitoring
             {
                 return JsonSerializer.Deserialize<System.Collections.Generic.List<OperationStatistics>>(json, _jsonOptions);
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return null;
             }
@@ -134,7 +134,7 @@ namespace SqliteMultiTenant.Monitoring
             {
                 return JsonSerializer.Deserialize<System.Collections.Generic.List<PerformanceMetric>>(json, _jsonOptions);
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 return null;
             }
@@ -156,7 +156,7 @@ namespace SqliteMultiTenant.Monitoring
                 value = JsonSerializer.Deserialize<SystemHealthSummary>(json, _jsonOptions);
                 return value is not null;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;
@@ -180,7 +180,7 @@ namespace SqliteMultiTenant.Monitoring
                 value = result;
                 return value is not null;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;
@@ -204,7 +204,7 @@ namespace SqliteMultiTenant.Monitoring
                 value = result;
                 return value is not null;
             }
-            catch (JsonException)
+            catch (Exception)
             {
                 value = null;
                 return false;

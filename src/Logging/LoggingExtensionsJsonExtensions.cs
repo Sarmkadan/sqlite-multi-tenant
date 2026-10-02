@@ -76,7 +76,7 @@ public static class LoggingExtensionsJsonExtensions
             value = JsonSerializer.Deserialize<T>(json, _jsonSerializerOptions);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             value = default;
             return false;
