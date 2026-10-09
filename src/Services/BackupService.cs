@@ -29,6 +29,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<Backup?> GetBackupAsync(string backupId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
 
@@ -50,6 +51,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<List<Backup>> GetDatabaseBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
 
@@ -71,6 +73,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<List<Backup>> GetCompletedBackupsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
 
@@ -92,6 +95,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<Backup?> GetLatestBackupAsync(string databaseId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
 
@@ -113,8 +117,11 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<Backup> CreateBackupAsync(string databaseId, BackupType backupType, string createdBy, string? backupPath = null, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+
+        ArgumentNullException.ThrowIfNull(createdBy);
 
         if (string.IsNullOrWhiteSpace(createdBy))
             throw new ArgumentException("CreatedBy cannot be empty", nameof(createdBy));
@@ -156,6 +163,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task MarkBackupAsCompletedAsync(string backupId, long sizeBytes, long durationMs, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
 
@@ -183,6 +191,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task MarkBackupAsFailedAsync(string backupId, string errorMessage, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
 
@@ -210,8 +219,11 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<BackupVerificationResult> VerifyBackupAsync(string backupId, string verifiedBy, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        ArgumentNullException.ThrowIfNull(verifiedBy);
 
         if (string.IsNullOrWhiteSpace(verifiedBy))
             throw new ArgumentException("VerifiedBy cannot be empty", nameof(verifiedBy));
@@ -289,6 +301,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task SetBackupExpirationAsync(string backupId, DateTime expirationDate, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
 
@@ -334,6 +347,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task<int> GetBackupCountAsync(string databaseId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
 
@@ -355,6 +369,7 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task DeleteBackupAsync(string backupId, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
 
@@ -381,8 +396,11 @@ public sealed class BackupService : IBackupService {
     /// <inheritdoc/>
     public async Task AddBackupTagAsync(string backupId, string tag, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+
+        ArgumentNullException.ThrowIfNull(tag);
 
         if (string.IsNullOrWhiteSpace(tag))
             throw new ArgumentException("Tag cannot be empty", nameof(tag));
@@ -425,8 +443,11 @@ public sealed class BackupService : IBackupService {
         int pagesPerStep = -1,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(sourceDatabasePath);
         if (string.IsNullOrWhiteSpace(sourceDatabasePath))
             throw new ArgumentException("Source database path cannot be empty", nameof(sourceDatabasePath));
+
+        ArgumentNullException.ThrowIfNull(destinationPath);
 
         if (string.IsNullOrWhiteSpace(destinationPath))
             throw new ArgumentException("Destination path cannot be empty", nameof(destinationPath));
