@@ -81,7 +81,28 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
             }
 
             if (pooled.Connection.State == System.Data.ConnectionState.Open)
-                return pooled.Connection;
+            {
+                // Additional health check: try to create a command to verify connection is usable
+                try
+                {
+                    using var cmd = pooled.Connection.CreateCommand();
+                    cmd.CommandText = "SELECT 1";
+                    // We don't await this as it's a sync call on SQLiteConnection
+                    // but we can execute it synchronously for health check
+                    var result = cmd.ExecuteScalar();
+                    if (result != null)
+                    {
+                        return pooled.Connection;
+                    }
+                }
+                catch
+                {
+                    // If health check fails, dispose the connection and continue
+                    pooled.Connection.Dispose();
+                    Interlocked.Decrement(ref _totalCreated);
+                    continue;
+                }
+            }
 
             pooled.Connection.Dispose();
             Interlocked.Decrement(ref _totalCreated);
@@ -102,9 +123,27 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     /// <param name="connection">The connection to return.</param>
     public void Release(SQLiteConnection connection)
     {
-        if (_disposed || connection.State != System.Data.ConnectionState.Open)
+        if (_disposed)
         {
-            connection.Dispose();
+            // If the pool is disposed, we don't interfere with the connection.
+            // Leased connections are managed by their owners and will be disposed by them.
+            // We also don't touch the semaphore as it has already been disposed.
+            return;
+        }
+
+        try
+        {
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                connection.Dispose();
+                Interlocked.Decrement(ref _totalCreated);
+                _semaphore.Release();
+                return;
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // Connection is already disposed, just decrement counter and release semaphore
             Interlocked.Decrement(ref _totalCreated);
             _semaphore.Release();
             return;
