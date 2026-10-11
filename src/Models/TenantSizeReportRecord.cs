@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // =====================================================================
 
+using System.Diagnostics;
 using System.Text;
 
 namespace SqliteMultiTenant.Models;
@@ -12,8 +13,16 @@ namespace SqliteMultiTenant.Models;
 /// Represents a single record in the tenant database size report.
 /// Contains comprehensive storage information for a tenant database.
 /// </summary>
+[DebuggerDisplay("{ToString(),nq}")]
 public sealed record TenantSizeReportRecord : IComparable<TenantSizeReportRecord>
 {
+    /// <summary>
+    /// Returns a diagnostic summary of the tenant's size report row: tenant, total size, free-list share, and database path.
+    /// </summary>
+    public override string ToString() =>
+        $"TenantSizeReportRecord {{ TenantId = {TenantId}, TenantName = {TenantName}, TotalSize = {TotalSizeHuman}, " +
+        $"FreeList = {FreeListSizeHuman} ({FreeListPercentage:F1}%), DatabasePath = {DatabasePath} }}";
+
     /// <summary>Tenant identifier.</summary>
     public string TenantId { get; init; } = string.Empty;
 

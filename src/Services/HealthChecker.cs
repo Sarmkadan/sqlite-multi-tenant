@@ -7,6 +7,7 @@
 using System.Collections.Concurrent;
 using System.Data.SQLite;
 using System.Diagnostics;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using SqliteMultiTenant.Database;
 using SqliteMultiTenant.Models;
 
@@ -18,7 +19,12 @@ namespace SqliteMultiTenant.Services;
 /// tenant database directories. Aggregates individual results into an overall
 /// system health report.
 /// </summary>
-public sealed class HealthChecker {
+/// <remarks>
+/// Implements <see cref="IHealthCheck"/> so it can be registered with ASP.NET Core health checks,
+/// e.g. <c>builder.Services.AddHealthChecks().AddCheck&lt;HealthChecker&gt;("sqlite-multi-tenant");</c>.
+/// The result's <see cref="HealthCheckResult.Data"/> carries a per-tenant <see cref="TenantHealthReport"/>.
+/// </remarks>
+public sealed class HealthChecker : IHealthCheck {
     private readonly ITenantService _tenantService;
     private readonly IConnectionPoolManager _connectionPool;
     private readonly ILogger<HealthChecker> _logger;
@@ -40,6 +46,147 @@ public sealed class HealthChecker {
         _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
         _connectionPool = connectionPool ?? throw new ArgumentNullException(nameof(connectionPool));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Runs <see cref="CheckAllTenantsAsync"/> and maps the outcome onto an ASP.NET Core health result.
+    /// The result is <see cref="HealthStatus.Unhealthy"/> when any tenant fails. <c>Data</c> contains
+    /// <c>tenantCount</c>, <c>unhealthyCount</c>, and <c>tenants</c> (a dictionary of <see cref="TenantHealthReport"/> keyed by tenant ID).
+    /// </summary>
+    /// <param name="context">The health check context supplied by the health check framework.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The aggregated health check result.</returns>
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<TenantHealthReport> reports;
+        try
+        {
+            reports = await CheckAllTenantsAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Tenant health check could not enumerate tenants");
+            return HealthCheckResult.Unhealthy("Tenant health check failed to run.", ex);
+        }
+
+        var unhealthy = reports.Count(r => !r.IsHealthy);
+        var data = new Dictionary<string, object>
+        {
+            ["tenantCount"] = reports.Count,
+            ["unhealthyCount"] = unhealthy,
+            ["tenants"] = reports.ToDictionary(r => r.TenantId)
+        };
+
+        return unhealthy == 0
+            ? HealthCheckResult.Healthy($"All {reports.Count} tenant database(s) are healthy.", data)
+            : HealthCheckResult.Unhealthy($"{unhealthy} of {reports.Count} tenant database(s) are unhealthy.", data: data);
+    }
+
+    /// <summary>
+    /// Probes every tenant known to <see cref="ITenantService"/> and returns one structured report per tenant.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A report per tenant, in the order returned by the tenant service.</returns>
+    public async Task<IReadOnlyList<TenantHealthReport>> CheckAllTenantsAsync(CancellationToken cancellationToken = default)
+    {
+        var tenants = await _tenantService.GetAllTenantsAsync(cancellationToken);
+        var reports = new List<TenantHealthReport>(tenants.Count);
+
+        foreach (var tenant in tenants)
+            reports.Add(await CheckTenantReportAsync(tenant, cancellationToken));
+
+        return reports;
+    }
+
+    /// <summary>
+    /// Builds a <see cref="TenantHealthReport"/> for one tenant: file existence and size, <c>PRAGMA integrity_check</c>,
+    /// <c>PRAGMA user_version</c> (schema version), connection pool utilization, and the most recent backup time.
+    /// </summary>
+    /// <param name="tenant">The tenant to probe.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The structured report. Problems are captured in <see cref="TenantHealthReport.Error"/>, not thrown.</returns>
+    /// <remarks>
+    /// The file is checked before any connection is opened, because SQLite would create an empty database
+    /// at a missing path.
+    /// </remarks>
+    public async Task<TenantHealthReport> CheckTenantReportAsync(Tenant tenant, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(tenant);
+
+        var report = new TenantHealthReport
+        {
+            TenantId = tenant.TenantId,
+            Name = tenant.Name,
+            LastBackupAt = tenant.Databases.Max(d => d.LastBackupAt),
+            CheckedAt = DateTimeOffset.UtcNow
+        };
+
+        if (string.IsNullOrWhiteSpace(tenant.DatabasePath))
+            return report with { Error = "No database path configured." };
+
+        var fileInfo = new FileInfo(tenant.DatabasePath);
+        if (!fileInfo.Exists)
+            return report with { Error = $"Database file not found: {tenant.DatabasePath}" };
+
+        report = report with { FileExists = true, FileSizeBytes = fileInfo.Length };
+
+        string? integrityResult = null;
+        long? schemaVersion = null;
+        string? error = null;
+        SQLiteConnection? connection = null;
+
+        try
+        {
+            connection = await _connectionPool.AcquireAsync(tenant.TenantId, $"Data Source={tenant.DatabasePath};", cancellationToken);
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "PRAGMA integrity_check";
+                integrityResult = (await command.ExecuteScalarAsync(cancellationToken))?.ToString();
+            }
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = "PRAGMA user_version";
+                schemaVersion = Convert.ToInt64(await command.ExecuteScalarAsync(cancellationToken));
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            error = ex.Message;
+            _logger.LogWarning(ex, "Health probe failed for tenant '{TenantId}'", tenant.TenantId);
+        }
+        finally
+        {
+            if (connection is not null)
+                await _connectionPool.ReleaseAsync(tenant.TenantId, connection);
+        }
+
+        report = report with
+        {
+            IntegrityCheckResult = integrityResult,
+            SchemaVersion = schemaVersion,
+            Error = error,
+            IsHealthy = error is null && string.Equals(integrityResult, "ok", StringComparison.OrdinalIgnoreCase)
+        };
+
+        if (_connectionPool.GetStatistics().TryGetValue(tenant.TenantId, out var pool))
+        {
+            report = report with
+            {
+                PoolTotal = pool.Total,
+                PoolIdle = pool.Available,
+                PoolLeased = Math.Max(0, pool.Total - pool.Available),
+                PoolWaiting = pool.Waiting
+            };
+        }
+
+        if (!report.IsHealthy && error is null)
+            report = report with { Error = $"integrity_check returned: {integrityResult ?? "no result"}" };
+
+        return report;
     }
 
     /// <summary>

@@ -6,6 +6,7 @@
 
 using System.Collections.Concurrent;
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace SqliteMultiTenant.Database;
 
@@ -15,6 +16,7 @@ namespace SqliteMultiTenant.Database;
 /// tracking idle time and enforcing a maximum pool size. For per-tenant pooling
 /// across multiple tenants, see <see cref="ConnectionPoolManager"/>.
 /// </summary>
+[DebuggerDisplay("{ToString(),nq}")]
 public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     private readonly string _connectionString;
     private readonly int _maxSize;
@@ -186,6 +188,28 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     /// Returns the number of idle connections available for immediate checkout.
     /// </summary>
     public int AvailableConnections => _available.Count;
+
+    /// <summary>
+    /// Returns a diagnostic summary: the tenant database (the connection string's <c>Data Source</c>),
+    /// connections checked out (leased), idle connections, and the configured maximum pool size.
+    /// </summary>
+    public override string ToString()
+    {
+        var leased = Math.Max(0, TotalConnections - AvailableConnections);
+        return $"ConnectionPool {{ Tenant = {GetTenantDataSource()}, Leased = {leased}, Idle = {AvailableConnections}, Max = {_maxSize} }}";
+    }
+
+    private string GetTenantDataSource()
+    {
+        try
+        {
+            return new SQLiteConnectionStringBuilder(_connectionString).DataSource ?? "unknown";
+        }
+        catch (ArgumentException)
+        {
+            return "unknown";
+        }
+    }
 
     /// <summary>
     /// Removes and disposes all idle connections that have exceeded the idle timeout.

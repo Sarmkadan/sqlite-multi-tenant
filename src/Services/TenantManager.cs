@@ -5,6 +5,7 @@
 // =============================================================================
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Database;
 using SqliteMultiTenant.Exceptions;
@@ -38,6 +39,7 @@ namespace SqliteMultiTenant.Services;
 /// calling any other methods may result in undefined behavior or <see cref="ObjectDisposedException"/>.
 /// </para>
 /// </remarks>
+[DebuggerDisplay("{ToString(),nq}")]
 public sealed class TenantManager : IDisposable {
     private readonly ITenantService _tenantService;
     private readonly IConnectionPoolManager _connectionPool;
@@ -276,6 +278,13 @@ public sealed class TenantManager : IDisposable {
         var stats = _connectionPool.GetStatistics();
         return stats.TryGetValue(tenantId, out var snapshot) ? snapshot : null;
     }
+
+    /// <summary>
+    /// Returns a diagnostic summary: the number of tenants currently tracked by a per-tenant lock
+    /// (i.e. tenants that have had a lifecycle operation run against them) and whether the instance is disposed.
+    /// </summary>
+    public override string ToString() =>
+        $"TenantManager {{ TrackedTenants = {_tenantLocks.Count}, Disposed = {_disposed} }}";
 
     /// <summary>
     /// Releases all resources used by the current instance of the <see cref="TenantManager"/> class.

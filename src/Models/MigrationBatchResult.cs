@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Diagnostics;
 using System.Text;
 
 namespace SqliteMultiTenant.Models;
@@ -137,8 +138,16 @@ public sealed record MigrationBatchResult
 /// <summary>
 /// Represents the migration result for a specific tenant/database.
 /// </summary>
+[DebuggerDisplay("{ToString(),nq}")]
 public sealed record TenantMigrationResult
 {
+    /// <summary>
+    /// Returns a diagnostic summary of the tenant's migration run: attempted, successful, and failed counts, and the schema version reached.
+    /// </summary>
+    public override string ToString() =>
+        $"TenantMigrationResult {{ DatabaseId = {DatabaseId}, TenantId = {TenantId ?? "n/a"}, Attempted = {TotalMigrationsAttempted}, " +
+        $"Succeeded = {SuccessfulMigrations}, Failed = {FailedMigrations}, SchemaVersionReached = {SchemaVersionReached ?? "none"} }}";
+
     /// <summary>
     /// The tenant/database identifier.
     /// </summary>
