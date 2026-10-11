@@ -296,3 +296,263 @@ dotnet build src/SqliteMultiTenant.csproj -c Release /p:EnforceCodeStyleInBuild=
 ```
 
 `.editorconfig` is the source of truth: 4-space indent, UTF-8, final newline, trim trailing whitespace, Allman braces (`csharp_new_line_before_open_brace = all`), `var` preferred everywhere. Note that many existing files (especially tests) use K&R braces; follow the style of the file you are editing rather than reformatting whole files.
+
+## Operations
+
+### Scheduled Backup of All Tenants via BackgroundService
+
+The library includes `BackupSchedulerService` for automated tenant backups. Register it in your ASP.NET Core application:
+
+```csharp
+using Microsoft.Extensions.Hosting;
+using SqliteMultiTenant.BackgroundWorkers;
+
+// In Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Add SQLite Multi-Tenant services
+builder.Services.AddSqliteMultiTenant("Data Source=master.db;Version=3;");
+
+// Add background backup service (runs daily at 2 AM UTC by default)
+builder.Services.AddHostedService<BackupSchedulerService>();
+
+var app = builder.Build();
+app.Run();
+```
+
+To customize the backup interval (e.g., every 6 hours):
+
+```csharp
+builder.Services.AddHostedService(sp => 
+    new BackupSchedulerService(
+        sp.GetRequiredService<IBackupService>(),
+        sp.GetRequiredService<ITenantService>(),
+        sp.GetRequiredService<ILogger<BackupSchedulerService>>(),
+        TimeSpan.FromHours(6) // Custom interval
+    ));
+```
+
+### Restoring One Tenant from a Backup File
+
+To restore a tenant database from a backup file:
+
+```csharp
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Models;
+using System.Data.SQLite;
+using System.IO;
+
+// Assume 'backupService' and 'tenantService' are obtained from DI
+var backupService = serviceProvider.GetRequiredService<IBackupService>();
+var tenantService = serviceProvider.GetRequiredService<ITenantService>();
+
+// Get the backup to restore from
+var backup = await backupService.GetBackupAsync("backup-id-here");
+if (backup == null)
+{
+    throw new Exception("Backup not found");
+}
+
+// Verify the backup file exists
+if (!File.Exists(backup.BackupPath))
+{
+    throw new Exception($"Backup file not found: {backup.BackupPath}");
+}
+
+// Get tenant information (optional, for validation)
+var tenant = await tenantService.GetTenantAsync(backup.TenantId);
+if (tenant == null)
+{
+    throw new Exception("Tenant not found for backup");
+}
+
+// Define restore path (could be original location or new location)
+string restorePath = Path.Combine("databases", $"{tenant.TenantId}_restored.db");
+
+// Ensure directory exists
+Directory.CreateDirectory(Path.GetDirectoryName(restorePath)!);
+
+// Copy backup file to restore location
+File.Copy(backup.BackupPath, restorePath, overwrite: true);
+
+// Optionally, verify the restored database
+using var connection = new SQLiteConnection($"Data Source={restorePath};");
+await connection.OpenAsync();
+
+using var command = connection.CreateCommand();
+command.CommandText = "PRAGMA integrity_check;";
+var result = await command.ExecuteScalarAsync();
+bool isValid = string.Equals(result?.ToString(), "ok", StringComparison.OrdinalIgnoreCase);
+
+if (!isValid)
+{
+    throw new Exception("Restored database failed integrity check");
+}
+
+// The restored database is now ready for use
+// You can update the tenant's database record to point to the restored file
+```
+
+### Wiring HealthChecker into ASP.NET Core Health Checks
+
+Integrate the `HealthChecker` service with ASP.NET Core's health check system:
+
+```csharp
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using SqliteMultiTenant.Services;
+
+// In Program.cs
+var builder = WebApplication.CreateBuilder(args);
+
+// Add SQLite Multi-Tenant services
+builder.Services.AddSqliteMultiTenant("Data Source=master.db;Version=3;");
+
+// Add HealthChecker as a scoped service
+builder.Services.AddScoped<HealthChecker>();
+
+// Add custom health check for tenant databases
+builder.Services.AddHealthChecks()
+    .AddCheck("tenant-databases", async sp =>
+    {
+        var healthChecker = sp.GetRequiredService<HealthChecker>();
+        var tenantService = sp.GetRequiredService<ITenantService>();
+        var connectionPool = sp.GetRequiredService<IConnectionPoolManager>();
+        
+        try
+        {
+            // Get all tenants
+            var tenants = await tenantService.GetAllTenantsAsync();
+            
+            // Check each tenant's health
+            var unhealthyTenants = new List<string>();
+            foreach (var tenant in tenants)
+            {
+                // Get tenant's database connection string (simplified example)
+                var tenantDb = tenant.Databases.FirstOrDefault();
+                if (tenantDb == null) continue;
+                
+                string connectionString = $"Data Source={tenantDb.FilePath};Version=3;";
+                
+                // Check tenant health
+                var result = await healthChecker.CheckTenantAsync(
+                    tenant.TenantId, 
+                    connectionString);
+                
+                if (!result.IsHealthy)
+                {
+                    unhealthyTenants.Add($"{tenant.TenantId}: {result.ErrorMessage}");
+                }
+            }
+            
+            return unhealthyTenants.Any()
+                ? HealthCheckResult.Unhealthy($"Unhealthy tenants: {string.Join(", ", unhealthyTenants)}")
+                : HealthCheckResult.Healthy("All tenants are healthy");
+        }
+        catch (Exception ex)
+        {
+            return new HealthCheckResult(
+                Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+                $"Health check failed: {ex.Message}");
+        }
+    });
+
+var app = builder.Build();
+
+// Map health check endpoint
+app.MapHealthChecks("/health");
+
+app.Run();
+```
+
+Sample `/health` JSON output when all tenants are healthy:
+```json
+{
+  "status": "Healthy",
+  "totalDuration": "00:00:00.1234567",
+  "entries": {
+    "tenant-databases": {
+      "status": "Healthy",
+      "description": "All tenants are healthy",
+      "data": {}
+    }
+  }
+}
+```
+
+Sample `/health` JSON output when some tenants are unhealthy:
+```json
+{
+  "status": "Unhealthy",
+  "totalDuration": "00:00:00.2345678",
+  "entries": {
+    "tenant-databases": {
+      "status": "Unhealthy",
+      "description": "Unhealthy tenants: tenant123: Database file not found, tenant456: Connection timeout",
+      "data": {}
+    }
+  }
+}
+```
+
+## Configuration
+
+The following configuration options are available in `MultiTenantOptions` and related classes:
+
+| Option | Type | Default | Meaning |
+|--------|------|---------|---------|
+| **MultiTenantOptions** |
+| BasePath | string | `"./databases"` | The base path where tenant databases are stored |
+| MaxConnectionsPerTenant | int | `10` | Maximum number of connections allowed per tenant |
+| DefaultMaxConnections | int | `10` | Default maximum number of connections for a tenant if not overridden |
+| MaxBackupCount | int | `20` | Maximum number of backup files to retain per tenant |
+| BackupRetention | TimeSpan | `30 days` | Time span after which backups are deleted |
+| EnableBackupScheduling | bool | `true` | Indicates whether backup scheduling is enabled |
+| BackupInterval | TimeSpan | `1 hour` | Interval between automatic backups |
+| EnableAuditLogging | bool | `true` | Indicates whether audit logging is enabled |
+| EnablePerformanceMonitoring | bool | `true` | Indicates whether performance monitoring is enabled |
+| EnableDataEncryption | bool | `false` | Indicates whether data encryption is enabled |
+| MaxCacheSize | int | `1000` | Maximum number of cache entries |
+| DefaultCacheTTL | TimeSpan | `1 hour` | Default time-to-live for cache entries |
+| RateLimitRequestsPerMinute | int | `1000` | Number of rate limit requests allowed per minute |
+| EncryptionKeyPath | string | `"./keys"` | Path to the encryption key file |
+| VerboseLogging | bool | `false` | Indicates whether verbose logging is enabled |
+| **BackupOptions** |
+| BackupPath | string | `"./backups"` | The path where backups are stored |
+| MaxConcurrentBackups | int | `3` | Maximum number of concurrent backup operations |
+| BackupTimeoutSeconds | int | `300` | Timeout in seconds for backup operations |
+| CompressBackups | bool | `true` | Indicates whether backups are compressed |
+| VerifyBackupIntegrity | bool | `true` | Indicates whether backup integrity is verified after creation |
+| RetainDifferentialBackups | bool | `true` | Indicates whether differential backups are retained |
+| **MonitoringOptions** |
+| Enabled | bool | `true` | Indicates whether monitoring is enabled |
+| MetricsCollectionInterval | TimeSpan | `60 seconds` | Interval at which metrics are collected |
+| MaxMetricsHistory | int | `1000` | Maximum number of metric history entries to retain |
+| SlowQueryThresholdMs | long | `1000` | Threshold in milliseconds for a query to be considered slow |
+| **AlertThreshold** (per metric) |
+| MetricName | string | (required) | The name of the metric to monitor |
+| WarningLevel | double | (required) | The value at which a warning alert is triggered |
+| CriticalLevel | double | (required) | The value at which a critical alert is triggered |
+| EnableEmail | bool | (required) | Indicates whether email alerts are enabled for this threshold |
+| EnableLog | bool | (required) | Indicates whether log alerts are enabled for this threshold |
+| **SecurityOptions** |
+| RequireTenantIdValidation | bool | `true` | Indicates whether tenant ID validation is required |
+| EnableQueryLogging | bool | `false` | Indicates whether query logging is enabled |
+| EnableConnectionEncryption | bool | `false` | Indicates whether connection encryption is enabled |
+| SessionTimeout | TimeSpan | `1 hour` | Timeout for user sessions |
+| MaxFailedLoginAttempts | int | `5` | Maximum number of failed login attempts before lockout |
+| LockoutDuration | TimeSpan | `15 minutes` | Duration of account lockout after too many failed attempts |
+| RequireStrongPasswords | bool | `false` | Indicates whether strong passwords are required |
+| **MaintenanceOptions** |
+| EnableAutomaticVacuum | bool | `true` | Indicates whether automatic vacuum is enabled |
+| VacuumInterval | TimeSpan | `1 day` | Interval at which automatic vacuum runs |
+| EnableIndexRebuild | bool | `true` | Indicates whether index rebuild is enabled |
+| IndexRebuildInterval | TimeSpan | `7 days` | Interval at which index rebuild runs |
+| EnableStatisticsUpdate | bool | `true` | Indicates whether statistics update is enabled |
+| StatisticsUpdateInterval | TimeSpan | `1 day` | Interval at which statistics update runs |
+| **FeatureFlags** |
+| EnableCaching | bool | `true` | Indicates whether caching is enabled |
+| EnableBatching | bool | `true` | Indicates whether batching is enabled |
+| EnableAsyncOperations | bool | `true` | Indicates whether asynchronous operations are enabled |
+| EnableWebhooks | bool | `false` | Indicates whether webhooks are enabled |
+| EnableExternalIntegrations | bool | `false` | Indicates whether external integrations are enabled |
+| EnableAdvancedAnalytics | bool | `false` | Indicates whether advanced analytics are enabled |
