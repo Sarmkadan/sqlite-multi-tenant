@@ -4,13 +4,23 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Diagnostics;
+
 namespace SqliteMultiTenant.Models;
 
 /// <summary>
 /// Storage usage statistics for a single tenant database.
 /// </summary>
+[DebuggerDisplay("{ToString(),nq}")]
 public sealed record TenantStorageInfo
 {
+    /// <summary>
+    /// Returns a diagnostic summary of the tenant's storage: tenant ID, database size, WAL size, and page layout.
+    /// </summary>
+    public override string ToString() =>
+        $"TenantStorageInfo {{ TenantId = {TenantId}, SizeBytes = {SizeBytes}, WalSizeBytes = {WalSizeBytes}, " +
+        $"TotalSizeBytes = {TotalSizeBytes}, PageCount = {PageCount}, PageSize = {PageSize} }}";
+
     /// <summary>Tenant identifier.</summary>
     public string TenantId { get; init; } = string.Empty;
 

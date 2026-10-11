@@ -5,14 +5,23 @@
 // =============================================================================
 
 using System.Data.SQLite;
+using System.Diagnostics;
 
 namespace SqliteMultiTenant.Models;
 
 /// <summary>
 /// Result of a backup file integrity verification
 /// </summary>
+[DebuggerDisplay("{ToString(),nq}")]
 public sealed record BackupVerificationResult
 {
+    /// <summary>
+    /// Returns a diagnostic summary of the verification outcome, including the integrity check output and any error.
+    /// </summary>
+    public override string ToString() =>
+        $"BackupVerificationResult {{ IsValid = {IsValid}, IntegrityCheckResult = {IntegrityCheckResult}, FileSizeBytes = {FileSizeBytes}, " +
+        $"PageCount = {PageCount}, PageSizeBytes = {PageSizeBytes}, VerifiedAt = {VerifiedAt:O}, Error = {ErrorMessage ?? "none"} }}";
+
     /// <summary>
     /// Indicates whether the backup file passed integrity check
     /// </summary>
