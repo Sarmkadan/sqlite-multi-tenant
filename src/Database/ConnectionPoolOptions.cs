@@ -54,14 +54,25 @@ public sealed class ConnectionPoolOptions
     public TimeSpan PruneInterval { get; set; } = TimeSpan.FromSeconds(60);
 
     /// <summary>
+    /// SQLite pragmas applied to each connection when it is opened: <c>journal_mode</c>
+    /// (default <c>WAL</c>), <c>synchronous</c>, <c>busy_timeout</c> and <c>foreign_keys</c>.
+    /// Invalid values are rejected by <see cref="Validate"/>.
+    /// </summary>
+    public SqlitePragmaOptions Pragmas { get; set; } = new();
+
+    /// <summary>
     /// Validates all option values and throws when any value is outside an acceptable range.
-    /// Called automatically by <see cref="ConnectionPoolManager"/>'s constructor.
+    /// Called automatically by <see cref="ConnectionPoolManager"/>'s constructor and by
+    /// <c>AddConnectionPooling</c>, so invalid settings fail at startup.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when a numeric option is out of range or a <see cref="TimeSpan"/> is non-positive.
     /// </exception>
     /// <exception cref="ArgumentException">
     /// Thrown when <see cref="MinPoolSize"/> exceeds <see cref="MaxPoolSize"/>.
+    /// </exception>
+    /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">
+    /// Thrown when a <see cref="Pragmas"/> value is not an allowed SQLite setting.
     /// </exception>
     public void Validate()
     {
@@ -79,6 +90,9 @@ public sealed class ConnectionPoolOptions
             throw new ArgumentOutOfRangeException(nameof(MaxConnectionLifetime), "MaxConnectionLifetime must be positive.");
         if (PruneInterval <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(PruneInterval), "PruneInterval must be positive.");
+
+        ArgumentNullException.ThrowIfNull(Pragmas);
+        Pragmas.Validate();
     }
 
     /// <summary>
@@ -86,7 +100,7 @@ public sealed class ConnectionPoolOptions
     /// including all configurable values.
     /// </summary>
     public override string ToString()
-        => $"ConnectionPoolOptions {{ MinPoolSize = {MinPoolSize}, MaxPoolSize = {MaxPoolSize}, IdleTimeout = {IdleTimeout}, AcquireTimeout = {AcquireTimeout}, MaxConnectionLifetime = {MaxConnectionLifetime}, PruneInterval = {PruneInterval} }}";
+        => $"ConnectionPoolOptions {{ MinPoolSize = {MinPoolSize}, MaxPoolSize = {MaxPoolSize}, IdleTimeout = {IdleTimeout}, AcquireTimeout = {AcquireTimeout}, MaxConnectionLifetime = {MaxConnectionLifetime}, PruneInterval = {PruneInterval}, JournalMode = {Pragmas?.JournalMode} }}";
 }
 
 /// <summary>
@@ -117,4 +131,11 @@ public sealed class PoolStatisticsSnapshot
 
     /// <summary>UTC timestamp of the most recently completed idle-prune pass.</summary>
     public DateTimeOffset LastPruneAt { get; init; }
+
+    /// <summary>
+    /// Pragma values SQLite reported on the tenant's most recently opened connection
+    /// (keys: <c>journal_mode</c>, <c>synchronous</c>, <c>busy_timeout</c>, <c>foreign_keys</c>).
+    /// Empty until the first connection has been opened.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Pragmas { get; init; } = new Dictionary<string, string>();
 }

@@ -22,6 +22,8 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     private readonly ILogger<ConnectionPool> _logger;
     private readonly ConcurrentBag<PooledConnection> _available = new();
     private readonly SemaphoreSlim _semaphore;
+    private readonly SqlitePragmaOptions _pragmas;
+    private IReadOnlyDictionary<string, string> _effectivePragmas = new Dictionary<string, string>();
     private int _totalCreated;
     private bool _disposed;
 
@@ -32,13 +34,16 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     /// <param name="logger">Logger instance.</param>
     /// <param name="maxSize">Maximum number of concurrent connections. Default: 10.</param>
     /// <param name="idleTimeout">How long an idle connection stays in the pool before disposal. Default: 5 minutes.</param>
+    /// <param name="pragmas">SQLite pragmas applied to each connection when it is opened. Default: WAL, NORMAL, 5000 ms busy timeout, foreign keys on.</param>
     /// <exception cref="ArgumentException">Thrown when connection string is null or empty.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when maxSize is less than 1.</exception>
+    /// <exception cref="Microsoft.Extensions.Options.OptionsValidationException">Thrown when a pragma value is not an allowed SQLite setting.</exception>
     public ConnectionPool(
         string connectionString,
         ILogger<ConnectionPool> logger,
         int maxSize = 10,
-        TimeSpan? idleTimeout = null)
+        TimeSpan? idleTimeout = null,
+        SqlitePragmaOptions? pragmas = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("Connection string is required.", nameof(connectionString));
@@ -49,8 +54,17 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _maxSize = maxSize;
         _idleTimeout = idleTimeout ?? TimeSpan.FromMinutes(5);
+        _pragmas = pragmas ?? new SqlitePragmaOptions();
+        _pragmas.Validate();
         _semaphore = new SemaphoreSlim(maxSize, maxSize);
     }
+
+    /// <summary>
+    /// The pragma values SQLite reported on the most recently opened connection
+    /// (keys: <c>journal_mode</c>, <c>synchronous</c>, <c>busy_timeout</c>, <c>foreign_keys</c>).
+    /// Empty until the first connection has been opened.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> EffectivePragmas => _effectivePragmas;
 
     /// <summary>
     /// Acquires a connection from the pool. Reuses an idle connection if one is available
@@ -109,7 +123,17 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
         }
 
         var connection = new SQLiteConnection(_connectionString);
-        await connection.OpenAsync(cancellationToken);
+        try
+        {
+            await connection.OpenAsync(cancellationToken);
+            _effectivePragmas = _pragmas.ApplyTo(connection, _logger);
+        }
+        catch
+        {
+            connection.Dispose();
+            _semaphore.Release();
+            throw;
+        }
         Interlocked.Increment(ref _totalCreated);
 
         _logger.LogDebug("Created new pooled connection. Total open: {Total}", _totalCreated);
