@@ -172,6 +172,7 @@ public sealed class ConnectionPoolManager : IConnectionPoolManager
     private int _total;
     private long _pruned;
     private DateTimeOffset _lastPruneAt;
+    private IReadOnlyDictionary<string, string> _pragmas = new Dictionary<string, string>();
 
     public TenantPool(string connectionString, ConnectionPoolOptions opts, ILogger logger)
     {
@@ -224,17 +225,19 @@ public sealed class ConnectionPoolManager : IConnectionPoolManager
       if (reused is not null)
         return reused;
 
-      SQLiteConnection conn = null!;
+      SQLiteConnection? conn = null;
       try
       {
         conn = new SQLiteConnection(_connectionString);
         await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        _pragmas = _opts.Pragmas.ApplyTo(conn, _logger);
         _meta.Add(conn, new ConnectionMeta(now));
         Interlocked.Increment(ref _total);
         return conn;
       }
       catch
       {
+        conn?.Dispose();
         _slots.Release();
         throw;
       }
@@ -327,6 +330,7 @@ public sealed class ConnectionPoolManager : IConnectionPoolManager
           Waiting = _slots.CurrentCount == 0 ? 1 : 0,
           PrunedTotal = Interlocked.Read(ref _pruned),
           LastPruneAt = _lastPruneAt,
+          Pragmas = _pragmas,
         };
       }
     }
