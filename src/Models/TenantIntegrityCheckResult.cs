@@ -78,6 +78,16 @@ public sealed class TenantIntegrityCheckResult
     }
 
     /// <summary>
+    /// Returns a concise summary including tenant id, pass/fail state and error presence.
+    /// </summary>
+    public override string ToString()
+    {
+        var status = IsSuccess ? "PASS" : "FAIL";
+        var errorInfo = string.IsNullOrEmpty(Error) ? string.Empty : $", Error={Error}";
+        return $"IntegrityCheck[TenantId={TenantId}, Status={status}{errorInfo}]";
+    }
+
+    /// <summary>
     /// Gets a detailed summary of the integrity check result.
     /// </summary>
     public string DetailedResult
