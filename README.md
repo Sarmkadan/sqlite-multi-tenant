@@ -692,3 +692,95 @@ ICacheStrategy strategy = new LruCacheStrategy(lruLogger, maxSize: 2000);
 await strategy.SetAsync("key", value, TimeSpan.FromMinutes(10));
 var cached = await strategy.GetAsync<MyType>("key");
 ```
+
+## Validation
+
+The library provides validators for tenant requests, migration scripts, connection strings, backups, and arbitrary data, plus a fluent rule builder for reusable validation logic.
+
+### TenantValidator
+
+`src/Validation/TenantValidator.cs` validates tenant create and update requests at the API boundary. Each method returns a `Dictionary<string, string>` of field-name-to-error-message pairs (empty when valid).
+
+| Method | Description |
+|--------|-------------|
+| `ValidateCreateRequest(CreateTenantRequest)` | Checks that `Name` is present and passes `IsValidTenantName()`, and that `ContactEmail` is present and passes `IsValidEmail()`. |
+| `ValidateUpdateRequest(UpdateTenantRequest)` | Validates only the fields that are provided (all fields are optional on update). |
+| `ValidateNameUniqueness(string, string?)` | Placeholder for database-backed uniqueness check. |
+
+The file also contains `MigrationValidator` (version format, script content, dangerous-pattern detection), `ConnectionStringValidator` (SQLite connection string format and path safety), and `BackupValidator` (tag format, retention days).
+
+### DataValidator
+
+`src/Validation/DataValidator.cs` is an imperative, fluent validator. Chain validation calls and collect results:
+
+| Method | Description |
+|--------|-------------|
+| `RequireString(value, fieldName, maxLength?)` | Non-null/non-whitespace check with optional max length. |
+| `RequireRange(value, min, max, fieldName)` | Integer range validation. |
+| `RequireValidEmail(email, fieldName)` | Email format check via `System.Net.Mail.MailAddress`. |
+| `RequireValidUrl(url, fieldName)` | Absolute HTTP(S) URL check. |
+| `RequireValidGuid(guid, fieldName)` | GUID format check. |
+| `RequirePattern(value, pattern, fieldName, message)` | Regex pattern match. |
+| `Require<T>(value, predicate, fieldName, message)` | Custom predicate. |
+| `RequireNotEmpty<T>(collection, fieldName)` | Collection must have at least one item. |
+| `RequireEqual<T>` / `RequireNotEqual<T>` | Equality / inequality checks. |
+| `GetResult()` | Returns a `ValidationResult` with `IsValid` and a list of `ValidationError` objects. |
+
+### ValidationRuleBuilder
+
+`src/Validation/ValidationRuleBuilder.cs` provides a generic fluent API for building reusable, composable validation rule sets.
+
+| Method | Description |
+|--------|-------------|
+| `Required(fieldName, message?)` | Field must have a non-null, non-whitespace value. |
+| `StringLength(fieldName, minLength?, maxLength?, message?)` | String length constraints. |
+| `Email(fieldName, message?)` | Email format via regex. |
+| `Range(fieldName, minValue?, maxValue?, message?)` | Numeric range (converts via `decimal`). |
+| `Pattern(fieldName, pattern, message?)` | Regex pattern match. |
+| `Custom(fieldName, predicate, message?)` | Arbitrary predicate on the object. |
+| `MustMatch(field1, field2, message?)` | Cross-field equality. |
+| `Validate(T obj)` | Runs all rules and returns `RuleValidationResult` with `IsValid` and `Errors`. |
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Validation;
+
+// Validate a tenant create request
+var validator = new TenantValidator();
+var errors = validator.ValidateCreateRequest(new CreateTenantRequest
+{
+    Name = "Acme Corp",
+    ContactEmail = "admin@acme.example.com"
+});
+
+if (errors.Count > 0)
+{
+    foreach (var (field, message) in errors)
+        Console.WriteLine($"{field}: {message}");
+}
+
+// Fluent data validation
+var dataValidator = new DataValidator(loggerFactory.CreateLogger<DataValidator>());
+var result = dataValidator
+    .RequireString(name, "Name", maxLength: 255)
+    .RequireValidEmail(email, "Email")
+    .RequireRange(age, 1, 150, "Age")
+    .GetResult();
+
+if (!result.IsValid)
+    Console.WriteLine(result.GetErrorMessage());
+
+// Reusable rule builder
+var rules = new ValidationRuleBuilder<CreateTenantRequest>()
+    .Required("Name")
+    .StringLength("Name", minLength: 3, maxLength: 255)
+    .Email("ContactEmail");
+
+var ruleResult = rules.Validate(request);
+if (!ruleResult.IsValid)
+{
+    foreach (var error in ruleResult.Errors)
+        Console.WriteLine($"{error.FieldName}: {error.Message}");
+}
+```
