@@ -616,3 +616,79 @@ The following configuration options are available in `MultiTenantOptions` and re
 | EnableWebhooks | bool | `false` | Indicates whether webhooks are enabled |
 | EnableExternalIntegrations | bool | `false` | Indicates whether external integrations are enabled |
 | EnableAdvancedAnalytics | bool | `false` | Indicates whether advanced analytics are enabled |
+
+## Caching
+
+The library ships two caching layers and two pluggable cache strategies.
+
+### CacheService
+
+`src/Caching/CacheService.cs` implements `ICacheService` and wraps `IMemoryCache` for thread-safe in-process caching. It tracks keys internally so it can remove entries by prefix pattern or clear the entire cache.
+
+| Method | Description |
+|--------|-------------|
+| `Get<T>(string key)` | Returns the cached value or `default(T)` on a miss. Null/whitespace keys return `default`. |
+| `Set<T>(string key, T value, TimeSpan?)` | Stores a value with an optional sliding expiration (default 1 hour). Null values are silently ignored. |
+| `Remove(string key)` | Removes a single key from the cache. Safe to call if the key does not exist. |
+| `RemoveByPattern(string pattern)` | Removes all keys whose prefix matches the pattern (e.g. `"tenant:*"`). |
+| `Clear()` | Removes every tracked entry without disposing the underlying `IMemoryCache`. |
+
+Consistent cache keys are generated via the static `CacheKeys` helper, which prefixes every key with `sqlmt:` and offers methods such as `TenantKey(id)`, `AllTenantsKey()`, `BackupKey(id)`, `PendingMigrationsKey(dbId)` and `HealthCheckKey()`.
+
+`CacheInvalidationService` provides event-driven invalidation - call `InvalidateTenant(id)`, `InvalidateBackups(dbId)`, `InvalidateMigrations(dbId)` or `InvalidateHealthCheck()` after mutations.
+
+### DistributedCacheService
+
+`src/Caching/DistributedCacheService.cs` implements `IDistributedCache` with a fully async API, LRU eviction and TTL support. Unlike `CacheService`, it does not depend on `IMemoryCache` and manages its own dictionary protected by a `SemaphoreSlim`.
+
+| Method | Description |
+|--------|-------------|
+| `GetAsync<T>(string key)` | Returns the cached value or `null`. Expired entries are evicted on read. |
+| `SetAsync<T>(string key, T value, TimeSpan?)` | Stores a value. When the cache is full the least-recently-used entry is evicted. Default TTL is 1 hour. |
+| `RemoveAsync(string key)` | Removes a single entry. |
+| `RemoveByPatternAsync(string pattern)` | Removes entries whose key starts with the pattern (case-insensitive). |
+| `ClearAsync()` | Removes all entries and resets hit/miss counters. |
+| `GetStatisticsAsync()` | Returns `DistributedCacheStatistics` with item count, total size, hits, misses and hit rate. |
+| `CleanupExpiredAsync()` | Explicitly purges all expired entries. |
+
+### Cache Strategies
+
+`src/Caching/CacheStrategy.cs` defines the `ICacheStrategy` interface with `GetAsync`, `SetAsync`, `RemoveAsync` and `ClearAsync`. Two implementations are provided:
+
+- **LruCacheStrategy** - evicts the least-recently-used entry when the cache reaches `maxSize` (default 1000). Entries can optionally have a TTL; expired entries are removed on read. Exposes `GetStatistics()` for per-key access counts and timestamps.
+- **TimeBasedCacheStrategy** - pure time-based expiration with a configurable default TTL (default 1 hour). Expired entries are removed on read.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Caching;
+
+// In-memory cache via CacheService
+var memoryCache = new MemoryCache(new MemoryCacheOptions());
+var logger = loggerFactory.CreateLogger<CacheService>();
+var cache = new CacheService(memoryCache, logger);
+
+cache.Set("tenant:t1", tenantObject, TimeSpan.FromMinutes(30));
+var tenant = cache.Get<Tenant>("tenant:t1");
+
+// Pattern-based invalidation
+cache.RemoveByPattern(CacheKeys.TenantPattern()); // removes all "sqlmt:tenant:*" keys
+
+// Distributed cache with LRU eviction
+var distLogger = loggerFactory.CreateLogger<DistributedCacheService>();
+var distCache = new DistributedCacheService(distLogger, maxItems: 500);
+
+await distCache.SetAsync("session:abc", sessionData, TimeSpan.FromMinutes(15));
+var session = await distCache.GetAsync<SessionData>("session:abc");
+var stats = await distCache.GetStatisticsAsync();
+Console.WriteLine($"Hit rate: {stats.HitRate:P1}");
+
+// Pluggable strategy (LRU)
+var lruLogger = loggerFactory.CreateLogger<LruCacheStrategy>();
+ICacheStrategy strategy = new LruCacheStrategy(lruLogger, maxSize: 2000);
+
+await strategy.SetAsync("key", value, TimeSpan.FromMinutes(10));
+var cached = await strategy.GetAsync<MyType>("key");
+```
