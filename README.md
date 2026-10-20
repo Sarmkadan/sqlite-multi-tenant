@@ -494,6 +494,66 @@ Sample `/health` JSON output when some tenants are unhealthy:
 }
 ```
 
+## HealthCheckService
+
+`src/Health/HealthCheckService.cs` provides system and component health monitoring through the `IHealthCheckService` interface. It checks database connectivity, disk space and memory usage, returning structured results for load balancer heartbeats and alerting systems.
+
+**Key members:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `GetHealthStatusAsync()` | `HealthCheckResponse` | Aggregated status with per-component breakdown (database, disk, memory) and response times |
+| `IsDatabaseHealthyAsync()` | `bool` | Tests master database accessibility |
+| `IsDiskSpaceHealthyAsync(long)` | `bool` | Checks free disk space against a threshold (default 1 GB) |
+| `IsSystemHealthyAsync()` | `bool` | Single boolean combining all component checks |
+| `GetDetailedStatusAsync()` | `string` | Returns `"healthy"` or `"unhealthy"` |
+| `CheckLivenessAsync()` | `HealthStatusResult` | Cheap process-level check (no external deps) for orchestrators |
+| `CheckReadinessAsync()` | `HealthStatusResult` | Database + disk check confirming the service can accept traffic |
+
+**`HealthStatusResult`** - structured result returned by liveness/readiness checks:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `Status` | `string` | `"healthy"` or `"unhealthy"` |
+| `IsHealthy` | `bool` | Boolean health flag |
+| `CheckedAt` | `DateTime` | UTC timestamp of the check |
+| `DurationMs` | `long` | Total check duration in milliseconds |
+| `Checks` | `Dictionary<string, ComponentHealth>` | Per-component results |
+
+`DetailedHealthCheckService` extends `HealthCheckService` with a `GetDetailedDiagnostics()` method returning OS version, processor count, .NET version, memory working set, CPU time and thread count.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Health;
+
+// Create the service (typically resolved from DI)
+var logger = loggerFactory.CreateLogger<HealthCheckService>();
+var healthService = new HealthCheckService(logger, databasePath: "./databases");
+
+// Full component breakdown
+var response = await healthService.GetHealthStatusAsync();
+Console.WriteLine($"Overall: {response.Status}");
+foreach (var (name, component) in response.Components)
+{
+    Console.WriteLine($"  {name}: {component.Status} ({component.ResponseTimeMs} ms)");
+}
+
+// Kubernetes-style probes
+var liveness = await healthService.CheckLivenessAsync();
+Console.WriteLine($"Liveness: {liveness.Status} (took {liveness.DurationMs} ms)");
+
+var readiness = await healthService.CheckReadinessAsync();
+Console.WriteLine($"Readiness: {readiness.Status}");
+
+// Quick boolean for conditional logic
+if (!await healthService.IsSystemHealthyAsync())
+{
+    Console.WriteLine("System is unhealthy - check components for details");
+}
+```
+
 ## Configuration
 
 The following configuration options are available in `MultiTenantOptions` and related classes:
