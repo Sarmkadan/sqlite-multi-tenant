@@ -788,3 +788,7 @@ if (!ruleResult.IsValid)
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
+
+## License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Vladyslav Zaiets.
