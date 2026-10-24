@@ -4,8 +4,12 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System;
+using System.Data.SQLite;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
-
+using Microsoft.Extensions.Logging;
 /// <summary>
 /// Unit tests for <see cref="SchemaManager"/> class that verify schema initialization, table management,
 /// column operations, index creation, and schema comparison functionality for multi-tenant SQLite databases.
@@ -15,569 +19,564 @@ using FluentAssertions;
 /// Each test creates its own uniquely named database instance to prevent state leakage.
 /// </remarks>
 using NSubstitute;
-using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Database;
-using System;
-using System.Data.SQLite;
-using System.Threading.Tasks;
 using Xunit;
-using System.Linq;
 
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+/// <summary>
+/// Test suite for <see cref="SchemaManager"/> functionality including schema initialization, table operations,
+/// column management, and index creation for multi-tenant SQLite databases.
+/// </summary>
+/// <remarks>
+/// Implements <see cref="IDisposable"/> to properly clean up database connections after each test.
+/// </remarks>
+public sealed class SchemaManagerTests : IDisposable
 {
+    private readonly ILogger<SchemaManager> _mockLogger;
+    private SQLiteConnection _connection;
+    private string _connectionString;
+    private SchemaManager _sut;
+
     /// <summary>
-    /// Test suite for <see cref="SchemaManager"/> functionality including schema initialization, table operations,
-    /// column management, and index creation for multi-tenant SQLite databases.
+    /// Initializes a new instance of the <see cref="SchemaManagerTests"/> class.
     /// </summary>
     /// <remarks>
-    /// Implements <see cref="IDisposable"/> to properly clean up database connections after each test.
+    /// Each test instance gets its own uniquely named shared-cache memory database,
+    /// since System.Data.SQLite pools connections and a fixed name would leak state
+    /// (e.g. tables/indexes) across test methods.
     /// </remarks>
-    public sealed class SchemaManagerTests : IDisposable
+    public SchemaManagerTests()
     {
-        private readonly ILogger<SchemaManager> _mockLogger;
-        private SQLiteConnection _connection;
-        private string _connectionString;
-        private SchemaManager _sut;
+        // Each test instance gets its own uniquely named shared-cache memory database,
+        // since System.Data.SQLite pools connections and a fixed name would leak state
+        // (e.g. tables/indexes) across test methods.
+        _connectionString = $"Data Source=:memory:schemamanagertests_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        _mockLogger = Substitute.For<ILogger<SchemaManager>>();
+        _sut = new SchemaManager(_mockLogger, _connectionString);
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SchemaManagerTests"/> class.
-        /// </summary>
-        /// <remarks>
-        /// Each test instance gets its own uniquely named shared-cache memory database,
-        /// since System.Data.SQLite pools connections and a fixed name would leak state
-        /// (e.g. tables/indexes) across test methods.
-        /// </remarks>
-        public SchemaManagerTests()
+        // Initialize a connection for direct assertions
+        _connection = new SQLiteConnection(_connectionString);
+        _connection.Open();
+    }
+
+    /// <summary>
+    /// Determines whether a table with the specified name exists in the database.
+    /// </summary>
+    /// <param name="tableName">Name of the table to check.</param>
+    /// <returns><see langword="true"/> if the table exists; otherwise, <see langword="false"/>.</returns>
+    private async Task<bool> TableExists(string tableName)
+    {
+        using (var command = _connection.CreateCommand())
         {
-            // Each test instance gets its own uniquely named shared-cache memory database,
-            // since System.Data.SQLite pools connections and a fixed name would leak state
-            // (e.g. tables/indexes) across test methods.
-            _connectionString = $"Data Source=:memory:schemamanagertests_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            _mockLogger = Substitute.For<ILogger<SchemaManager>>();
-            _sut = new SchemaManager(_mockLogger, _connectionString);
-
-            // Initialize a connection for direct assertions
-            _connection = new SQLiteConnection(_connectionString);
-            _connection.Open();
+            command.CommandText = $"SELECT name FROM sqlite_master WHERE type='table' AND name='{tableName}';";
+            var result = await command.ExecuteScalarAsync();
+            return result is not null;
         }
+    }
 
-        /// <summary>
-        /// Determines whether a table with the specified name exists in the database.
-        /// </summary>
-        /// <param name="tableName">Name of the table to check.</param>
-        /// <returns><see langword="true"/> if the table exists; otherwise, <see langword="false"/>.</returns>
-        private async Task<bool> TableExists(string tableName)
+    /// <summary>
+    /// Determines whether a column with the specified name exists in the specified table.
+    /// </summary>
+    /// <param name="tableName">Name of the table to check.</param>
+    /// <param name="columnName">Name of the column to check.</param>
+    /// <returns><see langword="true"/> if the column exists; otherwise, <see langword="false"/>.</returns>
+    private async Task<bool> ColumnExists(string tableName, string columnName)
+    {
+        using (var command = _connection.CreateCommand())
         {
-            using (var command = _connection.CreateCommand())
+            command.CommandText = $"PRAGMA table_info({tableName});";
+            using (var reader = await command.ExecuteReaderAsync())
             {
-                command.CommandText = $"SELECT name FROM sqlite_master WHERE type='table' AND name='{tableName}';";
-                var result = await command.ExecuteScalarAsync();
-                return result is not null;
-            }
-        }
-
-        /// <summary>
-        /// Determines whether a column with the specified name exists in the specified table.
-        /// </summary>
-        /// <param name="tableName">Name of the table to check.</param>
-        /// <param name="columnName">Name of the column to check.</param>
-        /// <returns><see langword="true"/> if the column exists; otherwise, <see langword="false"/>.</returns>
-        private async Task<bool> ColumnExists(string tableName, string columnName)
-        {
-            using (var command = _connection.CreateCommand())
-            {
-                command.CommandText = $"PRAGMA table_info({tableName});";
-                using (var reader = await command.ExecuteReaderAsync())
+                while (await reader.ReadAsync())
                 {
-                    while (await reader.ReadAsync())
+                    if (reader.GetString(1) == columnName) // Column name is at index 1
                     {
-                        if (reader.GetString(1) == columnName) // Column name is at index 1
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
-                return false;
+            }
+            return false;
+        }
+    }
+
+    private async Task<bool> IndexExists(string indexName)
+    {
+        using (var command = _connection.CreateCommand())
+        {
+            command.CommandText = $"SELECT name FROM sqlite_master WHERE type='index' AND name='{indexName}';";
+            var result = await command.ExecuteScalarAsync();
+            return result is not null;
+        }
+    }
+
+    /// <summary>
+    /// Verifies that the <see cref="SchemaManager"/> constructor throws an <see cref="ArgumentNullException"/>
+    /// when a null logger is provided.
+    /// </summary>
+    [Fact]
+    public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+    {
+        // Act & Assert
+        this.Invoking(_ => new SchemaManager(null, _connectionString))
+            .Should().Throw<ArgumentNullException>()
+            .WithParameterName("logger");
+    }
+
+    /// <summary>
+    /// Verifies that the <see cref="SchemaManager"/> constructor throws an <see cref="ArgumentNullException"/>
+    /// when a null connection string is provided.
+    /// </summary>
+    [Fact]
+    public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenConnectionStringIsNull()
+    {
+        // Act & Assert
+        this.Invoking(_ => new SchemaManager(_mockLogger, null))
+            .Should().Throw<ArgumentNullException>()
+            .WithParameterName("connectionString");
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.InitializeSchemaAsync"/> creates the required tables and indexes
+    /// for a new tenant in the database.
+    /// </summary>
+    [Fact]
+    public async Task InitializeSchemaAsync_CreatesTablesAndIndexes()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        _mockLogger.LogInformation("Running InitializeSchemaAsync_CreatesTablesAndIndexes for tenant {TenantId}", tenantId);
+
+        // Act
+        await _sut.InitializeSchemaAsync(tenantId);
+
+        // Assert
+        (await TableExists("Tenants")).Should().BeTrue();
+        (await TableExists("AuditLog")).Should().BeTrue();
+        (await IndexExists("idx_AuditLog_TenantId")).Should().BeTrue();
+        (await IndexExists("idx_AuditLog_CreatedAt")).Should().BeTrue();
+
+        _mockLogger.AssertLogged(LogLevel.Information, 1, "Schema initialized for tenant: {TenantId}", tenantId);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.InitializeSchemaAsync"/> multiple times does not recreate existing tables and indexes
+    /// and does not throw exceptions.
+    /// </summary>
+    [Fact]
+    public async Task InitializeSchemaAsync_ShouldNotRecreateExistingTablesAndIndexes()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId); // First initialization
+
+        // Act (Call again)
+        await _sut.InitializeSchemaAsync(tenantId);
+
+        // Assert (should not throw, tables and indexes should still exist)
+        (await TableExists("Tenants")).Should().BeTrue();
+        _mockLogger.AssertLogged(LogLevel.Information, 2, "Schema initialized for tenant: {TenantId}", tenantId);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.AddColumnAsync"/> adds a new column to an existing table
+    /// in the database for the specified tenant.
+    /// </summary>
+    [Fact]
+    public async Task AddColumnAsync_AddsNewColumnToTable()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId);
+        var tableName = "Tenants";
+        var columnName = "NewColumn";
+        var columnDefinition = "TEXT DEFAULT 'default_value'";
+
+        // Act
+        var result = await _sut.AddColumnAsync(tenantId, tableName, columnName, columnDefinition);
+
+        // Assert
+        result.Should().BeTrue();
+        (await ColumnExists(tableName, columnName)).Should().BeTrue();
+        _mockLogger.AssertLogged(LogLevel.Information, 1, "Column {ColumnName} added to table {TableName} for tenant {TenantId}",
+            columnName, tableName, tenantId);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.AddColumnAsync"/> returns false when attempting to add a column that already exists
+    /// in the specified table, without throwing an exception.
+    /// </summary>
+    [Fact]
+    public async Task AddColumnAsync_ReturnsFalse_WhenColumnAlreadyExists()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId);
+        var tableName = "Tenants";
+        var columnName = "Name"; // Existing column
+        var columnDefinition = "TEXT";
+
+        // Act
+        var result = await _sut.AddColumnAsync(tenantId, tableName, columnName, columnDefinition);
+
+        // Assert
+        result.Should().BeFalse();
+        _mockLogger.AssertLogged(LogLevel.Warning, 1, "Column {ColumnName} already exists in table {TableName}",
+            columnName, tableName);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.AddColumnAsync"/> throws a <see cref="SQLiteException"/> when attempting to add a column to a non-existent table.
+    /// </summary>
+    [Fact]
+    public async Task AddColumnAsync_ThrowsExceptionAndLogs_WhenTableNameDoesNotExist()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        var nonExistentTable = "NonExistentTable";
+        var columnName = "TestCol";
+        var columnDefinition = "TEXT";
+
+        // Act
+        await _sut.Awaiting(s => s.AddColumnAsync(tenantId, nonExistentTable, columnName, columnDefinition))
+            .Should().ThrowAsync<SQLiteException>();
+
+        // Assert
+        _mockLogger.AssertLoggedWithException(LogLevel.Error, 1, typeof(SQLiteException),
+            "Failed to add column {ColumnName} to table {TableName}", columnName, nonExistentTable);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.RenameTableAsync"/> successfully renames an existing table in the database.
+    /// </summary>
+    [Fact]
+    public async Task RenameTableAsync_RenamesTableSuccessfully()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId); // Creates Tenants table
+        var oldName = "Tenants";
+        var newName = "Customers";
+
+        // Act
+        await _sut.RenameTableAsync(oldName, newName);
+
+        // Assert
+        (await TableExists(oldName)).Should().BeFalse();
+        (await TableExists(newName)).Should().BeTrue();
+        _mockLogger.AssertLogged(LogLevel.Information, 1, "Table renamed from {OldName} to {NewName}",
+            oldName, newName);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.RenameTableAsync"/> throws a <see cref="SQLiteException"/> when attempting to rename a non-existent table.
+    /// </summary>
+    [Fact]
+    public async Task RenameTableAsync_ThrowsExceptionAndLogs_WhenOldTableDoesNotExist()
+    {
+        // Arrange
+        var nonExistentTable = "NonExistent";
+        var newName = "NewTable";
+
+        // Act
+        await _sut.Awaiting(s => s.RenameTableAsync(nonExistentTable, newName))
+            .Should().ThrowAsync<SQLiteException>();
+
+        // Assert
+        _mockLogger.AssertLoggedWithException(LogLevel.Error, 1, typeof(SQLiteException),
+            "Failed to rename table from {OldName} to {NewName}", nonExistentTable, newName);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CreateIndexAsync"/> creates a new index on the specified table with the given column names.
+    /// </summary>
+    [Fact]
+    public async Task CreateIndexAsync_CreatesNewIndex()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId);
+        var tableName = "Tenants";
+        var indexName = "idx_Tenants_Name";
+        var columns = new[] { "Name" };
+
+        // Act
+        var result = await _sut.CreateIndexAsync(tableName, indexName, columns);
+
+        // Assert
+        result.Should().BeTrue();
+        (await IndexExists(indexName)).Should().BeTrue();
+        _mockLogger.AssertLogged(LogLevel.Information, 1, "Index {IndexName} created on table {TableName}",
+            indexName, tableName);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CreateIndexAsync"/> returns false when attempting to create an index that already exists,
+    /// without throwing an exception.
+    /// </summary>
+    [Fact]
+    public async Task CreateIndexAsync_ReturnsFalse_WhenIndexAlreadyExists()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId);
+        var tableName = "AuditLog";
+        var indexName = "idx_AuditLog_TenantId"; // Existing index
+        var columns = new[] { "TenantId" };
+
+        // Act
+        var result = await _sut.CreateIndexAsync(tableName, indexName, columns);
+
+        // Assert
+        result.Should().BeFalse();
+        _mockLogger.AssertLogged(LogLevel.Warning, 1, "Index {IndexName} already exists", indexName);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.GetTablesAsync"/> returns all user-created tables in the database,
+    /// excluding system tables like sqlite_sequence.
+    /// </summary>
+    [Fact]
+    public async Task GetTablesAsync_ReturnsAllUserTables()
+    {
+        // Arrange
+        var tenantId = "testTenant";
+        await _sut.InitializeSchemaAsync(tenantId); // Creates Tenants and AuditLog
+
+        // Act
+        var tables = await _sut.GetTablesAsync();
+
+        // Assert
+        tables.Should().Contain("Tenants");
+        tables.Should().Contain("AuditLog");
+        tables.Should().NotContain("sqlite_sequence"); // Internal SQLite table
+        tables.Should().HaveCount(2);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.GetTablesAsync"/> returns an empty list when no tables exist in the database.
+    /// </summary>
+    [Fact]
+    public async Task GetTablesAsync_ReturnsEmptyList_WhenNoTablesExist()
+    {
+        // Arrange - use a fresh connection string without initialization
+        var newConnectionString = "Data Source=:memory:;Mode=Memory;Cache=Shared";
+        var newSut = new SchemaManager(_mockLogger, newConnectionString);
+
+        // Act
+        var tables = await newSut.GetTablesAsync();
+
+        // Assert
+        tables.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> returns an empty diff when both databases have identical schemas.
+    /// </summary>
+    [Fact]
+    public async Task CompareSchemasAsync_ReturnsEmptyDiff_WhenSchemasAreIdentical()
+    {
+        // Arrange - Create two databases with identical schemas
+        var db1ConnectionString = $"Data Source=:memory:schemacompare1_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare2_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
+
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        var tenantId = "testTenant";
+        await manager1.InitializeSchemaAsync(tenantId);
+        await manager2.InitializeSchemaAsync(tenantId);
+
+        // Act - Compare schemas
+        var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
+
+        // Assert
+        diff.IsIdentical.Should().BeTrue();
+        diff.MissingTables.Should().BeEmpty();
+        diff.TablesWithDifferences.Should().BeEmpty();
+        diff.IdenticalTables.Should().HaveCount(2); // Tenants and AuditLog
+        diff.TotalTables.Should().Be(2);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies missing tables in the target database.
+    /// </summary>
+    [Fact]
+    public async Task CompareSchemasAsync_IdentifiesMissingTables()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare3_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare4_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
+
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        // Create different schemas
+        await manager1.InitializeSchemaAsync("tenant1");
+        await manager2.InitializeSchemaAsync("tenant2");
+
+        // Add an extra table to db1
+        using (var conn = new SQLiteConnection(db1ConnectionString))
+        {
+            await conn.OpenAsync();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "CREATE TABLE ExtraTable (Id INTEGER PRIMARY KEY, Name TEXT)";
+                await cmd.ExecuteNonQueryAsync();
             }
         }
 
-        private async Task<bool> IndexExists(string indexName)
+        // Act
+        var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
+
+        // Assert
+        diff.IsIdentical.Should().BeFalse();
+        diff.MissingTables.Should().ContainSingle().Which.Should().Be("ExtraTable");
+        diff.TotalTables.Should().Be(3); // Tenants, AuditLog from both + ExtraTable
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies missing columns in the target table.
+    /// </summary>
+    [Fact]
+    public async Task CompareSchemasAsync_IdentifiesMissingColumns()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare5_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare6_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
+
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        await manager1.InitializeSchemaAsync("tenant1");
+        await manager2.InitializeSchemaAsync("tenant2");
+
+        // Add a column to Tenants table in db1
+        await manager1.AddColumnAsync("tenant1", "Tenants", "ExtraColumn", "TEXT DEFAULT ''");
+
+        // Act
+        var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
+        var tableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
+
+        // Assert
+        tableDiff.Should().NotBeNull();
+        tableDiff!.MissingColumns.Should().ContainSingle().Which.Should().Be("ExtraColumn");
+        tableDiff.IsIdentical.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies column type mismatches.
+    /// </summary>
+    [Fact]
+    public async Task CompareSchemasAsync_IdentifiesColumnTypeMismatches()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare7_{Guid.NewGuid():N};Mode=Memory";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare8_{Guid.NewGuid():N};Mode=Memory";
+
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
+
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        await manager1.InitializeSchemaAsync("tenant1");
+        await manager2.InitializeSchemaAsync("tenant2");
+
+        // Manually change column type in db2 by creating a new table with different schema
+        using (var conn = new SQLiteConnection(db2ConnectionString))
         {
-            using (var command = _connection.CreateCommand())
+            await conn.OpenAsync();
+            using (var cmd = conn.CreateCommand())
             {
-                command.CommandText = $"SELECT name FROM sqlite_master WHERE type='index' AND name='{indexName}';";
-                var result = await command.ExecuteScalarAsync();
-                return result is not null;
+                // Drop existing table
+                cmd.CommandText = "DROP TABLE IF EXISTS Tenants";
+                await cmd.ExecuteNonQueryAsync();
+
+                // Create table with different column type
+                cmd.CommandText = "CREATE TABLE Tenants (TenantId TEXT PRIMARY KEY, Name INTEGER, IsActive INTEGER NOT NULL DEFAULT 1, CreatedAt TEXT NOT NULL, UpdatedAt TEXT NOT NULL, DatabasePath TEXT NOT NULL UNIQUE)";
+                await cmd.ExecuteNonQueryAsync();
             }
         }
 
-        /// <summary>
-        /// Verifies that the <see cref="SchemaManager"/> constructor throws an <see cref="ArgumentNullException"/>
-        /// when a null logger is provided.
-        /// </summary>
-        [Fact]
-        public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+        // Act
+        var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
+        var tableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
+
+        // Assert
+        tableDiff.Should().NotBeNull();
+        tableDiff!.TypeMismatches.Should().NotBeEmpty();
+        tableDiff.IsIdentical.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies missing indexes.
+    /// </summary>
+    [Fact]
+    public async Task CompareSchemasAsync_IdentifiesMissingIndexes()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare9_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare10_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
+
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        await manager1.InitializeSchemaAsync("tenant1");
+        await manager2.InitializeSchemaAsync("tenant2");
+
+        // Add an extra index to db1
+        await manager1.CreateIndexAsync("Tenants", "idx_Tenants_Custom", "TenantId");
+
+        // Act
+        var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
+        var tableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
+
+        // Assert
+        tableDiff.Should().NotBeNull();
+        tableDiff!.MissingIndexes.Should().ContainSingle().Which.Should().Be("idx_Tenants_Custom");
+        tableDiff.ExtraIndexes.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies extra tables, columns, and indexes.
+    /// </summary>
+    [Fact]
+    public async Task CompareSchemasAsync_IdentifiesExtraElements()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare11_{Guid.NewGuid():N};Mode=Memory";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare12_{Guid.NewGuid():N};Mode=Memory";
+
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
+
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        await manager1.InitializeSchemaAsync("tenant1");
+
+        // Manually create schema in db2 with extra elements
+        using (var conn = new SQLiteConnection(db2ConnectionString))
         {
-            // Act & Assert
-            this.Invoking(_ => new SchemaManager(null, _connectionString))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("logger");
-        }
-
-        /// <summary>
-        /// Verifies that the <see cref="SchemaManager"/> constructor throws an <see cref="ArgumentNullException"/>
-        /// when a null connection string is provided.
-        /// </summary>
-        [Fact]
-        public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenConnectionStringIsNull()
-        {
-            // Act & Assert
-            this.Invoking(_ => new SchemaManager(_mockLogger, null))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("connectionString");
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.InitializeSchemaAsync"/> creates the required tables and indexes
-        /// for a new tenant in the database.
-        /// </summary>
-        [Fact]
-        public async Task InitializeSchemaAsync_CreatesTablesAndIndexes()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            _mockLogger.LogInformation("Running InitializeSchemaAsync_CreatesTablesAndIndexes for tenant {TenantId}", tenantId);
-
-            // Act
-            await _sut.InitializeSchemaAsync(tenantId);
-
-            // Assert
-            (await TableExists("Tenants")).Should().BeTrue();
-            (await TableExists("AuditLog")).Should().BeTrue();
-            (await IndexExists("idx_AuditLog_TenantId")).Should().BeTrue();
-            (await IndexExists("idx_AuditLog_CreatedAt")).Should().BeTrue();
-
-            _mockLogger.AssertLogged(LogLevel.Information, 1, "Schema initialized for tenant: {TenantId}", tenantId);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.InitializeSchemaAsync"/> multiple times does not recreate existing tables and indexes
-        /// and does not throw exceptions.
-        /// </summary>
-        [Fact]
-        public async Task InitializeSchemaAsync_ShouldNotRecreateExistingTablesAndIndexes()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId); // First initialization
-
-            // Act (Call again)
-            await _sut.InitializeSchemaAsync(tenantId);
-
-            // Assert (should not throw, tables and indexes should still exist)
-            (await TableExists("Tenants")).Should().BeTrue();
-            _mockLogger.AssertLogged(LogLevel.Information, 2, "Schema initialized for tenant: {TenantId}", tenantId);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.AddColumnAsync"/> adds a new column to an existing table
-        /// in the database for the specified tenant.
-        /// </summary>
-        [Fact]
-        public async Task AddColumnAsync_AddsNewColumnToTable()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId);
-            var tableName = "Tenants";
-            var columnName = "NewColumn";
-            var columnDefinition = "TEXT DEFAULT 'default_value'";
-
-            // Act
-            var result = await _sut.AddColumnAsync(tenantId, tableName, columnName, columnDefinition);
-
-            // Assert
-            result.Should().BeTrue();
-            (await ColumnExists(tableName, columnName)).Should().BeTrue();
-            _mockLogger.AssertLogged(LogLevel.Information, 1, "Column {ColumnName} added to table {TableName} for tenant {TenantId}",
-                columnName, tableName, tenantId);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.AddColumnAsync"/> returns false when attempting to add a column that already exists
-        /// in the specified table, without throwing an exception.
-        /// </summary>
-        [Fact]
-        public async Task AddColumnAsync_ReturnsFalse_WhenColumnAlreadyExists()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId);
-            var tableName = "Tenants";
-            var columnName = "Name"; // Existing column
-            var columnDefinition = "TEXT";
-
-            // Act
-            var result = await _sut.AddColumnAsync(tenantId, tableName, columnName, columnDefinition);
-
-            // Assert
-            result.Should().BeFalse();
-            _mockLogger.AssertLogged(LogLevel.Warning, 1, "Column {ColumnName} already exists in table {TableName}",
-                columnName, tableName);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.AddColumnAsync"/> throws a <see cref="SQLiteException"/> when attempting to add a column to a non-existent table.
-        /// </summary>
-        [Fact]
-        public async Task AddColumnAsync_ThrowsExceptionAndLogs_WhenTableNameDoesNotExist()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            var nonExistentTable = "NonExistentTable";
-            var columnName = "TestCol";
-            var columnDefinition = "TEXT";
-
-            // Act
-            await _sut.Awaiting(s => s.AddColumnAsync(tenantId, nonExistentTable, columnName, columnDefinition))
-                .Should().ThrowAsync<SQLiteException>();
-
-            // Assert
-            _mockLogger.AssertLoggedWithException(LogLevel.Error, 1, typeof(SQLiteException),
-                "Failed to add column {ColumnName} to table {TableName}", columnName, nonExistentTable);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.RenameTableAsync"/> successfully renames an existing table in the database.
-        /// </summary>
-        [Fact]
-        public async Task RenameTableAsync_RenamesTableSuccessfully()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId); // Creates Tenants table
-            var oldName = "Tenants";
-            var newName = "Customers";
-
-            // Act
-            await _sut.RenameTableAsync(oldName, newName);
-
-            // Assert
-            (await TableExists(oldName)).Should().BeFalse();
-            (await TableExists(newName)).Should().BeTrue();
-            _mockLogger.AssertLogged(LogLevel.Information, 1, "Table renamed from {OldName} to {NewName}",
-                oldName, newName);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.RenameTableAsync"/> throws a <see cref="SQLiteException"/> when attempting to rename a non-existent table.
-        /// </summary>
-        [Fact]
-        public async Task RenameTableAsync_ThrowsExceptionAndLogs_WhenOldTableDoesNotExist()
-        {
-            // Arrange
-            var nonExistentTable = "NonExistent";
-            var newName = "NewTable";
-
-            // Act
-            await _sut.Awaiting(s => s.RenameTableAsync(nonExistentTable, newName))
-                .Should().ThrowAsync<SQLiteException>();
-
-            // Assert
-            _mockLogger.AssertLoggedWithException(LogLevel.Error, 1, typeof(SQLiteException),
-                "Failed to rename table from {OldName} to {NewName}", nonExistentTable, newName);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CreateIndexAsync"/> creates a new index on the specified table with the given column names.
-        /// </summary>
-        [Fact]
-        public async Task CreateIndexAsync_CreatesNewIndex()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId);
-            var tableName = "Tenants";
-            var indexName = "idx_Tenants_Name";
-            var columns = new[] { "Name" };
-
-            // Act
-            var result = await _sut.CreateIndexAsync(tableName, indexName, columns);
-
-            // Assert
-            result.Should().BeTrue();
-            (await IndexExists(indexName)).Should().BeTrue();
-            _mockLogger.AssertLogged(LogLevel.Information, 1, "Index {IndexName} created on table {TableName}",
-                indexName, tableName);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CreateIndexAsync"/> returns false when attempting to create an index that already exists,
-        /// without throwing an exception.
-        /// </summary>
-        [Fact]
-        public async Task CreateIndexAsync_ReturnsFalse_WhenIndexAlreadyExists()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId);
-            var tableName = "AuditLog";
-            var indexName = "idx_AuditLog_TenantId"; // Existing index
-            var columns = new[] { "TenantId" };
-
-            // Act
-            var result = await _sut.CreateIndexAsync(tableName, indexName, columns);
-
-            // Assert
-            result.Should().BeFalse();
-            _mockLogger.AssertLogged(LogLevel.Warning, 1, "Index {IndexName} already exists", indexName);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.GetTablesAsync"/> returns all user-created tables in the database,
-        /// excluding system tables like sqlite_sequence.
-        /// </summary>
-        [Fact]
-        public async Task GetTablesAsync_ReturnsAllUserTables()
-        {
-            // Arrange
-            var tenantId = "testTenant";
-            await _sut.InitializeSchemaAsync(tenantId); // Creates Tenants and AuditLog
-
-            // Act
-            var tables = await _sut.GetTablesAsync();
-
-            // Assert
-            tables.Should().Contain("Tenants");
-            tables.Should().Contain("AuditLog");
-            tables.Should().NotContain("sqlite_sequence"); // Internal SQLite table
-            tables.Should().HaveCount(2);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.GetTablesAsync"/> returns an empty list when no tables exist in the database.
-        /// </summary>
-        [Fact]
-        public async Task GetTablesAsync_ReturnsEmptyList_WhenNoTablesExist()
-        {
-            // Arrange - use a fresh connection string without initialization
-            var newConnectionString = "Data Source=:memory:;Mode=Memory;Cache=Shared";
-            var newSut = new SchemaManager(_mockLogger, newConnectionString);
-
-            // Act
-            var tables = await newSut.GetTablesAsync();
-
-            // Assert
-            tables.Should().BeEmpty();
-        }
-
-        /// <summary>
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> returns an empty diff when both databases have identical schemas.
-        /// </summary>
-        [Fact]
-        public async Task CompareSchemasAsync_ReturnsEmptyDiff_WhenSchemasAreIdentical()
-        {
-            // Arrange - Create two databases with identical schemas
-            var db1ConnectionString = $"Data Source=:memory:schemacompare1_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare2_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
-
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
-
-            var tenantId = "testTenant";
-            await manager1.InitializeSchemaAsync(tenantId);
-            await manager2.InitializeSchemaAsync(tenantId);
-
-            // Act - Compare schemas
-            var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
-
-            // Assert
-            diff.IsIdentical.Should().BeTrue();
-            diff.MissingTables.Should().BeEmpty();
-            diff.TablesWithDifferences.Should().BeEmpty();
-            diff.IdenticalTables.Should().HaveCount(2); // Tenants and AuditLog
-            diff.TotalTables.Should().Be(2);
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies missing tables in the target database.
-        /// </summary>
-        [Fact]
-        public async Task CompareSchemasAsync_IdentifiesMissingTables()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare3_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare4_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
-
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
-
-            // Create different schemas
-            await manager1.InitializeSchemaAsync("tenant1");
-            await manager2.InitializeSchemaAsync("tenant2");
-
-            // Add an extra table to db1
-            using (var conn = new SQLiteConnection(db1ConnectionString))
+            await conn.OpenAsync();
+            using (var cmd = conn.CreateCommand())
             {
-                await conn.OpenAsync();
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "CREATE TABLE ExtraTable (Id INTEGER PRIMARY KEY, Name TEXT)";
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-
-            // Act
-            var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
-
-            // Assert
-            diff.IsIdentical.Should().BeFalse();
-            diff.MissingTables.Should().ContainSingle().Which.Should().Be("ExtraTable");
-            diff.TotalTables.Should().Be(3); // Tenants, AuditLog from both + ExtraTable
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies missing columns in the target table.
-        /// </summary>
-        [Fact]
-        public async Task CompareSchemasAsync_IdentifiesMissingColumns()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare5_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare6_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
-
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
-
-            await manager1.InitializeSchemaAsync("tenant1");
-            await manager2.InitializeSchemaAsync("tenant2");
-
-            // Add a column to Tenants table in db1
-            await manager1.AddColumnAsync("tenant1", "Tenants", "ExtraColumn", "TEXT DEFAULT ''");
-
-            // Act
-            var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
-            var tableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
-
-            // Assert
-            tableDiff.Should().NotBeNull();
-            tableDiff!.MissingColumns.Should().ContainSingle().Which.Should().Be("ExtraColumn");
-            tableDiff.IsIdentical.Should().BeFalse();
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies column type mismatches.
-        /// </summary>
-        [Fact]
-        public async Task CompareSchemasAsync_IdentifiesColumnTypeMismatches()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare7_{Guid.NewGuid():N};Mode=Memory";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare8_{Guid.NewGuid():N};Mode=Memory";
-
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
-
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
-
-            await manager1.InitializeSchemaAsync("tenant1");
-            await manager2.InitializeSchemaAsync("tenant2");
-
-            // Manually change column type in db2 by creating a new table with different schema
-            using (var conn = new SQLiteConnection(db2ConnectionString))
-            {
-                await conn.OpenAsync();
-                using (var cmd = conn.CreateCommand())
-                {
-                    // Drop existing table
-                    cmd.CommandText = "DROP TABLE IF EXISTS Tenants";
-                    await cmd.ExecuteNonQueryAsync();
-
-                    // Create table with different column type
-                    cmd.CommandText = "CREATE TABLE Tenants (TenantId TEXT PRIMARY KEY, Name INTEGER, IsActive INTEGER NOT NULL DEFAULT 1, CreatedAt TEXT NOT NULL, UpdatedAt TEXT NOT NULL, DatabasePath TEXT NOT NULL UNIQUE)";
-                    await cmd.ExecuteNonQueryAsync();
-                }
-            }
-
-            // Act
-            var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
-            var tableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
-
-            // Assert
-            tableDiff.Should().NotBeNull();
-            tableDiff!.TypeMismatches.Should().NotBeEmpty();
-            tableDiff.IsIdentical.Should().BeFalse();
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies missing indexes.
-        /// </summary>
-        [Fact]
-        public async Task CompareSchemasAsync_IdentifiesMissingIndexes()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare9_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare10_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
-
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
-
-            await manager1.InitializeSchemaAsync("tenant1");
-            await manager2.InitializeSchemaAsync("tenant2");
-
-            // Add an extra index to db1
-            await manager1.CreateIndexAsync("Tenants", "idx_Tenants_Custom", "TenantId");
-
-            // Act
-            var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
-            var tableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
-
-            // Assert
-            tableDiff.Should().NotBeNull();
-            tableDiff!.MissingIndexes.Should().ContainSingle().Which.Should().Be("idx_Tenants_Custom");
-            tableDiff.ExtraIndexes.Should().BeEmpty();
-        }
-
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareSchemasAsync"/> correctly identifies extra tables, columns, and indexes.
-        /// </summary>
-        [Fact]
-        public async Task CompareSchemasAsync_IdentifiesExtraElements()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare11_{Guid.NewGuid():N};Mode=Memory";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare12_{Guid.NewGuid():N};Mode=Memory";
-
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
-
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
-
-            await manager1.InitializeSchemaAsync("tenant1");
-
-            // Manually create schema in db2 with extra elements
-            using (var conn = new SQLiteConnection(db2ConnectionString))
-            {
-                await conn.OpenAsync();
-                using (var cmd = conn.CreateCommand())
-                {
-                    // Create Tenants table with extra column
-                    cmd.CommandText = @"CREATE TABLE Tenants (
+                // Create Tenants table with extra column
+                cmd.CommandText = @"CREATE TABLE Tenants (
                         TenantId TEXT PRIMARY KEY,
                         Name TEXT,
                         IsActive INTEGER NOT NULL DEFAULT 1,
@@ -586,104 +585,103 @@ namespace SqliteMultiTenant.Tests
                         DatabasePath TEXT NOT NULL UNIQUE,
                         ExtraCol TEXT
                     )";
-                    await cmd.ExecuteNonQueryAsync();
+                await cmd.ExecuteNonQueryAsync();
 
-                    // Create extra table
-                    cmd.CommandText = "CREATE TABLE ExtraTable (Id INTEGER PRIMARY KEY)";
-                    await cmd.ExecuteNonQueryAsync();
+                // Create extra table
+                cmd.CommandText = "CREATE TABLE ExtraTable (Id INTEGER PRIMARY KEY)";
+                await cmd.ExecuteNonQueryAsync();
 
-                    // Create extra index
-                    cmd.CommandText = "CREATE INDEX idx_Extra ON Tenants(ExtraCol)";
-                    await cmd.ExecuteNonQueryAsync();
-                }
+                // Create extra index
+                cmd.CommandText = "CREATE INDEX idx_Extra ON Tenants(ExtraCol)";
+                await cmd.ExecuteNonQueryAsync();
             }
-
-            // Act
-            var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
-
-            // Assert - ExtraTable should NOT be in MissingTables (it exists in target but not in source)
-            diff.MissingTables.Should().NotContain("ExtraTable");
-
-            // ExtraTable should be detected as a difference in the overall comparison
-            diff.TablesWithDifferences.Should().HaveCount(2); // Tenants and ExtraTable
-
-            var extraTableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "ExtraTable");
-            extraTableDiff.Should().NotBeNull();
-            extraTableDiff!.IsMissing.Should().BeTrue();
-
-            var tenantsDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
-            tenantsDiff.Should().NotBeNull();
-            tenantsDiff!.ExtraColumns.Should().ContainSingle().Which.Should().Be("ExtraCol");
-            tenantsDiff.ExtraIndexes.Should().ContainSingle().Which.Should().Be("idx_Extra");
         }
 
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareTableSchemasAsync"/> returns detailed comparison for a specific table.
-        /// </summary>
-        [Fact]
-        public async Task CompareTableSchemasAsync_ReturnsDetailedComparison()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare13_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare14_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        // Act
+        var diff = await manager1.CompareSchemasAsync(db2ConnectionString);
 
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
+        // Assert - ExtraTable should NOT be in MissingTables (it exists in target but not in source)
+        diff.MissingTables.Should().NotContain("ExtraTable");
 
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
+        // ExtraTable should be detected as a difference in the overall comparison
+        diff.TablesWithDifferences.Should().HaveCount(2); // Tenants and ExtraTable
 
-            await manager1.InitializeSchemaAsync("tenant1");
-            await manager2.InitializeSchemaAsync("tenant2");
+        var extraTableDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "ExtraTable");
+        extraTableDiff.Should().NotBeNull();
+        extraTableDiff!.IsMissing.Should().BeTrue();
 
-            // Add a column to Tenants in db1
-            await manager1.AddColumnAsync("tenant1", "Tenants", "NewCol", "TEXT");
+        var tenantsDiff = diff.TablesWithDifferences.FirstOrDefault(t => t.TableName == "Tenants");
+        tenantsDiff.Should().NotBeNull();
+        tenantsDiff!.ExtraColumns.Should().ContainSingle().Which.Should().Be("ExtraCol");
+        tenantsDiff.ExtraIndexes.Should().ContainSingle().Which.Should().Be("idx_Extra");
+    }
 
-            // Act
-            var tableDiff = await manager1.CompareTableSchemasAsync("Tenants", db2ConnectionString);
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareTableSchemasAsync"/> returns detailed comparison for a specific table.
+    /// </summary>
+    [Fact]
+    public async Task CompareTableSchemasAsync_ReturnsDetailedComparison()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare13_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare14_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
 
-            // Assert
-            tableDiff.TableName.Should().Be("Tenants");
-            tableDiff.IsMissing.Should().BeFalse();
-            tableDiff.MissingColumns.Should().ContainSingle().Which.Should().Be("NewCol");
-            tableDiff.IsIdentical.Should().BeFalse();
-        }
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
 
-        /// <summary>
-        /// Verifies that calling <see cref="SchemaManager.CompareTableSchemasAsync"/> handles missing tables gracefully.
-        /// </summary>
-        [Fact]
-        public async Task CompareTableSchemasAsync_HandlesMissingTable()
-        {
-            // Arrange
-            var db1ConnectionString = $"Data Source=:memory:schemacompare15_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
-            var db2ConnectionString = $"Data Source=:memory:schemacompare16_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
 
-            var logger1 = Substitute.For<ILogger<SchemaManager>>();
-            var logger2 = Substitute.For<ILogger<SchemaManager>>();
+        await manager1.InitializeSchemaAsync("tenant1");
+        await manager2.InitializeSchemaAsync("tenant2");
 
-            var manager1 = new SchemaManager(logger1, db1ConnectionString);
-            var manager2 = new SchemaManager(logger2, db2ConnectionString);
+        // Add a column to Tenants in db1
+        await manager1.AddColumnAsync("tenant1", "Tenants", "NewCol", "TEXT");
 
-            await manager1.InitializeSchemaAsync("tenant1");
+        // Act
+        var tableDiff = await manager1.CompareTableSchemasAsync("Tenants", db2ConnectionString);
 
-            // Don't initialize db2 - it will be empty
+        // Assert
+        tableDiff.TableName.Should().Be("Tenants");
+        tableDiff.IsMissing.Should().BeFalse();
+        tableDiff.MissingColumns.Should().ContainSingle().Which.Should().Be("NewCol");
+        tableDiff.IsIdentical.Should().BeFalse();
+    }
 
-            // Act
-            var tableDiff = await manager1.CompareTableSchemasAsync("NonExistentTable", db2ConnectionString);
+    /// <summary>
+    /// Verifies that calling <see cref="SchemaManager.CompareTableSchemasAsync"/> handles missing tables gracefully.
+    /// </summary>
+    [Fact]
+    public async Task CompareTableSchemasAsync_HandlesMissingTable()
+    {
+        // Arrange
+        var db1ConnectionString = $"Data Source=:memory:schemacompare15_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        var db2ConnectionString = $"Data Source=:memory:schemacompare16_{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
 
-            // Assert
-            tableDiff.IsMissing.Should().BeTrue();
-            tableDiff.TableName.Should().Be("NonExistentTable");
-        }
+        var logger1 = Substitute.For<ILogger<SchemaManager>>();
+        var logger2 = Substitute.For<ILogger<SchemaManager>>();
 
-        /// <summary>
-        /// Releases all resources used by the current test instance, including database connections.
-        /// </summary>
-        public void Dispose()
-        {
-            _connection?.Close();
-            _connection?.Dispose();
-        }
+        var manager1 = new SchemaManager(logger1, db1ConnectionString);
+        var manager2 = new SchemaManager(logger2, db2ConnectionString);
+
+        await manager1.InitializeSchemaAsync("tenant1");
+
+        // Don't initialize db2 - it will be empty
+
+        // Act
+        var tableDiff = await manager1.CompareTableSchemasAsync("NonExistentTable", db2ConnectionString);
+
+        // Assert
+        tableDiff.IsMissing.Should().BeTrue();
+        tableDiff.TableName.Should().Be("NonExistentTable");
+    }
+
+    /// <summary>
+    /// Releases all resources used by the current test instance, including database connections.
+    /// </summary>
+    public void Dispose()
+    {
+        _connection?.Close();
+        _connection?.Dispose();
     }
 }

@@ -15,7 +15,8 @@ namespace SqliteMultiTenant.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [HideColumns("Error", "StdDev")]
-public sealed class QueryBuilderBenchmarks {
+public sealed class QueryBuilderBenchmarks
+{
     private QueryBuilder _builder = null!;
 
     [GlobalSetup]

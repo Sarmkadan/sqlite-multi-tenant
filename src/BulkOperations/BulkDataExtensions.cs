@@ -100,7 +100,9 @@ file static class ServiceCollectionGuardExtensions
         where TImplementation : class, TService
     {
         if (services.All(d => d.ServiceType != typeof(TService)))
+        {
             services.AddScoped<TService, TImplementation>();
+        }
     }
 
     internal static void TryAddSingleton<TService>(
@@ -109,6 +111,8 @@ file static class ServiceCollectionGuardExtensions
         where TService : class
     {
         if (services.All(d => d.ServiceType != typeof(TService)))
+        {
             services.AddSingleton(factory);
+        }
     }
 }

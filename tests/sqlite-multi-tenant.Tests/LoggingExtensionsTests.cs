@@ -4,11 +4,11 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SqliteMultiTenant.Logging;
-using System.Collections.Generic;
 using Xunit;
 
 namespace SqliteMultiTenant.Tests.Logging;

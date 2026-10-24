@@ -16,7 +16,8 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// Provides endpoints for creating, verifying, restoring, and listing backups.
 /// Critical for disaster recovery and data protection compliance.
 /// </summary>
-public sealed class BackupController {
+public sealed class BackupController
+{
     private readonly IBackupService _backupService;
     private readonly ITenantService _tenantService;
     private readonly ILogger<BackupController> _logger;
@@ -78,7 +79,9 @@ public sealed class BackupController {
         {
             var backup = await _backupService.GetBackupAsync(backupId);
             if (backup is null)
+            {
                 return ApiResponse<BackupResponse>.NotFound($"Backup {backupId} not found");
+            }
 
             var response = new BackupResponse
             {
@@ -193,10 +196,14 @@ public sealed class BackupController {
             // Verify backup exists
             var backup = await _backupService.GetBackupAsync(backupId);
             if (backup is null)
+            {
                 return ApiResponse<object>.NotFound($"Backup {backupId} not found");
+            }
 
             if (backup.Status != Constants.BackupStatus.Completed)
+            {
                 return ApiResponse<object>.BadRequest("Backup must be completed before restore");
+            }
 
             _logger.LogWarning("Backup restore started by {RestoredBy}", restoredBy);
             return ApiResponse<object>.Success(new { message = "Restore initiated", backupId });
@@ -217,7 +224,9 @@ public sealed class BackupController {
         try
         {
             if (string.IsNullOrWhiteSpace(tag))
+            {
                 return ApiResponse<object>.BadRequest("Tag cannot be empty");
+            }
 
             await _backupService.AddBackupTagAsync(backupId, tag);
 

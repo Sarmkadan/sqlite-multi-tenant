@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Services;
 /// <summary>
 /// Service implementation for database migration management
 /// </summary>
-public sealed class MigrationService : IMigrationService {
+public sealed class MigrationService : IMigrationService
+{
     private readonly IMigrationRepository _repository;
     private readonly ILogger<MigrationService> _logger;
     private readonly Random _random = new();
@@ -42,7 +43,9 @@ public sealed class MigrationService : IMigrationService {
     public async Task<Migration?> GetMigrationAsync(string migrationId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
+        {
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+        }
 
         try
         {
@@ -66,7 +69,9 @@ public sealed class MigrationService : IMigrationService {
     public async Task<List<Migration>> GetDatabaseMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -90,7 +95,9 @@ public sealed class MigrationService : IMigrationService {
     public async Task<List<Migration>> GetPendingMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -114,7 +121,9 @@ public sealed class MigrationService : IMigrationService {
     public async Task<List<Migration>> GetAppliedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -143,22 +152,32 @@ public sealed class MigrationService : IMigrationService {
     public async Task<Migration> CreateMigrationAsync(string databaseId, string version, string name, string upScript, string? downScript = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         if (string.IsNullOrWhiteSpace(version))
+        {
             throw new ArgumentException("Migration version cannot be empty", nameof(version));
+        }
 
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException("Migration name cannot be empty", nameof(name));
+        }
 
         if (string.IsNullOrWhiteSpace(upScript))
+        {
             throw new ArgumentException("UpScript cannot be empty", nameof(upScript));
+        }
 
         try
         {
             var existingMigration = await _repository.GetByVersionAsync(databaseId, version, cancellationToken);
             if (existingMigration is not null)
+            {
                 throw MigrationException.AlreadyApplied(version);
+            }
 
             var migrations = await _repository.GetByDatabaseAsync(databaseId, cancellationToken);
             int executionOrder = migrations.Count + 1;
@@ -178,7 +197,9 @@ public sealed class MigrationService : IMigrationService {
             };
 
             if (!migration.Validate(out var errors))
+            {
                 throw new ArgumentException($"Migration validation failed: {string.Join(", ", errors)}");
+            }
 
             var createdMigration = await _repository.AddAsync(migration, cancellationToken);
             _logger.LogInformation($"Migration created: {migration.GetDisplayName()}");
@@ -203,16 +224,22 @@ public sealed class MigrationService : IMigrationService {
     public async Task<MigrationResult> ExecuteMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
+        {
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+        }
 
         if (string.IsNullOrWhiteSpace(executedBy))
+        {
             throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
+        }
 
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
+            {
                 return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
+            }
 
             migration.MarkAsStarted(executedBy);
             await _repository.UpdateAsync(migration, cancellationToken);
@@ -238,19 +265,27 @@ public sealed class MigrationService : IMigrationService {
     public async Task<MigrationResult> RollbackMigrationAsync(string migrationId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
+        {
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+        }
 
         if (string.IsNullOrWhiteSpace(executedBy))
+        {
             throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
+        }
 
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
+            {
                 return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
+            }
 
             if (!migration.CanRollback())
+            {
                 return MigrationResult.FailureResult($"Migration cannot be rolled back: {migration.GetDisplayName()}");
+            }
 
             migration.MarkAsRolledBack(0);
             await _repository.UpdateAsync(migration, cancellationToken);
@@ -276,13 +311,17 @@ public sealed class MigrationService : IMigrationService {
     public async Task<MigrationResult> MarkMigrationAsCompletedAsync(string migrationId, long executionTimeMs, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
+        {
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+        }
 
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
+            {
                 throw new Exceptions.MigrationException($"Migration with ID '{migrationId}' was not found");
+            }
 
             migration.MarkAsCompleted(executionTimeMs);
             await _repository.UpdateAsync(migration, cancellationToken);
@@ -308,16 +347,22 @@ public sealed class MigrationService : IMigrationService {
     public async Task<MigrationResult> MarkMigrationAsFailedAsync(string migrationId, string errorMessage, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(migrationId))
+        {
             throw new ArgumentException("Migration ID cannot be empty", nameof(migrationId));
+        }
 
         if (string.IsNullOrWhiteSpace(errorMessage))
+        {
             throw new ArgumentException("Error message cannot be empty", nameof(errorMessage));
+        }
 
         try
         {
             var migration = await _repository.GetByIdAsync(migrationId, cancellationToken);
             if (migration is null)
+            {
                 return MigrationResult.FailureResult($"Migration with ID '{migrationId}' was not found");
+            }
 
             migration.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(migration, cancellationToken);
@@ -342,7 +387,9 @@ public sealed class MigrationService : IMigrationService {
     public async Task<int> GetMigrationCountAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -367,10 +414,14 @@ public sealed class MigrationService : IMigrationService {
     public async Task<bool> IsMigrationAppliedAsync(string databaseId, string version, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         if (string.IsNullOrWhiteSpace(version))
+        {
             throw new ArgumentException("Version cannot be empty", nameof(version));
+        }
 
         try
         {
@@ -395,7 +446,9 @@ public sealed class MigrationService : IMigrationService {
     public async Task<List<Migration>> GetFailedMigrationsAsync(string databaseId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -419,10 +472,14 @@ public sealed class MigrationService : IMigrationService {
     public async Task<Models.MigrationBatchResult> ApplyMigrationsWithFaultIsolationAsync(string databaseId, string executedBy, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         if (string.IsNullOrWhiteSpace(executedBy))
+        {
             throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
+        }
 
         try
         {
@@ -469,10 +526,14 @@ public sealed class MigrationService : IMigrationService {
         CancellationToken cancellationToken = default)
     {
         if (databaseIds == null || databaseIds.Count == 0)
+        {
             throw new ArgumentException("Database IDs list cannot be null or empty", nameof(databaseIds));
+        }
 
         if (string.IsNullOrWhiteSpace(executedBy))
+        {
             throw new ArgumentException("ExecutedBy cannot be empty", nameof(executedBy));
+        }
 
         try
         {

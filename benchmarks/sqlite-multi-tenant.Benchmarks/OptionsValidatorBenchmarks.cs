@@ -14,8 +14,9 @@ namespace SqliteMultiTenant.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [HideColumns("Error", "StdDev")]
-public sealed class OptionsValidatorBenchmarks {
-    
+public sealed class OptionsValidatorBenchmarks
+{
+
     private MultiTenantOptions _validMultiTenantOptions = null!;
     private BackupOptions _validBackupOptions = null!;
 

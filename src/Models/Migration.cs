@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a database migration for a tenant
 /// </summary>
-public sealed class Migration {
+public sealed class Migration
+{
     public string MigrationId { get; set; } = string.Empty;
     public string DatabaseId { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
@@ -41,25 +42,39 @@ public sealed class Migration {
         errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(MigrationId))
+        {
             errors.Add("MigrationId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(DatabaseId))
+        {
             errors.Add("DatabaseId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(Version))
+        {
             errors.Add("Version is required");
+        }
 
         if (string.IsNullOrWhiteSpace(Name))
+        {
             errors.Add("Name is required");
+        }
 
         if (string.IsNullOrWhiteSpace(UpScript))
+        {
             errors.Add("UpScript is required");
+        }
 
         if (ExecutionTimeMs < 0)
+        {
             errors.Add("ExecutionTimeMs cannot be negative");
+        }
 
         if (ExecutionOrder < 0)
+        {
             errors.Add("ExecutionOrder cannot be negative");
+        }
 
         return errors.Count == 0;
     }

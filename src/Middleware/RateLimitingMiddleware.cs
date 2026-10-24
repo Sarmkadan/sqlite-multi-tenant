@@ -4,8 +4,8 @@
 // CTO & Software Architect
 // =============================================================================
 
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Middleware;
 
@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Middleware;
 /// Implements sliding window algorithm for fair rate distribution.
 /// Supports per-tenant and per-IP rate limits with configurable thresholds.
 /// </summary>
-public sealed class RateLimitingMiddleware {
+public sealed class RateLimitingMiddleware
+{
     private readonly RequestDelegate _next;
     private readonly ILogger<RateLimitingMiddleware> _logger;
     internal readonly RateLimitingOptions _options;
@@ -82,7 +83,8 @@ public sealed class RateLimitingMiddleware {
 /// Configuration options for rate limiting behavior.
 /// Allows tuning limits without recompiling code.
 /// </summary>
-public sealed class RateLimitingOptions {
+public sealed class RateLimitingOptions
+{
     /// <summary>
     /// Number of requests allowed per minute (default: 300 = 5 req/sec).
     /// Adjust based on expected load and infrastructure capacity.
@@ -107,7 +109,8 @@ public sealed class RateLimitingOptions {
 /// Thread-safe using lock for concurrent access patterns.
 /// Tracks last refill time to implement sliding window accurately.
 /// </summary>
-public sealed class TokenBucket {
+public sealed class TokenBucket
+{
     private double _tokens;
     private DateTime _lastRefillTime;
     private readonly double _refillRate;

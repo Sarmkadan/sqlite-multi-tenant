@@ -4,17 +4,17 @@
 // CTO & Software Architect
 // =============================================================================
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using SqliteMultiTenant.Api.Controllers;
 using SqliteMultiTenant.BackgroundWorkers;
 using SqliteMultiTenant.Caching;
-using SqliteMultiTenant.Services;
 using SqliteMultiTenant.Events;
 using SqliteMultiTenant.Formatters;
 using SqliteMultiTenant.Health;
 using SqliteMultiTenant.Integration;
 using SqliteMultiTenant.Middleware;
+using SqliteMultiTenant.Services;
 using SqliteMultiTenant.Validation;
 
 namespace SqliteMultiTenant.Configuration;

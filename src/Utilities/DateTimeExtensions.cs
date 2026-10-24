@@ -93,13 +93,19 @@ public static class DateTimeExtensions
     public static string ToHumanReadableDuration(this TimeSpan duration)
     {
         if (duration.TotalSeconds < 1)
+        {
             return "< 1s";
+        }
 
         if (duration.TotalMinutes < 1)
+        {
             return $"{(int)duration.TotalSeconds}s";
+        }
 
         if (duration.TotalHours < 1)
+        {
             return $"{(int)duration.TotalMinutes}m {duration.Seconds}s";
+        }
 
         var hours = (int)duration.TotalHours;
         var minutes = duration.Minutes;

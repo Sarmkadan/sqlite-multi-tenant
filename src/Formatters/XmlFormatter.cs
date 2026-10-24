@@ -15,7 +15,8 @@ namespace SqliteMultiTenant.Formatters;
 /// Handles nested objects, arrays, and preserves type information.
 /// Useful for system integration and data interchange.
 /// </summary>
-public sealed class XmlExportFormatter {
+public sealed class XmlExportFormatter
+{
     private readonly bool _includeDeclaration;
     private readonly ILogger<XmlExportFormatter> _logger;
 
@@ -47,14 +48,20 @@ public sealed class XmlExportFormatter {
         try
         {
             if (data is null)
+            {
                 return BuildXmlString(new XElement(rootName));
+            }
 
             XElement root;
 
             if (data is IEnumerable enumerable && !(data is string))
+            {
                 root = FormatCollection(enumerable, rootName);
+            }
             else
+            {
                 root = FormatObject(data, rootName);
+            }
 
             return BuildXmlString(root);
         }
@@ -74,7 +81,9 @@ public sealed class XmlExportFormatter {
         foreach (var item in collection)
         {
             if (item is null)
+            {
                 continue;
+            }
 
             var itemElement = FormatObject(item, itemName);
             root.Add(itemElement);
@@ -93,7 +102,9 @@ public sealed class XmlExportFormatter {
             var value = prop.GetValue(obj);
 
             if (value is null)
+            {
                 continue;
+            }
 
             var propElement = new XElement(ToCamelCase(prop.Name));
 
@@ -142,7 +153,9 @@ public sealed class XmlExportFormatter {
     private string ToCamelCase(string str)
     {
         if (string.IsNullOrEmpty(str) || char.IsLower(str[0]))
+        {
             return str;
+        }
 
         return char.ToLower(str[0]) + str.Substring(1);
     }
@@ -159,7 +172,9 @@ public sealed class XmlExportFormatter {
     private string EscapeXml(string text)
     {
         if (string.IsNullOrEmpty(text))
+        {
             return text;
+        }
 
         return text
             .Replace("&", "&amp;")

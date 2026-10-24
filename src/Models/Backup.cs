@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a backup of a tenant database
 /// </summary>
-public sealed class Backup {
+public sealed class Backup
+{
     public override string ToString() => $"Backup {{ BackupId = {BackupId}, DatabaseId = {DatabaseId}, BackupPath = {BackupPath}, BackupType = {BackupType}, Status = {Status}, CreatedAt = {CreatedAt} }}";
     /// <summary>
     /// Gets or sets the unique identifier for the backup
@@ -106,25 +107,39 @@ public sealed class Backup {
         errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(BackupId))
+        {
             errors.Add("BackupId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(DatabaseId))
+        {
             errors.Add("DatabaseId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(BackupPath))
+        {
             errors.Add("BackupPath is required");
+        }
 
         if (SizeBytes < 0)
+        {
             errors.Add("SizeBytes cannot be negative");
+        }
 
         if (OriginalSizeBytes < 0)
+        {
             errors.Add("OriginalSizeBytes cannot be negative");
+        }
 
         if (CompressionRatio < 0 || CompressionRatio > 100)
+        {
             errors.Add("CompressionRatio must be between 0 and 100");
+        }
 
         if (DurationMs < 0)
+        {
             errors.Add("DurationMs cannot be negative");
+        }
 
         return errors.Count == 0;
     }

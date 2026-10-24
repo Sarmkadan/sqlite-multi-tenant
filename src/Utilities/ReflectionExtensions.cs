@@ -35,7 +35,9 @@ public static class ReflectionExtensions
         ArgumentNullException.ThrowIfNull(type);
 
         if (PropertyCache.TryGetValue(type, out var cached))
+        {
             return cached;
+        }
 
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
         PropertyCache[type] = properties;
@@ -76,7 +78,9 @@ public static class ReflectionExtensions
         var property = obj.GetType().GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
         if (property is null || !property.CanWrite)
+        {
             return false;
+        }
 
         try
         {
@@ -115,7 +119,9 @@ public static class ReflectionExtensions
         ArgumentNullException.ThrowIfNull(type);
 
         if (!type.IsCollection())
+        {
             return null;
+        }
 
         var genericArgs = type.GetGenericArguments();
         return genericArgs.Length > 0 ? genericArgs[0] : typeof(object);

@@ -44,14 +44,20 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
+        {
             throw new TenantNotFoundException(tenantId);
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
+        }
 
         var result = new TenantMaintenanceResult
         {
@@ -106,7 +112,9 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         foreach (var tenant in tenants)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             try
             {
@@ -144,14 +152,20 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
+        {
             throw new TenantNotFoundException(tenantId);
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
+        }
 
         var result = new TenantMaintenanceResult
         {
@@ -197,7 +211,9 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         foreach (var tenant in tenants)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             try
             {
@@ -235,14 +251,20 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
+        {
             throw new TenantNotFoundException(tenantId);
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
+        }
 
         var result = new TenantMaintenanceResult
         {
@@ -288,7 +310,9 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         foreach (var tenant in tenants)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             try
             {
@@ -325,14 +349,20 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
+        {
             throw new TenantNotFoundException(tenantId);
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
+        }
 
         var result = new TenantMaintenanceResult
         {
@@ -399,7 +429,9 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         foreach (var tenant in tenants)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             try
             {
@@ -439,13 +471,19 @@ public sealed class TenantDatabaseMaintenanceService : ITenantDatabaseMaintenanc
         TimeSpan timeout)
     {
         if (tenant is null)
+        {
             throw new ArgumentNullException(nameof(tenant));
+        }
 
         if (string.IsNullOrWhiteSpace(sql))
+        {
             throw new ArgumentException("SQL cannot be empty", nameof(sql));
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenant.TenantId} database file not found");
+        }
 
         await using var connection = new SQLiteConnection($"Data Source={tenant.DatabasePath};");
         await connection.OpenAsync(cancellationToken);

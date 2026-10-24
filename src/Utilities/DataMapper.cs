@@ -20,7 +20,8 @@ public interface IDataMapper
     List<TTarget> MapList<TSource, TTarget>(List<TSource> sources) where TTarget : class, new();
 }
 
-public sealed class DataMapper : IDataMapper {
+public sealed class DataMapper : IDataMapper
+{
     private readonly ILogger<DataMapper> _logger;
     private readonly Dictionary<string, PropertyInfo[]> _propertyCache;
 
@@ -40,7 +41,9 @@ public sealed class DataMapper : IDataMapper {
         try
         {
             if (source is null)
+            {
                 return new TTarget();
+            }
 
             var target = new TTarget();
             var sourceType = typeof(TSource);
@@ -94,7 +97,9 @@ public sealed class DataMapper : IDataMapper {
         try
         {
             if (sources is null || sources.Count == 0)
+            {
                 return new List<TTarget>();
+            }
 
             return sources.Select(s => Map<TSource, TTarget>(s)).ToList();
         }
@@ -126,25 +131,39 @@ public sealed class DataMapper : IDataMapper {
         try
         {
             if (value is null)
+            {
                 return null;
+            }
 
             if (targetType == typeof(string))
+            {
                 return value.ToString();
+            }
 
             if (targetType == typeof(int))
+            {
                 return Convert.ToInt32(value, CultureInfo.InvariantCulture);
+            }
 
             if (targetType == typeof(long))
+            {
                 return Convert.ToInt64(value, CultureInfo.InvariantCulture);
+            }
 
             if (targetType == typeof(double))
+            {
                 return Convert.ToDouble(value, CultureInfo.InvariantCulture);
+            }
 
             if (targetType == typeof(bool))
+            {
                 return Convert.ToBoolean(value, CultureInfo.InvariantCulture);
+            }
 
             if (targetType == typeof(DateTime))
+            {
                 return Convert.ToDateTime(value, CultureInfo.InvariantCulture);
+            }
 
             if (targetType == typeof(Guid))
             {
@@ -164,7 +183,8 @@ public sealed class DataMapper : IDataMapper {
 /// <summary>
 /// Custom property mapping configurations.
 /// </summary>
-public sealed class MappingProfile {
+public sealed class MappingProfile
+{
     private readonly Dictionary<string, Func<object, object>> _customMappings;
 
     public MappingProfile()

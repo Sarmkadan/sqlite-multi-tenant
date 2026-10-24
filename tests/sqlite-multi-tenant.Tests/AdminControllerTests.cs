@@ -10,108 +10,107 @@ using SqliteMultiTenant.Monitoring;
 using SqliteMultiTenant.Tenants;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+/// <summary>
+/// Unit tests for the <see cref="AdminController"/> class.
+/// Tests controller endpoints for health checks and metrics dashboard functionality.
+/// </summary>
+public sealed class AdminControllerTests
 {
     /// <summary>
-    /// Unit tests for the <see cref="AdminController"/> class.
-    /// Tests controller endpoints for health checks and metrics dashboard functionality.
+    /// Mock health check service for testing.
     /// </summary>
-    public sealed class AdminControllerTests
+    private readonly HealthCheckService _mockHealthCheck;
+
+    /// <summary>
+    /// Mock metrics service for recording and retrieving metrics.
+    /// </summary>
+    private readonly MetricsService _mockMetricsService;
+
+    /// <summary>
+    /// Mock tenant quota enforcer for testing.
+    /// </summary>
+    private readonly TenantQuotaEnforcer _mockTenantQuotaEnforcer;
+
+    /// <summary>
+    /// Mock logger for the admin controller.
+    /// </summary>
+    private readonly ILogger<AdminController> _mockLogger;
+
+    /// <summary>
+    /// The admin controller instance under test.
+    /// </summary>
+    private readonly AdminController _controller;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AdminControllerTests"/> class.
+    /// Sets up mock services and the controller instance for testing.
+    /// </summary>
+    public AdminControllerTests()
     {
-        /// <summary>
-        /// Mock health check service for testing.
-        /// </summary>
-        private readonly HealthCheckService _mockHealthCheck;
+        var healthLogger = Substitute.For<ILogger<HealthCheckService>>();
+        _mockHealthCheck = new HealthCheckService(healthLogger);
 
-        /// <summary>
-        /// Mock metrics service for recording and retrieving metrics.
-        /// </summary>
-        private readonly MetricsService _mockMetricsService;
+        var metricsLogger = Substitute.For<ILogger<MetricsService>>();
+        _mockMetricsService = new MetricsService(metricsLogger);
 
-        /// <summary>
-        /// Mock tenant quota enforcer for testing.
-        /// </summary>
-        private readonly TenantQuotaEnforcer _mockTenantQuotaEnforcer;
+        var mockTenantService = Substitute.For<SqliteMultiTenant.Services.ITenantService>();
+        _mockTenantQuotaEnforcer = new TenantQuotaEnforcer(mockTenantService);
 
-        /// <summary>
-        /// Mock logger for the admin controller.
-        /// </summary>
-        private readonly ILogger<AdminController> _mockLogger;
+        _mockLogger = Substitute.For<ILogger<AdminController>>();
+        _controller = new AdminController(_mockHealthCheck, _mockMetricsService, _mockTenantQuotaEnforcer, _mockLogger);
+    }
 
-        /// <summary>
-        /// The admin controller instance under test.
-        /// </summary>
-        private readonly AdminController _controller;
+    [Fact]
+    /// <summary>
+    /// Tests that GetMetricsDashboard returns an OkObjectResult with a metrics snapshot
+    /// when metrics have been recorded.
+    /// </summary>
+    public void GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot()
+    {
+        _mockLogger.LogInformation("GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot started");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AdminControllerTests"/> class.
-        /// Sets up mock services and the controller instance for testing.
-        /// </summary>
-        public AdminControllerTests()
-        {
-            var healthLogger = Substitute.For<ILogger<HealthCheckService>>();
-            _mockHealthCheck = new HealthCheckService(healthLogger);
+        // Arrange
+        _mockMetricsService.RecordRequest("/api/test", 150, 200);
+        _mockMetricsService.RecordBackup(1024, 500, true);
 
-            var metricsLogger = Substitute.For<ILogger<MetricsService>>();
-            _mockMetricsService = new MetricsService(metricsLogger);
+        // Act
+        var result = _controller.GetMetricsDashboard() as OkObjectResult;
 
-            var mockTenantService = Substitute.For<SqliteMultiTenant.Services.ITenantService>();
-            _mockTenantQuotaEnforcer = new TenantQuotaEnforcer(mockTenantService);
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
 
-            _mockLogger = Substitute.For<ILogger<AdminController>>();
-            _controller = new AdminController(_mockHealthCheck, _mockMetricsService, _mockTenantQuotaEnforcer, _mockLogger);
-        }
+        var response = result.Value as ApiResponse<MetricsSnapshot>;
+        Assert.NotNull(response);
+        Assert.True(response.IsSuccess);
+        Assert.NotNull(response.Data);
+        Assert.Equal(1, response.Data.TotalRequests);
+        Assert.Equal(1, response.Data.TotalBackups);
+        Assert.Equal(1024, response.Data.TotalBackupBytes);
+    }
 
-        [Fact]
-        /// <summary>
-        /// Tests that GetMetricsDashboard returns an OkObjectResult with a metrics snapshot
-        /// when metrics have been recorded.
-        /// </summary>
-        public void GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot()
-        {
-            _mockLogger.LogInformation("GetMetricsDashboard_ReturnsOkResult_WithMetricsSnapshot started");
+    [Fact]
+    /// <summary>
+    /// Tests that GetMetricsDashboard returns an OkObjectResult with an empty metrics snapshot
+    /// when no metrics have been recorded.
+    /// </summary>
+    public void GetMetricsDashboard_ReturnsEmptySnapshot_WhenNoMetricsRecorded()
+    {
+        _mockLogger.LogInformation("GetMetricsDashboard_ReturnsEmptySnapshot_WhenNoMetricsRecorded started");
 
-            // Arrange
-            _mockMetricsService.RecordRequest("/api/test", 150, 200);
-            _mockMetricsService.RecordBackup(1024, 500, true);
+        // Act
+        var result = _controller.GetMetricsDashboard() as OkObjectResult;
 
-            // Act
-            var result = _controller.GetMetricsDashboard() as OkObjectResult;
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(200, result.StatusCode);
 
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(200, result.StatusCode);
-
-            var response = result.Value as ApiResponse<MetricsSnapshot>;
-            Assert.NotNull(response);
-            Assert.True(response.IsSuccess);
-            Assert.NotNull(response.Data);
-            Assert.Equal(1, response.Data.TotalRequests);
-            Assert.Equal(1, response.Data.TotalBackups);
-            Assert.Equal(1024, response.Data.TotalBackupBytes);
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that GetMetricsDashboard returns an OkObjectResult with an empty metrics snapshot
-        /// when no metrics have been recorded.
-        /// </summary>
-        public void GetMetricsDashboard_ReturnsEmptySnapshot_WhenNoMetricsRecorded()
-        {
-            _mockLogger.LogInformation("GetMetricsDashboard_ReturnsEmptySnapshot_WhenNoMetricsRecorded started");
-
-            // Act
-            var result = _controller.GetMetricsDashboard() as OkObjectResult;
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(200, result.StatusCode);
-
-            var response = result.Value as ApiResponse<MetricsSnapshot>;
-            Assert.NotNull(response);
-            Assert.True(response.IsSuccess);
-            Assert.NotNull(response.Data);
-            Assert.Equal(0, response.Data.TotalRequests);
-        }
+        var response = result.Value as ApiResponse<MetricsSnapshot>;
+        Assert.NotNull(response);
+        Assert.True(response.IsSuccess);
+        Assert.NotNull(response.Data);
+        Assert.Equal(0, response.Data.TotalRequests);
     }
 }

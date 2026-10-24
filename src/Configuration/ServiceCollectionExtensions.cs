@@ -4,6 +4,7 @@
 // CTO & Software Architect
 // ===========================================================================
 
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -17,8 +18,6 @@ using SqliteMultiTenant.Monitoring;
 using SqliteMultiTenant.Operations;
 using SqliteMultiTenant.Utilities;
 using SqliteMultiTenant.Validation;
-
-using System.Diagnostics.CodeAnalysis;
 
 namespace SqliteMultiTenant.Configuration;
 

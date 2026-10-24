@@ -16,329 +16,329 @@ using NSubstitute;
 using SqliteMultiTenant.Database;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+/// <summary>
+/// Integration tests for <see cref="ConnectionPoolManager"/> that verify connection pooling behavior
+/// with actual SQLite connections in a multi-tenant environment.
+/// </summary>
+public sealed class ConnectionPoolManagerIntegrationTests : IAsyncDisposable
 {
     /// <summary>
-    /// Integration tests for <see cref="ConnectionPoolManager"/> that verify connection pooling behavior
-    /// with actual SQLite connections in a multi-tenant environment.
+    /// Mock logger for testing connection pool manager operations.
     /// </summary>
-    public sealed class ConnectionPoolManagerIntegrationTests : IAsyncDisposable {
-        /// <summary>
-        /// Mock logger for testing connection pool manager operations.
-        /// </summary>
-        private readonly ILogger<ConnectionPoolManager> _mockLogger;
+    private readonly ILogger<ConnectionPoolManager> _mockLogger;
 
-        /// <summary>
-        /// Connection pool configuration options used for testing.
-        /// </summary>
-        private ConnectionPoolOptions _options;
+    /// <summary>
+    /// Connection pool configuration options used for testing.
+    /// </summary>
+    private ConnectionPoolOptions _options;
 
-        /// <summary>
-        /// The connection pool manager instance being tested.
-        /// </summary>
-        private IConnectionPoolManager _connectionPoolManager;
+    /// <summary>
+    /// The connection pool manager instance being tested.
+    /// </summary>
+    private IConnectionPoolManager _connectionPoolManager;
 
-        /// <summary>
-        /// First test tenant identifier used throughout the integration tests.
-        /// </summary>
-        private const string TenantId1 = "tenant1";
+    /// <summary>
+    /// First test tenant identifier used throughout the integration tests.
+    /// </summary>
+    private const string TenantId1 = "tenant1";
 
-        /// <summary>
-        /// Connection string for the first test tenant using in-memory SQLite database.
-        /// </summary>
-        private const string ConnectionString1 = "Data Source=:memory:connectionpoolmanager1;Mode=Memory;Cache=Shared";
+    /// <summary>
+    /// Connection string for the first test tenant using in-memory SQLite database.
+    /// </summary>
+    private const string ConnectionString1 = "Data Source=:memory:connectionpoolmanager1;Mode=Memory;Cache=Shared";
 
-        /// <summary>
-        /// Second test tenant identifier used throughout the integration tests.
-        /// </summary>
-        private const string TenantId2 = "tenant2";
+    /// <summary>
+    /// Second test tenant identifier used throughout the integration tests.
+    /// </summary>
+    private const string TenantId2 = "tenant2";
 
-        /// <summary>
-        /// Connection string for the second test tenant using in-memory SQLite database.
-        /// </summary>
-        private const string ConnectionString2 = "Data Source=:memory:connectionpoolmanager2;Mode=Memory;Cache=Shared";
+    /// <summary>
+    /// Connection string for the second test tenant using in-memory SQLite database.
+    /// </summary>
+    private const string ConnectionString2 = "Data Source=:memory:connectionpoolmanager2;Mode=Memory;Cache=Shared";
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConnectionPoolManagerIntegrationTests"/> class.
-        /// Sets up mock logger and connection pool configuration for testing.
-        /// </summary>
-        public ConnectionPoolManagerIntegrationTests()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConnectionPoolManagerIntegrationTests"/> class.
+    /// Sets up mock logger and connection pool configuration for testing.
+    /// </summary>
+    public ConnectionPoolManagerIntegrationTests()
+    {
+        _mockLogger = Substitute.For<ILogger<ConnectionPoolManager>>();
+        _options = new ConnectionPoolOptions
         {
-            _mockLogger = Substitute.For<ILogger<ConnectionPoolManager>>();
-            _options = new ConnectionPoolOptions
-            {
-                MaxPoolSize = 2,
-                MinPoolSize = 0,
-                AcquireTimeout = TimeSpan.FromSeconds(1),
-                IdleTimeout = TimeSpan.FromMilliseconds(100), // Short idle timeout for testing pruning
-                MaxConnectionLifetime = TimeSpan.FromSeconds(10), // Short lifetime for testing pruning
-                PruneInterval = TimeSpan.FromMilliseconds(50) // Short prune interval for testing
-            };
-            _connectionPoolManager = new ConnectionPoolManager(_options, _mockLogger);
-        }
+            MaxPoolSize = 2,
+            MinPoolSize = 0,
+            AcquireTimeout = TimeSpan.FromSeconds(1),
+            IdleTimeout = TimeSpan.FromMilliseconds(100), // Short idle timeout for testing pruning
+            MaxConnectionLifetime = TimeSpan.FromSeconds(10), // Short lifetime for testing pruning
+            PruneInterval = TimeSpan.FromMilliseconds(50) // Short prune interval for testing
+        };
+        _connectionPoolManager = new ConnectionPoolManager(_options, _mockLogger);
+    }
 
-        [Fact]
-        /// <summary>
-        /// Tests that acquiring a connection returns an open and usable SQLite connection.
-        /// Verifies that the connection pool manager correctly opens new connections.
-        /// </summary>
-        public async Task AcquireAsync_ShouldReturnOpenConnection()
+    [Fact]
+    /// <summary>
+    /// Tests that acquiring a connection returns an open and usable SQLite connection.
+    /// Verifies that the connection pool manager correctly opens new connections.
+    /// </summary>
+    public async Task AcquireAsync_ShouldReturnOpenConnection()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldReturnOpenConnection));
+        // Act
+        var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        // Assert
+        connection.Should().NotBeNull();
+        connection.State.Should().Be(System.Data.ConnectionState.Open);
+
+        // Cleanup
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldReturnOpenConnection));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that connections are reused from the pool when available.
+    /// Verifies that the connection pool manager correctly returns connections to the pool
+    /// and reuses them on subsequent acquisitions.
+    /// </summary>
+    public async Task AcquireAsync_ShouldReuseConnection_WhenAvailable()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldReuseConnection_WhenAvailable));
+        // Arrange
+        var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection1);
+
+        // Act
+        var connection2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        // Assert
+        connection2.Should().Be(connection1);
+        connection2.State.Should().Be(System.Data.ConnectionState.Open);
+
+        // Cleanup
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection2);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldReuseConnection_WhenAvailable));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that new connections are created when the pool is not yet full.
+    /// Verifies that the connection pool manager creates new connections up to MaxPoolSize.
+    /// </summary>
+    public async Task AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull));
+        // Arrange
+        var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        // Act
+        var connection2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        // Assert
+        connection2.Should().NotBeNull();
+        connection2.Should().NotBe(connection1); // Should be a new connection
+        connection2.State.Should().Be(System.Data.ConnectionState.Open);
+
+        // Cleanup
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection1);
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection2);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that releasing a connection returns it to the pool.
+    /// Verifies that the connection pool manager correctly tracks available connections
+    /// after releasing.
+    /// </summary>
+    public async Task ReleaseAsync_ShouldReturnConnectionToPool()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(ReleaseAsync_ShouldReturnConnectionToPool));
+        // Arrange
+        var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+        var statsBefore = _connectionPoolManager.GetStatistics();
+        statsBefore[TenantId1].Available.Should().Be(0);
+
+        // Act
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
+
+        // Assert
+        var statsAfter = _connectionPoolManager.GetStatistics();
+        statsAfter[TenantId1].Available.Should().Be(1);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(ReleaseAsync_ShouldReturnConnectionToPool));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that evicting a tenant removes its pool and disposes connections.
+    /// Verifies that the connection pool manager properly cleans up tenant-specific resources
+    /// and marks connections as disposed.
+    /// </summary>
+    public async Task EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections));
+        // Arrange
+        var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+        await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
+        _connectionPoolManager.GetStatistics().Should().ContainKey(TenantId1);
+
+        // Act
+        await _connectionPoolManager.EvictTenantAsync(TenantId1);
+
+        // Assert
+        _connectionPoolManager.GetStatistics().Should().NotContainKey(TenantId1);
+        // System.Data.SQLite fully disposes the native handle on Dispose(), so the
+        // connection object itself becomes unusable afterwards (State access throws)
+        // rather than reporting ConnectionState.Closed like some other ADO.NET providers.
+        this.Invoking(_ => connection.State)
+            .Should().Throw<ObjectDisposedException>();
+        _mockLogger.AssertLogged(LogLevel.Information, 1, "Connection pool evicted for tenant {TenantId}", TenantId1);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that statistics are correctly returned for all tenants.
+    /// Verifies that the connection pool manager accurately tracks connection counts,
+    /// available connections, and waiting connections per tenant.
+    /// </summary>
+    public async Task GetStatistics_ShouldReturnCorrectStats()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(GetStatistics_ShouldReturnCorrectStats));
+        // Arrange
+        var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+        var conn2 = await _connectionPoolManager.AcquireAsync(TenantId2, ConnectionString2);
+        await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
+
+        // Act
+        var stats = _connectionPoolManager.GetStatistics();
+
+        // Assert
+        stats.Should().ContainKey(TenantId1);
+        stats[TenantId1].Available.Should().Be(1);
+        stats[TenantId1].Total.Should().Be(1);
+        stats[TenantId1].Waiting.Should().Be(0);
+
+        stats.Should().ContainKey(TenantId2);
+        stats[TenantId2].Available.Should().Be(0);
+        stats[TenantId2].Total.Should().Be(1);
+        stats[TenantId2].Waiting.Should().Be(0);
+
+        // Cleanup
+        await _connectionPoolManager.ReleaseAsync(TenantId2, conn2);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(GetStatistics_ShouldReturnCorrectStats));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that acquiring a connection throws TimeoutException when pool is exhausted.
+    /// Verifies that the connection pool manager properly enforces MaxPoolSize limits
+    /// and provides helpful error messages.
+    /// </summary>
+    public async Task AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted));
+        // Arrange - MaxPoolSize is 2
+        var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+        var conn2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        // Act
+        Func<Task> act = async () => await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        // Assert
+        await act.Should().ThrowAsync<TimeoutException>()
+            .WithMessage("No connection became available within 1s. Consider increasing MaxPoolSize (current: 2).");
+
+        // Cleanup
+        await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
+        await _connectionPoolManager.ReleaseAsync(TenantId1, conn2);
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that acquiring a connection throws ArgumentException when tenantId is empty.
+    /// Verifies that the connection pool manager validates input parameters.
+    /// </summary>
+    public async Task AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty));
+        // Arrange
+        string tenantId = "";
+
+        // Act
+        Func<Task> act = async () => await _connectionPoolManager.AcquireAsync(tenantId, ConnectionString1);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("The value cannot be an empty string. (Parameter 'tenantId')");
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that acquiring a connection throws ArgumentException when connectionString is empty.
+    /// Verifies that the connection pool manager validates input parameters.
+    /// </summary>
+    public async Task AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty));
+        // Arrange
+        string connectionString = "";
+
+        // Act
+        Func<Task> act = async () => await _connectionPoolManager.AcquireAsync(TenantId1, connectionString);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("The value cannot be an empty string. (Parameter 'connectionString')");
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty));
+    }
+
+    [Fact]
+    /// <summary>
+    /// Tests that idle connections are pruned and disposed after timeout.
+    /// Verifies that the connection pool manager automatically cleans up idle connections
+    /// based on IdleTimeout configuration.
+    /// </summary>
+    public async Task PruneIdle_ShouldDisposeIdleConnections()
+    {
+        _mockLogger.LogInformation("Entering {MethodName}", nameof(PruneIdle_ShouldDisposeIdleConnections));
+        // Arrange
+        _options.IdleTimeout = TimeSpan.FromMilliseconds(50); // Set a short idle timeout
+        _connectionPoolManager = new ConnectionPoolManager(_options, _mockLogger); // Re-initialize with new options
+
+        var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+        var conn2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
+
+        await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
+        await _connectionPoolManager.ReleaseAsync(TenantId1, conn2);
+
+        // Connections are now idle. Wait for more than IdleTimeout + PruneInterval
+        await Task.Delay(TimeSpan.FromMilliseconds(_options.IdleTimeout.TotalMilliseconds + _options.PruneInterval.TotalMilliseconds + 50));
+
+        // Act: Pruning happens in background, so just check state after delay
+        var stats = _connectionPoolManager.GetStatistics();
+
+        // Assert
+        stats[TenantId1].Total.Should().Be(0);
+        stats[TenantId1].Available.Should().Be(0);
+        _mockLogger.AssertLoggedContains(LogLevel.Debug, 1, "Pruned 2 idle connection(s) from tenant pool");
+        _mockLogger.LogInformation("Exiting {MethodName}", nameof(PruneIdle_ShouldDisposeIdleConnections));
+    }
+
+    /// <summary>
+    /// Disposes the connection pool manager and cleans up resources.
+    /// </summary>
+    /// <returns>A ValueTask representing the asynchronous disposal operation.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        if (_connectionPoolManager is not null)
         {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldReturnOpenConnection));
-            // Act
-            var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            // Assert
-            connection.Should().NotBeNull();
-            connection.State.Should().Be(System.Data.ConnectionState.Open);
-
-            // Cleanup
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldReturnOpenConnection));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that connections are reused from the pool when available.
-        /// Verifies that the connection pool manager correctly returns connections to the pool
-        /// and reuses them on subsequent acquisitions.
-        /// </summary>
-        public async Task AcquireAsync_ShouldReuseConnection_WhenAvailable()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldReuseConnection_WhenAvailable));
-            // Arrange
-            var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection1);
-
-            // Act
-            var connection2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            // Assert
-            connection2.Should().Be(connection1);
-            connection2.State.Should().Be(System.Data.ConnectionState.Open);
-
-            // Cleanup
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection2);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldReuseConnection_WhenAvailable));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that new connections are created when the pool is not yet full.
-        /// Verifies that the connection pool manager creates new connections up to MaxPoolSize.
-        /// </summary>
-        public async Task AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull));
-            // Arrange
-            var connection1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            // Act
-            var connection2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            // Assert
-            connection2.Should().NotBeNull();
-            connection2.Should().NotBe(connection1); // Should be a new connection
-            connection2.State.Should().Be(System.Data.ConnectionState.Open);
-
-            // Cleanup
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection1);
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection2);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldCreateNewConnection_WhenPoolNotFull));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that releasing a connection returns it to the pool.
-        /// Verifies that the connection pool manager correctly tracks available connections
-        /// after releasing.
-        /// </summary>
-        public async Task ReleaseAsync_ShouldReturnConnectionToPool()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(ReleaseAsync_ShouldReturnConnectionToPool));
-            // Arrange
-            var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            var statsBefore = _connectionPoolManager.GetStatistics();
-            statsBefore[TenantId1].Available.Should().Be(0);
-
-            // Act
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
-
-            // Assert
-            var statsAfter = _connectionPoolManager.GetStatistics();
-            statsAfter[TenantId1].Available.Should().Be(1);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(ReleaseAsync_ShouldReturnConnectionToPool));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that evicting a tenant removes its pool and disposes connections.
-        /// Verifies that the connection pool manager properly cleans up tenant-specific resources
-        /// and marks connections as disposed.
-        /// </summary>
-        public async Task EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections));
-            // Arrange
-            var connection = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            await _connectionPoolManager.ReleaseAsync(TenantId1, connection);
-            _connectionPoolManager.GetStatistics().Should().ContainKey(TenantId1);
-
-            // Act
-            await _connectionPoolManager.EvictTenantAsync(TenantId1);
-
-            // Assert
-            _connectionPoolManager.GetStatistics().Should().NotContainKey(TenantId1);
-            // System.Data.SQLite fully disposes the native handle on Dispose(), so the
-            // connection object itself becomes unusable afterwards (State access throws)
-            // rather than reporting ConnectionState.Closed like some other ADO.NET providers.
-            this.Invoking(_ => connection.State)
-                .Should().Throw<ObjectDisposedException>();
-            _mockLogger.AssertLogged(LogLevel.Information, 1, "Connection pool evicted for tenant {TenantId}", TenantId1);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(EvictTenantAsync_ShouldRemoveTenantPoolAndDisposeConnections));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that statistics are correctly returned for all tenants.
-        /// Verifies that the connection pool manager accurately tracks connection counts,
-        /// available connections, and waiting connections per tenant.
-        /// </summary>
-        public async Task GetStatistics_ShouldReturnCorrectStats()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(GetStatistics_ShouldReturnCorrectStats));
-            // Arrange
-            var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            var conn2 = await _connectionPoolManager.AcquireAsync(TenantId2, ConnectionString2);
-            await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
-
-            // Act
-            var stats = _connectionPoolManager.GetStatistics();
-
-            // Assert
-            stats.Should().ContainKey(TenantId1);
-            stats[TenantId1].Available.Should().Be(1);
-            stats[TenantId1].Total.Should().Be(1);
-            stats[TenantId1].Waiting.Should().Be(0);
-
-            stats.Should().ContainKey(TenantId2);
-            stats[TenantId2].Available.Should().Be(0);
-            stats[TenantId2].Total.Should().Be(1);
-            stats[TenantId2].Waiting.Should().Be(0);
-
-            // Cleanup
-            await _connectionPoolManager.ReleaseAsync(TenantId2, conn2);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(GetStatistics_ShouldReturnCorrectStats));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that acquiring a connection throws TimeoutException when pool is exhausted.
-        /// Verifies that the connection pool manager properly enforces MaxPoolSize limits
-        /// and provides helpful error messages.
-        /// </summary>
-        public async Task AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted));
-            // Arrange - MaxPoolSize is 2
-            var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            var conn2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            // Act
-            Func<Task> act = async () => await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            // Assert
-            await act.Should().ThrowAsync<TimeoutException>()
-                .WithMessage("No connection became available within 1s. Consider increasing MaxPoolSize (current: 2).");
-
-            // Cleanup
-            await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
-            await _connectionPoolManager.ReleaseAsync(TenantId1, conn2);
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowTimeoutException_WhenPoolIsExhausted));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that acquiring a connection throws ArgumentException when tenantId is empty.
-        /// Verifies that the connection pool manager validates input parameters.
-        /// </summary>
-        public async Task AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty));
-            // Arrange
-            string tenantId = "";
-
-            // Act
-            Func<Task> act = async () => await _connectionPoolManager.AcquireAsync(tenantId, ConnectionString1);
-
-            // Assert
-            await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("The value cannot be an empty string. (Parameter 'tenantId')");
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenTenantIdIsEmpty));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that acquiring a connection throws ArgumentException when connectionString is empty.
-        /// Verifies that the connection pool manager validates input parameters.
-        /// </summary>
-        public async Task AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty));
-            // Arrange
-            string connectionString = "";
-
-            // Act
-            Func<Task> act = async () => await _connectionPoolManager.AcquireAsync(TenantId1, connectionString);
-
-            // Assert
-            await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("The value cannot be an empty string. (Parameter 'connectionString')");
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(AcquireAsync_ShouldThrowArgumentException_WhenConnectionStringIsEmpty));
-        }
-
-        [Fact]
-        /// <summary>
-        /// Tests that idle connections are pruned and disposed after timeout.
-        /// Verifies that the connection pool manager automatically cleans up idle connections
-        /// based on IdleTimeout configuration.
-        /// </summary>
-        public async Task PruneIdle_ShouldDisposeIdleConnections()
-        {
-            _mockLogger.LogInformation("Entering {MethodName}", nameof(PruneIdle_ShouldDisposeIdleConnections));
-            // Arrange
-            _options.IdleTimeout = TimeSpan.FromMilliseconds(50); // Set a short idle timeout
-            _connectionPoolManager = new ConnectionPoolManager(_options, _mockLogger); // Re-initialize with new options
-
-            var conn1 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-            var conn2 = await _connectionPoolManager.AcquireAsync(TenantId1, ConnectionString1);
-
-            await _connectionPoolManager.ReleaseAsync(TenantId1, conn1);
-            await _connectionPoolManager.ReleaseAsync(TenantId1, conn2);
-
-            // Connections are now idle. Wait for more than IdleTimeout + PruneInterval
-            await Task.Delay(TimeSpan.FromMilliseconds(_options.IdleTimeout.TotalMilliseconds + _options.PruneInterval.TotalMilliseconds + 50));
-
-            // Act: Pruning happens in background, so just check state after delay
-            var stats = _connectionPoolManager.GetStatistics();
-
-            // Assert
-            stats[TenantId1].Total.Should().Be(0);
-            stats[TenantId1].Available.Should().Be(0);
-            _mockLogger.AssertLoggedContains(LogLevel.Debug, 1, "Pruned 2 idle connection(s) from tenant pool");
-            _mockLogger.LogInformation("Exiting {MethodName}", nameof(PruneIdle_ShouldDisposeIdleConnections));
-        }
-
-        /// <summary>
-        /// Disposes the connection pool manager and cleans up resources.
-        /// </summary>
-        /// <returns>A ValueTask representing the asynchronous disposal operation.</returns>
-        public async ValueTask DisposeAsync()
-        {
-            if (_connectionPoolManager is not null)
-            {
-                await _connectionPoolManager.DisposeAsync();
-            }
+            await _connectionPoolManager.DisposeAsync();
         }
     }
 }

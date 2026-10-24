@@ -29,7 +29,9 @@ public static class StringExtensions
         ArgumentNullException.ThrowIfNull(value);
 
         if (string.IsNullOrWhiteSpace(value))
+        {
             return string.Empty;
+        }
 
         // Convert to lowercase and replace non-alphanumeric with underscore
         var safe = Regex.Replace(value.ToLowerInvariant(), @"[^a-z0-9]+", "_");
@@ -39,7 +41,9 @@ public static class StringExtensions
 
         // Ensure it doesn't start with a number (invalid in SQL)
         if (safe.Length > 0 && char.IsDigit(safe[0]))
+        {
             safe = "_" + safe;
+        }
 
         return safe;
     }
@@ -59,11 +63,15 @@ public static class StringExtensions
         ArgumentOutOfRangeException.ThrowIfNegative(maxLength);
 
         if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+        {
             return value;
+        }
 
         var truncated = value[..maxLength];
         if (addEllipsis)
+        {
             truncated = truncated[..Math.Max(0, maxLength - 3)] + "...";
+        }
 
         return truncated;
     }
@@ -77,11 +85,15 @@ public static class StringExtensions
     public static bool IsValidTenantIdentifier(this string value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return false;
+        }
 
         // Check for UUID format
         if (Guid.TryParse(value, out _))
+        {
             return true;
+        }
 
         // Check for slug format (alphanumeric + hyphen)
         return Regex.IsMatch(value, @"^[a-z0-9\-]+$", RegexOptions.IgnoreCase) && value.Length <= 100;
@@ -99,10 +111,14 @@ public static class StringExtensions
     public static T ToEnum<T>(this string value, T defaultValue) where T : struct, Enum
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return defaultValue;
+        }
 
         if (Enum.TryParse<T>(value, ignoreCase: true, out var result))
+        {
             return result;
+        }
 
         return defaultValue;
     }
@@ -117,25 +133,46 @@ public static class StringExtensions
     public static string EscapeForJson(this string value)
     {
         if (string.IsNullOrEmpty(value))
+        {
             return value;
+        }
 
         var sb = new StringBuilder();
         foreach (var c in value)
         {
             switch (c)
             {
-                case '"': sb.Append("\\\""); break;
-                case '\\': sb.Append("\\\\"); break;
-                case '\b': sb.Append("\\b"); break;
-                case '\f': sb.Append("\\f"); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case '\t': sb.Append("\\t"); break;
+                case '"':
+                    sb.Append("\\\"");
+                    break;
+                case '\\':
+                    sb.Append("\\\\");
+                    break;
+                case '\b':
+                    sb.Append("\\b");
+                    break;
+                case '\f':
+                    sb.Append("\\f");
+                    break;
+                case '\n':
+                    sb.Append("\\n");
+                    break;
+                case '\r':
+                    sb.Append("\\r");
+                    break;
+                case '\t':
+                    sb.Append("\\t");
+                    break;
                 default:
                     if (char.IsControl(c))
+                    {
                         sb.Append($"\\u{(int)c:X4}");
+                    }
                     else
+                    {
                         sb.Append(c);
+                    }
+
                     break;
             }
         }
@@ -166,7 +203,9 @@ public static class StringExtensions
     public static string NormalizeWhitespace(this string value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return string.Empty;
+        }
 
         return Regex.Replace(value.Trim(), @"\s+", " ");
     }
@@ -180,11 +219,15 @@ public static class StringExtensions
     public static bool IsValidFilePath(this string value)
     {
         if (string.IsNullOrWhiteSpace(value))
+        {
             return false;
+        }
 
         // Reject paths containing directory traversal
         if (value.Contains("..") || value.Contains("//"))
+        {
             return false;
+        }
 
         // Only allow alphanumeric, slashes, dots, hyphens
         return Regex.IsMatch(value, @"^[a-zA-Z0-9._\-\/:]+$");
@@ -198,7 +241,9 @@ public static class StringExtensions
     public static string Reverse(this string value)
     {
         if (string.IsNullOrEmpty(value))
+        {
             return value;
+        }
 
         var chars = value.ToCharArray();
         Array.Reverse(chars);

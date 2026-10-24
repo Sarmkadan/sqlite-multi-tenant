@@ -141,7 +141,11 @@ public sealed record TenantSizeReportRecord : IComparable<TenantSizeReportRecord
     /// </summary>
     public int CompareTo(TenantSizeReportRecord? other)
     {
-        if (other == null) return 1;
+        if (other == null)
+        {
+            return 1;
+        }
+
         return other.TotalSizeBytes.CompareTo(TotalSizeBytes);
     }
 

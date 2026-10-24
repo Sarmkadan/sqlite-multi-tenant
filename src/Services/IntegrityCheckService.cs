@@ -47,14 +47,20 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
+        {
             throw new TenantNotFoundException(tenantId);
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
+        }
 
         return await CheckDatabaseIntegrityAsync(tenant, cancellationToken);
     }
@@ -72,7 +78,9 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         CancellationToken cancellationToken = default)
     {
         if (tenantIds is null)
+        {
             throw new ArgumentNullException(nameof(tenantIds));
+        }
 
         var tenantList = tenantIds.ToList();
         _logger.LogInformation("Starting integrity checks for {Count} tenants with parallelism {Parallelism}",
@@ -189,10 +197,14 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
         CancellationToken cancellationToken)
     {
         if (tenant is null)
+        {
             throw new ArgumentNullException(nameof(tenant));
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenant.TenantId} database file not found");
+        }
 
         await using var connection = new SQLiteConnection($"Data Source={tenant.DatabasePath};");
         await connection.OpenAsync(cancellationToken);
@@ -293,7 +305,9 @@ public sealed class IntegrityCheckService : IIntegrityCheckService
             foreach (var tenantId in tenantIds)
             {
                 if (cancellationToken.IsCancellationRequested)
+                {
                     break;
+                }
 
                 try
                 {

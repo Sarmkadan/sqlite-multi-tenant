@@ -32,7 +32,8 @@ public abstract class DomainEvent
 /// Event raised when a new tenant is created.
 /// Triggers downstream actions (database setup, webhook notifications).
 /// </summary>
-public sealed class TenantCreatedEvent : DomainEvent {
+public sealed class TenantCreatedEvent : DomainEvent
+{
     /// <summary>Gets or sets the tenant identifier.</summary>
     public string TenantId { get; set; }
     /// <summary>Gets or sets the tenant name.</summary>
@@ -49,7 +50,8 @@ public sealed class TenantCreatedEvent : DomainEvent {
 /// Event raised when tenant is updated.
 /// Useful for notification systems and audit trails.
 /// </summary>
-public sealed class TenantUpdatedEvent : DomainEvent {
+public sealed class TenantUpdatedEvent : DomainEvent
+{
     /// <summary>Gets or sets the tenant identifier.</summary>
     public string TenantId { get; set; }
     /// <summary>Gets or sets the old name.</summary>
@@ -66,7 +68,8 @@ public sealed class TenantUpdatedEvent : DomainEvent {
 /// Event raised when tenant is suspended.
 /// Triggers access cleanup and webhook notifications.
 /// </summary>
-public sealed class TenantSuspendedEvent : DomainEvent {
+public sealed class TenantSuspendedEvent : DomainEvent
+{
     /// <summary>Gets or sets the tenant identifier.</summary>
     public string TenantId { get; set; }
     /// <summary>Gets or sets the user who suspended the tenant.</summary>
@@ -83,7 +86,8 @@ public sealed class TenantSuspendedEvent : DomainEvent {
 /// Event raised when backup starts.
 /// Used for monitoring and webhook notifications.
 /// </summary>
-public sealed class BackupStartedEvent : DomainEvent {
+public sealed class BackupStartedEvent : DomainEvent
+{
     /// <summary>Gets or sets the backup identifier.</summary>
     public string BackupId { get; set; }
     /// <summary>Gets or sets the database identifier.</summary>
@@ -100,7 +104,8 @@ public sealed class BackupStartedEvent : DomainEvent {
 /// Event raised when backup completes successfully.
 /// Triggers verification and retention policy checks.
 /// </summary>
-public sealed class BackupCompletedEvent : DomainEvent {
+public sealed class BackupCompletedEvent : DomainEvent
+{
     /// <summary>Gets or sets the backup identifier.</summary>
     public string BackupId { get; set; }
     /// <summary>Gets or sets the database identifier.</summary>
@@ -119,7 +124,8 @@ public sealed class BackupCompletedEvent : DomainEvent {
 /// Event raised when backup fails.
 /// Triggers alerts and retry mechanisms.
 /// </summary>
-public sealed class BackupFailedEvent : DomainEvent {
+public sealed class BackupFailedEvent : DomainEvent
+{
     /// <summary>Gets or sets the backup identifier.</summary>
     public string BackupId { get; set; }
     /// <summary>Gets or sets the database identifier.</summary>
@@ -136,7 +142,8 @@ public sealed class BackupFailedEvent : DomainEvent {
 /// Event raised when migration is applied.
 /// Tracks schema evolution and enables rollback tracking.
 /// </summary>
-public sealed class MigrationAppliedEvent : DomainEvent {
+public sealed class MigrationAppliedEvent : DomainEvent
+{
     /// <summary>Gets or sets the migration identifier.</summary>
     public string MigrationId { get; set; }
     /// <summary>Gets or sets the database identifier.</summary>
@@ -155,7 +162,8 @@ public sealed class MigrationAppliedEvent : DomainEvent {
 /// Event raised when migration application fails.
 /// Enables recovery procedures and notifications.
 /// </summary>
-public sealed class MigrationFailedEvent : DomainEvent {
+public sealed class MigrationFailedEvent : DomainEvent
+{
     /// <summary>Gets or sets the migration identifier.</summary>
     public string MigrationId { get; set; }
     /// <summary>Gets or sets the database identifier.</summary>
@@ -174,7 +182,8 @@ public sealed class MigrationFailedEvent : DomainEvent {
 /// Event raised when migration is rolled back.
 /// Important for audit and compliance tracking.
 /// </summary>
-public sealed class MigrationRolledBackEvent : DomainEvent {
+public sealed class MigrationRolledBackEvent : DomainEvent
+{
     /// <summary>Gets or sets the migration identifier.</summary>
     public string MigrationId { get; set; }
     /// <summary>Gets or sets the database identifier.</summary>
@@ -211,7 +220,8 @@ public sealed class TenantClonedEvent : DomainEvent
 /// Event raised when health check fails.
 /// Enables alerting and incident response.
 /// </summary>
-public sealed class HealthCheckFailedEvent : DomainEvent {
+public sealed class HealthCheckFailedEvent : DomainEvent
+{
     /// <summary>Gets or sets the component name.</summary>
     public string ComponentName { get; set; }
     /// <summary>Gets or sets the error message.</summary>
@@ -228,7 +238,8 @@ public sealed class HealthCheckFailedEvent : DomainEvent {
 /// Generic event for custom domain events.
 /// Allows extensibility without modifying this class.
 /// </summary>
-public sealed class CustomDomainEvent : DomainEvent {
+public sealed class CustomDomainEvent : DomainEvent
+{
     /// <summary>Gets or sets the custom event data.</summary>
     public Dictionary<string, object> Data { get; set; } = new();
 

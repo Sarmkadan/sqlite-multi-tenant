@@ -1,6 +1,6 @@
 using System;
-using System.ComponentModel;
 using System.Collections.Generic;
+using System.ComponentModel;
 using FluentAssertions;
 using SqliteMultiTenant.Utilities;
 using Xunit;

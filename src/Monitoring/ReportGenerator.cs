@@ -10,228 +10,228 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace SqliteMultiTenant.Monitoring
+namespace SqliteMultiTenant.Monitoring;
+
+/// <summary>
+/// Generates comprehensive reports for system monitoring and analysis.
+/// </summary>
+public sealed class ReportGenerator
 {
+    private readonly ILogger<ReportGenerator> _logger;
+
     /// <summary>
-    /// Generates comprehensive reports for system monitoring and analysis.
+    /// Initializes a new instance of the <see cref="ReportGenerator"/> class.
     /// </summary>
-    public sealed class ReportGenerator {
-        private readonly ILogger<ReportGenerator> _logger;
+    /// <param name="logger">The logger instance.</param>
+    public ReportGenerator(ILogger<ReportGenerator> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ReportGenerator"/> class.
-        /// </summary>
-        /// <param name="logger">The logger instance.</param>
-        public ReportGenerator(ILogger<ReportGenerator> logger)
+    /// <summary>
+    /// Generates a system health report.
+    /// </summary>
+    /// <param name="health">The system health summary.</param>
+    /// <param name="operationStats">The operation statistics.</param>
+    /// <returns>A system health report.</returns>
+    public string GenerateHealthReport(SystemHealthSummary health,
+        Dictionary<string, OperationStatistics> operationStats)
+    {
+        _logger.LogInformation("GenerateHealthReport called. Uptime: {UptimeSeconds}s, TotalOperations: {TotalOperations}, SuccessRate: {SuccessRate:P2}, OperationTypes: {OperationTypes}",
+            health.UptimeSeconds, health.TotalOperations, health.SuccessRate, health.OperationTypes);
+        var report = new StringBuilder();
+
+        report.AppendLine("=== SYSTEM HEALTH REPORT ===");
+        report.AppendLine($"Generated: {DateTime.UtcNow:O}");
+        report.AppendLine();
+
+        report.AppendLine("=== UPTIME & OPERATIONS ===");
+        report.AppendLine($"System Uptime: {TimeSpan.FromSeconds(health.UptimeSeconds):hh\\:mm\\:ss}");
+        report.AppendLine($"Total Operations: {health.TotalOperations}");
+        report.AppendLine($"Success Rate: {health.SuccessRate:P2}");
+        report.AppendLine($"Operation Types: {health.OperationTypes}");
+        report.AppendLine();
+
+        report.AppendLine("=== LATENCY METRICS ===");
+        report.AppendLine($"Average Latency: {health.AverageLatencyMs}ms");
+        report.AppendLine($"P95 Latency: {health.P95LatencyMs}ms");
+        report.AppendLine($"P99 Latency: {health.P99LatencyMs}ms");
+        report.AppendLine();
+
+        report.AppendLine("=== TOP OPERATIONS ===");
+        var topOps = operationStats.Values
+            .OrderByDescending(o => o.TotalExecutions)
+            .Take(10)
+            .ToList();
+
+        foreach (var op in topOps)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            report.AppendLine($"  {op.OperationName}:");
+            report.AppendLine($"    Executions: {op.TotalExecutions}");
+            report.AppendLine($"    Success Rate: {op.SuccessRate:P2}");
+            report.AppendLine($"    Avg Time: {op.AverageElapsedMs}ms");
+            report.AppendLine($"    Min/Max: {op.MinElapsedMs}ms / {op.MaxElapsedMs}ms");
         }
 
-        /// <summary>
-        /// Generates a system health report.
-        /// </summary>
-        /// <param name="health">The system health summary.</param>
-        /// <param name="operationStats">The operation statistics.</param>
-        /// <returns>A system health report.</returns>
-        public string GenerateHealthReport(SystemHealthSummary health,
-            Dictionary<string, OperationStatistics> operationStats)
+        report.AppendLine();
+        report.AppendLine("=== SLOWEST OPERATIONS ===");
+        var slowOps = operationStats.Values
+            .OrderByDescending(o => o.AverageElapsedMs)
+            .Take(5)
+            .ToList();
+
+        foreach (var op in slowOps)
         {
-            _logger.LogInformation("GenerateHealthReport called. Uptime: {UptimeSeconds}s, TotalOperations: {TotalOperations}, SuccessRate: {SuccessRate:P2}, OperationTypes: {OperationTypes}",
-                health.UptimeSeconds, health.TotalOperations, health.SuccessRate, health.OperationTypes);
-            var report = new StringBuilder();
+            report.AppendLine($"  {op.OperationName}: {op.AverageElapsedMs}ms avg");
+        }
 
-            report.AppendLine("=== SYSTEM HEALTH REPORT ===");
-            report.AppendLine($"Generated: {DateTime.UtcNow:O}");
-            report.AppendLine();
+        return report.ToString();
+    }
 
-            report.AppendLine("=== UPTIME & OPERATIONS ===");
-            report.AppendLine($"System Uptime: {TimeSpan.FromSeconds(health.UptimeSeconds):hh\\:mm\\:ss}");
-            report.AppendLine($"Total Operations: {health.TotalOperations}");
-            report.AppendLine($"Success Rate: {health.SuccessRate:P2}");
-            report.AppendLine($"Operation Types: {health.OperationTypes}");
-            report.AppendLine();
+    /// <summary>
+    /// Generates a performance report.
+    /// </summary>
+    /// <param name="metrics">The performance metrics.</param>
+    /// <returns>A performance report.</returns>
+    public string GeneratePerformanceReport(List<PerformanceMetric> metrics)
+    {
+        var report = new StringBuilder();
 
-            report.AppendLine("=== LATENCY METRICS ===");
-            report.AppendLine($"Average Latency: {health.AverageLatencyMs}ms");
-            report.AppendLine($"P95 Latency: {health.P95LatencyMs}ms");
-            report.AppendLine($"P99 Latency: {health.P99LatencyMs}ms");
-            report.AppendLine();
+        report.AppendLine("=== PERFORMANCE REPORT ===");
+        report.AppendLine($"Generated: {DateTime.UtcNow:O}");
+        report.AppendLine($"Total Metrics: {metrics.Count}");
+        report.AppendLine();
 
-            report.AppendLine("=== TOP OPERATIONS ===");
-            var topOps = operationStats.Values
-                .OrderByDescending(o => o.TotalExecutions)
-                .Take(10)
-                .ToList();
+        // Group by operation
+        var grouped = metrics.GroupBy(m => m.OperationName);
 
-            foreach (var op in topOps)
+        foreach (var group in grouped.OrderByDescending(g => g.Count()))
+        {
+            report.AppendLine($"Operation: {group.Key}");
+            report.AppendLine($"  Count: {group.Count()}");
+            report.AppendLine($"  Avg Time: {group.Average(m => m.ElapsedMilliseconds):F2}ms");
+            report.AppendLine($"  Min: {group.Min(m => m.ElapsedMilliseconds)}ms");
+            report.AppendLine($"  Max: {group.Max(m => m.ElapsedMilliseconds)}ms");
+
+            var failures = group.Count(m => !m.IsSuccess);
+            if (failures > 0)
             {
-                report.AppendLine($"  {op.OperationName}:");
-                report.AppendLine($"    Executions: {op.TotalExecutions}");
-                report.AppendLine($"    Success Rate: {op.SuccessRate:P2}");
-                report.AppendLine($"    Avg Time: {op.AverageElapsedMs}ms");
-                report.AppendLine($"    Min/Max: {op.MinElapsedMs}ms / {op.MaxElapsedMs}ms");
+                report.AppendLine($"  Failures: {failures}");
             }
-
-            report.AppendLine();
-            report.AppendLine("=== SLOWEST OPERATIONS ===");
-            var slowOps = operationStats.Values
-                .OrderByDescending(o => o.AverageElapsedMs)
-                .Take(5)
-                .ToList();
-
-            foreach (var op in slowOps)
-            {
-                report.AppendLine($"  {op.OperationName}: {op.AverageElapsedMs}ms avg");
-            }
-
-            return report.ToString();
         }
 
-        /// <summary>
-        /// Generates a performance report.
-        /// </summary>
-        /// <param name="metrics">The performance metrics.</param>
-        /// <returns>A performance report.</returns>
-        public string GeneratePerformanceReport(List<PerformanceMetric> metrics)
+        return report.ToString();
+    }
+
+    /// <summary>
+    /// Generates a tenant usage report.
+    /// </summary>
+    /// <param name="tenantMetrics">The tenant metrics.</param>
+    /// <returns>A tenant usage report.</returns>
+    public string GenerateTenantUsageReport(Dictionary<string, List<PerformanceMetric>> tenantMetrics)
+    {
+        var report = new StringBuilder();
+
+        report.AppendLine("=== TENANT USAGE REPORT ===");
+        report.AppendLine($"Generated: {DateTime.UtcNow:O}");
+        report.AppendLine($"Active Tenants: {tenantMetrics.Count}");
+        report.AppendLine();
+
+        foreach (var tenant in tenantMetrics.OrderByDescending(t => t.Value.Count))
         {
-            var report = new StringBuilder();
+            report.AppendLine($"Tenant: {tenant.Key}");
+            report.AppendLine($"  Operations: {tenant.Value.Count}");
+            report.AppendLine($"  Avg Latency: {tenant.Value.Average(m => m.ElapsedMilliseconds):F2}ms");
 
-            report.AppendLine("=== PERFORMANCE REPORT ===");
-            report.AppendLine($"Generated: {DateTime.UtcNow:O}");
-            report.AppendLine($"Total Metrics: {metrics.Count}");
-            report.AppendLine();
-
-            // Group by operation
-            var grouped = metrics.GroupBy(m => m.OperationName);
-
-            foreach (var group in grouped.OrderByDescending(g => g.Count()))
-            {
-                report.AppendLine($"Operation: {group.Key}");
-                report.AppendLine($"  Count: {group.Count()}");
-                report.AppendLine($"  Avg Time: {group.Average(m => m.ElapsedMilliseconds):F2}ms");
-                report.AppendLine($"  Min: {group.Min(m => m.ElapsedMilliseconds)}ms");
-                report.AppendLine($"  Max: {group.Max(m => m.ElapsedMilliseconds)}ms");
-
-                var failures = group.Count(m => !m.IsSuccess);
-                if (failures > 0)
-                {
-                    report.AppendLine($"  Failures: {failures}");
-                }
-            }
-
-            return report.ToString();
+            var failures = tenant.Value.Count(m => !m.IsSuccess);
+            var successRate = ((tenant.Value.Count - failures) / (double)tenant.Value.Count) * 100;
+            report.AppendLine($"  Success Rate: {successRate:P2}");
         }
 
-        /// <summary>
-        /// Generates a tenant usage report.
-        /// </summary>
-        /// <param name="tenantMetrics">The tenant metrics.</param>
-        /// <returns>A tenant usage report.</returns>
-        public string GenerateTenantUsageReport(Dictionary<string, List<PerformanceMetric>> tenantMetrics)
+        return report.ToString();
+    }
+
+    /// <summary>
+    /// Generates an error report.
+    /// </summary>
+    /// <param name="failedMetrics">The failed metrics.</param>
+    /// <returns>An error report.</returns>
+    public string GenerateErrorReport(List<PerformanceMetric> failedMetrics)
+    {
+        var report = new StringBuilder();
+
+        report.AppendLine("=== ERROR REPORT ===");
+        report.AppendLine($"Generated: {DateTime.UtcNow:O}");
+        report.AppendLine($"Total Failures: {failedMetrics.Count}");
+        report.AppendLine();
+
+        var byOperation = failedMetrics.GroupBy(m => m.OperationName);
+
+        foreach (var group in byOperation.OrderByDescending(g => g.Count()))
         {
-            var report = new StringBuilder();
+            report.AppendLine($"Operation: {group.Key}");
+            report.AppendLine($"  Failure Count: {group.Count()}");
 
-            report.AppendLine("=== TENANT USAGE REPORT ===");
-            report.AppendLine($"Generated: {DateTime.UtcNow:O}");
-            report.AppendLine($"Active Tenants: {tenantMetrics.Count}");
-            report.AppendLine();
-
-            foreach (var tenant in tenantMetrics.OrderByDescending(t => t.Value.Count))
+            var byException = group.GroupBy(m => m.ExceptionType);
+            foreach (var exGroup in byException)
             {
-                report.AppendLine($"Tenant: {tenant.Key}");
-                report.AppendLine($"  Operations: {tenant.Value.Count}");
-                report.AppendLine($"  Avg Latency: {tenant.Value.Average(m => m.ElapsedMilliseconds):F2}ms");
-
-                var failures = tenant.Value.Count(m => !m.IsSuccess);
-                var successRate = ((tenant.Value.Count - failures) / (double)tenant.Value.Count) * 100;
-                report.AppendLine($"  Success Rate: {successRate:P2}");
+                report.AppendLine($"    {exGroup.Key}: {exGroup.Count()}");
             }
-
-            return report.ToString();
         }
 
-        /// <summary>
-        /// Generates an error report.
-        /// </summary>
-        /// <param name="failedMetrics">The failed metrics.</param>
-        /// <returns>An error report.</returns>
-        public string GenerateErrorReport(List<PerformanceMetric> failedMetrics)
+        return report.ToString();
+    }
+
+    /// <summary>
+    /// Generates a capacity planning report.
+    /// </summary>
+    /// <param name="health">The system health summary.</param>
+    /// <param name="totalDiskUsage">The total disk usage.</param>
+    /// <param name="tenantCount">The tenant count.</param>
+    /// <returns>A capacity planning report.</returns>
+    public string GenerateCapacityReport(SystemHealthSummary health, long totalDiskUsage,
+        int tenantCount)
+    {
+        var report = new StringBuilder();
+
+        report.AppendLine("=== CAPACITY PLANNING REPORT ===");
+        report.AppendLine($"Generated: {DateTime.UtcNow:O}");
+        report.AppendLine();
+
+        report.AppendLine("=== CURRENT STATE ===");
+        report.AppendLine($"Tenant Count: {tenantCount}");
+        report.AppendLine($"Total Disk Usage: {FormatBytes(totalDiskUsage)}");
+        report.AppendLine($"Avg per Tenant: {FormatBytes(tenantCount > 0 ? totalDiskUsage / tenantCount : 0)}");
+        report.AppendLine();
+
+        report.AppendLine("=== PROJECTIONS (12 months) ===");
+        var projectedTenants = (int)(tenantCount * 1.3); // 30% growth
+        var projectedDiskUsage = (long)(totalDiskUsage * 1.5); // 50% data growth
+
+        report.AppendLine($"Projected Tenants: {projectedTenants}");
+        report.AppendLine($"Projected Disk Usage: {FormatBytes(projectedDiskUsage)}");
+        report.AppendLine($"Required Capacity: {FormatBytes((long)(projectedDiskUsage * 1.2))}");
+
+        return report.ToString();
+    }
+
+    /// <summary>
+    /// Formats bytes into a human-readable format.
+    /// </summary>
+    /// <param name="bytes">The bytes to format.</param>
+    /// <returns>A formatted string.</returns>
+    private string FormatBytes(long bytes)
+    {
+        var sizes = new[] { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+
+        while (len >= 1024 && order < sizes.Length - 1)
         {
-            var report = new StringBuilder();
-
-            report.AppendLine("=== ERROR REPORT ===");
-            report.AppendLine($"Generated: {DateTime.UtcNow:O}");
-            report.AppendLine($"Total Failures: {failedMetrics.Count}");
-            report.AppendLine();
-
-            var byOperation = failedMetrics.GroupBy(m => m.OperationName);
-
-            foreach (var group in byOperation.OrderByDescending(g => g.Count()))
-            {
-                report.AppendLine($"Operation: {group.Key}");
-                report.AppendLine($"  Failure Count: {group.Count()}");
-
-                var byException = group.GroupBy(m => m.ExceptionType);
-                foreach (var exGroup in byException)
-                {
-                    report.AppendLine($"    {exGroup.Key}: {exGroup.Count()}");
-                }
-            }
-
-            return report.ToString();
+            order++;
+            len = len / 1024;
         }
 
-        /// <summary>
-        /// Generates a capacity planning report.
-        /// </summary>
-        /// <param name="health">The system health summary.</param>
-        /// <param name="totalDiskUsage">The total disk usage.</param>
-        /// <param name="tenantCount">The tenant count.</param>
-        /// <returns>A capacity planning report.</returns>
-        public string GenerateCapacityReport(SystemHealthSummary health, long totalDiskUsage,
-            int tenantCount)
-        {
-            var report = new StringBuilder();
-
-            report.AppendLine("=== CAPACITY PLANNING REPORT ===");
-            report.AppendLine($"Generated: {DateTime.UtcNow:O}");
-            report.AppendLine();
-
-            report.AppendLine("=== CURRENT STATE ===");
-            report.AppendLine($"Tenant Count: {tenantCount}");
-            report.AppendLine($"Total Disk Usage: {FormatBytes(totalDiskUsage)}");
-            report.AppendLine($"Avg per Tenant: {FormatBytes(tenantCount > 0 ? totalDiskUsage / tenantCount : 0)}");
-            report.AppendLine();
-
-            report.AppendLine("=== PROJECTIONS (12 months) ===");
-            var projectedTenants = (int)(tenantCount * 1.3); // 30% growth
-            var projectedDiskUsage = (long)(totalDiskUsage * 1.5); // 50% data growth
-
-            report.AppendLine($"Projected Tenants: {projectedTenants}");
-            report.AppendLine($"Projected Disk Usage: {FormatBytes(projectedDiskUsage)}");
-            report.AppendLine($"Required Capacity: {FormatBytes((long)(projectedDiskUsage * 1.2))}");
-
-            return report.ToString();
-        }
-
-        /// <summary>
-        /// Formats bytes into a human-readable format.
-        /// </summary>
-        /// <param name="bytes">The bytes to format.</param>
-        /// <returns>A formatted string.</returns>
-        private string FormatBytes(long bytes)
-        {
-            var sizes = new[] { "B", "KB", "MB", "GB", "TB" };
-            double len = bytes;
-            int order = 0;
-
-            while (len >= 1024 && order < sizes.Length - 1)
-            {
-                order++;
-                len = len / 1024;
-            }
-
-            return $"{len:0.##} {sizes[order]}";
-        }
+        return $"{len:0.##} {sizes[order]}";
     }
 }

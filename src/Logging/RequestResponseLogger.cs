@@ -70,14 +70,20 @@ public sealed class RequestResponseLogger : IRequestResponseLogger
         {
             // Apply sampling
             if (new Random().Next(0, SamplingRate) != 0)
+            {
                 return;
+            }
+
             await _semaphore.WaitAsync();
             request.Id = Guid.NewGuid().ToString();
             request.Timestamp = DateTime.UtcNow;
             _requestLogs.Add(request);
             // Maintain memory limit
             if (_requestLogs.Count > MaxLogsInMemory)
+            {
                 _requestLogs.RemoveRange(0, _requestLogs.Count - MaxLogsInMemory);
+            }
+
             _logger.LogDebug("Request logged: {Method} {Path}", request.Method, request.Path);
         }
         finally
@@ -103,7 +109,9 @@ public sealed class RequestResponseLogger : IRequestResponseLogger
 
             // Maintain memory limit
             if (_responseLogs.Count > MaxLogsInMemory)
+            {
                 _responseLogs.RemoveRange(0, _responseLogs.Count - MaxLogsInMemory);
+            }
 
             _logger.LogDebug("Response logged: Status {StatusCode}, Duration {DurationMs}ms", response.StatusCode, response.DurationMs);
         }
@@ -126,16 +134,24 @@ public sealed class RequestResponseLogger : IRequestResponseLogger
             var query = _requestLogs.AsEnumerable();
 
             if (!string.IsNullOrEmpty(filter.Method))
+            {
                 query = query.Where(r => r.Method == filter.Method);
+            }
 
             if (!string.IsNullOrEmpty(filter.Path))
+            {
                 query = query.Where(r => r.Path.Contains(filter.Path, StringComparison.OrdinalIgnoreCase));
+            }
 
             if (filter.StartTime.HasValue)
+            {
                 query = query.Where(r => r.Timestamp >= filter.StartTime);
+            }
 
             if (filter.EndTime.HasValue)
+            {
                 query = query.Where(r => r.Timestamp <= filter.EndTime);
+            }
 
             return query
                 .OrderByDescending(r => r.Timestamp)
@@ -161,16 +177,24 @@ public sealed class RequestResponseLogger : IRequestResponseLogger
             var query = _responseLogs.AsEnumerable();
 
             if (filter.StatusCode.HasValue)
+            {
                 query = query.Where(r => r.StatusCode == filter.StatusCode);
+            }
 
             if (filter.StartTime.HasValue)
+            {
                 query = query.Where(r => r.Timestamp >= filter.StartTime);
+            }
 
             if (filter.EndTime.HasValue)
+            {
                 query = query.Where(r => r.Timestamp <= filter.EndTime);
+            }
 
             if (filter.MinDuration.HasValue)
+            {
                 query = query.Where(r => r.DurationMs >= filter.MinDuration);
+            }
 
             return query
                 .OrderByDescending(r => r.Timestamp)

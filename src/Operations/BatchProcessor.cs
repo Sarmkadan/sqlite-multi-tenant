@@ -44,7 +44,8 @@ public interface IBatchProcessor
 /// <summary>
 /// Processes batches concurrently while isolating errors for individual items.
 /// </summary>
-public sealed class BatchProcessor : IBatchProcessor {
+public sealed class BatchProcessor : IBatchProcessor
+{
     private readonly ILogger<BatchProcessor> _logger;
 
     /// <summary>
@@ -180,7 +181,8 @@ public sealed class BatchProcessor : IBatchProcessor {
 /// Contains the successful results and errors produced by a batch operation.
 /// </summary>
 /// <typeparam name="T">The type of each successful result.</typeparam>
-public sealed class BatchProcessResult<T> {
+public sealed class BatchProcessResult<T>
+{
     private readonly object _lock = new();
 
     /// <summary>
@@ -259,7 +261,8 @@ public sealed class BatchProcessResult<T> {
 /// <summary>
 /// Describes an error encountered while processing a batch item.
 /// </summary>
-public sealed class BatchErrorItem {
+public sealed class BatchErrorItem
+{
     /// <summary>
     /// Gets or sets the identifier of the item that failed.
     /// </summary>

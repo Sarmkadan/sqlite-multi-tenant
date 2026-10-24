@@ -9,7 +9,8 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents configuration settings for a tenant
 /// </summary>
-public sealed class TenantSettings {
+public sealed class TenantSettings
+{
     /// <summary>
     /// Unique identifier for the setting
     /// </summary>
@@ -69,19 +70,29 @@ public sealed class TenantSettings {
         errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(SettingId))
+        {
             errors.Add("SettingId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(TenantId))
+        {
             errors.Add("TenantId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(SettingKey))
+        {
             errors.Add("SettingKey is required");
+        }
 
         if (string.IsNullOrWhiteSpace(SettingValue))
+        {
             errors.Add("SettingValue is required");
+        }
 
         if (SettingKey.Length > 256)
+        {
             errors.Add("SettingKey exceeds maximum length");
+        }
 
         return errors.Count == 0;
     }

@@ -32,7 +32,8 @@ public interface IEventHandler<T> where T : DomainEvent
 /// In-memory event publisher for local event dispatching.
 /// Suitable for single-process deployments; use message queue for distributed systems.
 /// </summary>
-public sealed class EventPublisher : IEventPublisher {
+public sealed class EventPublisher : IEventPublisher
+{
     private readonly Dictionary<Type, List<Delegate>> _handlers = new();
     private readonly ILogger<EventPublisher> _logger;
 
@@ -49,7 +50,9 @@ public sealed class EventPublisher : IEventPublisher {
     public async Task PublishAsync<T>(T @event, CancellationToken cancellationToken = default) where T : DomainEvent
     {
         if (@event is null)
+        {
             throw new ArgumentNullException(nameof(@event));
+        }
 
         var eventType = typeof(T);
 
@@ -105,12 +108,16 @@ public sealed class EventPublisher : IEventPublisher {
     public void Subscribe<T>(IEventHandler<T> handler) where T : DomainEvent
     {
         if (handler is null)
+        {
             throw new ArgumentNullException(nameof(handler));
+        }
 
         var eventType = typeof(T);
 
         if (!_handlers.ContainsKey(eventType))
+        {
             _handlers[eventType] = new List<Delegate>();
+        }
 
         // Create async delegate from handler
         Func<T, CancellationToken, Task> asyncDelegate = (e, ct) => handler.HandleAsync(e, ct);
@@ -137,7 +144,8 @@ public sealed class EventPublisher : IEventPublisher {
 /// Logger event handler that logs all domain events.
 /// Useful for audit trails and event history tracking.
 /// </summary>
-public sealed class LoggingEventHandler<T> : IEventHandler<T> where T : DomainEvent {
+public sealed class LoggingEventHandler<T> : IEventHandler<T> where T : DomainEvent
+{
     private readonly ILogger<LoggingEventHandler<T>> _logger;
 
     public LoggingEventHandler(ILogger<LoggingEventHandler<T>> logger)
@@ -163,7 +171,8 @@ public sealed class LoggingEventHandler<T> : IEventHandler<T> where T : DomainEv
 /// <summary>
 /// Configuration for event publishing behavior.
 /// </summary>
-public sealed class EventPublisherOptions {
+public sealed class EventPublisherOptions
+{
     /// <summary>
     /// Enable async event publishing (fire and forget).
     /// Default: true (recommended for performance).

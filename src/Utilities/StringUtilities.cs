@@ -34,7 +34,9 @@ public static class StringUtilities
     public static string ComputeSha256Hash(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return string.Empty;
+        }
 
         var maxByteCount = Encoding.UTF8.GetMaxByteCount(input.Length);
         var rentedBuffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
@@ -58,7 +60,9 @@ public static class StringUtilities
     public static string ComputeMd5Hash(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return string.Empty;
+        }
 
         var maxByteCount = Encoding.UTF8.GetMaxByteCount(input.Length);
         var rentedBuffer = ArrayPool<byte>.Shared.Rent(maxByteCount);
@@ -81,10 +85,14 @@ public static class StringUtilities
     public static string TruncateWithEllipsis(string input, int maxLength = 100)
     {
         if (maxLength < 3)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxLength), maxLength, "Maximum length must be at least 3 to accommodate ellipsis.");
+        }
 
         if (string.IsNullOrEmpty(input) || input.Length <= maxLength)
+        {
             return input;
+        }
 
         // Fix: Added bounds checking for maxLength to prevent index out of range exception when < 3
         return input[..(maxLength - 3)] + "...";
@@ -96,7 +104,9 @@ public static class StringUtilities
     public static string ToTitleCase(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         var textInfo = new CultureInfo("en-US", false).TextInfo;
         return textInfo.ToTitleCase(input.ToLower());
@@ -108,7 +118,9 @@ public static class StringUtilities
     public static string ToSnakeCase(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         return SnakeCaseRegex.Replace(input, "$1_$2").ToLower();
     }
@@ -119,7 +131,9 @@ public static class StringUtilities
     public static string ToCamelCase(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         var parts = input.Split('_');
         var result = new StringBuilder(parts[0].ToLower());
@@ -127,7 +141,9 @@ public static class StringUtilities
         for (int i = 1; i < parts.Length; i++)
         {
             if (parts[i].Length > 0)
+            {
                 result.Append(char.ToUpper(parts[i][0]) + parts[i][1..]);
+            }
         }
 
         return result.ToString();
@@ -139,7 +155,9 @@ public static class StringUtilities
     public static string RemoveWhitespace(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         return Regex.Replace(input, @"\s+", string.Empty);
     }
@@ -151,7 +169,9 @@ public static class StringUtilities
     public static string SanitizeForFilePath(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         // Single pass over the input with a pooled char buffer avoids the O(k)
         // chained string.Replace calls (one allocation per invalid-char category).
@@ -162,9 +182,13 @@ public static class StringUtilities
             foreach (var c in input.AsSpan())
             {
                 if (c == ' ')
+                {
                     buffer[writeIdx++] = '_';
+                }
                 else if (!InvalidFileNameCharSet.Contains(c))
+                {
                     buffer[writeIdx++] = c;
+                }
             }
             return new string(buffer, 0, writeIdx);
         }
@@ -180,7 +204,9 @@ public static class StringUtilities
     public static string SanitizeForHtml(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         return input
             .Replace("&", "&amp;")
@@ -196,7 +222,9 @@ public static class StringUtilities
     public static bool IsValidEmail(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+        {
             return false;
+        }
 
         try
         {
@@ -215,7 +243,9 @@ public static class StringUtilities
     public static bool IsValidUrl(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+        {
             return false;
+        }
 
         return Uri.TryCreate(input, UriKind.Absolute, out var uriResult) &&
                (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
@@ -227,7 +257,9 @@ public static class StringUtilities
     public static bool IsValidGuid(string input)
     {
         if (string.IsNullOrWhiteSpace(input))
+        {
             return false;
+        }
 
         return Guid.TryParse(input, out _);
     }
@@ -251,7 +283,9 @@ public static class StringUtilities
     public static string Repeat(string input, int count)
     {
         if (count <= 0 || string.IsNullOrEmpty(input))
+        {
             return string.Empty;
+        }
 
         return string.Concat(Enumerable.Repeat(input, count));
     }
@@ -262,7 +296,9 @@ public static class StringUtilities
     public static IEnumerable<string> SplitPreservingQuotes(string input, char delimiter = ',')
     {
         if (input is null)
+        {
             throw new ArgumentNullException(nameof(input), "Input string cannot be null.");
+        }
 
         // Fix: Added null check to prevent NullReferenceException during string enumeration
         var parts = new List<string>();
@@ -288,7 +324,9 @@ public static class StringUtilities
         }
 
         if (currentPart.Length > 0)
+        {
             parts.Add(currentPart.ToString().Trim());
+        }
 
         return parts;
     }
@@ -300,7 +338,9 @@ public static class StringUtilities
     public static double GetStringSimilarity(string str1, string str2)
     {
         if (string.IsNullOrEmpty(str1) || string.IsNullOrEmpty(str2))
+        {
             return 0;
+        }
 
         int distance = LevenshteinDistance(str1, str2);
         int maxLength = Math.Max(str1.Length, str2.Length);
@@ -315,10 +355,14 @@ public static class StringUtilities
         int[,] distances = new int[len1 + 1, len2 + 1];
 
         for (int i = 0; i <= len1; i++)
+        {
             distances[i, 0] = i;
+        }
 
         for (int j = 0; j <= len2; j++)
+        {
             distances[0, j] = j;
+        }
 
         for (int i = 1; i <= len1; i++)
         {

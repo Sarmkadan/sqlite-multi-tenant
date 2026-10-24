@@ -75,7 +75,9 @@ public static class LoggingExtensions
         var level = success ? LogLevel.Debug : LogLevel.Error;
 
         if (durationMs > 5000)
+        {
             level = LogLevel.Warning; // Slow query
+        }
 
         logger.Log(level,
             "Database operation: {operation} | DatabaseId: {databaseId} | Duration: {duration}ms | Success: {success}",

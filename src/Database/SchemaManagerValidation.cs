@@ -7,58 +7,57 @@
 using System;
 using System.Collections.Generic;
 
-namespace SqliteMultiTenant.Database
+namespace SqliteMultiTenant.Database;
+
+/// <summary>
+/// Provides validation and validation helper methods for <see cref="SchemaManager"/> instances.
+/// </summary>
+public static class SchemaManagerValidation
 {
     /// <summary>
-    /// Provides validation and validation helper methods for <see cref="SchemaManager"/> instances.
+    /// Validates the specified <see cref="SchemaManager"/> instance.
     /// </summary>
-    public static class SchemaManagerValidation
+    /// <param name="value">The <see cref="SchemaManager"/> instance to validate.</param>
+    /// <returns>A list of human-readable validation problems; empty if the instance is valid.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    public static IReadOnlyList<string> Validate(this SchemaManager value)
     {
-        /// <summary>
-        /// Validates the specified <see cref="SchemaManager"/> instance.
-        /// </summary>
-        /// <param name="value">The <see cref="SchemaManager"/> instance to validate.</param>
-        /// <returns>A list of human-readable validation problems; empty if the instance is valid.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-        public static IReadOnlyList<string> Validate(this SchemaManager value)
+        ArgumentNullException.ThrowIfNull(value);
+
+        var problems = new List<string>();
+
+        // Validate connection string is not empty or whitespace
+        if (string.IsNullOrWhiteSpace(value.ConnectionString))
         {
-            ArgumentNullException.ThrowIfNull(value);
-
-            var problems = new List<string>();
-
-            // Validate connection string is not empty or whitespace
-            if (string.IsNullOrWhiteSpace(value.ConnectionString))
-            {
-                problems.Add("Connection string cannot be null, empty, or whitespace.");
-            }
-
-            return problems.AsReadOnly();
+            problems.Add("Connection string cannot be null, empty, or whitespace.");
         }
 
-        /// <summary>
-        /// Determines whether the specified <see cref="SchemaManager"/> instance is valid.
-        /// </summary>
-        /// <param name="value">The <see cref="SchemaManager"/> instance to check.</param>
-        /// <returns><c>true</c> if the instance is valid; otherwise, <c>false</c>.</returns>
-        public static bool IsValid(this SchemaManager value) => value?.Validate().Count == 0;
+        return problems.AsReadOnly();
+    }
 
-        /// <summary>
-        /// Ensures that the specified <see cref="SchemaManager"/> instance is valid.
-        /// </summary>
-        /// <param name="value">The <see cref="SchemaManager"/> instance to validate.</param>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when the instance is not valid, containing a list of problems.</exception>
-        public static void EnsureValid(this SchemaManager value)
+    /// <summary>
+    /// Determines whether the specified <see cref="SchemaManager"/> instance is valid.
+    /// </summary>
+    /// <param name="value">The <see cref="SchemaManager"/> instance to check.</param>
+    /// <returns><c>true</c> if the instance is valid; otherwise, <c>false</c>.</returns>
+    public static bool IsValid(this SchemaManager value) => value?.Validate().Count == 0;
+
+    /// <summary>
+    /// Ensures that the specified <see cref="SchemaManager"/> instance is valid.
+    /// </summary>
+    /// <param name="value">The <see cref="SchemaManager"/> instance to validate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when the instance is not valid, containing a list of problems.</exception>
+    public static void EnsureValid(this SchemaManager value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        var problems = value.Validate();
+
+        if (problems.Count > 0)
         {
-            ArgumentNullException.ThrowIfNull(value);
-
-            var problems = value.Validate();
-
-            if (problems.Count > 0)
-            {
-                throw new ArgumentException(
-                    $"SchemaManager is not valid. Problems: {string.Join("; ", problems)}");
-            }
+            throw new ArgumentException(
+                $"SchemaManager is not valid. Problems: {string.Join("; ", problems)}");
         }
     }
 }

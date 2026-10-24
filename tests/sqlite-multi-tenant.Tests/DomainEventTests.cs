@@ -12,7 +12,8 @@ using Xunit;
 /// <summary>
 /// Tests for domain events.
 /// </summary>
-public sealed class DomainEventTests {
+public sealed class DomainEventTests
+{
     /// <summary>
     /// Verifies that the TenantCreatedEvent has the correct name.
     /// </summary>
@@ -51,7 +52,7 @@ public sealed class DomainEventTests {
         // Assert
         ev.Should().NotBeNull();
     }
-    
+
     /// <summary>
     /// Verifies that the TenantSuspendedEvent has the correct name.
     /// </summary>
@@ -64,7 +65,7 @@ public sealed class DomainEventTests {
         // Assert
         ev.Should().NotBeNull();
     }
-    
+
     /// <summary>
     /// Verifies that the TenantUpdatedEvent has the correct name.
     /// </summary>

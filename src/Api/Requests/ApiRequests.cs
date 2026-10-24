@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Api.Requests;
 /// Minimalist design: only required fields, optional descriptions.
 /// Validation happens in controller to provide meaningful error messages.
 /// </summary>
-public sealed class CreateTenantRequest {
+public sealed class CreateTenantRequest
+{
     /// <summary>
     /// Gets or sets the name of the tenant.
     /// </summary>
@@ -33,7 +34,8 @@ public sealed class CreateTenantRequest {
 /// All fields optional to allow partial updates.
 /// Immutable fields (TenantId, CreatedAt) are not exposed here.
 /// </summary>
-public sealed class UpdateTenantRequest {
+public sealed class UpdateTenantRequest
+{
     /// <summary>
     /// Gets or sets the name of the tenant.
     /// </summary>
@@ -53,7 +55,8 @@ public sealed class UpdateTenantRequest {
 /// Validation ensures up/down scripts are non-empty and version is semantic.
 /// Down script is optional for irreversible migrations.
 /// </summary>
-public sealed class CreateMigrationRequest {
+public sealed class CreateMigrationRequest
+{
     /// <summary>
     /// Gets or sets the database identifier.
     /// </summary>
@@ -80,7 +83,8 @@ public sealed class CreateMigrationRequest {
 /// Request DTO for querying migrations with filters.
 /// Supports filtering by status (pending, applied, failed) for UI dashboards.
 /// </summary>
-public sealed class QueryMigrationsRequest {
+public sealed class QueryMigrationsRequest
+{
     /// <summary>
     /// Gets or sets the database identifier.
     /// </summary>
@@ -104,7 +108,8 @@ public sealed class QueryMigrationsRequest {
 /// Requires explicit confirmation to prevent accidental data loss.
 /// Target database must be different from source to implement dry-run patterns.
 /// </summary>
-public sealed class RestoreBackupRequest {
+public sealed class RestoreBackupRequest
+{
     /// <summary>
     /// Gets or sets the backup identifier.
     /// </summary>
@@ -127,7 +132,8 @@ public sealed class RestoreBackupRequest {
 /// Request DTO for paginated list queries.
 /// Reusable across all list endpoints with consistent pagination semantics.
 /// </summary>
-public sealed class PaginationRequest {
+public sealed class PaginationRequest
+{
     /// <summary>
     /// Gets or sets the page number (starting from 1).
     /// </summary>
@@ -144,7 +150,8 @@ public sealed class PaginationRequest {
 /// Request DTO for batch operations (e.g., apply migrations to multiple tenants).
 /// Supports async processing with job ID returned for polling.
 /// </summary>
-public sealed class BatchOperationRequest {
+public sealed class BatchOperationRequest
+{
     /// <summary>
     /// Gets or sets the list of resource identifiers to operate on.
     /// </summary>
@@ -163,7 +170,8 @@ public sealed class BatchOperationRequest {
 /// Request DTO for webhook configuration.
 /// Enables event-driven integrations (e.g., notify on backup completion).
 /// </summary>
-public sealed class WebhookSubscriptionRequest {
+public sealed class WebhookSubscriptionRequest
+{
     /// <summary>
     /// Gets or sets the webhook URL.
     /// </summary>
@@ -185,7 +193,8 @@ public sealed class WebhookSubscriptionRequest {
 /// <summary>
 /// Request DTO for applying migrations to multiple databases with fault isolation.
 /// </summary>
-public sealed class ApplyMigrationsToMultipleRequest {
+public sealed class ApplyMigrationsToMultipleRequest
+{
     /// <summary>
     /// Gets or sets the list of database identifiers to apply migrations to.
     /// </summary>

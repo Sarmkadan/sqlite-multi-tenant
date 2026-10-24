@@ -24,7 +24,8 @@ namespace SqliteMultiTenant.Services;
 /// e.g. <c>builder.Services.AddHealthChecks().AddCheck&lt;HealthChecker&gt;("sqlite-multi-tenant");</c>.
 /// The result's <see cref="HealthCheckResult.Data"/> carries a per-tenant <see cref="TenantHealthReport"/>.
 /// </remarks>
-public sealed class HealthChecker : IHealthCheck {
+public sealed class HealthChecker : IHealthCheck
+{
     private readonly ITenantService _tenantService;
     private readonly IConnectionPoolManager _connectionPool;
     private readonly ILogger<HealthChecker> _logger;
@@ -95,7 +96,9 @@ public sealed class HealthChecker : IHealthCheck {
         var reports = new List<TenantHealthReport>(tenants.Count);
 
         foreach (var tenant in tenants)
+        {
             reports.Add(await CheckTenantReportAsync(tenant, cancellationToken));
+        }
 
         return reports;
     }
@@ -124,11 +127,15 @@ public sealed class HealthChecker : IHealthCheck {
         };
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath))
+        {
             return report with { Error = "No database path configured." };
+        }
 
         var fileInfo = new FileInfo(tenant.DatabasePath);
         if (!fileInfo.Exists)
+        {
             return report with { Error = $"Database file not found: {tenant.DatabasePath}" };
+        }
 
         report = report with { FileExists = true, FileSizeBytes = fileInfo.Length };
 
@@ -161,7 +168,9 @@ public sealed class HealthChecker : IHealthCheck {
         finally
         {
             if (connection is not null)
+            {
                 await _connectionPool.ReleaseAsync(tenant.TenantId, connection);
+            }
         }
 
         report = report with
@@ -184,7 +193,9 @@ public sealed class HealthChecker : IHealthCheck {
         }
 
         if (!report.IsHealthy && error is null)
+        {
             report = report with { Error = $"integrity_check returned: {integrityResult ?? "no result"}" };
+        }
 
         return report;
     }
@@ -203,7 +214,9 @@ public sealed class HealthChecker : IHealthCheck {
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
 
         var sw = Stopwatch.StartNew();
         try
@@ -266,7 +279,9 @@ public sealed class HealthChecker : IHealthCheck {
             var isOk = string.Equals(result?.ToString(), "ok", StringComparison.OrdinalIgnoreCase);
 
             if (!isOk)
+            {
                 _logger.LogWarning("Integrity check failed for tenant '{TenantId}': {Result}", tenantId, result);
+            }
 
             return isOk;
         }
@@ -323,8 +338,10 @@ public sealed class HealthChecker : IHealthCheck {
             result[tenantId] = healthy;
 
             if (!healthy)
+            {
                 _logger.LogWarning("Pool back-pressure detected for tenant '{TenantId}': {Waiting} waiters",
                     tenantId, snapshot.Waiting);
+            }
         }
 
         return result;

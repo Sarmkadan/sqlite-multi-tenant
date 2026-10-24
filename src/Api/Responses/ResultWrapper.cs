@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Api.Responses;
 /// Provides standardized structure for success, errors, and metadata.
 /// Supports both data and paginated results.
 /// </summary>
-public sealed class Result<T> {
+public sealed class Result<T>
+{
     /// <summary>
     /// Indicates whether the operation was successful.
     /// </summary>
@@ -83,7 +84,8 @@ public sealed class Result<T> {
 /// <summary>
 /// Result wrapper for paginated data.
 /// </summary>
-public sealed class PaginatedResult<T> {
+public sealed class PaginatedResult<T>
+{
     /// <summary>
     /// Indicates whether the operation was successful.
     /// </summary>
@@ -147,7 +149,8 @@ public sealed class PaginatedResult<T> {
 /// <summary>
 /// Additional metadata for result objects.
 /// </summary>
-public sealed class ResultMetadata {
+public sealed class ResultMetadata
+{
     /// <summary>
     /// The timestamp when the result was created.
     /// </summary>
@@ -169,7 +172,8 @@ public sealed class ResultMetadata {
 /// <summary>
 /// Pagination metadata for paginated results.
 /// </summary>
-public sealed class PaginationMetadata {
+public sealed class PaginationMetadata
+{
     /// <summary>
     /// The current page number (1-based).
     /// </summary>
@@ -199,7 +203,8 @@ public sealed class PaginationMetadata {
 /// <summary>
 /// Operation result for actions without return data.
 /// </summary>
-public sealed class OperationResult {
+public sealed class OperationResult
+{
     /// <summary>
     /// Indicates whether the operation was successful.
     /// </summary>
@@ -263,7 +268,8 @@ public sealed class OperationResult {
 /// <summary>
 /// Batch operation result for multiple items.
 /// </summary>
-public sealed class BatchOperationResult {
+public sealed class BatchOperationResult
+{
     /// <summary>
     /// The number of items that were processed successfully.
     /// </summary>
@@ -291,7 +297,8 @@ public sealed class BatchOperationResult {
 /// <summary>
 /// Represents the result of processing an individual item in a batch operation.
 /// </summary>
-public sealed class BatchItemResult {
+public sealed class BatchItemResult
+{
     /// <summary>
     /// The unique identifier of the item.
     /// </summary>

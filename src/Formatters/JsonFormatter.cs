@@ -13,17 +13,18 @@ namespace SqliteMultiTenant.Formatters;
 /// Formats objects as JSON with customizable serialization options.
 /// Supports pretty-printing, null handling, and circular reference detection.
 /// </summary>
-public sealed class JsonExportFormatter {
+public sealed class JsonExportFormatter
+{
     private readonly JsonSerializerOptions _options;
     private readonly ILogger<JsonExportFormatter> _logger;
 
     /// <summary>
-/// Initializes a new instance of the <see cref="JsonExportFormatter"/> class.
-/// </summary>
-/// <param name="logger">The logger used for error reporting.</param>
-/// <param name="prettyPrint">Whether to format the JSON with indentation.</param>
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint = false)
+    /// Initializes a new instance of the <see cref="JsonExportFormatter"/> class.
+    /// </summary>
+    /// <param name="logger">The logger used for error reporting.</param>
+    /// <param name="prettyPrint">Whether to format the JSON with indentation.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
@@ -48,7 +49,9 @@ public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint
         try
         {
             if (data is null)
+            {
                 return "null";
+            }
 
             return JsonSerializer.Serialize(data, _options);
         }
@@ -73,7 +76,9 @@ public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint
         try
         {
             if (string.IsNullOrWhiteSpace(json))
+            {
                 return null;
+            }
 
             return JsonSerializer.Deserialize<T>(json, _options);
         }
@@ -102,7 +107,9 @@ public JsonExportFormatter(ILogger<JsonExportFormatter> logger, bool prettyPrint
         try
         {
             if (data is null)
+            {
                 return "null";
+            }
 
             return JsonSerializer.Serialize(data, options);
         }

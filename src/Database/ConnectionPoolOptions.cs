@@ -77,19 +77,39 @@ public sealed class ConnectionPoolOptions
     public void Validate()
     {
         if (MinPoolSize < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(MinPoolSize), "MinPoolSize must be non-negative.");
+        }
+
         if (MaxPoolSize < 1)
+        {
             throw new ArgumentOutOfRangeException(nameof(MaxPoolSize), "MaxPoolSize must be at least 1.");
+        }
+
         if (MinPoolSize > MaxPoolSize)
+        {
             throw new ArgumentException($"{nameof(MinPoolSize)} cannot exceed {nameof(MaxPoolSize)}.");
+        }
+
         if (IdleTimeout <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(IdleTimeout), "IdleTimeout must be positive.");
+        }
+
         if (AcquireTimeout <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(AcquireTimeout), "AcquireTimeout must be positive.");
+        }
+
         if (MaxConnectionLifetime <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(MaxConnectionLifetime), "MaxConnectionLifetime must be positive.");
+        }
+
         if (PruneInterval <= TimeSpan.Zero)
+        {
             throw new ArgumentOutOfRangeException(nameof(PruneInterval), "PruneInterval must be positive.");
+        }
 
         ArgumentNullException.ThrowIfNull(Pragmas);
         Pragmas.Validate();

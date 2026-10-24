@@ -9,7 +9,8 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a database associated with a tenant
 /// </summary>
-public sealed class TenantDatabase {
+public sealed class TenantDatabase
+{
     /// <summary>
     /// The unique identifier for the database.
     /// </summary>
@@ -92,28 +93,44 @@ public sealed class TenantDatabase {
         errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(DatabaseId))
+        {
             errors.Add("DatabaseId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(TenantId))
+        {
             errors.Add("TenantId is required");
+        }
 
         if (string.IsNullOrWhiteSpace(Name))
+        {
             errors.Add("Name is required");
+        }
 
         if (string.IsNullOrWhiteSpace(FilePath))
+        {
             errors.Add("FilePath is required");
+        }
 
         if (FilePath.Length > 260)
+        {
             errors.Add("FilePath exceeds maximum path length");
+        }
 
         if (SizeBytes < 0)
+        {
             errors.Add("SizeBytes cannot be negative");
+        }
 
         if (SchemaVersion <= 0)
+        {
             errors.Add("SchemaVersion must be greater than zero");
+        }
 
         if (ActiveConnectionCount < 0)
+        {
             errors.Add("ActiveConnectionCount cannot be negative");
+        }
 
         return errors.Count == 0;
     }

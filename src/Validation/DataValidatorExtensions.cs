@@ -376,13 +376,17 @@ public static class DataValidatorExtensions
         for (var i = digits.Length - 1; i >= 0; i--)
         {
             if (!int.TryParse(digits[i].ToString(), out var digit))
+            {
                 return false;
+            }
 
             if (alternate)
             {
                 digit *= 2;
                 if (digit > 9)
+                {
                     digit = (digit % 10) + 1;
+                }
             }
 
             sum += digit;

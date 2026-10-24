@@ -48,7 +48,9 @@ public static class BulkDataServiceExtensions
         var result = await service.ExportTableAsync(databaseId, tableName, format, options, progress, cancellationToken).ConfigureAwait(false);
 
         if (!result.IsSuccess)
+        {
             return result;
+        }
 
         // Create a new database file and import the exported data
         var newDatabasePath = Path.Combine(service.GetOptions().BaseDatabasePath, $"{databaseId}_exported.db");
@@ -148,7 +150,9 @@ public static class BulkDataServiceExtensions
         var exportResult = await service.ExportDatabaseAsync(databaseId, format, options, progress, cancellationToken).ConfigureAwait(false);
 
         if (!exportResult.IsSuccess)
+        {
             return exportResult;
+        }
 
         // Create backup database path
         var backupPath = Path.Combine(service.GetOptions().BaseDatabasePath, $"{backupDatabaseId}.db");

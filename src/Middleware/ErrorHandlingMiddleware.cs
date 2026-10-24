@@ -4,10 +4,10 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Api.Responses;
 using SqliteMultiTenant.Exceptions;
-using System.Text.Json;
 
 namespace SqliteMultiTenant.Middleware;
 
@@ -16,7 +16,8 @@ namespace SqliteMultiTenant.Middleware;
 /// Prevents internal exception details leaking to clients while logging for diagnostics.
 /// Maps domain exceptions to appropriate HTTP status codes automatically.
 /// </summary>
-public sealed class ErrorHandlingMiddleware {
+public sealed class ErrorHandlingMiddleware
+{
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
 
     public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger)
@@ -101,7 +102,8 @@ public sealed class ErrorHandlingMiddleware {
 /// Result pattern exception handling for controllers.
 /// Allows methods to return Result<T> instead of throwing, reducing allocations.
 /// </summary>
-public sealed class Result<T> {
+public sealed class Result<T>
+{
     public bool IsSuccess { get; set; }
     public T? Value { get; set; }
     public string? ErrorMessage { get; set; }

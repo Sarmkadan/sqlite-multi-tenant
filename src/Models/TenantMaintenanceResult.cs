@@ -90,7 +90,9 @@ public sealed class TenantMaintenanceResult
         get
         {
             if (SizeBeforeBytes == 0)
+            {
                 return "N/A";
+            }
 
             var reductionPercent = (double)SizeReductionBytes / SizeBeforeBytes * 100;
             var before = FormatFileSize(SizeBeforeBytes);

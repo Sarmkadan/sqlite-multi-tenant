@@ -4,9 +4,9 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Api.Responses;
-using System.Diagnostics;
 
 namespace SqliteMultiTenant.Health;
 
@@ -40,7 +40,8 @@ public interface IHealthCheckService
 /// <summary>
 /// Health check implementation with component-level diagnostics.
 /// </summary>
-public class HealthCheckService : IHealthCheckService {
+public class HealthCheckService : IHealthCheckService
+{
     private readonly ILogger<HealthCheckService> _logger;
     private readonly string _databasePath;
 
@@ -350,7 +351,8 @@ public sealed class HealthStatusResult
 /// Extended health check with detailed diagnostics.
 /// Provides deeper insight for debugging and monitoring dashboards.
 /// </summary>
-public sealed class DetailedHealthCheckService : HealthCheckService {
+public sealed class DetailedHealthCheckService : HealthCheckService
+{
     private readonly ILogger<DetailedHealthCheckService> _logger;
 
     public DetailedHealthCheckService(ILogger<DetailedHealthCheckService> logger, string databasePath = ".")

@@ -23,7 +23,9 @@ public static class TenantDatabaseMaintenanceServiceExtensions
         this IServiceCollection services)
     {
         if (services is null)
+        {
             throw new ArgumentNullException(nameof(services));
+        }
 
         services.AddScoped<ITenantDatabaseMaintenanceService, TenantDatabaseMaintenanceService>();
 
@@ -41,10 +43,14 @@ public static class TenantDatabaseMaintenanceServiceExtensions
         Action<TenantDatabaseMaintenanceOptions> configure)
     {
         if (services is null)
+        {
             throw new ArgumentNullException(nameof(services));
+        }
 
         if (configure is null)
+        {
             throw new ArgumentNullException(nameof(configure));
+        }
 
         services.AddScoped<ITenantDatabaseMaintenanceService, TenantDatabaseMaintenanceService>();
         services.Configure(configure);

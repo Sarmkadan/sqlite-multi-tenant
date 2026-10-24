@@ -23,14 +23,18 @@ public static class ValidationExtensions
     public static bool IsValidHexString(this string? value)
     {
         if (string.IsNullOrEmpty(value))
+        {
             return false;
+        }
 
         foreach (var character in value)
         {
             if (!((character >= '0' && character <= '9') ||
                   (character >= 'a' && character <= 'f') ||
                   (character >= 'A' && character <= 'F')))
+            {
                 return false;
+            }
         }
 
         return true;
@@ -48,7 +52,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(email);
 
         if (string.IsNullOrWhiteSpace(email))
+        {
             return false;
+        }
 
         try
         {
@@ -86,7 +92,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(version);
 
         if (string.IsNullOrWhiteSpace(version))
+        {
             return false;
+        }
 
         var pattern = @"^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$";
         return Regex.IsMatch(version, pattern);
@@ -104,7 +112,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(name);
 
         if (string.IsNullOrWhiteSpace(name) || name.Length > 255)
+        {
             return false;
+        }
 
         return Regex.IsMatch(name, @"^[a-zA-Z_][a-zA-Z0-9_]*$");
     }
@@ -134,7 +144,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(path);
 
         if (string.IsNullOrWhiteSpace(path) || path.Contains(".."))
+        {
             return false;
+        }
 
         // Only allow forward/backward slashes, alphanumeric, dots, hyphens, spaces, and unicode characters
         return Regex.IsMatch(path, @"^[\p{L}\p{N}._\-/\\ ]+$");
@@ -152,7 +164,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(script);
 
         if (string.IsNullOrWhiteSpace(script))
+        {
             return false;
+        }
 
         // Reject scripts with dangerous patterns (basic check)
         var dangerousPatterns = new[] { "DROP DATABASE", "DELETE FROM", "TRUNCATE" };
@@ -183,7 +197,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(connectionString);
 
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             return false;
+        }
 
         // For SQLite: check for Data Source or Filename
         var hasDataSource = connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase) ||
@@ -204,7 +220,9 @@ public static class ValidationExtensions
         ArgumentNullException.ThrowIfNull(tag);
 
         if (string.IsNullOrWhiteSpace(tag) || tag.Length > 100)
+        {
             return false;
+        }
 
         return Regex.IsMatch(tag, @"^[a-zA-Z0-9\-_]+$");
     }

@@ -5,19 +5,19 @@
 // =============================================================================
 
 using System;
+using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Data.SQLite;
-using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;
+using Xunit;
 
-namespace SqliteMultiTenant.Tests
-{
+namespace SqliteMultiTenant.Tests;
+
 /// <summary>
 /// Integration tests for <see cref="BackupRepository"/> that verify database operations against a real SQLite database.
 /// </summary>
@@ -264,5 +264,4 @@ VALUES (@BackupId, @DatabaseId, @BackupPath, @BackupType, @Status, @CreatedAt, 0
             File.Delete(_dbPath);
         }
     }
-}
 }

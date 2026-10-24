@@ -99,9 +99,14 @@ public sealed record MigrationBatchResult
         ArgumentNullException.ThrowIfNull(tenantResults);
 
         if (successfulMigrations < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(successfulMigrations), "Value cannot be negative");
+        }
+
         if (totalMigrationsAttempted < successfulMigrations)
+        {
             throw new ArgumentOutOfRangeException(nameof(totalMigrationsAttempted), "Total cannot be less than successful");
+        }
 
         return new MigrationBatchResult
         {
@@ -207,9 +212,14 @@ public sealed record TenantMigrationResult
         ArgumentException.ThrowIfNullOrEmpty(databaseId);
 
         if (successfulMigrations < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(successfulMigrations), "Value cannot be negative");
+        }
+
         if (totalMigrationsAttempted < successfulMigrations)
+        {
             throw new ArgumentOutOfRangeException(nameof(totalMigrationsAttempted), "Total cannot be less than successful");
+        }
 
         return new TenantMigrationResult
         {
@@ -240,9 +250,14 @@ public sealed record TenantMigrationResult
         ArgumentNullException.ThrowIfNull(failures);
 
         if (successfulMigrations < 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(successfulMigrations), "Value cannot be negative");
+        }
+
         if (totalMigrationsAttempted < successfulMigrations)
+        {
             throw new ArgumentOutOfRangeException(nameof(totalMigrationsAttempted), "Total cannot be less than successful");
+        }
 
         return new TenantMigrationResult
         {

@@ -105,7 +105,9 @@ public abstract class OperationStatusBase
         get
         {
             if (StartedAt == null || CompletedAt == null)
+            {
                 return null;
+            }
 
             return (long)(CompletedAt.Value - StartedAt.Value).TotalMilliseconds;
         }

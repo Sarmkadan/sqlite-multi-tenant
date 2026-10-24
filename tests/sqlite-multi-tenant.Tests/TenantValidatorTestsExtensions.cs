@@ -12,76 +12,75 @@ using SqliteMultiTenant.Api.Requests;
 using SqliteMultiTenant.Validation;
 
 // ReSharper disable once RedundantNameQualifier
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+public static class TenantValidatorTestsExtensions
 {
-    public static class TenantValidatorTestsExtensions
+    /// <summary>
+    /// Creates a valid create tenant request for testing purposes.
+    /// </summary>
+    /// <param name="name">The tenant name (3-255 characters).</param>
+    /// <param name="email">The contact email address.</param>
+    /// <returns>A valid <see cref="CreateTenantRequest"/> instance.</returns>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or outside the 3-255 character range. <paramref name="email"/> is null or empty.</exception>
+    public static CreateTenantRequest CreateValidCreateRequest(this TenantValidatorTests _, string name = "ValidTenantName", string email = "test@example.com")
     {
-        /// <summary>
-        /// Creates a valid create tenant request for testing purposes.
-        /// </summary>
-        /// <param name="name">The tenant name (3-255 characters).</param>
-        /// <param name="email">The contact email address.</param>
-        /// <returns>A valid <see cref="CreateTenantRequest"/> instance.</returns>
-        /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or outside the 3-255 character range. <paramref name="email"/> is null or empty.</exception>
-        public static CreateTenantRequest CreateValidCreateRequest(this TenantValidatorTests _, string name = "ValidTenantName", string email = "test@example.com")
+        ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+        ArgumentException.ThrowIfNullOrEmpty(email, nameof(email));
+
+        return new CreateTenantRequest
         {
-            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentException.ThrowIfNullOrEmpty(email, nameof(email));
+            Name = name,
+            ContactEmail = email
+        };
+    }
 
-            return new CreateTenantRequest
-            {
-                Name = name,
-                ContactEmail = email
-            };
-        }
+    /// <summary>
+    /// Creates a valid update tenant request for testing purposes.
+    /// </summary>
+    /// <param name="name">The tenant name (3-255 characters).</param>
+    /// <param name="email">The contact email address.</param>
+    /// <returns>A valid <see cref="UpdateTenantRequest"/> instance.</returns>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or outside the 3-255 character range. <paramref name="email"/> is null or empty.</exception>
+    public static UpdateTenantRequest CreateValidUpdateRequest(this TenantValidatorTests _, string name = "UpdatedTenantName", string email = "updated@example.com")
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
+        ArgumentException.ThrowIfNullOrEmpty(email, nameof(email));
 
-        /// <summary>
-        /// Creates a valid update tenant request for testing purposes.
-        /// </summary>
-        /// <param name="name">The tenant name (3-255 characters).</param>
-        /// <param name="email">The contact email address.</param>
-        /// <returns>A valid <see cref="UpdateTenantRequest"/> instance.</returns>
-        /// <exception cref="ArgumentException"><paramref name="name"/> is null, empty, or outside the 3-255 character range. <paramref name="email"/> is null or empty.</exception>
-        public static UpdateTenantRequest CreateValidUpdateRequest(this TenantValidatorTests _, string name = "UpdatedTenantName", string email = "updated@example.com")
+        return new UpdateTenantRequest
         {
-            ArgumentException.ThrowIfNullOrEmpty(name, nameof(name));
-            ArgumentException.ThrowIfNullOrEmpty(email, nameof(email));
+            Name = name,
+            ContactEmail = email
+        };
+    }
 
-            return new UpdateTenantRequest
-            {
-                Name = name,
-                ContactEmail = email
-            };
-        }
+    /// <summary>
+    /// Asserts that a validation result contains exactly one error for the specified property.
+    /// </summary>
+    /// <param name="errors">The validation errors dictionary.</param>
+    /// <param name="propertyName">The name of the property that should have an error.</param>
+    /// <param name="expectedErrorMessage">The expected error message.</param>
+    /// <exception cref="ArgumentNullException">Thrown when errors is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when propertyName is null or empty.</exception>
+    public static void ShouldHaveSingleErrorFor(this IReadOnlyDictionary<string, string> errors, string propertyName, string expectedErrorMessage)
+    {
+        ArgumentNullException.ThrowIfNull(errors);
+        ArgumentException.ThrowIfNullOrEmpty(propertyName);
+        ArgumentException.ThrowIfNullOrEmpty(expectedErrorMessage);
 
-        /// <summary>
-        /// Asserts that a validation result contains exactly one error for the specified property.
-        /// </summary>
-        /// <param name="errors">The validation errors dictionary.</param>
-        /// <param name="propertyName">The name of the property that should have an error.</param>
-        /// <param name="expectedErrorMessage">The expected error message.</param>
-        /// <exception cref="ArgumentNullException">Thrown when errors is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when propertyName is null or empty.</exception>
-        public static void ShouldHaveSingleErrorFor(this IReadOnlyDictionary<string, string> errors, string propertyName, string expectedErrorMessage)
-        {
-            ArgumentNullException.ThrowIfNull(errors);
-            ArgumentException.ThrowIfNullOrEmpty(propertyName);
-            ArgumentException.ThrowIfNullOrEmpty(expectedErrorMessage);
+        errors.Should().ContainSingle()
+            .And.ContainKey(propertyName)
+            .And.ContainValue(expectedErrorMessage);
+    }
 
-            errors.Should().ContainSingle()
-                .And.ContainKey(propertyName)
-                .And.ContainValue(expectedErrorMessage);
-        }
-
-        /// <summary>
-        /// Asserts that a validation result is empty (no errors).
-        /// </summary>
-        /// <param name="errors">The validation errors dictionary.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="errors"/> is <see langword="null"/>.</exception>
-        public static void ShouldBeEmpty(this IReadOnlyDictionary<string, string> errors)
-        {
-            ArgumentNullException.ThrowIfNull(errors);
-            errors.Should().BeEmpty();
-        }
+    /// <summary>
+    /// Asserts that a validation result is empty (no errors).
+    /// </summary>
+    /// <param name="errors">The validation errors dictionary.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="errors"/> is <see langword="null"/>.</exception>
+    public static void ShouldBeEmpty(this IReadOnlyDictionary<string, string> errors)
+    {
+        ArgumentNullException.ThrowIfNull(errors);
+        errors.Should().BeEmpty();
     }
 }

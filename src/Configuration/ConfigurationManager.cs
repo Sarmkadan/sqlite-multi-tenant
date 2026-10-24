@@ -21,7 +21,8 @@ public interface IConfigurationManager
     Dictionary<string, object> GetAll();
 }
 
-public sealed class ConfigurationManager : IConfigurationManager {
+public sealed class ConfigurationManager : IConfigurationManager
+{
     private readonly Dictionary<string, object> _configuration;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<ConfigurationManager> _logger;
@@ -42,18 +43,26 @@ public sealed class ConfigurationManager : IConfigurationManager {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         if (multiTenantOptions is null)
+        {
             throw new ArgumentNullException(nameof(multiTenantOptions));
+        }
 
         var options = multiTenantOptions.Value ?? throw new ArgumentNullException(nameof(multiTenantOptions));
 
         if (options.DefaultMaxConnections <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(options.DefaultMaxConnections), "DefaultMaxConnections must be greater than 0.");
+        }
 
         if (string.IsNullOrEmpty(options.BasePath))
+        {
             throw new ArgumentException("BasePath cannot be null or empty.", nameof(options.BasePath));
+        }
 
         if (!Directory.Exists(options.BasePath))
+        {
             throw new DirectoryNotFoundException($"BasePath '{options.BasePath}' does not exist.");
+        }
 
         _multiTenantOptions = options;
         _configuration = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
@@ -70,7 +79,9 @@ public sealed class ConfigurationManager : IConfigurationManager {
     {
         _logger.LogInformation("Getting configuration section: {Key}", key);
         if (_appConfiguration is null)
+        {
             throw new InvalidOperationException("This ConfigurationManager instance was not created with an IConfiguration source.");
+        }
 
         return _appConfiguration.GetSection(key);
     }
@@ -81,11 +92,15 @@ public sealed class ConfigurationManager : IConfigurationManager {
     public string? GetTenantSetting(string tenantId, string key)
     {
         if (_appConfiguration is null)
+        {
             throw new InvalidOperationException("This ConfigurationManager instance was not created with an IConfiguration source.");
+        }
 
         var tenantValue = _appConfiguration[$"Tenants:{tenantId}:Settings:{key}"];
         if (!string.IsNullOrEmpty(tenantValue))
+        {
             return tenantValue;
+        }
 
         return _appConfiguration[$"GlobalSettings:{key}"];
     }
@@ -96,7 +111,9 @@ public sealed class ConfigurationManager : IConfigurationManager {
     public MultiTenantOptions GetMultiTenantOptions()
     {
         if (_multiTenantOptions is null)
+        {
             throw new InvalidOperationException("This ConfigurationManager instance was not created with MultiTenantOptions.");
+        }
 
         return _multiTenantOptions;
     }
@@ -117,7 +134,9 @@ public sealed class ConfigurationManager : IConfigurationManager {
         try
         {
             if (TryGet(key, out T? value))
+            {
                 return value!;
+            }
 
             return defaultValue;
         }
@@ -253,7 +272,9 @@ public sealed class ConfigurationManager : IConfigurationManager {
             _semaphore.Wait();
 
             foreach (var kvp in settings)
+            {
                 _configuration[kvp.Key] = kvp.Value;
+            }
 
             _logger.LogInformation("Loaded {Count} configuration entries", settings.Count);
         }
@@ -275,7 +296,8 @@ public sealed class ConfigurationManager : IConfigurationManager {
 /// <summary>
 /// Validates configuration values.
 /// </summary>
-public sealed class ConfigurationValidator {
+public sealed class ConfigurationValidator
+{
     public bool ValidateConnectionString(string? connectionString)
     {
         return !string.IsNullOrWhiteSpace(connectionString) &&
@@ -295,7 +317,9 @@ public sealed class ConfigurationValidator {
     public bool ValidateFilePath(string? path)
     {
         if (string.IsNullOrWhiteSpace(path))
+        {
             return false;
+        }
 
         try
         {
@@ -312,7 +336,8 @@ public sealed class ConfigurationValidator {
 /// <summary>
 /// Configuration settings for the application.
 /// </summary>
-public sealed class AppConfiguration {
+public sealed class AppConfiguration
+{
     public string MasterConnectionString { get; set; } = string.Empty;
     public string DatabaseDirectory { get; set; } = string.Empty;
     public string BackupDirectory { get; set; } = string.Empty;

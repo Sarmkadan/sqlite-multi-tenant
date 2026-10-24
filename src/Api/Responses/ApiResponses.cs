@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Api.Responses;
 /// Implements Result pattern to provide status, message, and data in single object.
 /// Eliminates HTTP status code ambiguity at application layer.
 /// </summary>
-public sealed class ApiResponse<T> {
+public sealed class ApiResponse<T>
+{
     /// <summary>Gets or sets the StatusCode property of type int.</summary>
     public int StatusCode { get; set; }
     /// <summary>Gets or sets the IsSuccess property of type bool.</summary>
@@ -99,7 +100,8 @@ public sealed class ApiResponse<T> {
 /// Response DTO for tenant information.
 /// Exposes only safe fields; sensitive data (connection strings) never in responses.
 /// </summary>
-public sealed class TenantResponse {
+public sealed class TenantResponse
+{
     /// <summary>Gets or sets the TenantId property of type string, defaulting to string.Empty.</summary>
     public string TenantId { get; set; } = string.Empty;
     /// <summary>Gets or sets the Name property of type string, defaulting to string.Empty.</summary>
@@ -116,7 +118,8 @@ public sealed class TenantResponse {
 /// Response DTO for backup information.
 /// Includes all metadata needed for recovery decisions without exposing sensitive paths.
 /// </summary>
-public sealed class BackupResponse {
+public sealed class BackupResponse
+{
     /// <summary>Gets or sets the BackupId property of type string, defaulting to string.Empty.</summary>
     public string BackupId { get; set; } = string.Empty;
     /// <summary>Gets or sets the DatabaseId property of type string, defaulting to string.Empty.</summary>
@@ -141,7 +144,8 @@ public sealed class BackupResponse {
 /// Response DTO for individual migration information.
 /// Shows version history and rollback capability for schema evolution tracking.
 /// </summary>
-public sealed class MigrationResponse {
+public sealed class MigrationResponse
+{
     /// <summary>Gets or sets the MigrationId property of type string, defaulting to string.Empty.</summary>
     public string MigrationId { get; set; } = string.Empty;
     /// <summary>Gets or sets the DatabaseId property of type string, defaulting to string.Empty.</summary>
@@ -297,7 +301,8 @@ public sealed class MigrationBatchResponse
 /// Response DTO for migration history queries.
 /// Used for status dashboards and schema evolution audits.
 /// </summary>
-public sealed class MigrationHistoryResponse {
+public sealed class MigrationHistoryResponse
+{
     /// <summary>Gets or sets the DatabaseId property of type string, defaulting to string.Empty.</summary>
     public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the PendingCount property of type int.</summary>
@@ -312,7 +317,8 @@ public sealed class MigrationHistoryResponse {
 /// Response DTO for health check endpoint.
 /// Standardizes monitoring and alerting across all components.
 /// </summary>
-public sealed class HealthCheckResponse {
+public sealed class HealthCheckResponse
+{
     /// <summary>Gets or sets the Status property of type string, defaulting to string.Empty.</summary>
     public string Status { get; set; } = string.Empty;
     /// <summary>Gets or sets the CheckedAt property of type DateTime, defaulting to DateTime.UtcNow.</summary>
@@ -325,7 +331,8 @@ public sealed class HealthCheckResponse {
 /// Component-level health status.
 /// Enables granular monitoring of database, cache, file system.
 /// </summary>
-public sealed class ComponentHealth {
+public sealed class ComponentHealth
+{
     /// <summary>Gets or sets the Status property of type string, defaulting to string.Empty.</summary>
     public string Status { get; set; } = string.Empty;
     /// <summary>Gets or sets the Message property of type string?.</summary>
@@ -338,7 +345,8 @@ public sealed class ComponentHealth {
 /// Paginated response wrapper for list endpoints.
 /// Provides metadata for client-side pagination UI rendering.
 /// </summary>
-public sealed class PaginatedResponse<T> {
+public sealed class PaginatedResponse<T>
+{
     /// <summary>Gets or sets the Items property of type List&lt;T&gt;, defaulting to a new list.</summary>
     public List<T> Items { get; set; } = new();
     /// <summary>Gets or sets the TotalCount property of type int.</summary>
@@ -355,7 +363,8 @@ public sealed class PaginatedResponse<T> {
 /// Response DTO for async operation status.
 /// Clients poll this endpoint to track long-running operations (backups, migrations).
 /// </summary>
-public sealed class AsyncOperationResponse {
+public sealed class AsyncOperationResponse
+{
     /// <summary>Gets or sets the OperationId property of type string, defaulting to string.Empty.</summary>
     public string OperationId { get; set; } = string.Empty;
     /// <summary>Gets or sets the Status property of type string, defaulting to string.Empty.</summary>
@@ -376,7 +385,8 @@ public sealed class AsyncOperationResponse {
 /// Error response DTO for validation and business rule violations.
 /// Multiple errors returned together to improve client user experience.
 /// </summary>
-public sealed class ErrorResponse {
+public sealed class ErrorResponse
+{
     /// <summary>Gets or sets the Code property of type string, defaulting to string.Empty.</summary>
     public string Code { get; set; } = string.Empty;
     /// <summary>Gets or sets the Message property of type string, defaulting to string.Empty.</summary>

@@ -5,84 +5,83 @@ using System.Threading.Tasks;
 using SqliteMultiTenant.Api;          // ApiResponse<T>
 using SqliteMultiTenant.Models;      // TenantResponse (assumed location)
 
-namespace SqliteMultiTenant.Api.Controllers
+namespace SqliteMultiTenant.Api.Controllers;
+
+/// <summary>
+/// Extension methods for <see cref="TenantController"/>.
+/// </summary>
+public static class TenantControllerExtensions
 {
     /// <summary>
-    /// Extension methods for <see cref="TenantController"/>.
+    /// Executes an asynchronous operation with a simple retry policy.
+    /// The operation is invoked up to <paramref name="maxAttempts"/> times
+    /// until a successful <see cref="ApiResponse{T}"/> is returned.
     /// </summary>
-    public static class TenantControllerExtensions
+    /// <param name="controller">The tenant controller instance.</param>
+    /// <param name="operation">The operation to execute.</param>
+    /// <param name="maxAttempts">Maximum number of retry attempts. Must be positive.</param>
+    /// <returns>The successful response or the last attempt if all failed.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="operation"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="maxAttempts"/> is not positive.</exception>
+    public static async Task<ApiResponse<T>> ExecuteWithRetryAsync<T>(
+        this TenantController controller,
+        Func<Task<ApiResponse<T>>> operation,
+        int maxAttempts = 3)
     {
-        /// <summary>
-        /// Executes an asynchronous operation with a simple retry policy.
-        /// The operation is invoked up to <paramref name="maxAttempts"/> times
-        /// until a successful <see cref="ApiResponse{T}"/> is returned.
-        /// </summary>
-        /// <param name="controller">The tenant controller instance.</param>
-        /// <param name="operation">The operation to execute.</param>
-        /// <param name="maxAttempts">Maximum number of retry attempts. Must be positive.</param>
-        /// <returns>The successful response or the last attempt if all failed.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="controller"/> or <paramref name="operation"/> is null.</exception>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="maxAttempts"/> is not positive.</exception>
-        public static async Task<ApiResponse<T>> ExecuteWithRetryAsync<T>(
-            this TenantController controller,
-            Func<Task<ApiResponse<T>>> operation,
-            int maxAttempts = 3)
+        ArgumentNullException.ThrowIfNull(controller);
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxAttempts);
+
+        ApiResponse<T>? lastResult = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {
-            ArgumentNullException.ThrowIfNull(controller);
-            ArgumentNullException.ThrowIfNull(operation);
-            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxAttempts);
+            lastResult = await operation();
 
-            ApiResponse<T>? lastResult = null;
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            if (lastResult is { IsSuccess: true })
             {
-                lastResult = await operation();
-
-                if (lastResult is { IsSuccess: true })
-                {
-                    return lastResult;
-                }
+                return lastResult;
             }
-
-            // Return the last attempt (may be a failure) so the caller can handle it.
-            return lastResult!;
         }
 
-        /// <summary>
-        /// Retrieves all tenants and returns them as a dictionary keyed by tenant identifier.
-        /// The method uses reflection to obtain the identifier property named <c>TenantId</c>
-        /// from each <see cref="TenantResponse"/> instance, avoiding a hard compile‑time
-        /// dependency on the exact shape of the type.
-        /// </summary>
-        /// <param name="controller">The tenant controller instance.</param>
-        /// <returns>A dictionary mapping tenant identifiers to tenant responses.</returns>
-        /// <exception cref="ArgumentNullException"><paramref name="controller"/> is null.</exception>
-        public static async Task<Dictionary<string, TenantResponse>> GetAllTenantsAsDictionaryAsync(
-            this TenantController controller)
+        // Return the last attempt (may be a failure) so the caller can handle it.
+        return lastResult!;
+    }
+
+    /// <summary>
+    /// Retrieves all tenants and returns them as a dictionary keyed by tenant identifier.
+    /// The method uses reflection to obtain the identifier property named <c>TenantId</c>
+    /// from each <see cref="TenantResponse"/> instance, avoiding a hard compile‑time
+    /// dependency on the exact shape of the type.
+    /// </summary>
+    /// <param name="controller">The tenant controller instance.</param>
+    /// <returns>A dictionary mapping tenant identifiers to tenant responses.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="controller"/> is null.</exception>
+    public static async Task<Dictionary<string, TenantResponse>> GetAllTenantsAsDictionaryAsync(
+        this TenantController controller)
+    {
+        ArgumentNullException.ThrowIfNull(controller);
+
+        var response = await controller.ListAllTenantsAsync();
+
+        var dict = new Dictionary<string, TenantResponse>(StringComparer.OrdinalIgnoreCase);
+
+        if (response.IsSuccess && response.Data != null)
         {
-            ArgumentNullException.ThrowIfNull(controller);
-
-            var response = await controller.ListAllTenantsAsync();
-
-            var dict = new Dictionary<string, TenantResponse>(StringComparer.OrdinalIgnoreCase);
-
-            if (response.IsSuccess && response.Data != null)
+            foreach (var tenant in response.Data)
             {
-                foreach (var tenant in response.Data)
+                // Expect a property named "TenantId" on TenantResponse.
+                var idProp = tenant.GetType().GetProperty("TenantId");
+                if (idProp != null)
                 {
-                    // Expect a property named "TenantId" on TenantResponse.
-                    var idProp = tenant.GetType().GetProperty("TenantId");
-                    if (idProp != null)
+                    var id = idProp.GetValue(tenant) as string;
+                    if (!string.IsNullOrEmpty(id))
                     {
-                        var id = idProp.GetValue(tenant) as string;
-                        if (!string.IsNullOrEmpty(id))
-                        {
-                            dict[id] = tenant;
-                        }
+                        dict[id] = tenant;
                     }
                 }
             }
-
-            return dict;
         }
+
+        return dict;
     }
 }

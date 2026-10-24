@@ -17,7 +17,8 @@ namespace SqliteMultiTenant.Database;
 /// across multiple tenants, see <see cref="ConnectionPoolManager"/>.
 /// </summary>
 [DebuggerDisplay("{ToString(),nq}")]
-public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
+public sealed class ConnectionPool : IAsyncDisposable, IDisposable
+{
     private readonly string _connectionString;
     private readonly int _maxSize;
     private readonly TimeSpan _idleTimeout;
@@ -48,9 +49,14 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
         SqlitePragmaOptions? pragmas = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
+        {
             throw new ArgumentException("Connection string is required.", nameof(connectionString));
+        }
+
         if (maxSize < 1)
+        {
             throw new ArgumentOutOfRangeException(nameof(maxSize), "Max pool size must be at least 1.");
+        }
 
         _connectionString = connectionString;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -85,7 +91,9 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
 
         var acquired = await _semaphore.WaitAsync(timeout ?? TimeSpan.FromSeconds(30), cancellationToken);
         if (!acquired)
+        {
             throw new TimeoutException("Timed out waiting for a connection pool slot.");
+        }
 
         while (_available.TryTake(out var pooled))
         {
@@ -235,10 +243,14 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
         }
 
         foreach (var item in keep)
+        {
             _available.Add(item);
+        }
 
         if (pruned > 0)
+        {
             _logger.LogDebug("Pruned {Count} idle connections", pruned);
+        }
 
         return pruned;
     }
@@ -246,7 +258,11 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         while (_available.TryTake(out var pooled))
@@ -261,7 +277,11 @@ public sealed class ConnectionPool : IAsyncDisposable, IDisposable {
     /// <inheritdoc />
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         while (_available.TryTake(out var pooled))

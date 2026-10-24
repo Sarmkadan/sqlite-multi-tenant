@@ -18,11 +18,12 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/databases")]
-public sealed class DatabaseController : ControllerBase {
+public sealed class DatabaseController : ControllerBase
+{
     private const string BaseDatabasePath = "./databases";
-        private const string QuickCheckPragma = "PRAGMA quick_check";
-        private const string IntegrityCheckPragma = "PRAGMA integrity_check";
-        private const string TableInfoPragmaFormat = "PRAGMA table_info(\"{0}\")";
+    private const string QuickCheckPragma = "PRAGMA quick_check";
+    private const string IntegrityCheckPragma = "PRAGMA integrity_check";
+    private const string TableInfoPragmaFormat = "PRAGMA table_info(\"{0}\")";
 
     private readonly ILogger<DatabaseController> _logger;
 
@@ -51,7 +52,9 @@ public sealed class DatabaseController : ControllerBase {
 
             var path = ResolveDatabasePath(databaseId);
             if (!System.IO.File.Exists(path))
+            {
                 return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+            }
 
             var isCorrupted = false;
             var tableCount = 0;
@@ -121,7 +124,9 @@ public sealed class DatabaseController : ControllerBase {
 
             var path = ResolveDatabasePath(databaseId);
             if (!System.IO.File.Exists(path))
+            {
                 return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+            }
 
             var startTime = DateTime.UtcNow;
 
@@ -178,7 +183,9 @@ public sealed class DatabaseController : ControllerBase {
 
             var path = ResolveDatabasePath(databaseId);
             if (!System.IO.File.Exists(path))
+            {
                 return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+            }
 
             var startTime = DateTime.UtcNow;
             var errors = new List<string>();
@@ -195,7 +202,9 @@ public sealed class DatabaseController : ControllerBase {
                 {
                     var message = reader.GetString(0);
                     if (!string.Equals(message, "ok", StringComparison.OrdinalIgnoreCase))
+                    {
                         errors.Add(message);
+                    }
                 }
             }
 
@@ -237,7 +246,9 @@ public sealed class DatabaseController : ControllerBase {
 
             var path = ResolveDatabasePath(databaseId);
             if (!System.IO.File.Exists(path))
+            {
                 return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+            }
 
             var tables = new List<TableSchema>();
 
@@ -252,7 +263,9 @@ public sealed class DatabaseController : ControllerBase {
                         "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
                     using var reader = command.ExecuteReader();
                     while (reader.Read())
+                    {
                         tableNames.Add(reader.GetString(0));
+                    }
                 }
 
                 foreach (var tableName in tableNames)
@@ -322,11 +335,15 @@ public sealed class DatabaseController : ControllerBase {
             _logger.LogInformation("Database export requested: {DatabaseId} as {Format}", databaseId, format);
 
             if (!IsValidExportFormat(format))
+            {
                 return BadRequest(ApiResponse<object>.Error($"Invalid export format: {format}"));
+            }
 
             var path = ResolveDatabasePath(databaseId);
             if (!System.IO.File.Exists(path))
+            {
                 return NotFound(ApiResponse<object>.Error($"Database not found: {databaseId}"));
+            }
 
             await Task.CompletedTask;
 
@@ -356,7 +373,8 @@ public sealed class DatabaseController : ControllerBase {
         };
 }
 
-public sealed class DatabaseStats {
+public sealed class DatabaseStats
+{
     public string DatabaseId { get; set; } = string.Empty;
     public long FileSizeBytes { get; set; }
     public int TableCount { get; set; }
@@ -366,14 +384,16 @@ public sealed class DatabaseStats {
     public DateTime Timestamp { get; set; }
 }
 
-public sealed class OptimizationResult {
+public sealed class OptimizationResult
+{
     public string DatabaseId { get; set; } = string.Empty;
     public long DurationMs { get; set; }
     public string Message { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
 }
 
-public sealed class IntegrityCheckResult {
+public sealed class IntegrityCheckResult
+{
     public string DatabaseId { get; set; } = string.Empty;
     public bool IsValid { get; set; }
     public int ErrorCount { get; set; }
@@ -382,26 +402,30 @@ public sealed class IntegrityCheckResult {
     public DateTime Timestamp { get; set; }
 }
 
-public sealed class DatabaseSchema {
+public sealed class DatabaseSchema
+{
     public string DatabaseId { get; set; } = string.Empty;
     public List<TableSchema> Tables { get; set; } = new();
     public DateTime Timestamp { get; set; }
 }
 
-public sealed class TableSchema {
+public sealed class TableSchema
+{
     public string TableName { get; set; } = string.Empty;
     public List<ColumnSchema> Columns { get; set; } = new();
     public int RowCount { get; set; }
 }
 
-public sealed class ColumnSchema {
+public sealed class ColumnSchema
+{
     public string ColumnName { get; set; } = string.Empty;
     public string DataType { get; set; } = string.Empty;
     public bool IsNullable { get; set; }
     public bool IsPrimaryKey { get; set; }
 }
 
-public sealed class ExportResult {
+public sealed class ExportResult
+{
     public string DatabaseId { get; set; } = string.Empty;
     public string Format { get; set; } = string.Empty;
     public DateTime ExportedAt { get; set; }

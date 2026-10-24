@@ -19,7 +19,8 @@ public interface IAuditLogger
     Task PurgeOldEntriesAsync(TimeSpan retentionPeriod);
 }
 
-public sealed class AuditLogger : IAuditLogger {
+public sealed class AuditLogger : IAuditLogger
+{
     private readonly List<AuditLogEntry> _entries;
     private readonly ILogger<AuditLogger> _logger;
     private readonly SemaphoreSlim _semaphore;
@@ -52,7 +53,9 @@ public sealed class AuditLogger : IAuditLogger {
 
             // Maintain memory limit
             if (_entries.Count > MaxEntriesInMemory)
+            {
                 _entries.RemoveRange(0, _entries.Count - MaxEntriesInMemory);
+            }
 
             _logger.LogInformation(
                 $"Audit logged: {entry.EventType} by {entry.Actor} - {entry.Description}");
@@ -79,23 +82,35 @@ public sealed class AuditLogger : IAuditLogger {
 
             // Apply filters
             if (!string.IsNullOrEmpty(filter.EventType))
+            {
                 query = query.Where(e => e.EventType == filter.EventType);
+            }
 
             if (!string.IsNullOrEmpty(filter.Actor))
+            {
                 query = query.Where(e => e.Actor == filter.Actor);
+            }
 
             if (!string.IsNullOrEmpty(filter.ResourceId))
+            {
                 query = query.Where(e => e.ResourceId == filter.ResourceId);
+            }
 
             if (filter.StartTime.HasValue)
+            {
                 query = query.Where(e => e.Timestamp >= filter.StartTime);
+            }
 
             if (filter.EndTime.HasValue)
+            {
                 query = query.Where(e => e.Timestamp <= filter.EndTime);
+            }
 
             if (!string.IsNullOrEmpty(filter.SearchTerm))
+            {
                 query = query.Where(e =>
                     e.Description.Contains(filter.SearchTerm, StringComparison.OrdinalIgnoreCase));
+            }
 
             // Order and limit results
             return query
@@ -124,16 +139,24 @@ public sealed class AuditLogger : IAuditLogger {
             var query = _entries.AsEnumerable();
 
             if (!string.IsNullOrEmpty(filter.EventType))
+            {
                 query = query.Where(e => e.EventType == filter.EventType);
+            }
 
             if (!string.IsNullOrEmpty(filter.Actor))
+            {
                 query = query.Where(e => e.Actor == filter.Actor);
+            }
 
             if (filter.StartTime.HasValue)
+            {
                 query = query.Where(e => e.Timestamp >= filter.StartTime);
+            }
 
             if (filter.EndTime.HasValue)
+            {
                 query = query.Where(e => e.Timestamp <= filter.EndTime);
+            }
 
             return query.Count();
         }
@@ -188,7 +211,8 @@ public sealed class AuditLogger : IAuditLogger {
     }
 }
 
-public sealed class AuditLogEntry {
+public sealed class AuditLogEntry
+{
     public string Id { get; set; } = string.Empty;
     public DateTime Timestamp { get; set; }
     public string EventType { get; set; } = string.Empty;
@@ -199,7 +223,7 @@ public sealed class AuditLogEntry {
     public AuditAction Action { get; set; }
     public Dictionary<string, object> Changes { get; set; } = new();
     public string IpAddress { get; set; } = string.Empty;
-	public string TenantId { get; set; } = string.Empty;
+    public string TenantId { get; set; } = string.Empty;
 }
 
 public enum AuditAction
@@ -213,7 +237,8 @@ public enum AuditAction
     Import
 }
 
-public sealed class AuditLogFilter {
+public sealed class AuditLogFilter
+{
     public string? EventType { get; set; }
     public string? Actor { get; set; }
     public string? ResourceId { get; set; }
@@ -223,7 +248,8 @@ public sealed class AuditLogFilter {
     public int Limit { get; set; } = 100;
 }
 
-public sealed class AuditLogStatistics {
+public sealed class AuditLogStatistics
+{
     public int TotalEntries { get; set; }
     public int UniqueActors { get; set; }
     public int UniqueEventTypes { get; set; }
