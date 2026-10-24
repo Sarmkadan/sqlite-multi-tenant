@@ -298,9 +298,9 @@ public sealed class CommandLineParser
 
     internal class CommandDefinition
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public Action<LegacyParsedCommand> Handler { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
+        public required Action<LegacyParsedCommand> Handler { get; set; }
         public List<string> Aliases { get; set; } = new List<string>();
         public Dictionary<string, OptionDefinition> Options { get; set; } = new Dictionary<string, OptionDefinition>();
         public Dictionary<string, FlagDefinition> Flags { get; set; } = new Dictionary<string, FlagDefinition>();
@@ -308,16 +308,16 @@ public sealed class CommandLineParser
 
     internal class OptionDefinition
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
         public char? ShortName { get; set; }
         public bool Required { get; set; }
     }
 
     internal class FlagDefinition
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public required string Name { get; set; }
+        public required string Description { get; set; }
         public char? ShortName { get; set; }
     }
 
@@ -336,12 +336,12 @@ public sealed class CommandLineParser
 /// </summary>
 public sealed class LegacyParsedCommand
 {
-    public string Command { get; set; }
+    public string? Command { get; set; }
     public Dictionary<string, string> Options { get; set; } = new Dictionary<string, string>();
     public Dictionary<string, bool> Flags { get; set; } = new Dictionary<string, bool>();
     public List<string> PositionalArguments { get; set; } = new List<string>();
     public bool IsValid { get; set; }
-    public string Error { get; set; }
+    public string? Error { get; set; }
 
     /// <summary>
     /// Gets the value of the specified option or returns a default value if the option is not present.
@@ -349,7 +349,7 @@ public sealed class LegacyParsedCommand
     /// <param name="name">The name of the option to retrieve.</param>
     /// <param name="defaultValue">The default value to return if the option is not found.</param>
     /// <returns>The option value if found, otherwise the default value.</returns>
-    public string GetOption(string name, string defaultValue = null)
+    public string? GetOption(string name, string? defaultValue = null)
     {
         return Options.TryGetValue(name, out var value) ? value : defaultValue;
     }
@@ -371,7 +371,7 @@ public sealed class LegacyParsedCommand
     /// <param name="name">The name of the option to retrieve.</param>
     /// <param name="defaultValue">The default value to return if the option is not found or cannot be converted.</param>
     /// <returns>The converted option value if found and convertible, otherwise the default value.</returns>
-    public T GetOption<T>(string name, T defaultValue = default) where T : IConvertible
+    public T? GetOption<T>(string name, T? defaultValue = default) where T : IConvertible
     {
         if (Options.TryGetValue(name, out var value))
         {

@@ -94,7 +94,7 @@ public static class ConflictResolutionServiceExtensions
     public static async Task<ConflictResolutionResult> ResolveConflictsAsync(
         this ConflictResolutionService service,
         ConflictDetectionResult conflicts,
-        Func<string, ConflictType, object, object, object> customResolver)
+        Func<string, ConflictType, object?, object?, object?> customResolver)
     {
         ArgumentNullException.ThrowIfNull(customResolver);
 

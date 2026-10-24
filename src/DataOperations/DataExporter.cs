@@ -71,7 +71,7 @@ public sealed class DataExporter
 
         try
         {
-            var rows = new List<Dictionary<string, object>>();
+            var rows = new List<Dictionary<string, object?>>();
 
             using (var command = connection.CreateCommand())
             {
@@ -89,7 +89,7 @@ public sealed class DataExporter
 
                     while (await reader.ReadAsync())
                     {
-                        var row = new Dictionary<string, object>();
+                        var row = new Dictionary<string, object?>();
                         for (int i = 0; i < fieldCount; i++)
                         {
                             row[fieldNames[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
@@ -185,7 +185,7 @@ public sealed class DataExporter
                                 csv.Append(",");
                             }
 
-                            var value = reader.IsDBNull(i) ? string.Empty : reader.GetValue(i).ToString();
+                            var value = reader.IsDBNull(i) ? string.Empty : reader.GetValue(i).ToString() ?? string.Empty;
                             csv.Append(EscapeCsvField(value));
                         }
                         csv.AppendLine();
@@ -288,7 +288,7 @@ public sealed class DataExporter
                                 }
                                 else
                                 {
-                                    values.Append($"'{value.ToString().Replace("'", "''")}'");
+                                    values.Append($"'{value!.ToString()?.Replace("'", "''")}'");
                                 }
                             }
                         }

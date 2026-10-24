@@ -12,7 +12,7 @@ public class TenantServiceValidationTests
     {
         // TenantService likely has no public parameterless ctor.
         // Use FormatterServices to create an uninitialized instance.
-        return (TenantService)FormatterServices.GetUninitializedObject(typeof(TenantService));
+        return (TenantService)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(TenantService));
     }
 
     [Fact]

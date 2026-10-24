@@ -91,7 +91,7 @@ public class JsonExportFormatterTests
     [Fact]
     public void Parse_NullInput_ReturnsNull()
     {
-        string json = null;
+        string? json = null;
         object? result = _formatter.Parse<object>(json);
 
         Assert.Null(result);
@@ -118,7 +118,7 @@ public class JsonExportFormatterTests
     {
         JsonSerializerOptions options = JsonExportFormatter.GetMinimalOptions();
 
-        Assert.Equal(false, options.WriteIndented);
+        Assert.False(options.WriteIndented);
         Assert.Equal(JsonNamingPolicy.CamelCase, options.PropertyNamingPolicy);
         Assert.Equal(JsonIgnoreCondition.WhenWritingNull, options.DefaultIgnoreCondition);
     }
@@ -128,7 +128,7 @@ public class JsonExportFormatterTests
     {
         JsonSerializerOptions options = JsonExportFormatter.GetVerboseOptions();
 
-        Assert.Equal(true, options.WriteIndented);
+        Assert.True(options.WriteIndented);
         Assert.Equal(JsonNamingPolicy.CamelCase, options.PropertyNamingPolicy);
         Assert.Equal(JsonIgnoreCondition.Never, options.DefaultIgnoreCondition);
     }

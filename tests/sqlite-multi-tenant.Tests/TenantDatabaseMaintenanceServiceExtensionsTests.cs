@@ -11,7 +11,7 @@ public sealed class TenantDatabaseMaintenanceServiceExtensionsTests
     public void AddTenantDatabaseMaintenanceService_NullServices_ThrowsArgumentNullException()
     {
         // Arrange
-        IServiceCollection services = null;
+        IServiceCollection services = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => services.AddTenantDatabaseMaintenanceService());
@@ -38,7 +38,7 @@ public sealed class TenantDatabaseMaintenanceServiceExtensionsTests
     public void AddTenantDatabaseMaintenanceService_WithConfigure_NullServices_ThrowsArgumentNullException()
     {
         // Arrange
-        IServiceCollection services = null;
+        IServiceCollection services = null!;
         Action<TenantDatabaseMaintenanceOptions> configure = options => { };
 
         // Act & Assert
@@ -50,7 +50,7 @@ public sealed class TenantDatabaseMaintenanceServiceExtensionsTests
     {
         // Arrange
         var services = new ServiceCollection();
-        Action<TenantDatabaseMaintenanceOptions> configure = null;
+        Action<TenantDatabaseMaintenanceOptions> configure = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => services.AddTenantDatabaseMaintenanceService(configure));

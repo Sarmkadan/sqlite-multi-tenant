@@ -350,7 +350,7 @@ public sealed class DataImporter
                         {
                             values.Add(prop.Value.ValueKind == JsonValueKind.Null
                                 ? DBNull.Value
-                                : (object)prop.Value.GetString());
+                                : (object?)prop.Value.GetString() ?? DBNull.Value);
                         }
 
                         // Add parameters for current record

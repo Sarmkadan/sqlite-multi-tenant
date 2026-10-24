@@ -318,7 +318,7 @@ public sealed class BackupRotationResult
     /// <summary>
     /// Error message if the operation failed; otherwise null.
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 }
 
 /// <summary>
@@ -329,11 +329,11 @@ public sealed class BackupVerificationResult
     /// <summary>
     /// Full path to the backup file.
     /// </summary>
-    public string FilePath { get; set; }
+    public required string FilePath { get; set; }
     /// <summary>
     /// File name of the backup.
     /// </summary>
-    public string FileName { get; set; }
+    public required string FileName { get; set; }
     /// <summary>
     /// Size of the file in bytes (from <see cref="FileInfo"/>).
     /// </summary>
@@ -361,7 +361,7 @@ public sealed class BackupVerificationResult
     /// <summary>
     /// Error message if verification failed; otherwise null.
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 }
 
 /// <summary>

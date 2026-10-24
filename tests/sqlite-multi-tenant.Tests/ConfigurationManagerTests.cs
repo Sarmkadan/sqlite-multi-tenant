@@ -72,7 +72,7 @@ public sealed class ConfigurationManagerTests : IDisposable
         var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
         // Act & Assert
-        this.Invoking(_ => new ConfigurationManager(null, _mockLogger, Options.Create(options)))
+        this.Invoking(_ => new ConfigurationManager(null!, _mockLogger, Options.Create(options)))
         .Should().Throw<ArgumentNullException>()
         .WithParameterName("configuration");
     }
@@ -89,7 +89,7 @@ public sealed class ConfigurationManagerTests : IDisposable
         var options = new MultiTenantOptions { BasePath = _tempBasePath, DefaultMaxConnections = 10 };
 
         // Act & Assert
-        this.Invoking(_ => new ConfigurationManager(_mockConfiguration, null, Options.Create(options)))
+        this.Invoking(_ => new ConfigurationManager(_mockConfiguration, null!, Options.Create(options)))
         .Should().Throw<ArgumentNullException>()
         .WithParameterName("logger");
     }
@@ -103,7 +103,7 @@ public sealed class ConfigurationManagerTests : IDisposable
     {
         _mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentNullException_WhenOptionsIsNull called");
         // Act & Assert
-        this.Invoking(_ => new ConfigurationManager(_mockConfiguration, _mockLogger, null))
+        this.Invoking(_ => new ConfigurationManager(_mockConfiguration, _mockLogger, null!))
         .Should().Throw<ArgumentNullException>()
         .WithParameterName("multiTenantOptions");
     }
@@ -153,7 +153,7 @@ public sealed class ConfigurationManagerTests : IDisposable
     {
         _mockLogger.LogInformation("ConfigurationManager_Constructor_ThrowsArgumentException_WhenBasePathIsNull called");
         // Arrange
-        var options = new MultiTenantOptions { BasePath = null, DefaultMaxConnections = 10 };
+        var options = new MultiTenantOptions { BasePath = null!, DefaultMaxConnections = 10 };
 
         // Act & Assert
         this.Invoking(_ => CreateManager(options))

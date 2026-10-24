@@ -1,10 +1,21 @@
 <Project>
   <PropertyGroup>
+    <!-- Language and analysis -->
     <LangVersion>latest</LangVersion>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Common package metadata -->
     <Authors>Vladyslav Zaiets</Authors>
+    <Copyright>Copyright (c) 2026 Vladyslav Zaiets</Copyright>
     <PackageProjectUrl>https://github.com/sarmkadan/sqlite-multi-tenant</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sarmkadan/sqlite-multi-tenant</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 </Project>

@@ -19,7 +19,7 @@ namespace SqliteMultiTenant.Caching;
 /// </summary>
 public interface ICacheService
 {
-    T Get<T>(string key);
+    T? Get<T>(string key);
     void Set<T>(string key, T value, TimeSpan? expiration = null);
     void Remove(string key);
     void RemoveByPattern(string pattern);
@@ -50,7 +50,7 @@ public sealed class CacheService : ICacheService
     /// Retrieves value from cache if it exists and hasn't expired.
     /// Returns default(T) if not found or expired (no exception thrown).
     /// </summary>
-    public T Get<T>(string key)
+    public T? Get<T>(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
         {

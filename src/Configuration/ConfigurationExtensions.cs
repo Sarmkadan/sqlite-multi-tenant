@@ -25,7 +25,7 @@ public static class ConfigurationExtensions
     /// <returns>The parsed value or default if parsing fails.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="key"/> is null.</exception>
-    public static T GetValueSafe<T>(this IConfiguration config, string key, T defaultValue = default)
+    public static T? GetValueSafe<T>(this IConfiguration config, string key, T? defaultValue = default)
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(key);
@@ -118,7 +118,7 @@ public static class ConfigurationExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="name"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="name"/> is empty or whitespace.</exception>
-    public static string GetConnectionStringSafe(this IConfiguration config, string name, string defaultValue = null)
+    public static string GetConnectionStringSafe(this IConfiguration config, string name, string? defaultValue = null)
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(name);
@@ -160,14 +160,14 @@ public static class ConfigurationExtensions
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="sectionKey"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown if <paramref name="sectionKey"/> is empty or whitespace.</exception>
-    public static Dictionary<string, string> GetSectionAsDictionary(this IConfiguration config, string sectionKey)
+    public static Dictionary<string, string?> GetSectionAsDictionary(this IConfiguration config, string sectionKey)
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(sectionKey);
         ArgumentException.ThrowIfNullOrWhiteSpace(sectionKey);
 
         var section = config.GetSection(sectionKey);
-        var result = new Dictionary<string, string>();
+        var result = new Dictionary<string, string?>();
 
         foreach (var child in section.GetChildren())
         {
@@ -226,7 +226,7 @@ public static class ConfigurationExtensions
     /// <returns>The environment variable value if set, otherwise the configuration value.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="config"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="key"/> is null.</exception>
-    public static string GetValueWithEnvironmentOverride(this IConfiguration config, string key, string envVar = null)
+    public static string? GetValueWithEnvironmentOverride(this IConfiguration config, string key, string? envVar = null)
     {
         ArgumentNullException.ThrowIfNull(config);
         ArgumentNullException.ThrowIfNull(key);
@@ -277,7 +277,7 @@ public sealed class ConfigurationBuilder
     /// </summary>
     /// <param name="prefix">The prefix to filter environment variables.</param>
     /// <returns>The builder instance for method chaining.</returns>
-    public ConfigurationBuilder AddEnvironmentVariables(string prefix = null)
+    public ConfigurationBuilder AddEnvironmentVariables(string? prefix = null)
     {
         _builder.AddEnvironmentVariables(prefix);
         return this;
@@ -289,7 +289,7 @@ public sealed class ConfigurationBuilder
     /// <param name="settings">The dictionary containing configuration key-value pairs.</param>
     /// <returns>The builder instance for method chaining.</returns>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="settings"/> is null.</exception>
-    public ConfigurationBuilder AddInMemory(Dictionary<string, string> settings)
+    public ConfigurationBuilder AddInMemory(Dictionary<string, string?> settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _builder.AddInMemoryCollection(settings);
@@ -311,7 +311,7 @@ public sealed class ConfigurationBuilder
     /// </summary>
     /// <param name="environment">Optional environment name. If null, reads from ASPNETCORE_ENVIRONMENT.</param>
     /// <returns>The built configuration root.</returns>
-    public static IConfigurationRoot BuildStandardConfiguration(string environment = null)
+    public static IConfigurationRoot BuildStandardConfiguration(string? environment = null)
     {
         var env = environment ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
 

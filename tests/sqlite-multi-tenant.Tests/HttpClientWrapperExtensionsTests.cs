@@ -13,7 +13,7 @@ public class HttpClientWrapperExtensionsTests
     public void AddJsonAcceptHeader_ThrowsArgumentNullException_WhenClientIsNull()
     {
         // Arrange
-        IHttpClientWrapper client = null;
+        IHttpClientWrapper client = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => HttpClientWrapperExtensions.AddJsonAcceptHeader(client));
@@ -36,7 +36,7 @@ public class HttpClientWrapperExtensionsTests
     public async Task GetListAsync_ThrowsArgumentNullException_WhenClientIsNull()
     {
         // Arrange
-        IHttpClientWrapper client = null;
+        IHttpClientWrapper client = null!;
         string requestUri = "https://example.com";
 
         // Act & Assert
@@ -48,7 +48,7 @@ public class HttpClientWrapperExtensionsTests
     {
         // Arrange
         var client = Substitute.For<IHttpClientWrapper>();
-        string requestUri = null;
+        string requestUri = null!;
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => HttpClientWrapperExtensions.GetListAsync<string>(client, requestUri));
@@ -91,7 +91,7 @@ public class HttpClientWrapperExtensionsTests
         var client = Substitute.For<IHttpClientWrapper>();
         string requestUri = "https://example.com/api/data";
 
-        client.GetAsync<IReadOnlyList<string>>(requestUri).Returns((IReadOnlyList<string>)null);
+        client.GetAsync<IReadOnlyList<string>>(requestUri).Returns((IReadOnlyList<string>)null!);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => HttpClientWrapperExtensions.GetListAsync<string>(client, requestUri));
@@ -101,7 +101,7 @@ public class HttpClientWrapperExtensionsTests
     public async Task DeleteIfExistsAsync_ThrowsArgumentNullException_WhenClientIsNull()
     {
         // Arrange
-        IHttpClientWrapper client = null;
+        IHttpClientWrapper client = null!;
         string requestUri = "https://example.com";
 
         // Act & Assert
@@ -113,7 +113,7 @@ public class HttpClientWrapperExtensionsTests
     {
         // Arrange
         var client = Substitute.For<IHttpClientWrapper>();
-        string requestUri = null;
+        string requestUri = null!;
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => HttpClientWrapperExtensions.DeleteIfExistsAsync(client, requestUri));

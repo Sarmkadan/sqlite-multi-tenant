@@ -82,7 +82,7 @@ public sealed class TenantValidator
     /// Validates tenant name uniqueness against existing tenants.
     /// This would be enhanced with database lookup in production.
     /// </summary>
-    public Dictionary<string, string> ValidateNameUniqueness(string tenantName, string excludeTenantId = null)
+    public Dictionary<string, string> ValidateNameUniqueness(string tenantName, string? excludeTenantId = null)
     {
         var errors = new Dictionary<string, string>();
 

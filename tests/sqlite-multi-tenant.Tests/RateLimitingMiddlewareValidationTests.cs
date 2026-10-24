@@ -32,14 +32,14 @@ public class RateLimitingMiddlewareValidationTests
     private static TokenBucket CreateTokenBucket()
     {
         // TokenBucket has no public validation state; we can create an uninitialized instance.
-        return (TokenBucket)FormatterServices.GetUninitializedObject(typeof(TokenBucket));
+        return (TokenBucket)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(TokenBucket));
     }
 
     private static RateLimitingMiddleware CreateMiddleware(RateLimitingOptions options)
     {
         // RateLimitingMiddleware is likely sealed and has no parameterless ctor.
         // Use FormatterServices to bypass the constructor and inject the private _options field.
-        var middleware = (RateLimitingMiddleware)FormatterServices.GetUninitializedObject(typeof(RateLimitingMiddleware));
+        var middleware = (RateLimitingMiddleware)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(RateLimitingMiddleware));
 
         // Find the private field named "_options" and set it.
         var field = typeof(RateLimitingMiddleware).GetField("_options", BindingFlags.Instance | BindingFlags.NonPublic);

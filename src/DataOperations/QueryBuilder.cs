@@ -34,11 +34,11 @@ public sealed class QueryBuilder
     private readonly List<(string name, object value)> _parameters;
     private string _tableName;
     private List<string> _columns;
-    private string _whereClause;
+    private string? _whereClause;
     private List<string> _joins;
     private List<(string column, string direction)> _orderBy;
     private List<string> _groupBy;
-    private string _havingClause;
+    private string? _havingClause;
     private int? _limit;
     private int? _offset;
 
@@ -548,7 +548,7 @@ public sealed class UpdateBuilder
 {
     private readonly string _tableName;
     private readonly Dictionary<string, object> _values;
-    private string _whereClause;
+    private string? _whereClause;
 
     /// <summary>
     /// Initializes a new instance of the UpdateBuilder class for the specified table.

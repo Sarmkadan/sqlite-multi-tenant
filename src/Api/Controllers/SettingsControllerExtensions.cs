@@ -34,7 +34,7 @@ public static class SettingsControllerExtensions
                 return controller.Ok(ApiResponse<T>.Success(typedValue));
             }
 
-            return controller.Ok(ApiResponse<T>.Success(default));
+            return controller.Ok(ApiResponse<T?>.Success(default));
         }
 
         return result;
@@ -71,7 +71,7 @@ public static class SettingsControllerExtensions
         ArgumentNullException.ThrowIfNull(controller);
         ArgumentNullException.ThrowIfNull(settings);
 
-        var dictionary = settings.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value);
+        var dictionary = settings.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value!);
         return controller.UpdateBatchSettings(dictionary);
     }
 
@@ -175,7 +175,7 @@ public static class SettingsControllerExtensions
                 }
                 catch (Exception ex) when (ex is FormatException or OverflowException or InvalidCastException)
                 {
-                    return controller.Ok(ApiResponse<T>.Success(default));
+                    return controller.Ok(ApiResponse<T?>.Success(default));
                 }
             }
             else if (response.Data?.Value is T typedValue)

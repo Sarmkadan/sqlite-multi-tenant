@@ -206,7 +206,6 @@ public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<
         string? message = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(nameof(fieldName));
-        ArgumentNullException.ThrowIfNull(nameof(predicate));
         _rules.Add(new ValidationRule
         {
             FieldName = fieldName,
@@ -250,14 +249,13 @@ public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<
     /// <returns>A <see cref="RuleValidationResult"/> indicating whether validation succeeded and containing any errors.</returns>
     public RuleValidationResult Validate(T obj)
     {
-        ArgumentNullException.ThrowIfNull(nameof(obj));
         var errors = new List<RuleValidationError>();
 
         foreach (var rule in _rules)
         {
             try
             {
-                if (!rule.Predicate(obj))
+                if (!rule.Predicate(obj!))
                 {
                     errors.Add(new RuleValidationError
                     {
@@ -442,7 +440,7 @@ public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<
     private class ValidationRule
     {
         public string? FieldName { get; set; }
-        public Func<object, bool>? Predicate { get; set; }
+        public required Func<object, bool> Predicate { get; set; }
         public string? ErrorMessage { get; set; }
     }
 }

@@ -21,7 +21,7 @@ namespace SqliteMultiTenant.Utilities;
 public sealed class TenantContextHelper
 {
     private readonly ILogger<TenantContextHelper> _logger;
-    private static readonly AsyncLocal<TenantContext> _currentContext = new AsyncLocal<TenantContext>();
+    private static readonly AsyncLocal<TenantContext?> _currentContext = new AsyncLocal<TenantContext?>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TenantContextHelper"/> class.
@@ -53,7 +53,7 @@ public sealed class TenantContextHelper
     /// Gets the current tenant context.
     /// </summary>
     /// <returns>The current tenant context, or null if no context is set.</returns>
-    public TenantContext GetTenantContext()
+    public TenantContext? GetTenantContext()
     {
         var context = _currentContext.Value;
         if (context is null)
@@ -77,7 +77,7 @@ public sealed class TenantContextHelper
     /// Gets the current tenant ID.
     /// </summary>
     /// <returns>The current tenant ID, or null if no context is set.</returns>
-    public string GetCurrentTenantId()
+    public string? GetCurrentTenantId()
     {
         return _currentContext.Value?.TenantId;
     }
@@ -102,7 +102,7 @@ public sealed class TenantContextHelper
     /// </remarks>
     /// <param name="expectedTenantId">The expected tenant ID, or null to ignore.</param>
     /// <returns>true if the tenant context is valid, false otherwise.</returns>
-    public bool ValidateTenantContext(string expectedTenantId = null)
+    public bool ValidateTenantContext(string? expectedTenantId = null)
     {
         var context = GetTenantContext();
 
@@ -147,7 +147,7 @@ public sealed class TenantContextHelper
     /// <param name="userId">The user ID to use for the scoped context, or null to ignore.</param>
     /// <returns>An IDisposable instance that will restore the previous context when disposed.</returns>
     /// <exception cref="ArgumentException">Thrown when Tenant ID cannot be empty.</exception>
-    public IDisposable CreateScope(string tenantId, string userId = null)
+    public IDisposable CreateScope(string tenantId, string? userId = null)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -171,15 +171,15 @@ public sealed class TenantContextHelper
     /// Gets metadata for the current tenant.
     /// </summary>
     /// <returns>A dictionary containing metadata for the current tenant.</returns>
-    public Dictionary<string, object> GetContextMetadata()
+    public Dictionary<string, object?> GetContextMetadata()
     {
         var context = GetTenantContext();
         if (context is null)
         {
-            return new Dictionary<string, object>();
+            return new Dictionary<string, object?>();
         }
 
-        return new Dictionary<string, object>
+        return new Dictionary<string, object?>
         {
             { "TenantId", context.TenantId },
             { "UserId", context.UserId },
@@ -207,7 +207,7 @@ public sealed class TenantContextHelper
     private class TenantContextScope : IDisposable
     {
         private readonly TenantContextHelper _helper;
-        private readonly TenantContext _previousContext;
+        private readonly TenantContext? _previousContext;
         private bool _disposed;
 
         /// <summary>
@@ -215,7 +215,7 @@ public sealed class TenantContextHelper
         /// </summary>
         /// <param name="helper">The TenantContextHelper instance.</param>
         /// <param name="previousContext">The previous tenant context, or null to clear the current context.</param>
-        public TenantContextScope(TenantContextHelper helper, TenantContext previousContext)
+        public TenantContextScope(TenantContextHelper helper, TenantContext? previousContext)
         {
             _helper = helper;
             _previousContext = previousContext;

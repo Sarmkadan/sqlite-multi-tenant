@@ -16,8 +16,8 @@ namespace SqliteMultiTenant.Utilities;
 /// </summary>
 public interface IDataMapper
 {
-    TTarget Map<TSource, TTarget>(TSource source) where TTarget : class, new();
-    List<TTarget> MapList<TSource, TTarget>(List<TSource> sources) where TTarget : class, new();
+    TTarget Map<TSource, TTarget>(TSource? source) where TTarget : class, new();
+    List<TTarget> MapList<TSource, TTarget>(List<TSource>? sources) where TTarget : class, new();
 }
 
 public sealed class DataMapper : IDataMapper
@@ -35,9 +35,8 @@ public sealed class DataMapper : IDataMapper
     /// Maps a source object to a target object.
     /// Copies properties with matching names and compatible types.
     /// </summary>
-    public TTarget Map<TSource, TTarget>(TSource source) where TTarget : class, new()
+    public TTarget Map<TSource, TTarget>(TSource? source) where TTarget : class, new()
     {
-        ArgumentNullException.ThrowIfNull(nameof(source));
         try
         {
             if (source is null)
@@ -91,9 +90,8 @@ public sealed class DataMapper : IDataMapper
     /// <summary>
     /// Maps a list of source objects to target objects.
     /// </summary>
-    public List<TTarget> MapList<TSource, TTarget>(List<TSource> sources) where TTarget : class, new()
+    public List<TTarget> MapList<TSource, TTarget>(List<TSource>? sources) where TTarget : class, new()
     {
-        ArgumentNullException.ThrowIfNull(nameof(sources));
         try
         {
             if (sources is null || sources.Count == 0)

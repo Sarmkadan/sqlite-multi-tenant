@@ -94,7 +94,7 @@ public class EncryptionKeyManagerTests : IDisposable
         // Assert - verify it's cached
         var cachedKey = await _keyManager.GetActiveKeyAsync(tenantId);
         cachedKey.Should().NotBeNull();
-        cachedKey.KeyId.Should().Be(key.KeyId);
+        cachedKey!.KeyId.Should().Be(key.KeyId);
 
         _logger.LogInformation("Completed test: GenerateKeyAsync_WithValidTenantId_CachesKeyInMemory");
     }
@@ -180,7 +180,7 @@ public class EncryptionKeyManagerTests : IDisposable
 
         // Assert
         retrievedKey.Should().NotBeNull();
-        retrievedKey.KeyId.Should().Be(generatedKey.KeyId);
+        retrievedKey!.KeyId.Should().Be(generatedKey.KeyId);
         retrievedKey.Version.Should().Be(1);
         retrievedKey.IsActive.Should().BeTrue();
 
@@ -258,7 +258,7 @@ public class EncryptionKeyManagerTests : IDisposable
         // Assert - old key is deactivated and can be retrieved
         var activeKey = await _keyManager.GetActiveKeyAsync(tenantId);
         activeKey.Should().NotBeNull();
-        activeKey.KeyId.Should().Be(newKey.KeyId);
+        activeKey!.KeyId.Should().Be(newKey.KeyId);
 
         // Old key should still be retrievable (either by version or by checking deactivated state)
         var oldKeyFromCache = await _keyManager.GetActiveKeyAsync(tenantId);
@@ -266,7 +266,7 @@ public class EncryptionKeyManagerTests : IDisposable
         // But we should be able to retrieve it from disk
         var oldKeyFromDisk = await _keyManager.GetKeyVersionAsync(tenantId, 1);
         oldKeyFromDisk.Should().NotBeNull();
-        oldKeyFromDisk.IsActive.Should().BeFalse();
+        oldKeyFromDisk!.IsActive.Should().BeFalse();
         oldKeyFromDisk.DeactivatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         _logger.LogInformation("Completed test: RotateKeyAsync_ForExistingTenant_CreatesNewKeyAndDeactivatesOld");
@@ -325,22 +325,22 @@ public class EncryptionKeyManagerTests : IDisposable
         // Assert - active key is version 4
         var activeKey = await _keyManager.GetActiveKeyAsync(tenantId);
         activeKey.Should().NotBeNull();
-        activeKey.Version.Should().Be(4);
+        activeKey!.Version.Should().Be(4);
 
         // Assert - all previous versions can be retrieved from disk
         var key1 = await _keyManager.GetKeyVersionAsync(tenantId, 1);
         key1.Should().NotBeNull("Key version 1 should exist on disk");
-        key1.IsActive.Should().BeFalse();
+        key1!.IsActive.Should().BeFalse();
         key1.Version.Should().Be(1);
 
         var key2Retrieved = await _keyManager.GetKeyVersionAsync(tenantId, 2);
         key2Retrieved.Should().NotBeNull("Key version 2 should exist on disk");
-        key2Retrieved.IsActive.Should().BeFalse();
+        key2Retrieved!.IsActive.Should().BeFalse();
         key2Retrieved.Version.Should().Be(2);
 
         var key3Retrieved = await _keyManager.GetKeyVersionAsync(tenantId, 3);
         key3Retrieved.Should().NotBeNull("Key version 3 should exist on disk");
-        key3Retrieved.IsActive.Should().BeFalse();
+        key3Retrieved!.IsActive.Should().BeFalse();
         key3Retrieved.Version.Should().Be(3);
 
         _logger.LogInformation("Completed test: RotateKeyAsync_MultipleTimes_IncrementsVersionEachTime");
@@ -387,7 +387,7 @@ public class EncryptionKeyManagerTests : IDisposable
 
         // Assert
         retrievedKey.Should().NotBeNull();
-        retrievedKey.Version.Should().Be(1);
+        retrievedKey!.Version.Should().Be(1);
         retrievedKey.KeyId.Should().Be(originalKey.KeyId);
 
         _logger.LogInformation("Completed test: GetKeyVersionAsync_ForExistingVersion_ReturnsCorrectKey");
@@ -534,7 +534,7 @@ public class EncryptionKeyManagerTests : IDisposable
         // Assert - old key is still available for decryption
         var stillRetrievableOldKey = await _keyManager.GetKeyVersionAsync(tenantId, 1);
         stillRetrievableOldKey.Should().NotBeNull();
-        stillRetrievableOldKey.IsActive.Should().BeFalse();
+        stillRetrievableOldKey!.IsActive.Should().BeFalse();
         stillRetrievableOldKey.DeactivatedAt.Should().NotBeNull();
 
         _logger.LogInformation("Completed test: KeyRotation_PreservesOldKeyForDecryption");
@@ -610,7 +610,7 @@ public class EncryptionKeyManagerTests : IDisposable
 
         // Assert
         reloadedKey.Should().NotBeNull();
-        reloadedKey.KeyId.Should().Be(originalKey.KeyId);
+        reloadedKey!.KeyId.Should().Be(originalKey.KeyId);
         reloadedKey.KeyMaterial.Should().BeEquivalentTo(originalKey.KeyMaterial);
 
         _logger.LogInformation("Completed test: KeysAreStoredOnDisk_AndCanBeReloaded");
@@ -639,7 +639,7 @@ public class EncryptionKeyManagerTests : IDisposable
         // Assert
         retrievedKey1.Should().NotBeNull();
         retrievedKey2.Should().NotBeNull();
-        retrievedKey1.KeyId.Should().NotBe(retrievedKey2.KeyId);
+        retrievedKey1!.KeyId.Should().NotBe(retrievedKey2!.KeyId);
         retrievedKey1.TenantId.Should().Be(tenant1);
         retrievedKey2.TenantId.Should().Be(tenant2);
 

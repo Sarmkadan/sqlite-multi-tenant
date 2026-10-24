@@ -26,7 +26,7 @@ public interface ICacheStrategy
     /// <typeparam name="T">The type of the cached value.</typeparam>
     /// <param name="key">The unique identifier for the cached entry.</param>
     /// <returns>A <see cref="Task{TResult}"/> that resolves to the cached value, or <c>default</c> if not found.</returns>
-    Task<T> GetAsync<T>(string key);
+    Task<T?> GetAsync<T>(string key);
 
     /// <summary>
     /// Stores a value in the cache under the specified <paramref name="key"/>.
@@ -77,7 +77,7 @@ public sealed class LruCacheStrategy : ICacheStrategy
     }
 
     /// <inheritdoc/>
-    public async Task<T> GetAsync<T>(string key)
+    public async Task<T?> GetAsync<T>(string key)
     {
         if (string.IsNullOrEmpty(key))
         {
@@ -99,7 +99,7 @@ public sealed class LruCacheStrategy : ICacheStrategy
                 entry.LastAccessedAt = DateTime.UtcNow;
                 entry.AccessCount++;
 
-                return (T)entry.Value;
+                return (T)entry.Value!;
             }
         }
         catch (Exception ex)
@@ -220,7 +220,7 @@ public sealed class LruCacheStrategy : ICacheStrategy
 
     private class CacheEntry
     {
-        public object Value { get; set; }
+        public object? Value { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastAccessedAt { get; set; }
         public DateTime? ExpiresAt { get; set; }
@@ -244,7 +244,7 @@ public sealed class TimeBasedCacheStrategy : ICacheStrategy
     /// </summary>
     /// <param name="logger">The logger used for diagnostic messages.</param>
     /// <param name="defaultExpiration">
-    /// The default time‑to‑live applied when <paramref name="expiration"/> is not supplied to <see cref="SetAsync{T}"/>.
+    /// The default time‑to‑live applied when <paramref name="defaultExpiration"/> is not supplied to <see cref="SetAsync{T}"/>.
     /// </param>
     public TimeBasedCacheStrategy(ILogger<TimeBasedCacheStrategy> logger,
         TimeSpan? defaultExpiration = null)
@@ -255,7 +255,7 @@ public sealed class TimeBasedCacheStrategy : ICacheStrategy
     }
 
     /// <inheritdoc/>
-    public async Task<T> GetAsync<T>(string key)
+    public async Task<T?> GetAsync<T>(string key)
     {
         if (string.IsNullOrEmpty(key))
         {
@@ -272,7 +272,7 @@ public sealed class TimeBasedCacheStrategy : ICacheStrategy
                     return default;
                 }
 
-                return (T)entry.Value;
+                return (T)entry.Value!;
             }
         }
         catch (Exception ex)
@@ -327,7 +327,7 @@ public sealed class TimeBasedCacheStrategy : ICacheStrategy
 
     private class CacheEntry
     {
-        public object Value { get; set; }
+        public object? Value { get; set; }
         public DateTime ExpiresAt { get; set; }
     }
 }
@@ -340,7 +340,7 @@ public sealed class CacheStatistics
     /// <summary>
     /// The cache key associated with this entry.
     /// </summary>
-    public string Key { get; set; }
+    public string? Key { get; set; }
 
     /// <summary>
     /// The UTC timestamp when the entry was created.

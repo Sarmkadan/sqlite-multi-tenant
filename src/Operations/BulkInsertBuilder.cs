@@ -208,7 +208,7 @@ public sealed class BulkInsertBuilder
                 if (record.ContainsKey(columnName))
                 {
                     var value = record[columnName];
-                    values.Add(value is null ? "NULL" : $"'{value.ToString().Replace("'", "''")}'");
+                    values.Add(value is null ? "NULL" : $"'{value.ToString()?.Replace("'", "''")}'");
                 }
                 else
                 {
@@ -247,7 +247,7 @@ public sealed class BulkInsertResult
     /// <summary>
     /// Gets or sets the error message associated with the operation.
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 }
 
 /// <summary>
@@ -354,5 +354,5 @@ public sealed class BulkUpdateResult
     /// <summary>
     /// Gets or sets the error message associated with the operation.
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 }

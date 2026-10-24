@@ -192,7 +192,7 @@ public class MigrationExceptionExtensionsTests
     public void GetMigrationDetails_WithNullMigrationId_ShouldReturnNullForId()
     {
         // Arrange
-        var exception = new MigrationException("Test message", null, "2.1.0");
+        var exception = new MigrationException("Test message", null!, "2.1.0");
 
         // Act
         var result = exception.GetMigrationDetails();
@@ -224,7 +224,7 @@ public class MigrationExceptionExtensionsTests
     public void GetMigrationDetails_WithBothNullMigrationIdAndVersion_ShouldReturnNullForBoth()
     {
         // Arrange
-        var exception = new MigrationException("Test message", null, null);
+        var exception = new MigrationException("Test message", null!, null);
 
         // Act
         var result = exception.GetMigrationDetails();

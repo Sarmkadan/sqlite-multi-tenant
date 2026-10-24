@@ -224,7 +224,7 @@ public class BackupExceptionExtensionsTests
     public void GetErrorDetails_WithNullBackupId_ShouldIncludeNullInOutput()
     {
         // Arrange
-        var exception = new BackupException("Test error", null, "db-456");
+        var exception = new BackupException("Test error", null!, "db-456");
 
         // Act
         var result = exception.GetErrorDetails();
@@ -240,7 +240,7 @@ public class BackupExceptionExtensionsTests
     public void GetErrorDetails_WithNullDatabaseId_ShouldIncludeNullInOutput()
     {
         // Arrange
-        var exception = new BackupException("Test error", "backup-123", null);
+        var exception = new BackupException("Test error", "backup-123", null!);
 
         // Act
         var result = exception.GetErrorDetails();

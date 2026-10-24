@@ -180,7 +180,7 @@ public class MigrationExceptionTests
         var version = "3.0.0";
 
         // Act
-        var exception = MigrationException.RollbackFailed(migrationId, version, null);
+        var exception = MigrationException.RollbackFailed(migrationId, version, null!);
 
         // Assert
         exception.Message.Should().Be($"Migration '{version}' (ID: {migrationId}) failed to rollback");

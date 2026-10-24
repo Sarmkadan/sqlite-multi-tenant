@@ -261,9 +261,9 @@ public sealed class ConnectionManager : IDisposable
         {
             await _semaphore.WaitAsync(cancellationToken);
 
-            SQLiteConnection connection;
+            SQLiteConnection? connection;
 
-            if (_availableConnections.TryTake(out connection))
+            if (_availableConnections.TryTake(out connection) && connection is not null)
             {
                 if (connection.State != System.Data.ConnectionState.Open)
                 {
@@ -324,7 +324,7 @@ public sealed class PoolStatistics
     /// <summary>
     /// The unique identifier of the tenant.
     /// </summary>
-    public string TenantId { get; set; }
+    public string? TenantId { get; set; }
 
     /// <summary>
     /// The number of available connections in the pool for the tenant.

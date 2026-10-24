@@ -67,7 +67,7 @@ public sealed class ConflictResolutionServiceExtensionsTests
         var conflicts = new List<DataConflict>
         {
             new DataConflict { Field = "A", ConflictType = ConflictType.ValueDifference, LocalValue = 1, RemoteValue = 2 },
-            new DataConflict { Field = "B", ConflictType = ConflictType.CreatedRemotely, LocalValue = null, RemoteValue = "new" }
+            new DataConflict { Field = "B", ConflictType = ConflictType.CreatedRemotely, LocalValue = null!, RemoteValue = "new" }
         };
 
         // Act
@@ -199,7 +199,7 @@ public sealed class ConflictResolutionServiceExtensionsTests
             LocalValue = 10,
             RemoteValue = 20
         });
-        Func<string, ConflictType, object, object, object> resolver =
+        Func<string, ConflictType, object?, object?, object?> resolver =
             (field, type, local, remote) => remote; // always prefer remote
 
         // Act
@@ -233,7 +233,7 @@ public sealed class ConflictResolutionServiceExtensionsTests
             LocalValue = "a",
             RemoteValue = "b"
         });
-        Func<string, ConflictType, object, object, object> resolver =
+        Func<string, ConflictType, object?, object?, object?> resolver =
             (_, _, _, _) => throw new InvalidOperationException("boom");
 
         // Act

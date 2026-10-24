@@ -26,7 +26,7 @@ public static class DatabaseAccessExceptionExtensions
 
         return new DatabaseAccessException(
             newMessage,
-            exception.DatabaseId,
+            exception.DatabaseId ?? string.Empty,
             exception.OperationType ?? "Unknown",
             exception.InnerException);
     }
@@ -47,7 +47,7 @@ public static class DatabaseAccessExceptionExtensions
         var enhancedMessage = $"{exception.Message} | Context: {contextInfo}";
         return new DatabaseAccessException(
             enhancedMessage,
-            exception.DatabaseId,
+            exception.DatabaseId ?? string.Empty,
             exception.OperationType ?? "Unknown",
             exception.InnerException);
     }

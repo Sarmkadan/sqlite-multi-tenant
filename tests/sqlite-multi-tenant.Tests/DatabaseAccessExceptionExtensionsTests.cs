@@ -15,7 +15,7 @@ public class DatabaseAccessExceptionExtensionsTests
     {
         // DatabaseAccessException has a constructor:
         // DatabaseAccessException(string message, string databaseId, string operationType, Exception? innerException = null)
-        return new DatabaseAccessException(message, databaseId, operationType, inner);
+        return new DatabaseAccessException(message, databaseId!, operationType!, inner);
     }
 
     [Fact]

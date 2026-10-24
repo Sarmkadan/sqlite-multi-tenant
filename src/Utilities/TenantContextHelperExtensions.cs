@@ -25,7 +25,7 @@ public static class TenantContextHelperExtensions
     /// <param name="userId">Optional user ID to associate with the context.</param>
     /// <returns>An <see cref="IDisposable"/> scope that restores the previous context when disposed.</returns>
     /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
-    public static IDisposable CreateValidatedScope(this TenantContextHelper helper, string tenantId, string userId = null)
+    public static IDisposable CreateValidatedScope(this TenantContextHelper helper, string tenantId, string? userId = null)
     {
         ArgumentNullException.ThrowIfNull(helper);
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantId, nameof(tenantId));
@@ -73,7 +73,7 @@ public static class TenantContextHelperExtensions
     /// <exception cref="ArgumentNullException">Thrown when helper or action is null.</exception>
     /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
-    public static void ExecuteInTenantContext(this TenantContextHelper helper, string tenantId, Action action, string userId = null)
+    public static void ExecuteInTenantContext(this TenantContextHelper helper, string tenantId, Action action, string? userId = null)
     {
         ArgumentNullException.ThrowIfNull(helper);
         ArgumentNullException.ThrowIfNull(action);
@@ -95,7 +95,7 @@ public static class TenantContextHelperExtensions
     /// <exception cref="ArgumentNullException">Thrown when helper or func is null.</exception>
     /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
-    public static T ExecuteInTenantContext<T>(this TenantContextHelper helper, string tenantId, Func<T> func, string userId = null)
+    public static T ExecuteInTenantContext<T>(this TenantContextHelper helper, string tenantId, Func<T> func, string? userId = null)
     {
         ArgumentNullException.ThrowIfNull(helper);
         ArgumentNullException.ThrowIfNull(func);
@@ -172,7 +172,7 @@ public static class TenantContextHelperExtensions
     /// <exception cref="ArgumentNullException">Thrown when helper or action is null.</exception>
     /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
-    public static async Task ExecuteInTenantContextAsync(this TenantContextHelper helper, string tenantId, Func<Task> action, string userId = null)
+    public static async Task ExecuteInTenantContextAsync(this TenantContextHelper helper, string tenantId, Func<Task> action, string? userId = null)
     {
         ArgumentNullException.ThrowIfNull(helper);
         ArgumentNullException.ThrowIfNull(action);
@@ -194,7 +194,7 @@ public static class TenantContextHelperExtensions
     /// <exception cref="ArgumentNullException">Thrown when helper or func is null.</exception>
     /// <exception cref="ArgumentException">Thrown when tenantId is null or whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when CreateScope fails.</exception>
-    public static async Task<T> ExecuteInTenantContextAsync<T>(this TenantContextHelper helper, string tenantId, Func<Task<T>> func, string userId = null)
+    public static async Task<T> ExecuteInTenantContextAsync<T>(this TenantContextHelper helper, string tenantId, Func<Task<T>> func, string? userId = null)
     {
         ArgumentNullException.ThrowIfNull(helper);
         ArgumentNullException.ThrowIfNull(func);

@@ -9,7 +9,7 @@ namespace SqliteMultiTenant.Exceptions;
 public static class TenantNotFoundExceptionExtensions
 {
     /// <summary>
-    /// Determines whether the exception's <see cref="TenantNotFoundException.TenantId"/> matches the
+    /// Determines whether the exception's <see cref="MultiTenantException.TenantId"/> matches the
     /// specified <paramref name="tenantId"/>.
     /// </summary>
     /// <param name="exception">

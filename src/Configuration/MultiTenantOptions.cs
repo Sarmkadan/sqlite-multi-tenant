@@ -150,7 +150,7 @@ public sealed class AlertThreshold
     /// <summary>
     /// The name of the metric to monitor.
     /// </summary>
-    public string MetricName { get; set; }
+    public string MetricName { get; set; } = string.Empty;
     /// <summary>
     /// The value at which a warning alert is triggered.
     /// </summary>

@@ -19,7 +19,7 @@ public class PerformanceMiddlewareTests
         public LogLevel? LastLogLevel { get; private set; }
         public string? LastMessage { get; private set; }
 
-        public IDisposable? BeginScope<TState>(TState state) => null;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,

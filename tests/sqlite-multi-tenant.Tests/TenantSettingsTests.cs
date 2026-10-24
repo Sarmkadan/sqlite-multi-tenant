@@ -173,7 +173,7 @@ public sealed class TenantSettingsTests
         var modifiedBy = "tester";
 
         // Act
-        settings.SetValue<string>(null, modifiedBy);
+        settings.SetValue<string>(null!, modifiedBy);
 
         // Assert
         Assert.Equal(string.Empty, settings.SettingValue);

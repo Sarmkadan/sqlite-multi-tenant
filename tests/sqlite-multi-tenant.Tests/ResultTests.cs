@@ -29,7 +29,7 @@ public class ResultTests
     public void Ok_WithNullData_SetsSuccessTrue()
     {
         // Act
-        var result = Result<string>.Ok(null, null);
+        var result = Result<string>.Ok(null!, null);
 
         // Assert
         Assert.True(result.Success);

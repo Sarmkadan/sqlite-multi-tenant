@@ -66,7 +66,7 @@ public sealed class CsvFormatter : IOutputFormatter
 
     /// <summary>
     /// Formats collection as CSV with headers.
-    /// Supports any IEnumerable<T> where T has public properties.
+    /// Supports any IEnumerable&lt;T&gt; where T has public properties.
     /// Escapes commas, quotes, and newlines in values.
     /// </summary>
     public string Format<T>(T data)
@@ -219,6 +219,8 @@ public sealed class XmlFormatter : IOutputFormatter
     /// </summary>
     private XElement FormatSingleObject<T>(T obj)
     {
+        ArgumentNullException.ThrowIfNull(obj);
+
         var element = new XElement(obj.GetType().Name);
         var properties = obj.GetType().GetProperties();
 

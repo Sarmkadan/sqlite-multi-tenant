@@ -35,11 +35,11 @@ public abstract class DomainEvent
 public sealed class TenantCreatedEvent : DomainEvent
 {
     /// <summary>Gets or sets the tenant identifier.</summary>
-    public string TenantId { get; set; }
+    public new string? TenantId { get; set; }
     /// <summary>Gets or sets the tenant name.</summary>
-    public string TenantName { get; set; }
+    public string TenantName { get; set; } = string.Empty;
     /// <summary>Gets or sets the contact email.</summary>
-    public string ContactEmail { get; set; }
+    public string ContactEmail { get; set; } = string.Empty;
 
     public TenantCreatedEvent() : base(nameof(TenantCreatedEvent))
     {
@@ -53,11 +53,11 @@ public sealed class TenantCreatedEvent : DomainEvent
 public sealed class TenantUpdatedEvent : DomainEvent
 {
     /// <summary>Gets or sets the tenant identifier.</summary>
-    public string TenantId { get; set; }
+    public new string? TenantId { get; set; }
     /// <summary>Gets or sets the old name.</summary>
-    public string OldName { get; set; }
+    public string OldName { get; set; } = string.Empty;
     /// <summary>Gets or sets the new name.</summary>
-    public string NewName { get; set; }
+    public string NewName { get; set; } = string.Empty;
 
     public TenantUpdatedEvent() : base(nameof(TenantUpdatedEvent))
     {
@@ -71,11 +71,11 @@ public sealed class TenantUpdatedEvent : DomainEvent
 public sealed class TenantSuspendedEvent : DomainEvent
 {
     /// <summary>Gets or sets the tenant identifier.</summary>
-    public string TenantId { get; set; }
+    public new string? TenantId { get; set; }
     /// <summary>Gets or sets the user who suspended the tenant.</summary>
-    public string SuspendedBy { get; set; }
+    public string SuspendedBy { get; set; } = string.Empty;
     /// <summary>Gets or sets the reason for suspension.</summary>
-    public string Reason { get; set; }
+    public string Reason { get; set; } = string.Empty;
 
     public TenantSuspendedEvent() : base(nameof(TenantSuspendedEvent))
     {
@@ -89,11 +89,11 @@ public sealed class TenantSuspendedEvent : DomainEvent
 public sealed class BackupStartedEvent : DomainEvent
 {
     /// <summary>Gets or sets the backup identifier.</summary>
-    public string BackupId { get; set; }
+    public string BackupId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database identifier.</summary>
-    public string DatabaseId { get; set; }
+    public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the backup type.</summary>
-    public string BackupType { get; set; }
+    public string BackupType { get; set; } = string.Empty;
 
     public BackupStartedEvent() : base(nameof(BackupStartedEvent))
     {
@@ -107,9 +107,9 @@ public sealed class BackupStartedEvent : DomainEvent
 public sealed class BackupCompletedEvent : DomainEvent
 {
     /// <summary>Gets or sets the backup identifier.</summary>
-    public string BackupId { get; set; }
+    public string BackupId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database identifier.</summary>
-    public string DatabaseId { get; set; }
+    public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the backup size in bytes.</summary>
     public long SizeBytes { get; set; }
     /// <summary>Gets or sets the backup duration in milliseconds.</summary>
@@ -127,11 +127,11 @@ public sealed class BackupCompletedEvent : DomainEvent
 public sealed class BackupFailedEvent : DomainEvent
 {
     /// <summary>Gets or sets the backup identifier.</summary>
-    public string BackupId { get; set; }
+    public string BackupId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database identifier.</summary>
-    public string DatabaseId { get; set; }
+    public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the error message.</summary>
-    public string ErrorMessage { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
 
     public BackupFailedEvent() : base(nameof(BackupFailedEvent))
     {
@@ -145,13 +145,13 @@ public sealed class BackupFailedEvent : DomainEvent
 public sealed class MigrationAppliedEvent : DomainEvent
 {
     /// <summary>Gets or sets the migration identifier.</summary>
-    public string MigrationId { get; set; }
+    public string MigrationId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database identifier.</summary>
-    public string DatabaseId { get; set; }
+    public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the version.</summary>
-    public string Version { get; set; }
+    public string Version { get; set; } = string.Empty;
     /// <summary>Gets or sets the migration name.</summary>
-    public string MigrationName { get; set; }
+    public string MigrationName { get; set; } = string.Empty;
 
     public MigrationAppliedEvent() : base(nameof(MigrationAppliedEvent))
     {
@@ -165,13 +165,13 @@ public sealed class MigrationAppliedEvent : DomainEvent
 public sealed class MigrationFailedEvent : DomainEvent
 {
     /// <summary>Gets or sets the migration identifier.</summary>
-    public string MigrationId { get; set; }
+    public string MigrationId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database identifier.</summary>
-    public string DatabaseId { get; set; }
+    public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the version.</summary>
-    public string Version { get; set; }
+    public string Version { get; set; } = string.Empty;
     /// <summary>Gets or sets the error message.</summary>
-    public string ErrorMessage { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
 
     public MigrationFailedEvent() : base(nameof(MigrationFailedEvent))
     {
@@ -185,13 +185,13 @@ public sealed class MigrationFailedEvent : DomainEvent
 public sealed class MigrationRolledBackEvent : DomainEvent
 {
     /// <summary>Gets or sets the migration identifier.</summary>
-    public string MigrationId { get; set; }
+    public string MigrationId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database identifier.</summary>
-    public string DatabaseId { get; set; }
+    public string DatabaseId { get; set; } = string.Empty;
     /// <summary>Gets or sets the version.</summary>
-    public string Version { get; set; }
+    public string Version { get; set; } = string.Empty;
     /// <summary>Gets or sets the user who rolled back the migration.</summary>
-    public string RolledBackBy { get; set; }
+    public string RolledBackBy { get; set; } = string.Empty;
 
     public MigrationRolledBackEvent() : base(nameof(MigrationRolledBackEvent))
     {
@@ -205,11 +205,11 @@ public sealed class MigrationRolledBackEvent : DomainEvent
 public sealed class TenantClonedEvent : DomainEvent
 {
     /// <summary>Gets or sets the source tenant identifier.</summary>
-    public string SourceTenantId { get; set; }
+    public string SourceTenantId { get; set; } = string.Empty;
     /// <summary>Gets or sets the target tenant identifier.</summary>
-    public string TargetTenantId { get; set; }
+    public string TargetTenantId { get; set; } = string.Empty;
     /// <summary>Gets or sets the database path.</summary>
-    public string DatabasePath { get; set; }
+    public string DatabasePath { get; set; } = string.Empty;
 
     public TenantClonedEvent() : base(nameof(TenantClonedEvent))
     {
@@ -223,9 +223,9 @@ public sealed class TenantClonedEvent : DomainEvent
 public sealed class HealthCheckFailedEvent : DomainEvent
 {
     /// <summary>Gets or sets the component name.</summary>
-    public string ComponentName { get; set; }
+    public string ComponentName { get; set; } = string.Empty;
     /// <summary>Gets or sets the error message.</summary>
-    public string ErrorMessage { get; set; }
+    public string ErrorMessage { get; set; } = string.Empty;
     /// <summary>Gets or sets the response time in milliseconds.</summary>
     public long ResponseTimeMs { get; set; }
 

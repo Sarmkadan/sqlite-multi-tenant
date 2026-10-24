@@ -37,7 +37,7 @@ public sealed class DataExporterTests : IDisposable
     /// <summary>
     /// Gets the SQLite database connection used for testing.
     /// </summary>
-    private SQLiteConnection _connection;
+    private SQLiteConnection _connection = default!;
 
     /// <summary>
     /// Gets the name of the test table containing sample user data.
@@ -140,7 +140,7 @@ public sealed class DataExporterTests : IDisposable
     public async Task ExportAsJsonAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
     {
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsJsonAsync(null, _testTableName))
+        await _sut.Awaiting(s => s.ExportAsJsonAsync(null!, _testTableName))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("connection");
     }
@@ -166,7 +166,7 @@ public sealed class DataExporterTests : IDisposable
     public async Task ExportAsJsonAsync_ShouldThrowArgumentNullException_WhenTableNameIsNull()
     {
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsJsonAsync(_connection, null))
+        await _sut.Awaiting(s => s.ExportAsJsonAsync(_connection, null!))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("tableName");
     }
@@ -269,7 +269,7 @@ public sealed class DataExporterTests : IDisposable
     public async Task ExportAsCsvAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
     {
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsCsvAsync(null, _testTableName))
+        await _sut.Awaiting(s => s.ExportAsCsvAsync(null!, _testTableName))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("connection");
     }
@@ -360,7 +360,7 @@ public sealed class DataExporterTests : IDisposable
     public async Task ExportAsSqlAsync_ShouldThrowArgumentNullException_WhenConnectionIsNull()
     {
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsSqlAsync(null, _testTableName))
+        await _sut.Awaiting(s => s.ExportAsSqlAsync(null!, _testTableName))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("connection");
     }
@@ -491,7 +491,7 @@ public sealed class DataExporterTests : IDisposable
         var outputPath = "/tmp/test_export_null.jsonl";
 
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(null, _testTableName, outputPath))
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(null!, _testTableName, outputPath))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("connection");
     }
@@ -507,7 +507,7 @@ public sealed class DataExporterTests : IDisposable
         var outputPath = "/tmp/test_export_null.jsonl";
 
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, null, outputPath))
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, null!, outputPath))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("tableName");
     }
@@ -520,7 +520,7 @@ public sealed class DataExporterTests : IDisposable
     public async Task ExportAsJsonLinesAsync_ShouldThrowArgumentNullException_WhenOutputPathIsNull()
     {
         // Act & Assert
-        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, _testTableName, null))
+        await _sut.Awaiting(s => s.ExportAsJsonLinesAsync(_connection, _testTableName, null!))
             .Should().ThrowAsync<ArgumentNullException>()
             .WithParameterName("outputPath");
     }

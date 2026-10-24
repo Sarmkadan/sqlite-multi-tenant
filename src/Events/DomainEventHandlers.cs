@@ -19,7 +19,7 @@ public interface IDomainEventHandler<T> where T : DomainEvent
     /// <summary>
     /// Handles the specified domain event.
     /// </summary>
-    /// <param name="@event">The domain event to handle.</param>
+    /// <param name="event">The domain event to handle.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task HandleAsync(T @event);
 }
@@ -49,7 +49,7 @@ public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreate
     /// <summary>
     /// Handles the tenant created notification event.
     /// </summary>
-    /// <param name="@event">The tenant created notification event.</param>
+    /// <param name="event">The tenant created notification event.</param>
     public async Task HandleAsync(TenantCreatedNotificationEvent @event)
     {
         ArgumentNullException.ThrowIfNull(@event);
@@ -98,7 +98,7 @@ public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDelete
     /// <summary>
     /// Handles the tenant deleted event.
     /// </summary>
-    /// <param name="@event">The tenant deleted event.</param>
+    /// <param name="event">The tenant deleted event.</param>
     public async Task HandleAsync(TenantDeletedEvent @event)
     {
         ArgumentNullException.ThrowIfNull(@event);
@@ -147,7 +147,7 @@ public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupComp
     /// <summary>
     /// Handles the backup completed notification event.
     /// </summary>
-    /// <param name="@event">The backup completed notification event.</param>
+    /// <param name="event">The backup completed notification event.</param>
     public async Task HandleAsync(BackupCompletedNotificationEvent @event)
     {
         ArgumentNullException.ThrowIfNull(@event);
@@ -235,7 +235,7 @@ public sealed class TenantCreatedNotificationEvent : DomainEvent
     /// <summary>
     /// Gets or sets the unique identifier of the tenant.
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public new string TenantId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the name of the tenant.
@@ -261,7 +261,7 @@ public sealed class TenantCreatedNotificationEvent : DomainEvent
 /// </summary>
 public sealed class TenantDeletedEvent : DomainEvent
 {
-    public string TenantId { get; set; } = string.Empty;
+    public new string TenantId { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
 
     public TenantDeletedEvent() : base(nameof(TenantDeletedEvent))

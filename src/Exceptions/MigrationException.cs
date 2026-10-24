@@ -40,7 +40,6 @@ public sealed class MigrationException : MultiTenantException
         : base(message, innerException)
     {
         ArgumentException.ThrowIfNullOrEmpty(nameof(message));
-        ArgumentNullException.ThrowIfNull(nameof(innerException));
     }
 
     /// <summary>
@@ -64,7 +63,6 @@ public sealed class MigrationException : MultiTenantException
     {
         ArgumentException.ThrowIfNullOrEmpty(nameof(migrationId));
         ArgumentException.ThrowIfNullOrEmpty(nameof(version));
-        ArgumentNullException.ThrowIfNull(nameof(innerException));
         return new MigrationException(
             $"Migration '{version}' (ID: {migrationId}) failed to execute",
             migrationId,
@@ -76,7 +74,6 @@ public sealed class MigrationException : MultiTenantException
     {
         ArgumentException.ThrowIfNullOrEmpty(nameof(migrationId));
         ArgumentException.ThrowIfNullOrEmpty(nameof(version));
-        ArgumentNullException.ThrowIfNull(nameof(innerException));
         return new MigrationException(
             $"Migration '{version}' (ID: {migrationId}) failed to rollback",
             migrationId,

@@ -40,7 +40,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.GetOrCreateClient(null, "tenant1"));
+            MultiTenantHttpClientFactoryExtensions.GetOrCreateClient(null!, "tenant1"));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.GetOrCreateClient(_factory, null));
+            MultiTenantHttpClientFactoryExtensions.GetOrCreateClient(_factory, null!));
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.SetDefaultHeader(null, "tenant1", "X-Custom-Header", "value"));
+            MultiTenantHttpClientFactoryExtensions.SetDefaultHeader(null!, "tenant1", "X-Custom-Header", "value"));
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.SetDefaultHeader(_factory, null, "X-Custom-Header", "value"));
+            MultiTenantHttpClientFactoryExtensions.SetDefaultHeader(_factory, null!, "X-Custom-Header", "value"));
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.SetDefaultHeader(_factory, "tenant1", null, "value"));
+            MultiTenantHttpClientFactoryExtensions.SetDefaultHeader(_factory, "tenant1", null!, "value"));
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.SetTimeout(null, "tenant1", TimeSpan.FromSeconds(30)));
+            MultiTenantHttpClientFactoryExtensions.SetTimeout(null!, "tenant1", TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.SetTimeout(_factory, null, TimeSpan.FromSeconds(30)));
+            MultiTenantHttpClientFactoryExtensions.SetTimeout(_factory, null!, TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.RefreshClient(null, "tenant1"));
+            MultiTenantHttpClientFactoryExtensions.RefreshClient(null!, "tenant1"));
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public class MultiTenantHttpClientFactoryExtensionsTests : IDisposable
     {
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() =>
-            MultiTenantHttpClientFactoryExtensions.RefreshClient(_factory, null));
+            MultiTenantHttpClientFactoryExtensions.RefreshClient(_factory, null!));
     }
 
     [Fact]

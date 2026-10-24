@@ -22,8 +22,6 @@ public sealed class TenantService : ITenantService
     /// <summary>
     /// Initializes a new instance of the <see cref="TenantService"/> class.
     /// </summary>
-    /// <param name="repository">The tenant repository.</param>
-    /// <param name="logger">The logger instance.</param>
     /// <exception cref="ArgumentNullException">Thrown when repository or logger is null.</exception>
     [System.Text.Json.Serialization.JsonConstructor]
     public TenantService() : this(null!, Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantService>.Instance) { }

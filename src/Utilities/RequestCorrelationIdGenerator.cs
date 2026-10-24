@@ -15,11 +15,11 @@ namespace SqliteMultiTenant.Utilities;
 /// </summary>
 public sealed class RequestCorrelationIdGenerator
 {
-    private static readonly AsyncLocal<string> _currentCorrelationId =
-        new AsyncLocal<string>();
+    private static readonly AsyncLocal<string?> _currentCorrelationId =
+        new AsyncLocal<string?>();
 
-    private static readonly AsyncLocal<List<string>> _correlationChain =
-        new AsyncLocal<List<string>>();
+    private static readonly AsyncLocal<List<string>?> _correlationChain =
+        new AsyncLocal<List<string>?>();
 
     /// <summary>
     /// Generates a new correlation ID in the format "tenant_timestamp_guid".
@@ -62,13 +62,14 @@ public sealed class RequestCorrelationIdGenerator
     /// <returns>The current correlation ID.</returns>
     public static string GetCorrelationId()
     {
-        if (string.IsNullOrEmpty(_currentCorrelationId.Value))
+        var currentId = _currentCorrelationId.Value;
+        if (string.IsNullOrEmpty(currentId))
         {
-            var newId = GenerateCorrelationId();
-            SetCorrelationId(newId);
+            currentId = GenerateCorrelationId();
+            SetCorrelationId(currentId);
         }
 
-        return _currentCorrelationId.Value;
+        return currentId;
     }
 
     /// <summary>
@@ -118,10 +119,10 @@ public sealed class RequestCorrelationIdGenerator
 
     private class CorrelationIdScope : IDisposable
     {
-        private readonly string _previousCorrelationId;
+        private readonly string? _previousCorrelationId;
         private bool _disposed;
 
-        public CorrelationIdScope(string previousCorrelationId)
+        public CorrelationIdScope(string? previousCorrelationId)
         {
             _previousCorrelationId = previousCorrelationId;
         }

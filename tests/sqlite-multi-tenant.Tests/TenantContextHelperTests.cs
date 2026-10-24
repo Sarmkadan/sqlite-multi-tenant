@@ -27,7 +27,7 @@ public class TenantContextHelperTests
     [Fact]
     public void SetTenantContext_NullContext_ThrowsArgumentNullException()
     {
-        Assert.Throws<ArgumentNullException>(() => _helper.SetTenantContext(null));
+        Assert.Throws<ArgumentNullException>(() => _helper.SetTenantContext(null!));
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class TenantContextHelperTests
     {
         var context = new TenantContext { TenantId = "tenant1" };
         _helper.SetTenantContext(context);
-        Assert.False(_helper.ValidateTenantContext(null));
+        Assert.False(_helper.ValidateTenantContext(null!));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class TenantContextHelperTests
     [Fact]
     public void CreateScope_NullTenantId_ThrowsArgumentException()
     {
-        Assert.Throws<ArgumentException>(() => _helper.CreateScope(null));
+        Assert.Throws<ArgumentException>(() => _helper.CreateScope(null!));
     }
 
     [Fact]

@@ -40,12 +40,12 @@ public class TenantContextHelperAsyncTests
         using (var scope = _helper.CreateScope("scoped-tenant"))
         {
             capturedContext = _helper.GetTenantContext();
-            Assert.Equal("scoped-tenant", capturedContext.TenantId);
+            Assert.Equal("scoped-tenant", capturedContext!.TenantId);
         }
 
         // Assert
         var restoredContext = _helper.GetTenantContext();
-        Assert.Equal("initial-tenant", restoredContext.TenantId);
+        Assert.Equal("initial-tenant", restoredContext!.TenantId);
     }
 
     [Fact]
@@ -59,18 +59,18 @@ public class TenantContextHelperAsyncTests
         await _helper.ExecuteInTenantContextAsync("async-tenant", async () =>
         {
             var context = _helper.GetTenantContext();
-            Assert.Equal("async-tenant", context.TenantId);
+            Assert.Equal("async-tenant", context!.TenantId);
 
             // Simulate async work
             await Task.Delay(10);
 
             context = _helper.GetTenantContext();
-            Assert.Equal("async-tenant", context.TenantId);
+            Assert.Equal("async-tenant", context!.TenantId);
         });
 
         // Assert
         var restoredContext = _helper.GetTenantContext();
-        Assert.Equal("initial-tenant", restoredContext.TenantId);
+        Assert.Equal("initial-tenant", restoredContext!.TenantId);
     }
 
     [Fact]
@@ -83,19 +83,19 @@ public class TenantContextHelperAsyncTests
         // Act - create nested scopes
         using (var scope1 = _helper.CreateScope("middle-tenant"))
         {
-            Assert.Equal("middle-tenant", _helper.GetTenantContext().TenantId);
+            Assert.Equal("middle-tenant", _helper.GetTenantContext()!.TenantId);
 
             using (var scope2 = _helper.CreateScope("inner-tenant"))
             {
-                Assert.Equal("inner-tenant", _helper.GetTenantContext().TenantId);
+                Assert.Equal("inner-tenant", _helper.GetTenantContext()!.TenantId);
             }
 
             // After inner scope disposed, should restore to middle
-            Assert.Equal("middle-tenant", _helper.GetTenantContext().TenantId);
+            Assert.Equal("middle-tenant", _helper.GetTenantContext()!.TenantId);
         }
 
         // After middle scope disposed, should restore to outer
-        Assert.Equal("outer-tenant", _helper.GetTenantContext().TenantId);
+        Assert.Equal("outer-tenant", _helper.GetTenantContext()!.TenantId);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public class TenantContextHelperAsyncTests
 
         // Final context should be restored to initial
         var finalContext = _helper.GetTenantContext();
-        Assert.Equal("tenant-a", finalContext.TenantId);
+        Assert.Equal("tenant-a", finalContext!.TenantId);
     }
 
     [Fact]
@@ -159,13 +159,13 @@ public class TenantContextHelperAsyncTests
         using (var scope = _helper.CreateScope(tenantId))
         {
             var context = _helper.GetTenantContext();
-            results.Add($"{flowName}:{context.TenantId}");
+            results.Add($"{flowName}:{context!.TenantId}");
 
             // Simulate async work that might switch threads
             await Task.Delay(5);
 
             context = _helper.GetTenantContext();
-            results.Add($"{flowName}:{context.TenantId}");
+            results.Add($"{flowName}:{context!.TenantId}");
         }
     }
 }

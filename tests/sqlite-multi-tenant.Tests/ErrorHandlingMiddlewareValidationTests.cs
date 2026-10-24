@@ -18,7 +18,7 @@ public class ErrorHandlingMiddlewareValidationTests
     // -----------------------------------------------------------------
     private static ErrorHandlingMiddleware CreateMiddleware()
     {
-        return (ErrorHandlingMiddleware)FormatterServices.GetUninitializedObject(
+        return (ErrorHandlingMiddleware)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(
             typeof(ErrorHandlingMiddleware));
     }
 
@@ -28,7 +28,7 @@ public class ErrorHandlingMiddlewareValidationTests
     // -----------------------------------------------------------------
     private static Result<T> CreateResult<T>(bool isSuccess, string? errorMessage, T value)
     {
-        var result = (Result<T>)FormatterServices.GetUninitializedObject(typeof(Result<T>));
+        var result = (Result<T>)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(Result<T>));
 
         var isSuccessProp = typeof(Result<T>).GetProperty("IsSuccess");
         var errorMessageProp = typeof(Result<T>).GetProperty("ErrorMessage");

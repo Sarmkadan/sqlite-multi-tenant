@@ -35,7 +35,7 @@ public class DataValidatorTests
     public void RequireString_NullInput_ReturnsValidator()
     {
         // Arrange
-        string value = null;
+        string value = null!;
         string fieldName = "Name";
 
         // Act
@@ -133,7 +133,7 @@ public class DataValidatorTests
     public void RequireValidEmail_NullInput_ReturnsValidator()
     {
         // Arrange
-        string value = null;
+        string value = null!;
         string fieldName = "Email";
 
         // Act
@@ -172,7 +172,7 @@ public class DataValidatorTests
     public void RequireValidUrl_NullInput_ReturnsValidator()
     {
         // Arrange
-        string value = null;
+        string value = null!;
         string fieldName = "Url";
 
         // Act
@@ -211,7 +211,7 @@ public class DataValidatorTests
     public void RequireValidGuid_NullInput_ReturnsValidator()
     {
         // Arrange
-        string value = null;
+        string value = null!;
         string fieldName = "Guid";
 
         // Act
@@ -251,7 +251,7 @@ public class DataValidatorTests
     public void RequirePattern_NullInput_ReturnsValidator()
     {
         // Arrange
-        string value = null;
+        string value = null!;
         string pattern = "^[a-zA-Z]+$";
         string fieldName = "Name";
 

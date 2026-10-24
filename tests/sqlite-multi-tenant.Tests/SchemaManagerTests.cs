@@ -118,7 +118,7 @@ public sealed class SchemaManagerTests : IDisposable
     public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
         // Act & Assert
-        this.Invoking(_ => new SchemaManager(null, _connectionString))
+        this.Invoking(_ => new SchemaManager(null!, _connectionString))
             .Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
@@ -131,7 +131,7 @@ public sealed class SchemaManagerTests : IDisposable
     public void SchemaManager_Constructor_ThrowsArgumentNullException_WhenConnectionStringIsNull()
     {
         // Act & Assert
-        this.Invoking(_ => new SchemaManager(_mockLogger, null))
+        this.Invoking(_ => new SchemaManager(_mockLogger, null!))
             .Should().Throw<ArgumentNullException>()
             .WithParameterName("connectionString");
     }

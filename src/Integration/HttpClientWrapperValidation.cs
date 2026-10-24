@@ -189,7 +189,7 @@ public static class HttpClientWrapperValidation
         var type = typeof(T);
         return type switch
         {
-            { } when type == typeof(string) => problems.AsReadOnly(),
+            _ when type == typeof(string) => problems.AsReadOnly(),
             _ when !type.IsClass || type == typeof(object) =>
                 problems.Append("Response type must be a reference type (class), not a value type or object.").ToList().AsReadOnly(),
             _ when type.IsAbstract =>

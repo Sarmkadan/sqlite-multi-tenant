@@ -212,7 +212,7 @@ public sealed class ConflictResolutionService
         }
     }
 
-    private object MergeValues(object local, object remote)
+    private object? MergeValues(object? local, object? remote)
     {
         if (local is null)
         {
@@ -276,7 +276,7 @@ public sealed class DataConflict
     /// <summary>
     /// Gets or sets the name of the field in conflict
     /// </summary>
-    public string Field { get; set; }
+    public string Field { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the type of conflict
@@ -286,12 +286,12 @@ public sealed class DataConflict
     /// <summary>
     /// Gets or sets the local value
     /// </summary>
-    public object LocalValue { get; set; }
+    public object? LocalValue { get; set; }
 
     /// <summary>
     /// Gets or sets the remote value
     /// </summary>
-    public object RemoteValue { get; set; }
+    public object? RemoteValue { get; set; }
 }
 
 /// <summary>
@@ -359,7 +359,7 @@ public sealed class ConflictResolutionResult
     /// <summary>
     /// Gets the dictionary of resolved field values
     /// </summary>
-    public Dictionary<string, object> ResolvedValues { get; } = new Dictionary<string, object>();
+    public Dictionary<string, object?> ResolvedValues { get; } = new Dictionary<string, object?>();
 
     /// <summary>
     /// Gets or sets a value indicating whether the resolution was successful
@@ -369,5 +369,5 @@ public sealed class ConflictResolutionResult
     /// <summary>
     /// Gets or sets the error message if the resolution failed
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 }

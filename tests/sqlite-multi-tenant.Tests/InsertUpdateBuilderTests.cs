@@ -90,7 +90,7 @@ public class InsertUpdateBuilderTests
         // Arrange
         var builder = new InsertBuilder("Users");
         builder.Value("Name", "John Doe")
-              .Value("Email", null);
+              .Value("Email", null!);
 
         // Act
         var (query, parameters) = builder.Build();
@@ -167,7 +167,7 @@ public class InsertUpdateBuilderTests
     public void InsertBuilder_NullTableName_ThrowsArgumentException()
     {
         // Arrange & Act
-        Action act = () => new InsertBuilder(null);
+        Action act = () => new InsertBuilder(null!);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -215,7 +215,7 @@ public class InsertUpdateBuilderTests
         var builder = new InsertBuilder("Users");
 
         // Act
-        Action act = () => builder.Value(null, "value");
+        Action act = () => builder.Value(null!, "value");
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -297,7 +297,7 @@ public class InsertUpdateBuilderTests
         // Arrange
         var builder = new UpdateBuilder("Users");
         builder.Set("Name", "John Doe")
-              .Set("Email", null)
+              .Set("Email", null!)
               .Where("Id = 1");
 
         // Act
@@ -377,7 +377,7 @@ public class InsertUpdateBuilderTests
         builder.Set("Name", "John Doe");
 
         // Act
-        Action act = () => builder.Where(null);
+        Action act = () => builder.Where(null!);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -447,7 +447,7 @@ public class InsertUpdateBuilderTests
     public void UpdateBuilder_NullTableName_ThrowsArgumentException()
     {
         // Arrange & Act
-        Action act = () => new UpdateBuilder(null);
+        Action act = () => new UpdateBuilder(null!);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -495,7 +495,7 @@ public class InsertUpdateBuilderTests
         var builder = new UpdateBuilder("Users");
 
         // Act
-        Action act = () => builder.Set(null, "value");
+        Action act = () => builder.Set(null!, "value");
 
         // Assert
         act.Should().Throw<ArgumentException>()

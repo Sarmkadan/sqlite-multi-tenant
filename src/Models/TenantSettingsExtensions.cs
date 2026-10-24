@@ -17,7 +17,7 @@ public static class TenantSettingsExtensions
     /// <param name="defaultValue">The value to return when conversion fails.</param>
     /// <returns>The converted value or <paramref name="defaultValue"/>.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="settings"/> is null.</exception>
-    public static T GetValueOrDefault<T>(this TenantSettings settings, T defaultValue = default) where T : IConvertible
+    public static T? GetValueOrDefault<T>(this TenantSettings settings, T? defaultValue = default) where T : IConvertible
     {
         if (settings == null)
         {
@@ -43,7 +43,7 @@ public static class TenantSettingsExtensions
     /// <returns>The string representation of the setting value.</returns>
     public static string GetString(this TenantSettings settings, string defaultValue = "")
     {
-        return settings.GetValueOrDefault(defaultValue);
+        return settings.GetValueOrDefault(defaultValue) ?? defaultValue;
     }
 
     /// <summary>

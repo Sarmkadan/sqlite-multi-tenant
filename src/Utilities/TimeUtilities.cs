@@ -257,7 +257,7 @@ public static class TimeUtilities
 
     /// <summary>
     /// Checks if two DateTime values are on the same day.
-    /// </>
+    /// </summary>
     public static bool IsSameDay(DateTime date1, DateTime date2)
     {
         return date1.Date == date2.Date;

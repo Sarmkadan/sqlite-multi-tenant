@@ -55,7 +55,7 @@ public sealed class AsyncResourcePool<T> : IDisposable where T : class
         _logger.LogInformation("Acquiring resource. Current pool count: {AvailableResources}, Total created: {TotalCreated}", _pool.Count, _totalCreated);
         await _semaphore.WaitAsync(cancellationToken);
 
-        T resource;
+        T? resource;
 
         if (_pool.TryTake(out resource))
         {
@@ -91,7 +91,7 @@ public sealed class AsyncResourcePool<T> : IDisposable where T : class
             _pool.Add(resource);
             _logger.LogDebug("Resource returned to pool. Available: {Count}", _pool.Count);
         }
-        else
+        else if (resource is not null)
         {
             await _resourceDisposer(resource);
             _logger.LogDebug("Resource disposed. Pool at capacity or resource null");

@@ -216,7 +216,7 @@ public sealed class TenantIsolationVerifier
 
                 command.Parameters.AddWithValue("@tenantId", tenantId);
 
-                var count = (long)await command.ExecuteScalarAsync();
+                var count = Convert.ToInt64(await command.ExecuteScalarAsync());
                 return count == 0; // Should be 0 if properly isolated
             }
         }
@@ -361,7 +361,7 @@ public sealed class IsolationVerificationResult
     /// <summary>
     /// Gets or sets the tenant identifier being verified.
     /// </summary>
-    public string TenantId { get; set; }
+    public required string TenantId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether all isolation checks passed successfully.
@@ -399,17 +399,17 @@ public sealed class DataLeakageSuspicion
     /// <summary>
     /// Gets or sets the type/category of the data leakage suspicion.
     /// </summary>
-    public string Type { get; set; }
+    public required string Type { get; set; }
 
     /// <summary>
     /// Gets or sets a description of the potential data leakage issue.
     /// </summary>
-    public string Description { get; set; }
+    public required string Description { get; set; }
 
     /// <summary>
     /// Gets or sets the severity level of the data leakage concern (e.g., "Critical", "High", "Medium").
     /// </summary>
-    public string Severity { get; set; }
+    public required string Severity { get; set; }
 }
 
 /// <summary>
@@ -420,12 +420,12 @@ public sealed class QueryValidationResult
     /// <summary>
     /// Gets or sets the SQL query that was validated.
     /// </summary>
-    public string Query { get; set; }
+    public required string Query { get; set; }
 
     /// <summary>
     /// Gets or sets the tenant identifier the query should be scoped to.
     /// </summary>
-    public string TenantId { get; set; }
+    public required string TenantId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the query contains a tenant filter.
