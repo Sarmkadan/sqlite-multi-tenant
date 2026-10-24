@@ -30,9 +30,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a null tenant ID sets the expected message,
-/// a null tenant ID, and a null inner exception.
-/// </summary>
+    /// Verifies that the constructor with a null tenant ID sets the expected message,
+    /// a null tenant ID, and a null inner exception.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullTenantId_ShouldSetMessageAndNullTenantId()
     {
@@ -49,9 +49,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with an empty tenant ID sets the expected message,
-/// an empty tenant ID, and a null inner exception.
-/// </summary>
+    /// Verifies that the constructor with an empty tenant ID sets the expected message,
+    /// an empty tenant ID, and a null inner exception.
+    /// </summary>
     [Fact]
     public void Constructor_WithEmptyTenantId_ShouldSetMessageAndEmptyTenantId()
     {
@@ -68,8 +68,8 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a tenant ID and inner exception sets all properties correctly.
-/// </summary>
+    /// Verifies that the constructor with a tenant ID and inner exception sets all properties correctly.
+    /// </summary>
     [Fact]
     public void Constructor_WithTenantIdAndInnerException_ShouldSetProperties()
     {
@@ -87,8 +87,8 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a null tenant ID and inner exception sets all properties correctly.
-/// </summary>
+    /// Verifies that the constructor with a null tenant ID and inner exception sets all properties correctly.
+    /// </summary>
     [Fact]
     public void Constructor_WithNullTenantIdAndInnerException_ShouldSetProperties()
     {
@@ -106,9 +106,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a custom message, tenant ID, and inner exception
-/// sets all properties to the provided values.
-/// </summary>
+    /// Verifies that the constructor with a custom message, tenant ID, and inner exception
+    /// sets all properties to the provided values.
+    /// </summary>
     [Fact]
     public void Constructor_WithMessageTenantIdAndInnerException_ShouldSetAllProperties()
     {
@@ -127,9 +127,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a custom message, null tenant ID, and null inner exception
-/// sets the message and leaves the tenant ID and inner exception null.
-/// </summary>
+    /// Verifies that the constructor with a custom message, null tenant ID, and null inner exception
+    /// sets the message and leaves the tenant ID and inner exception null.
+    /// </summary>
     [Fact]
     public void Constructor_WithCustomMessageNullTenantIdAndNullInnerException_ShouldSetProperties()
     {
@@ -148,9 +148,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a whitespace-padded tenant ID sets the expected message
-/// and preserves the tenant ID as provided.
-/// </summary>
+    /// Verifies that the constructor with a whitespace-padded tenant ID sets the expected message
+    /// and preserves the tenant ID as provided.
+    /// </summary>
     [Fact]
     public void Constructor_WithWhitespaceTenantId_ShouldSetMessageAndTenantId()
     {
@@ -166,9 +166,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a tenant ID containing special characters
-/// sets the expected message and preserves the tenant ID as provided.
-/// </summary>
+    /// Verifies that the constructor with a tenant ID containing special characters
+    /// sets the expected message and preserves the tenant ID as provided.
+    /// </summary>
     [Fact]
     public void Constructor_WithSpecialCharactersInTenantId_ShouldSetMessageAndTenantId()
     {
@@ -184,9 +184,9 @@ public class TenantNotFoundExceptionTests
     }
 
     /// <summary>
-/// Verifies that the constructor with a very long tenant ID sets the expected message
-/// and preserves the tenant ID as provided.
-/// </summary>
+    /// Verifies that the constructor with a very long tenant ID sets the expected message
+    /// and preserves the tenant ID as provided.
+    /// </summary>
     [Fact]
     public void Constructor_WithLongTenantId_ShouldSetMessageAndTenantId()
     {

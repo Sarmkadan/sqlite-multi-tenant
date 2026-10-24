@@ -42,16 +42,22 @@ public sealed class TenantSizeReportService : ITenantSizeReportService
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         _logger.LogDebug("Generating size report for tenant {TenantId}", tenantId);
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken);
         if (tenant is null)
+        {
             throw new TenantNotFoundException(tenantId);
+        }
 
         if (string.IsNullOrWhiteSpace(tenant.DatabasePath) || !File.Exists(tenant.DatabasePath))
+        {
             throw new InvalidOperationException($"Tenant {tenantId} database file not found at {tenant.DatabasePath}");
+        }
 
         var fileInfo = new FileInfo(tenant.DatabasePath);
 
@@ -125,7 +131,9 @@ public sealed class TenantSizeReportService : ITenantSizeReportService
         foreach (var tenant in tenants)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             try
             {

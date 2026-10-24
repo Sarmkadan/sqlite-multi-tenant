@@ -4,17 +4,18 @@
 // CTO & Software Architect
 // =============================================================================
 
-using SqliteMultiTenant.Constants;
-using SqliteMultiTenant.Models;
 using System.Data;
 using System.Data.SQLite;
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Repositories;
 
 /// <summary>
 /// SQLite implementation of the migration repository
 /// </summary>
-public sealed class MigrationRepository : IMigrationRepository {
+public sealed class MigrationRepository : IMigrationRepository
+{
     private readonly string _connectionString;
     private readonly ILogger<MigrationRepository> _logger;
 
@@ -309,7 +310,9 @@ public sealed class MigrationRepository : IMigrationRepository {
         try
         {
             if (!migration.Validate(out var errors))
+            {
                 throw new ArgumentException($"Migration validation failed: {string.Join(", ", errors)}");
+            }
 
             using var connection = new SQLiteConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
@@ -345,7 +348,9 @@ public sealed class MigrationRepository : IMigrationRepository {
         try
         {
             if (!migration.Validate(out var errors))
+            {
                 throw new ArgumentException($"Migration validation failed: {string.Join(", ", errors)}");
+            }
 
             using var connection = new SQLiteConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);

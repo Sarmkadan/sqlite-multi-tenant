@@ -6,10 +6,9 @@ using SqliteMultiTenant.Api.Controllers;
 using SqliteMultiTenant.Api.Responses;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+public class SettingsControllerExtensionsTests
 {
-    public class SettingsControllerExtensionsTests
-    {
-        // ... entire file content ...
-    }
+    // ... entire file content ...
 }

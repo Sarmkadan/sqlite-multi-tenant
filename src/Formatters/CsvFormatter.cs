@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Formatters;
 /// Handles nested objects, arrays, and special character escaping.
 /// Useful for exporting data to spreadsheet applications.
 /// </summary>
-public sealed class CsvExportFormatter {
+public sealed class CsvExportFormatter
+{
     private readonly string _delimiter;
     private readonly bool _includeHeader;
     private readonly ILogger<CsvExportFormatter> _logger;
@@ -49,11 +50,17 @@ public sealed class CsvExportFormatter {
         {
             string result;
             if (data is null)
+            {
                 result = string.Empty;
+            }
             else if (data is IEnumerable enumerable && !(data is string))
+            {
                 result = FormatCollection(enumerable);
+            }
             else
+            {
                 result = FormatObject(data);
+            }
 
             _logger.LogInformation("Finished formatting CSV data of type {DataType}", typeof(T).Name);
             return result;
@@ -74,7 +81,9 @@ public sealed class CsvExportFormatter {
         foreach (var item in collection)
         {
             if (item is null)
+            {
                 continue;
+            }
 
             var itemType = item.GetType();
 
@@ -141,7 +150,9 @@ public sealed class CsvExportFormatter {
     private string EscapeValue(string value)
     {
         if (string.IsNullOrEmpty(value))
+        {
             return string.Empty;
+        }
 
         // Escape double quotes and wrap in quotes if contains special characters
         if (value.Contains(_delimiter) || value.Contains("\"") || value.Contains("\n"))

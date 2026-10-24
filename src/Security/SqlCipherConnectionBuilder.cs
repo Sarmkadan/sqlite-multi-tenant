@@ -53,10 +53,14 @@ public static class SqlCipherConnectionBuilder
     public static string BuildConnectionString(string databasePath, string encryptionKey, int version = 4)
     {
         if (string.IsNullOrWhiteSpace(databasePath))
+        {
             throw new ArgumentException("Database path cannot be empty.", nameof(databasePath));
+        }
 
         if (string.IsNullOrWhiteSpace(encryptionKey))
+        {
             throw new ArgumentException("Encryption key cannot be empty.", nameof(encryptionKey));
+        }
 
         var builder = new SQLiteConnectionStringBuilder
         {
@@ -80,9 +84,15 @@ public static class SqlCipherConnectionBuilder
         string encryptionKey,
         CancellationToken cancellationToken = default)
     {
-        if (connection is null) throw new ArgumentNullException(nameof(connection));
+        if (connection is null)
+        {
+            throw new ArgumentNullException(nameof(connection));
+        }
+
         if (string.IsNullOrWhiteSpace(encryptionKey))
+        {
             throw new ArgumentException("Encryption key cannot be empty.", nameof(encryptionKey));
+        }
 
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $"PRAGMA key = '{EscapeSqliteString(encryptionKey)}';";
@@ -115,9 +125,15 @@ public static class SqlCipherConnectionBuilder
         string newKey,
         CancellationToken cancellationToken = default)
     {
-        if (connection is null) throw new ArgumentNullException(nameof(connection));
+        if (connection is null)
+        {
+            throw new ArgumentNullException(nameof(connection));
+        }
+
         if (string.IsNullOrWhiteSpace(newKey))
+        {
             throw new ArgumentException("New encryption key cannot be empty.", nameof(newKey));
+        }
 
         using var cmd = connection.CreateCommand();
         cmd.CommandText = $"PRAGMA rekey = '{EscapeSqliteString(newKey)}';";

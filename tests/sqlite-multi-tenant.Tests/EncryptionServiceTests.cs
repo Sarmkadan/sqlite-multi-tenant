@@ -1,9 +1,9 @@
+using System.Security.Cryptography;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using SqliteMultiTenant.Security;
-using System.Security.Cryptography;
 using Xunit;
 
 namespace SqliteMultiTenant.Tests.Security;

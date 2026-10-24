@@ -5,11 +5,11 @@
 
 #nullable enable
 
+using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Api.Requests;
 using SqliteMultiTenant.Api.Responses;
 using SqliteMultiTenant.Services;
-using System.ComponentModel.DataAnnotations;
 
 namespace SqliteMultiTenant.Api.Controllers;
 
@@ -18,7 +18,8 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// Handles CRUD operations for multi-tenant database instances.
 /// All operations are validated and logged for audit purposes.
 /// </summary>
-public sealed class TenantController {
+public sealed class TenantController
+{
     private readonly ITenantService _tenantService;
     private readonly ILogger<TenantController> _logger;
 
@@ -39,10 +40,14 @@ public sealed class TenantController {
         try
         {
             if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.ContactEmail))
+            {
                 return ApiResponse<TenantResponse>.BadRequest("Name and email are required");
+            }
 
             if (!IsValidEmail(request.ContactEmail))
+            {
                 return ApiResponse<TenantResponse>.BadRequest("Invalid email format");
+            }
 
             var tenant = await _tenantService.CreateTenantAsync(
                 request.Name,
@@ -77,7 +82,9 @@ public sealed class TenantController {
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant is null)
+            {
                 return ApiResponse<TenantResponse>.NotFound($"Tenant {tenantId} not found");
+            }
 
             var response = new TenantResponse
             {
@@ -136,16 +143,24 @@ public sealed class TenantController {
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant is null)
+            {
                 return ApiResponse<TenantResponse>.NotFound($"Tenant {tenantId} not found");
+            }
 
             if (!string.IsNullOrWhiteSpace(request.Name))
+            {
                 tenant.Name = request.Name;
+            }
 
             if (!string.IsNullOrWhiteSpace(request.Description))
+            {
                 tenant.Description = request.Description;
+            }
 
             if (!string.IsNullOrWhiteSpace(request.ContactEmail) && IsValidEmail(request.ContactEmail))
+            {
                 tenant.ContactEmail = request.ContactEmail;
+            }
 
             var response = new TenantResponse
             {
@@ -176,7 +191,9 @@ public sealed class TenantController {
         {
             var tenant = await _tenantService.GetTenantAsync(tenantId);
             if (tenant is null)
+            {
                 return ApiResponse<object>.NotFound($"Tenant {tenantId} not found");
+            }
 
             tenant.Status = Constants.TenantStatus.Suspended;
             _logger.LogWarning("Tenant {TenantId} suspended by {SuspendedBy}", tenantId, suspendedBy);

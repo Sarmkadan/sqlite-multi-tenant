@@ -4,11 +4,11 @@
 // CTO & Software Architect
 // =======================================================================
 
-using SqliteMultiTenant.Configuration;
 using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Utilities;
-using SqliteMultiTenant.Exceptions;
 
 namespace SqliteMultiTenant.Operations;
 
@@ -365,8 +365,8 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     public async Task<BatchOperationResult> ExecuteAsync(BatchOperation operation, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(operation);
-    // Validate batch size limits to prevent resource exhaustion
-    ValidateBatchSize(operation);
+        // Validate batch size limits to prevent resource exhaustion
+        ValidateBatchSize(operation);
 
 
         var operationId = operation.OperationId;
@@ -417,7 +417,9 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
         foreach (var tenantGroup in resourcesByTenant)
         {
             if (cancellationToken.IsCancellationRequested)
+            {
                 break;
+            }
 
             var tenantId = tenantGroup.Key;
             var tenantResourceIds = tenantGroup.Value;
@@ -437,15 +439,21 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
                 result.ResourceResults.Add(resourceResult);
 
                 if (resourceResult.Success)
+                {
                     result.SuccessCount++;
+                }
                 else
+                {
                     result.FailureCount++;
+                }
 
                 // Update progress
                 status.ProcessedResources = result.SuccessCount + result.FailureCount;
 
                 if (cancellationToken.IsCancellationRequested)
+                {
                     break;
+                }
             }
         }
 
@@ -472,7 +480,9 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     public Task<BatchOperationStatus> GetStatusAsync(string operationId)
     {
         if (_statusTracker.TryGetValue(operationId, out var status))
+        {
             return Task.FromResult(status);
+        }
 
         return Task.FromResult<BatchOperationStatus>(null);
     }
@@ -487,7 +497,9 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     private void ValidateTenantAuthorization(IEnumerable<string> resourceIds)
     {
         if (resourceIds is null || !resourceIds.Any())
+        {
             return;
+        }
 
         var currentTenantId = _tenantContextHelper.GetCurrentTenantId();
 

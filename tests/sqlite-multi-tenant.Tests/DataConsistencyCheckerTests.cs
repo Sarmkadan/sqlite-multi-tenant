@@ -13,7 +13,8 @@ using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 
-public sealed class DataConsistencyCheckerTests {
+public sealed class DataConsistencyCheckerTests
+{
     private readonly DataConsistencyChecker _checker;
     private readonly ILogger<DataConsistencyChecker> _logger;
 

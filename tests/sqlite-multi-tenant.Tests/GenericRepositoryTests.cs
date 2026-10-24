@@ -6,8 +6,8 @@
 
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using SqliteMultiTenant.Repositories;
 using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
 using Xunit;
 
 namespace SqliteMultiTenant.Tests;
@@ -17,7 +17,8 @@ namespace SqliteMultiTenant.Tests;
 /// This class provides unit tests for the generic repository pattern used throughout the application,
 /// ensuring that basic CRUD operations and transaction handling work as expected.
 /// </summary>
-public sealed class GenericRepositoryTests {
+public sealed class GenericRepositoryTests
+{
     /// <summary>
     /// Test entity used for testing generic repository operations.
     /// </summary>
@@ -83,7 +84,9 @@ public sealed class GenericRepositoryTests {
             ArgumentNullException.ThrowIfNull(entity);
             var index = Items.FindIndex(i => i.Id == entity.Id);
             if (index < 0)
+            {
                 return Task.FromResult(false);
+            }
 
             Items[index] = entity;
             return Task.FromResult(true);
@@ -99,7 +102,9 @@ public sealed class GenericRepositoryTests {
             ArgumentException.ThrowIfNullOrEmpty(id);
             var item = Items.FirstOrDefault(i => i.Id == id);
             if (item is null)
+            {
                 return Task.FromResult(false);
+            }
 
             Items.Remove(item);
             return Task.FromResult(true);
@@ -146,7 +151,9 @@ public sealed class GenericRepositoryTests {
             ArgumentNullException.ThrowIfNull(predicate);
             var toRemove = Items.Where(predicate).ToList();
             foreach (var item in toRemove)
+            {
                 Items.Remove(item);
+            }
 
             return Task.FromResult(toRemove.Count);
         }

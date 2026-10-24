@@ -53,14 +53,24 @@ public sealed class SqlitePragmaOptions
         var failures = new List<string>();
 
         if (!IsAllowed(JournalMode, AllowedJournalModes))
+        {
             failures.Add(FormatInvalid(nameof(JournalMode), JournalMode, AllowedJournalModes));
+        }
+
         if (!IsAllowed(Synchronous, AllowedSynchronousModes))
+        {
             failures.Add(FormatInvalid(nameof(Synchronous), Synchronous, AllowedSynchronousModes));
+        }
+
         if (BusyTimeoutMs < 0)
+        {
             failures.Add($"{nameof(BusyTimeoutMs)} must be zero or greater (current: {BusyTimeoutMs}).");
+        }
 
         if (failures.Count > 0)
+        {
             throw new OptionsValidationException(nameof(SqlitePragmaOptions), typeof(SqlitePragmaOptions), failures);
+        }
     }
 
     /// <summary>

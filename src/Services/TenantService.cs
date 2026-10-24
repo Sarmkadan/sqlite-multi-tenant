@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Services;
 /// <summary>
 /// Service implementation for tenant management.
 /// </summary>
-public sealed class TenantService : ITenantService {
+public sealed class TenantService : ITenantService
+{
     private readonly ITenantRepository _repository;
     private readonly ILogger<TenantService> _logger;
 
@@ -43,7 +44,9 @@ public sealed class TenantService : ITenantService {
     public async Task<Tenant?> GetTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException($"Tenant ID parameter '{nameof(tenantId)}' must be a valid non-empty identifier.", nameof(tenantId));
+        }
 
         try
         {
@@ -75,13 +78,17 @@ public sealed class TenantService : ITenantService {
     public async Task<Tenant> CreateTenantAsync(string name, string? description = null, string? contactEmail = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException($"Tenant name parameter '{nameof(name)}' cannot be null or empty during creation.", nameof(name));
+        }
 
         try
         {
             var existingTenant = await _repository.GetByNameAsync(name, cancellationToken);
             if (existingTenant is not null)
+            {
                 throw new InvalidOperationException($"Tenant with name '{name}' already exists");
+            }
 
             var tenant = new Tenant
             {
@@ -97,7 +104,9 @@ public sealed class TenantService : ITenantService {
             };
 
             if (!tenant.Validate(out var errors))
+            {
                 throw new ArgumentException($"Tenant validation failed: {string.Join(", ", errors)}");
+            }
 
             var createdTenant = await _repository.AddAsync(tenant, cancellationToken);
             _logger.LogInformation("Tenant created: {TenantId}", createdTenant.TenantId);
@@ -121,18 +130,24 @@ public sealed class TenantService : ITenantService {
     public async Task UpdateTenantAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         if (tenant is null)
+        {
             throw new ArgumentNullException(nameof(tenant));
+        }
 
         try
         {
             var existingTenant = await _repository.GetByIdAsync(tenant.TenantId, cancellationToken);
             if (existingTenant is null)
+            {
                 throw new TenantNotFoundException(tenant.TenantId);
+            }
 
             tenant.UpdatedAt = DateTime.UtcNow;
 
             if (!tenant.Validate(out var errors))
+            {
                 throw new ArgumentException($"Tenant validation failed: {string.Join(", ", errors)}");
+            }
 
             await _repository.UpdateAsync(tenant, cancellationToken);
             _logger.LogInformation("Tenant updated: {TenantId}", tenant.TenantId);
@@ -154,13 +169,17 @@ public sealed class TenantService : ITenantService {
     public async Task DeleteTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         try
         {
             var existingTenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
             if (existingTenant is null)
+            {
                 throw new TenantNotFoundException(tenantId);
+            }
 
             await _repository.DeleteAsync(tenantId, cancellationToken);
             _logger.LogInformation("Tenant deleted: {TenantId}", tenantId);
@@ -218,13 +237,17 @@ public sealed class TenantService : ITenantService {
     public async Task ActivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
             if (tenant is null)
+            {
                 throw new TenantNotFoundException(tenantId);
+            }
 
             tenant.Activate();
             await _repository.UpdateAsync(tenant, cancellationToken);
@@ -247,13 +270,17 @@ public sealed class TenantService : ITenantService {
     public async Task DeactivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
             if (tenant is null)
+            {
                 throw new TenantNotFoundException(tenantId);
+            }
 
             tenant.Deactivate();
             await _repository.UpdateAsync(tenant, cancellationToken);
@@ -276,13 +303,17 @@ public sealed class TenantService : ITenantService {
     public async Task SuspendTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
             if (tenant is null)
+            {
                 throw new TenantNotFoundException(tenantId);
+            }
 
             tenant.Status = TenantStatus.Suspended;
             tenant.UpdatedAt = DateTime.UtcNow;
@@ -305,7 +336,9 @@ public sealed class TenantService : ITenantService {
     public async Task<bool> TenantExistsAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             return false;
+        }
 
         try
         {
@@ -346,7 +379,9 @@ public sealed class TenantService : ITenantService {
     public async Task<List<Tenant>> SearchTenantsAsync(string searchTerm, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
+        {
             throw new ArgumentException("Search term cannot be empty", nameof(searchTerm));
+        }
 
         try
         {
@@ -371,16 +406,22 @@ public sealed class TenantService : ITenantService {
     public async Task SetTenantMetadataAsync(string tenantId, string key, string value, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         if (string.IsNullOrWhiteSpace(key))
+        {
             throw new ArgumentException("Metadata key cannot be empty", nameof(key));
+        }
 
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
             if (tenant is null)
+            {
                 throw new TenantNotFoundException(tenantId);
+            }
 
             tenant.SetMetadata(key, value);
             await _repository.UpdateAsync(tenant, cancellationToken);
@@ -405,16 +446,22 @@ public sealed class TenantService : ITenantService {
     public async Task<TenantStorageInfo> GetTenantDatabaseSizeAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID cannot be empty", nameof(tenantId));
+        }
 
         try
         {
             var tenant = await _repository.GetByIdAsync(tenantId, cancellationToken);
             if (tenant is null)
+            {
                 throw new TenantNotFoundException(tenantId);
+            }
 
             if (string.IsNullOrWhiteSpace(tenant.DatabasePath))
+            {
                 throw new InvalidOperationException($"Tenant {tenantId} has no database path configured.");
+            }
 
             long pageCount;
             int pageSize;
@@ -440,7 +487,9 @@ public sealed class TenantService : ITenantService {
             long walSizeBytes = 0;
             var walPath = tenant.DatabasePath + "-wal";
             if (File.Exists(walPath))
+            {
                 walSizeBytes = new FileInfo(walPath).Length;
+            }
 
             return new Models.TenantStorageInfo
             {

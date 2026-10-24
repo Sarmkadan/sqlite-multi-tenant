@@ -1,8 +1,8 @@
 #nullable enable
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Security;
 
@@ -21,7 +21,8 @@ public interface IEncryptionService
     string HashPassword(string password);
 }
 
-public sealed class EncryptionService : IEncryptionService {
+public sealed class EncryptionService : IEncryptionService
+{
     private readonly string _encryptionKey;
     private readonly ILogger<EncryptionService> _logger;
     private readonly EncryptionOptions _options;
@@ -34,7 +35,9 @@ public sealed class EncryptionService : IEncryptionService {
             throw new InvalidOperationException("Encryption key not configured");
 
         if (_encryptionKey.Length < 32)
+        {
             throw new InvalidOperationException("Encryption key must be at least 32 characters");
+        }
     }
 
     /// <summary>
@@ -45,7 +48,9 @@ public sealed class EncryptionService : IEncryptionService {
         try
         {
             if (string.IsNullOrEmpty(plainText))
+            {
                 return string.Empty;
+            }
 
             byte[] encryptedBytes = EncryptBytes(Encoding.UTF8.GetBytes(plainText));
             return Convert.ToBase64String(encryptedBytes);
@@ -65,7 +70,9 @@ public sealed class EncryptionService : IEncryptionService {
         try
         {
             if (string.IsNullOrEmpty(cipherText))
+            {
                 return string.Empty;
+            }
 
             byte[] cipherBytes = Convert.FromBase64String(cipherText);
             byte[] decryptedBytes = DecryptBytes(cipherBytes);
@@ -130,7 +137,9 @@ public sealed class EncryptionService : IEncryptionService {
         try
         {
             if (data.Length < _options.IvSize / 8)
+            {
                 throw new InvalidOperationException("Invalid encrypted data");
+            }
 
             using (var aes = Aes.Create())
             {
@@ -172,12 +181,16 @@ public sealed class EncryptionService : IEncryptionService {
         try
         {
             if (string.IsNullOrEmpty(plainText) || string.IsNullOrEmpty(hash))
+            {
                 return false;
+            }
 
             byte[] hashBytes = Convert.FromBase64String(hash);
 
             if (hashBytes.Length < (_options.SaltSize / 8) + (_options.KeySize / 8))
+            {
                 return false;
+            }
 
             // Extract salt from hash
             byte[] salt = new byte[_options.SaltSize / 8];
@@ -190,7 +203,9 @@ public sealed class EncryptionService : IEncryptionService {
             for (int i = 0; i < derivedKey.Length; i++)
             {
                 if (derivedKey[i] != hashBytes[i + (_options.SaltSize / 8)])
+                {
                     return false;
+                }
             }
 
             return true;

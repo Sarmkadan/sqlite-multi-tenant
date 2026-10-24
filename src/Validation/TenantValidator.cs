@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Validation;
 /// Enforces business rules and data constraints at API boundary.
 /// Returns validation errors for user-friendly error responses.
 /// </summary>
-public sealed class TenantValidator {
+public sealed class TenantValidator
+{
     /// <summary>
     /// Validates create tenant request.
     /// Checks required fields, email format, name length.
@@ -27,14 +28,22 @@ public sealed class TenantValidator {
         var errors = new Dictionary<string, string>();
 
         if (string.IsNullOrWhiteSpace(request.Name))
+        {
             errors.Add(nameof(request.Name), "Tenant name is required");
+        }
         else if (!request.Name.IsValidTenantName())
+        {
             errors.Add(nameof(request.Name), "Tenant name must be between 3 and 255 characters");
+        }
 
         if (string.IsNullOrWhiteSpace(request.ContactEmail))
+        {
             errors.Add(nameof(request.ContactEmail), "Contact email is required");
+        }
         else if (!request.ContactEmail.IsValidEmail())
+        {
             errors.Add(nameof(request.ContactEmail), "Contact email must be valid");
+        }
 
         return errors;
     }
@@ -53,13 +62,17 @@ public sealed class TenantValidator {
         if (!string.IsNullOrWhiteSpace(request.Name))
         {
             if (!request.Name.IsValidTenantName())
+            {
                 errors.Add(nameof(request.Name), "Tenant name must be between 3 and 255 characters");
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(request.ContactEmail))
         {
             if (!request.ContactEmail.IsValidEmail())
+            {
                 errors.Add(nameof(request.ContactEmail), "Contact email must be valid");
+            }
         }
 
         return errors;
@@ -85,7 +98,8 @@ public sealed class TenantValidator {
 /// Validator for migration creation and execution.
 /// Ensures migrations contain valid SQL and follow conventions.
 /// </summary>
-public sealed class MigrationValidator {
+public sealed class MigrationValidator
+{
     /// <summary>
     /// Validates migration creation request.
     /// Checks version format, script content, naming conventions.
@@ -98,24 +112,38 @@ public sealed class MigrationValidator {
         var errors = new Dictionary<string, string>();
 
         if (string.IsNullOrWhiteSpace(request.Version))
+        {
             errors.Add(nameof(request.Version), "Version is required");
+        }
         else if (!request.Version.IsValidSemanticVersion())
+        {
             errors.Add(nameof(request.Version), "Version must be valid semantic version (e.g., 1.0.0)");
+        }
 
         if (string.IsNullOrWhiteSpace(request.Name))
+        {
             errors.Add(nameof(request.Name), "Migration name is required");
+        }
         else if (request.Name.Length < 3 || request.Name.Length > 255)
+        {
             errors.Add(nameof(request.Name), "Migration name must be between 3 and 255 characters");
+        }
 
         if (string.IsNullOrWhiteSpace(request.UpScript))
+        {
             errors.Add(nameof(request.UpScript), "Up script is required");
+        }
         else if (!request.UpScript.IsValidSqlScript())
+        {
             errors.Add(nameof(request.UpScript), "Up script contains potentially dangerous SQL patterns");
+        }
 
         if (!string.IsNullOrWhiteSpace(request.DownScript))
         {
             if (!request.DownScript.IsValidSqlScript())
+            {
                 errors.Add(nameof(request.DownScript), "Down script contains potentially dangerous SQL patterns");
+            }
         }
 
         return errors;
@@ -149,7 +177,8 @@ public sealed class MigrationValidator {
 /// Validator for database connection strings.
 /// Ensures safe and properly formatted connection strings.
 /// </summary>
-public sealed class ConnectionStringValidator {
+public sealed class ConnectionStringValidator
+{
     /// <summary>
     /// Validates SQLite connection string format.
     /// </summary>
@@ -164,20 +193,27 @@ public sealed class ConnectionStringValidator {
         }
 
         if (!connectionString.IsValidConnectionString())
+        {
             errors.Add("ConnectionString", "Connection string must contain Data Source or Filename");
+        }
 
         // Validate path is safe
         if (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase))
         {
             var start = connectionString.IndexOf("Data Source=", StringComparison.OrdinalIgnoreCase) + 12;
             var end = connectionString.IndexOf(";", start);
-            if (end == -1) end = connectionString.Length;
+            if (end == -1)
+            {
+                end = connectionString.Length;
+            }
 
             // Hotfix: Trim quotes to handle quoted connection strings
             var path = connectionString[start..end].Trim('"', '\'');
 
             if (!path.IsValidRelativePath())
+            {
                 errors.Add("Path", "Database path contains invalid characters or patterns");
+            }
         }
 
         return errors;
@@ -187,7 +223,8 @@ public sealed class ConnectionStringValidator {
 /// <summary>
 /// Validator for backup operations.
 /// </summary>
-public sealed class BackupValidator {
+public sealed class BackupValidator
+{
     /// <summary>
     /// Validates backup tag format and length.
     /// </summary>
@@ -196,7 +233,9 @@ public sealed class BackupValidator {
         var errors = new Dictionary<string, string>();
 
         if (!tag.IsValidBackupTag())
+        {
             errors.Add("Tag", "Tag must be alphanumeric with hyphens/underscores and max 100 characters");
+        }
 
         return errors;
     }
@@ -209,7 +248,9 @@ public sealed class BackupValidator {
         var errors = new Dictionary<string, string>();
 
         if (!days.IsValidRetentionDays())
+        {
             errors.Add("RetentionDays", "Retention must be between 1 and 3650 days");
+        }
 
         return errors;
     }

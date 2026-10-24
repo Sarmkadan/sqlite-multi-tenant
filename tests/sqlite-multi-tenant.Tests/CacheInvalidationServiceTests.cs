@@ -4,109 +4,109 @@
 // CTO & Software Architect
 // =============================================================================
 
-using FluentAssertions;
-using NSubstitute;
-using Microsoft.Extensions.Logging;
-using SqliteMultiTenant.Caching;
 using System;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using SqliteMultiTenant.Caching;
 using Xunit;
 
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+/// <summary>
+/// Tests for the <see cref="CacheInvalidationService"/> class.
+/// </summary>
+public sealed class CacheInvalidationServiceTests
 {
-    /// <summary>
-    /// Tests for the <see cref="CacheInvalidationService"/> class.
-    /// </summary>
-    public sealed class CacheInvalidationServiceTests {
-        private readonly ICacheService _mockCacheService;
-        private readonly ILogger<CacheInvalidationService> _mockLogger;
-        private readonly CacheInvalidationService _sut;
+    private readonly ICacheService _mockCacheService;
+    private readonly ILogger<CacheInvalidationService> _mockLogger;
+    private readonly CacheInvalidationService _sut;
 
-        public CacheInvalidationServiceTests()
-        {
-            _mockCacheService = Substitute.For<ICacheService>();
-            _mockLogger = Substitute.For<ILogger<CacheInvalidationService>>();
-            _sut = new CacheInvalidationService(_mockCacheService, _mockLogger);
-        }
+    public CacheInvalidationServiceTests()
+    {
+        _mockCacheService = Substitute.For<ICacheService>();
+        _mockLogger = Substitute.For<ILogger<CacheInvalidationService>>();
+        _sut = new CacheInvalidationService(_mockCacheService, _mockLogger);
+    }
 
-        [Fact]
-        public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenCacheServiceIsNull()
-        {
-            // Act & Assert
-            this.Invoking(_ => new CacheInvalidationService(null, _mockLogger))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("cache");
-        }
+    [Fact]
+    public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenCacheServiceIsNull()
+    {
+        // Act & Assert
+        this.Invoking(_ => new CacheInvalidationService(null, _mockLogger))
+            .Should().Throw<ArgumentNullException>()
+            .WithParameterName("cache");
+    }
 
-        [Fact]
-        public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
-        {
-            // Act & Assert
-            this.Invoking(_ => new CacheInvalidationService(_mockCacheService, null))
-                .Should().Throw<ArgumentNullException>()
-                .WithParameterName("logger");
-        }
+    [Fact]
+    public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
+    {
+        // Act & Assert
+        this.Invoking(_ => new CacheInvalidationService(_mockCacheService, null))
+            .Should().Throw<ArgumentNullException>()
+            .WithParameterName("logger");
+    }
 
-        [Fact]
-        public void InvalidateTenant_ShouldCallRemoveForTenantAndAllTenantsKeys()
-        {
-            // Arrange
-            var tenantId = "tenant123";
-            var tenantKey = CacheKeys.TenantKey(tenantId);
-            var allTenantsKey = CacheKeys.AllTenantsKey();
+    [Fact]
+    public void InvalidateTenant_ShouldCallRemoveForTenantAndAllTenantsKeys()
+    {
+        // Arrange
+        var tenantId = "tenant123";
+        var tenantKey = CacheKeys.TenantKey(tenantId);
+        var allTenantsKey = CacheKeys.AllTenantsKey();
 
-            // Act
-            _sut.InvalidateTenant(tenantId);
+        // Act
+        _sut.InvalidateTenant(tenantId);
 
-            // Assert
-            _mockCacheService.Received(1).Remove(tenantKey);
-            _mockCacheService.Received(1).Remove(allTenantsKey);
-            _mockLogger.AssertLoggedAny(LogLevel.Information);
-        }
+        // Assert
+        _mockCacheService.Received(1).Remove(tenantKey);
+        _mockCacheService.Received(1).Remove(allTenantsKey);
+        _mockLogger.AssertLoggedAny(LogLevel.Information);
+    }
 
-        [Fact]
-        public void InvalidateBackups_ShouldCallRemoveForBackupsForDatabaseKey()
-        {
-            // Arrange
-            var databaseId = "db456";
-            var backupsKey = CacheKeys.BackupsForDatabase(databaseId);
+    [Fact]
+    public void InvalidateBackups_ShouldCallRemoveForBackupsForDatabaseKey()
+    {
+        // Arrange
+        var databaseId = "db456";
+        var backupsKey = CacheKeys.BackupsForDatabase(databaseId);
 
-            // Act
-            _sut.InvalidateBackups(databaseId);
+        // Act
+        _sut.InvalidateBackups(databaseId);
 
-            // Assert
-            _mockCacheService.Received(1).Remove(backupsKey);
-            _mockLogger.AssertLoggedAny(LogLevel.Information);
-        }
+        // Assert
+        _mockCacheService.Received(1).Remove(backupsKey);
+        _mockLogger.AssertLoggedAny(LogLevel.Information);
+    }
 
-        [Fact]
-        public void InvalidateMigrations_ShouldCallRemoveForPendingAndAppliedMigrationsKeys()
-        {
-            // Arrange
-            var databaseId = "db789";
-            var pendingMigrationsKey = CacheKeys.PendingMigrationsKey(databaseId);
-            var appliedMigrationsKey = CacheKeys.AppliedMigrationsKey(databaseId);
+    [Fact]
+    public void InvalidateMigrations_ShouldCallRemoveForPendingAndAppliedMigrationsKeys()
+    {
+        // Arrange
+        var databaseId = "db789";
+        var pendingMigrationsKey = CacheKeys.PendingMigrationsKey(databaseId);
+        var appliedMigrationsKey = CacheKeys.AppliedMigrationsKey(databaseId);
 
-            // Act
-            _sut.InvalidateMigrations(databaseId);
+        // Act
+        _sut.InvalidateMigrations(databaseId);
 
-            // Assert
-            _mockCacheService.Received(1).Remove(pendingMigrationsKey);
-            _mockCacheService.Received(1).Remove(appliedMigrationsKey);
-            _mockLogger.AssertLoggedAny(LogLevel.Information);
-        }
+        // Assert
+        _mockCacheService.Received(1).Remove(pendingMigrationsKey);
+        _mockCacheService.Received(1).Remove(appliedMigrationsKey);
+        _mockLogger.AssertLoggedAny(LogLevel.Information);
+    }
 
-        [Fact]
-        public void InvalidateHealthCheck_ShouldCallRemoveForHealthCheckKey()
-        {
-            // Arrange
-            var healthCheckKey = CacheKeys.HealthCheckKey();
+    [Fact]
+    public void InvalidateHealthCheck_ShouldCallRemoveForHealthCheckKey()
+    {
+        // Arrange
+        var healthCheckKey = CacheKeys.HealthCheckKey();
 
-            // Act
-            _sut.InvalidateHealthCheck();
+        // Act
+        _sut.InvalidateHealthCheck();
 
-            // Assert
-            _mockCacheService.Received(1).Remove(healthCheckKey);
-            _mockLogger.AssertLoggedAny(LogLevel.Information);
-        }
+        // Assert
+        _mockCacheService.Received(1).Remove(healthCheckKey);
+        _mockLogger.AssertLoggedAny(LogLevel.Information);
     }
 }

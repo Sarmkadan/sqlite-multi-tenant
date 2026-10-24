@@ -17,7 +17,8 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/settings")]
-public sealed class SettingsController : ControllerBase {
+public sealed class SettingsController : ControllerBase
+{
     private readonly AppConfigManager _configManager;
     private readonly ILogger<SettingsController> _logger;
 
@@ -102,7 +103,9 @@ public sealed class SettingsController : ControllerBase {
         try
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ApiResponse<object>.Error("Invalid request"));
+            }
 
             _logger.LogInformation("Setting updated: {Key}", key);
 
@@ -136,7 +139,9 @@ public sealed class SettingsController : ControllerBase {
         try
         {
             if (settings is null || settings.Count == 0)
+            {
                 return BadRequest(ApiResponse<object>.Error("No settings provided"));
+            }
 
             _logger.LogInformation("Batch settings update: {Count} items", settings.Count);
 
@@ -211,7 +216,9 @@ public sealed class SettingsController : ControllerBase {
         _logger.LogInformation("Setting existence check: {Key}", key);
 
         if (_configManager.Contains(key))
+        {
             return Ok();
+        }
 
         return NotFound();
     }
@@ -253,7 +260,8 @@ public sealed class SettingsController : ControllerBase {
 /// <summary>
 /// Represents a request to set a configuration value.
 /// </summary>
-public sealed class SetSettingRequest {
+public sealed class SetSettingRequest
+{
     /// <summary>
     /// The value to set for the configuration key.
     /// </summary>
@@ -263,7 +271,8 @@ public sealed class SetSettingRequest {
 /// <summary>
 /// Represents a setting value along with its key and type information.
 /// </summary>
-public sealed class SettingValue {
+public sealed class SettingValue
+{
     /// <summary>
     /// The key of the setting.
     /// </summary>
@@ -283,7 +292,8 @@ public sealed class SettingValue {
 /// <summary>
 /// Represents the result of a batch settings update operation.
 /// </summary>
-public sealed class BatchSettingUpdateResult {
+public sealed class BatchSettingUpdateResult
+{
     /// <summary>
     /// The number of settings that were successfully updated.
     /// </summary>
@@ -313,7 +323,8 @@ public sealed class BatchSettingUpdateResult {
 /// <summary>
 /// Represents application information including name, version, and runtime statistics.
 /// </summary>
-public sealed class AppInfo {
+public sealed class AppInfo
+{
     /// <summary>
     /// The name of the application.
     /// </summary>

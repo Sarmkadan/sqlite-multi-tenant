@@ -5,9 +5,9 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Services;
-using SqliteMultiTenant.Exceptions;
 
 namespace SqliteMultiTenant.Tenants;
 

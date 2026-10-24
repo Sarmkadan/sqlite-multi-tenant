@@ -15,7 +15,8 @@ namespace SqliteMultiTenant.Services;
 /// <summary>
 /// Service implementation for database backup management
 /// </summary>
-public sealed class BackupService : IBackupService {
+public sealed class BackupService : IBackupService
+{
     private readonly IBackupRepository _repository;
     private readonly ILogger<BackupService> _logger;
 
@@ -31,7 +32,9 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         try
         {
@@ -53,7 +56,9 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -75,7 +80,9 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -97,7 +104,9 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -119,12 +128,16 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         ArgumentNullException.ThrowIfNull(createdBy);
 
         if (string.IsNullOrWhiteSpace(createdBy))
+        {
             throw new ArgumentException("CreatedBy cannot be empty", nameof(createdBy));
+        }
 
         try
         {
@@ -143,7 +156,9 @@ public sealed class BackupService : IBackupService {
             };
 
             if (!backup.Validate(out var errors))
+            {
                 throw new ArgumentException($"Backup validation failed: {string.Join(", ", errors)}");
+            }
 
             var createdBackup = await _repository.AddAsync(backup, cancellationToken);
             _logger.LogInformation("Backup created: {BackupId}", backup.BackupId);
@@ -165,13 +180,17 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
+            {
                 throw BackupException.NotFound(backupId);
+            }
 
             backup.MarkAsCompleted(sizeBytes, durationMs);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -193,13 +212,17 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
+            {
                 throw BackupException.NotFound(backupId);
+            }
 
             backup.MarkAsFailed(errorMessage);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -221,19 +244,25 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         ArgumentNullException.ThrowIfNull(verifiedBy);
 
         if (string.IsNullOrWhiteSpace(verifiedBy))
+        {
             throw new ArgumentException("VerifiedBy cannot be empty", nameof(verifiedBy));
+        }
 
         Backup? backup = null;
         try
         {
             backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
+            {
                 throw BackupException.NotFound(backupId);
+            }
 
             if (string.IsNullOrWhiteSpace(backup.BackupPath) || !File.Exists(backup.BackupPath))
             {
@@ -303,13 +332,17 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
+            {
                 throw BackupException.NotFound(backupId);
+            }
 
             backup.SetExpiration(expirationDate);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -349,7 +382,9 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(databaseId);
         if (string.IsNullOrWhiteSpace(databaseId))
+        {
             throw new ArgumentException("Database ID cannot be empty", nameof(databaseId));
+        }
 
         try
         {
@@ -371,13 +406,17 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
+            {
                 throw BackupException.NotFound(backupId);
+            }
 
             await _repository.DeleteAsync(backupId, cancellationToken);
             _logger.LogInformation("Backup deleted: {BackupId}", backupId);
@@ -398,18 +437,24 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(backupId);
         if (string.IsNullOrWhiteSpace(backupId))
+        {
             throw new ArgumentException("Backup ID cannot be empty", nameof(backupId));
+        }
 
         ArgumentNullException.ThrowIfNull(tag);
 
         if (string.IsNullOrWhiteSpace(tag))
+        {
             throw new ArgumentException("Tag cannot be empty", nameof(tag));
+        }
 
         try
         {
             var backup = await _repository.GetByIdAsync(backupId, cancellationToken);
             if (backup is null)
+            {
                 throw BackupException.NotFound(backupId);
+            }
 
             backup.AddTag(tag);
             await _repository.UpdateAsync(backup, cancellationToken);
@@ -445,12 +490,16 @@ public sealed class BackupService : IBackupService {
     {
         ArgumentNullException.ThrowIfNull(sourceDatabasePath);
         if (string.IsNullOrWhiteSpace(sourceDatabasePath))
+        {
             throw new ArgumentException("Source database path cannot be empty", nameof(sourceDatabasePath));
+        }
 
         ArgumentNullException.ThrowIfNull(destinationPath);
 
         if (string.IsNullOrWhiteSpace(destinationPath))
+        {
             throw new ArgumentException("Destination path cannot be empty", nameof(destinationPath));
+        }
 
         try
         {
@@ -469,7 +518,9 @@ public sealed class BackupService : IBackupService {
                 callback = (src, srcName, dst, dstName, pages, remainingPages, totalPages, retry) =>
                 {
                     if (cancellationToken.IsCancellationRequested)
+                    {
                         return false;
+                    }
 
                     int copied = totalPages - remainingPages;
                     progress.Report(new BackupProgress

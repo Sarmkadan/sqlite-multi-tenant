@@ -82,6 +82,7 @@ public sealed class BulkDataService : IBulkDataService
         tables = await GetTableNamesAsync(connection, cancellationToken);
 
         if (_options.PublishDomainEvents)
+        {
             await _eventBus.PublishAsync(new BulkExportStartedEvent
             {
                 DatabaseId = databaseId,
@@ -89,6 +90,7 @@ public sealed class BulkDataService : IBulkDataService
                 Format = format.ToString(),
                 OperationId = operationId
             }, cancellationToken);
+        }
 
         try
         {
@@ -113,16 +115,21 @@ public sealed class BulkDataService : IBulkDataService
                 allRows += rowCount;
 
                 if (_options.EnableProgressReporting)
+                {
                     progress?.Report(new ExportProgress(item.tableName, rowCount, rowCount, 0));
+                }
             }
 
             foreach (var error in tableResults.Errors)
+            {
                 warnings.Add($"Table export failed [{error.ItemId}]: {error.Message}");
+            }
 
             var artifact = await PersistArtifactAsync(output.ToString(), databaseId, format, opts);
             var duration = DateTime.UtcNow - started;
 
             if (_options.PublishDomainEvents)
+            {
                 await _eventBus.PublishAsync(new BulkExportCompletedEvent
                 {
                     DatabaseId = databaseId,
@@ -132,6 +139,7 @@ public sealed class BulkDataService : IBulkDataService
                     OutputPath = artifact,
                     OperationId = operationId
                 }, cancellationToken);
+            }
 
             _logger.LogInformation(
                 "BulkExport completed: database={DatabaseId}, rows={Rows}, tables={Tables}, ms={Ms}",
@@ -152,12 +160,14 @@ public sealed class BulkDataService : IBulkDataService
             var duration = DateTime.UtcNow - started;
 
             if (_options.PublishDomainEvents)
+            {
                 await _eventBus.PublishAsync(new BulkExportFailedEvent
                 {
                     DatabaseId = databaseId,
                     ErrorMessage = ex.Message,
                     OperationId = operationId
                 }, CancellationToken.None);
+            }
 
             _logger.LogError(ex, "BulkExport failed: database={DatabaseId}, op={OperationId}",
                 databaseId, operationId);
@@ -196,7 +206,9 @@ public sealed class BulkDataService : IBulkDataService
         var duration = DateTime.UtcNow - started;
 
         if (_options.EnableProgressReporting)
+        {
             progress?.Report(new ExportProgress(tableName, rowCount, rowCount, 0));
+        }
 
         _logger.LogInformation("ExportTable completed: table={Table}, rows={Rows}, ms={Ms}",
             tableName, rowCount, (long)duration.TotalMilliseconds);
@@ -222,7 +234,10 @@ public sealed class BulkDataService : IBulkDataService
         ArgumentException.ThrowIfNullOrWhiteSpace(databaseId);
         ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
 
-        if (batchSize <= 0) batchSize = _options.DefaultBatchSize;
+        if (batchSize <= 0)
+        {
+            batchSize = _options.DefaultBatchSize;
+        }
 
         using var connection = await OpenConnectionAsync(databaseId, cancellationToken);
         using var command = connection.CreateCommand();
@@ -244,11 +259,16 @@ public sealed class BulkDataService : IBulkDataService
 
             var row = new Dictionary<string, object?>(fieldCount);
             for (var i = 0; i < fieldCount; i++)
+            {
                 row[fieldNames[i]] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+            }
 
             buffer.Add(row);
 
-            if (buffer.Count < batchSize) continue;
+            if (buffer.Count < batchSize)
+            {
+                continue;
+            }
 
             yield return new ExportBatch(
                 tableName,
@@ -288,6 +308,7 @@ public sealed class BulkDataService : IBulkDataService
         var started = DateTime.UtcNow;
 
         if (_options.PublishDomainEvents)
+        {
             await _eventBus.PublishAsync(new BulkImportStartedEvent
             {
                 DatabaseId = databaseId,
@@ -295,6 +316,7 @@ public sealed class BulkDataService : IBulkDataService
                 Format = format.ToString(),
                 OperationId = operationId
             }, cancellationToken);
+        }
 
         try
         {
@@ -306,9 +328,12 @@ public sealed class BulkDataService : IBulkDataService
             var duration = DateTime.UtcNow - started;
 
             if (_options.EnableProgressReporting)
+            {
                 progress?.Report(new ImportProgress(tableName, rowsImported, 0, 0));
+            }
 
             if (_options.PublishDomainEvents)
+            {
                 await _eventBus.PublishAsync(new BulkImportCompletedEvent
                 {
                     DatabaseId = databaseId,
@@ -317,6 +342,7 @@ public sealed class BulkDataService : IBulkDataService
                     DurationMs = (long)duration.TotalMilliseconds,
                     OperationId = operationId
                 }, cancellationToken);
+            }
 
             _logger.LogInformation("ImportTable completed: table={Table}, rows={Rows}, ms={Ms}",
                 tableName, rowsImported, (long)duration.TotalMilliseconds);
@@ -335,12 +361,14 @@ public sealed class BulkDataService : IBulkDataService
             var duration = DateTime.UtcNow - started;
 
             if (_options.PublishDomainEvents)
+            {
                 await _eventBus.PublishAsync(new BulkImportFailedEvent
                 {
                     DatabaseId = databaseId,
                     ErrorMessage = ex.Message,
                     OperationId = operationId
                 }, CancellationToken.None);
+            }
 
             _logger.LogError(ex, "ImportTable failed: database={DatabaseId}, table={Table}",
                 databaseId, tableName);
@@ -380,6 +408,7 @@ public sealed class BulkDataService : IBulkDataService
             databaseId, operationId);
 
         if (_options.PublishDomainEvents)
+        {
             await _eventBus.PublishAsync(new BulkImportStartedEvent
             {
                 DatabaseId = databaseId,
@@ -387,6 +416,7 @@ public sealed class BulkDataService : IBulkDataService
                 Format = "Streaming",
                 OperationId = operationId
             }, cancellationToken);
+        }
 
         using var connection = await OpenConnectionAsync(databaseId, cancellationToken);
 
@@ -404,8 +434,10 @@ public sealed class BulkDataService : IBulkDataService
                     totalImported += imported;
 
                     if (_options.EnableProgressReporting)
+                    {
                         progress?.Report(new ImportProgress(
                             batch.TableName, totalImported, totalFailed, batch.SequenceNumber));
+                    }
 
                     _logger.LogDebug(
                         "StreamImport batch {Seq} processed: table={Table}, rows={Rows}",
@@ -424,6 +456,7 @@ public sealed class BulkDataService : IBulkDataService
             var duration = DateTime.UtcNow - started;
 
             if (_options.PublishDomainEvents)
+            {
                 await _eventBus.PublishAsync(new BulkImportCompletedEvent
                 {
                     DatabaseId = databaseId,
@@ -432,6 +465,7 @@ public sealed class BulkDataService : IBulkDataService
                     DurationMs = (long)duration.TotalMilliseconds,
                     OperationId = operationId
                 }, cancellationToken);
+            }
 
             _logger.LogInformation(
                 "StreamImport completed: database={DatabaseId}, rows={Rows}, failed={Failed}, ms={Ms}",
@@ -452,6 +486,7 @@ public sealed class BulkDataService : IBulkDataService
             var duration = DateTime.UtcNow - started;
 
             if (_options.PublishDomainEvents)
+            {
                 await _eventBus.PublishAsync(new BulkImportFailedEvent
                 {
                     DatabaseId = databaseId,
@@ -459,6 +494,7 @@ public sealed class BulkDataService : IBulkDataService
                     RowsFailedBeforeAbort = totalFailed,
                     OperationId = operationId
                 }, CancellationToken.None);
+            }
 
             _logger.LogError(ex, "StreamImport failed: database={DatabaseId}", databaseId);
 
@@ -493,7 +529,10 @@ public sealed class BulkDataService : IBulkDataService
         cmd.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
         using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
+        {
             tables.Add(reader.GetString(0));
+        }
+
         return tables;
     }
 
@@ -544,10 +583,17 @@ public sealed class BulkDataService : IBulkDataService
         {
             for (var i = 0; i < fieldNames.Length; i++)
             {
-                if (i > 0) sb.Append(',');
+                if (i > 0)
+                {
+                    sb.Append(',');
+                }
+
                 var val = row.TryGetValue(fieldNames[i], out var v) ? v?.ToString() ?? string.Empty : string.Empty;
                 if (val.Contains(',') || val.Contains('"') || val.Contains('\n'))
+                {
                     val = $"\"{val.Replace("\"", "\"\"")}\"";
+                }
+
                 sb.Append(val);
             }
             sb.AppendLine();
@@ -584,7 +630,9 @@ public sealed class BulkDataService : IBulkDataService
     {
         if (string.IsNullOrWhiteSpace(opts.OutputFilePath) &&
             string.IsNullOrWhiteSpace(_options.DefaultExportDirectory))
+        {
             return null;
+        }
 
         var ext = format switch { BulkDataFormat.Csv => "csv", BulkDataFormat.Sql => "sql", _ => "json" };
         var dir = opts.OutputFilePath is not null

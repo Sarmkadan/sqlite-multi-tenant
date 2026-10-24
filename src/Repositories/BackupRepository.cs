@@ -4,26 +4,27 @@
 // CTO & Software Architect
 // =============================================================================
 
-using SqliteMultiTenant.Constants;
-using SqliteMultiTenant.Models;
 using System.Data;
 using System.Data.SQLite;
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Repositories;
 
 /// <summary>
 /// SQLite implementation of the backup repository
 /// </summary>
-public sealed class BackupRepository : IBackupRepository {
+public sealed class BackupRepository : IBackupRepository
+{
     private readonly string _connectionString;
     private readonly ILogger<BackupRepository> _logger;
 
     /// <summary>
-/// Initializes a new instance of the <see cref="BackupRepository"/> class.
-/// </summary>
-/// <param name="connectionString">The connection string for the SQLite database.</param>
-/// <param name="logger">The logger instance for logging messages.</param>
-public BackupRepository(string connectionString, ILogger<BackupRepository> logger)
+    /// Initializes a new instance of the <see cref="BackupRepository"/> class.
+    /// </summary>
+    /// <param name="connectionString">The connection string for the SQLite database.</param>
+    /// <param name="logger">The logger instance for logging messages.</param>
+    public BackupRepository(string connectionString, ILogger<BackupRepository> logger)
     {
         _connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -308,7 +309,9 @@ public BackupRepository(string connectionString, ILogger<BackupRepository> logge
         try
         {
             if (!backup.Validate(out var errors))
+            {
                 throw new ArgumentException($"Backup validation failed: {string.Join(", ", errors)}");
+            }
 
             using var connection = new SQLiteConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
@@ -344,7 +347,9 @@ public BackupRepository(string connectionString, ILogger<BackupRepository> logge
         try
         {
             if (!backup.Validate(out var errors))
+            {
                 throw new ArgumentException($"Backup validation failed: {string.Join(", ", errors)}");
+            }
 
             using var connection = new SQLiteConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);

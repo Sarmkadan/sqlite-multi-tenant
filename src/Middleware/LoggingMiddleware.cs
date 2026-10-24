@@ -4,8 +4,8 @@
 // CTO & Software Architect
 // =============================================================================
 
-using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Middleware;
 
@@ -15,7 +15,8 @@ namespace SqliteMultiTenant.Middleware;
 /// Enables tracking user actions and identifying performance bottlenecks.
 /// Implements structured logging for ELK/Datadog integration.
 /// </summary>
-public sealed class LoggingMiddleware {
+public sealed class LoggingMiddleware
+{
     private const long SlowRequestThresholdMs = 5000;
     private const int ClientErrorStatusCodeThreshold = 400;
 

@@ -220,10 +220,14 @@ public sealed class RateLimiter : IRateLimiter
                 .ToList();
 
             foreach (var key in keysToRemove)
+            {
                 _buckets.Remove(key);
+            }
 
             if (keysToRemove.Count > 0)
+            {
                 _logger.LogInformation("Cleaned up {Count} expired rate limit buckets", keysToRemove.Count);
+            }
         }
         catch (Exception ex)
         {

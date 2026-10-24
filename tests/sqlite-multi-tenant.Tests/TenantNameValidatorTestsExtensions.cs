@@ -5,10 +5,10 @@
 // CTO & Software Architect
 // =============================================================================
 
-using FluentAssertions;
-using SqliteMultiTenant.Utilities;
 using System;
 using System.Collections.Generic;
+using FluentAssertions;
+using SqliteMultiTenant.Utilities;
 
 namespace SqliteMultiTenant.Tests;
 

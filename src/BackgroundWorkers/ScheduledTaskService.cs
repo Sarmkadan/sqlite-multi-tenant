@@ -239,7 +239,9 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
             await _semaphore.WaitAsync(cancellationToken);
 
             if (!_isRunning)
+            {
                 return;
+            }
 
             // Cancel all running tasks
             foreach (var cts in _cancellationTokens.Values)
@@ -279,7 +281,9 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
                 }
 
                 if (task is null)
+                {
                     break;
+                }
 
                 var now = DateTime.UtcNow;
 

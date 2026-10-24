@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Middleware;
 /// Generates unique ID if not present in headers, and includes it in responses.
 /// Enables request tracking across multiple services and logs.
 /// </summary>
-public sealed class CorrelationIdMiddleware {
+public sealed class CorrelationIdMiddleware
+{
     private readonly RequestDelegate _next;
     private readonly ILogger<CorrelationIdMiddleware> _logger;
     private const string CorrelationIdHeader = "X-Correlation-Id";
@@ -45,7 +46,9 @@ public sealed class CorrelationIdMiddleware {
         context.Response.OnStarting(() =>
         {
             if (!context.Response.Headers.ContainsKey(CorrelationIdHeader))
+            {
                 context.Response.Headers.Add(CorrelationIdHeader, correlationId);
+            }
 
             return Task.CompletedTask;
         });
@@ -67,7 +70,9 @@ public sealed class CorrelationIdMiddleware {
         {
             var correlationId = headerValues.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(correlationId))
+            {
                 return correlationId;
+            }
         }
 
         // Try to get from query string
@@ -75,7 +80,9 @@ public sealed class CorrelationIdMiddleware {
         {
             var correlationId = queryValues.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(correlationId))
+            {
                 return correlationId;
+            }
         }
 
         // Generate new correlation ID
@@ -99,7 +106,9 @@ public static class CorrelationIdMiddlewareExtensions
     public static string GetCorrelationId(this HttpContext context)
     {
         if (context.Items.TryGetValue("X-Correlation-Id", out var correlationId))
+        {
             return correlationId?.ToString() ?? string.Empty;
+        }
 
         return string.Empty;
     }

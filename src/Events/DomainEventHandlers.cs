@@ -28,7 +28,8 @@ public interface IDomainEventHandler<T> where T : DomainEvent
 /// Handles tenant created events of type <see cref="TenantCreatedNotificationEvent"/>.
 /// Logs creation, sends notifications, and initializes tenant resources.
 /// </summary>
-public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedNotificationEvent> {
+public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreatedNotificationEvent>
+{
     private readonly ILogger<TenantCreatedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -76,7 +77,8 @@ public sealed class TenantCreatedEventHandler : IDomainEventHandler<TenantCreate
 /// Handles tenant deleted events.
 /// Performs cleanup operations and notifies subscribers.
 /// </summary>
-public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDeletedEvent> {
+public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDeletedEvent>
+{
     private readonly ILogger<TenantDeletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -124,7 +126,8 @@ public sealed class TenantDeletedEventHandler : IDomainEventHandler<TenantDelete
 /// Handles backup completed events.
 /// Verifies backup and sends notifications.
 /// </summary>
-public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedNotificationEvent> {
+public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupCompletedNotificationEvent>
+{
     private readonly ILogger<BackupCompletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -174,7 +177,8 @@ public sealed class BackupCompletedEventHandler : IDomainEventHandler<BackupComp
 /// Handles migration completed events.
 /// Logs migration success and updates schema versions.
 /// </summary>
-public sealed class MigrationCompletedEventHandler : IDomainEventHandler<MigrationCompletedEvent> {
+public sealed class MigrationCompletedEventHandler : IDomainEventHandler<MigrationCompletedEvent>
+{
     private readonly ILogger<MigrationCompletedEventHandler> _logger;
     private readonly Integration.WebhookService _webhookService;
 
@@ -226,7 +230,8 @@ public sealed class MigrationCompletedEventHandler : IDomainEventHandler<Migrati
 /// Represents a notification that a tenant has been created.
 /// Contains the tenant ID and name.
 /// </summary>
-public sealed class TenantCreatedNotificationEvent : DomainEvent {
+public sealed class TenantCreatedNotificationEvent : DomainEvent
+{
     /// <summary>
     /// Gets or sets the unique identifier of the tenant.
     /// </summary>
@@ -254,7 +259,8 @@ public sealed class TenantCreatedNotificationEvent : DomainEvent {
 /// Represents a notification that a tenant has been deleted.
 /// Contains the tenant ID and name.
 /// </summary>
-public sealed class TenantDeletedEvent : DomainEvent {
+public sealed class TenantDeletedEvent : DomainEvent
+{
     public string TenantId { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
 
@@ -267,7 +273,8 @@ public sealed class TenantDeletedEvent : DomainEvent {
 /// Represents a notification that a backup has been completed.
 /// Contains backup details including ID, size, duration, and verification status.
 /// </summary>
-public sealed class BackupCompletedNotificationEvent : DomainEvent {
+public sealed class BackupCompletedNotificationEvent : DomainEvent
+{
     /// <summary>
     /// Gets or sets the unique identifier of the backup.
     /// </summary>
@@ -305,7 +312,8 @@ public sealed class BackupCompletedNotificationEvent : DomainEvent {
 /// Represents a notification that a migration has been completed.
 /// Contains details about the migration including database ID, version, name, and duration.
 /// </summary>
-public sealed class MigrationCompletedEvent : DomainEvent {
+public sealed class MigrationCompletedEvent : DomainEvent
+{
     /// <summary>
     /// Gets or sets the identifier of the database that was migrated.
     /// </summary>

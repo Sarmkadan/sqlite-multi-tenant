@@ -16,7 +16,8 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// Runs on configurable intervals (default: daily at 2 AM UTC).
 /// Ensures all tenant databases are backed up for disaster recovery.
 /// </summary>
-public sealed class BackupSchedulerService : BackgroundService {
+public sealed class BackupSchedulerService : BackgroundService
+{
     private readonly IBackupService _backupService;
     private readonly ITenantService _tenantService;
     private readonly ILogger<BackupSchedulerService> _logger;
@@ -102,7 +103,9 @@ public sealed class BackupSchedulerService : BackgroundService {
             foreach (var tenant in tenants)
             {
                 if (cancellationToken.IsCancellationRequested)
+                {
                     break;
+                }
 
                 try
                 {
@@ -137,7 +140,8 @@ public sealed class BackupSchedulerService : BackgroundService {
 /// Background service for cleaning up expired backups.
 /// Removes backups older than retention period to save disk space.
 /// </summary>
-public sealed class BackupCleanupService : BackgroundService {
+public sealed class BackupCleanupService : BackgroundService
+{
     private readonly IBackupService _backupService;
     private readonly ILogger<BackupCleanupService> _logger;
     private readonly int _retentionDays;
@@ -172,7 +176,9 @@ public sealed class BackupCleanupService : BackgroundService {
 
                 var delay = nextRun - DateTime.UtcNow;
                 if (delay < TimeSpan.Zero)
+                {
                     delay = TimeSpan.FromHours(24);
+                }
 
                 _logger.LogDebug("Next cleanup in {hours}h", delay.TotalHours);
                 await Task.Delay(delay, stoppingToken);

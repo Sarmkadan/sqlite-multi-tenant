@@ -14,7 +14,8 @@ namespace SqliteMultiTenant.Integration;
 /// Supports event filtering, retry logic, and delivery status tracking.
 /// Webhooks are delivered to registered endpoints when events occur.
 /// </summary>
-public sealed class WebhookService {
+public sealed class WebhookService
+{
     private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookService> _logger;
     private readonly Dictionary<string, List<WebhookSubscription>> _subscriptions;
@@ -58,7 +59,9 @@ public sealed class WebhookService {
             };
 
             if (!_subscriptions.ContainsKey(eventType))
+            {
                 _subscriptions[eventType] = new List<WebhookSubscription>();
+            }
 
             _subscriptions[eventType].Add(subscription);
 
@@ -112,7 +115,9 @@ public sealed class WebhookService {
         try
         {
             if (!_subscriptions.TryGetValue(eventType, out var subscriptions))
+            {
                 return;
+            }
 
             var tasks = subscriptions
                 .Where(s => s.IsActive)
@@ -177,7 +182,9 @@ public sealed class WebhookService {
                     $"Webhook delivery failed: {subscription.EventType}, Status: {response.StatusCode}, Attempt: {attempt}");
 
                 if (attempt < maxAttempts)
+                {
                     await Task.Delay(delayBetweenRetries);
+                }
             }
             catch (Exception ex)
             {
@@ -185,7 +192,9 @@ public sealed class WebhookService {
                     $"Webhook delivery exception: {subscription.EventType}, Error: {ex.Message}, Attempt: {attempt}");
 
                 if (attempt < maxAttempts)
+                {
                     await Task.Delay(delayBetweenRetries);
+                }
             }
         }
 
@@ -243,7 +252,9 @@ public sealed class WebhookService {
             await _semaphore.WaitAsync();
 
             if (_subscriptions.TryGetValue(eventType, out var subscriptions))
+            {
                 return subscriptions.Where(s => s.IsActive).ToList();
+            }
 
             return new List<WebhookSubscription>();
         }
@@ -254,7 +265,8 @@ public sealed class WebhookService {
     }
 }
 
-public sealed class WebhookSubscription {
+public sealed class WebhookSubscription
+{
     public string Id { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
     public string WebhookUrl { get; set; } = string.Empty;

@@ -63,10 +63,14 @@ public sealed class CommandExecutor
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!command.Success)
-            return new CommandResult { Success = false, Message = command.Message };
+            {
+                return new CommandResult { Success = false, Message = command.Message };
+            }
 
             if (command.IsHelpCommand)
-            return new CommandResult { Success = true, Message = command.Message };
+            {
+                return new CommandResult { Success = true, Message = command.Message };
+            }
 
             return await ExecuteCommandAsync(command.MainCommand, command.Subcommand, command.Arguments, cancellationToken);
         }
@@ -167,7 +171,9 @@ public sealed class CommandExecutor
         var tenant = await _tenantService.GetTenantAsync(tenantId);
 
         if (tenant is null)
-        return new CommandResult { Success = false, Message = $"Tenant {tenantId} not found" };
+        {
+            return new CommandResult { Success = false, Message = $"Tenant {tenantId} not found" };
+        }
 
         return new CommandResult
         {
@@ -198,7 +204,9 @@ public sealed class CommandExecutor
         var tenant = await _tenantService.GetTenantAsync(tenantId);
 
         if (tenant is null)
-        return new CommandResult { Success = false, Message = $"Tenant {tenantId} not found" };
+        {
+            return new CommandResult { Success = false, Message = $"Tenant {tenantId} not found" };
+        }
 
         return new CommandResult
         {
@@ -326,7 +334,9 @@ public sealed class CommandExecutor
         var output = new System.Text.StringBuilder();
         output.AppendLine($"Pending migrations for {databaseId}: {migrations.Count}");
         foreach (var m in migrations)
-        output.AppendLine($" - {m.GetDisplayName()}");
+        {
+            output.AppendLine($" - {m.GetDisplayName()}");
+        }
 
         return new CommandResult { Success = true, Message = output.ToString() };
     }

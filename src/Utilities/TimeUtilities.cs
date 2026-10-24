@@ -30,16 +30,24 @@ public static class TimeUtilities
         var parts = new List<string>();
 
         if (span.Days > 0)
+        {
             parts.Add($"{span.Days} day{(span.Days != 1 ? "s" : "")}");
+        }
 
         if (span.Hours > 0)
+        {
             parts.Add($"{span.Hours} hour{(span.Hours != 1 ? "s" : "")}");
+        }
 
         if (span.Minutes > 0)
+        {
             parts.Add($"{span.Minutes} minute{(span.Minutes != 1 ? "s" : "")}");
+        }
 
         if (span.Seconds > 0 && parts.Count < 3)
+        {
             parts.Add($"{span.Seconds} second{(span.Seconds != 1 ? "s" : "")}");
+        }
 
         return parts.Count > 0 ? string.Join(", ", parts) : "less than a second";
     }
@@ -54,13 +62,19 @@ public static class TimeUtilities
         var span = now - dateTime;
 
         if (span.TotalSeconds < SecondsInMinute)
+        {
             return "just now";
+        }
 
         if (span.TotalMinutes < MinutesInHour)
+        {
             return $"{(int)span.TotalMinutes} minute{(span.TotalMinutes != 1 ? "s" : "")} ago";
+        }
 
         if (span.TotalHours < HoursInDay)
+        {
             return $"{(int)span.TotalHours} hour{(span.TotalHours != 1 ? "s" : "")} ago";
+        }
 
         if (span.TotalDays < DaysInWeek)
         {
@@ -117,7 +131,9 @@ public static class TimeUtilities
     {
         int daysToMonday = (int)dateTime.DayOfWeek - 1;
         if (daysToMonday < 0)
+        {
             daysToMonday = 6;
+        }
 
         return dateTime.AddDays(-daysToMonday).Date;
     }
@@ -211,7 +227,9 @@ public static class TimeUtilities
         while (current < end)
         {
             if (current.DayOfWeek != DayOfWeek.Saturday && current.DayOfWeek != DayOfWeek.Sunday)
+            {
                 count++;
+            }
 
             current = current.AddDays(1);
         }

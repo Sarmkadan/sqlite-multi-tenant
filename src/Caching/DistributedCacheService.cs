@@ -21,7 +21,8 @@ public interface IDistributedCache
     Task<DistributedCacheStatistics> GetStatisticsAsync();
 }
 
-public sealed class DistributedCacheService : IDistributedCache {
+public sealed class DistributedCacheService : IDistributedCache
+{
     private readonly Dictionary<string, CacheEntry> _cache;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<DistributedCacheService> _logger;
@@ -48,9 +49,14 @@ public sealed class DistributedCacheService : IDistributedCache {
     public async Task<T?> GetAsync<T>(string key) where T : class
     {
         if (key == null)
+        {
             throw new ArgumentNullException(nameof(key));
+        }
+
         if (key == string.Empty)
+        {
             throw new ArgumentException("Key cannot be empty.", nameof(key));
+        }
 
         try
         {
@@ -90,11 +96,19 @@ public sealed class DistributedCacheService : IDistributedCache {
     public async Task SetAsync<T>(string key, T value, TimeSpan? ttl = null) where T : class
     {
         if (key == null)
+        {
             throw new ArgumentNullException(nameof(key));
+        }
+
         if (key == string.Empty)
+        {
             throw new ArgumentException("Key cannot be empty.", nameof(key));
+        }
+
         if (value == null)
+        {
             throw new ArgumentNullException(nameof(value));
+        }
 
         try
         {
@@ -131,9 +145,14 @@ public sealed class DistributedCacheService : IDistributedCache {
     public async Task<bool> RemoveAsync(string key)
     {
         if (key == null)
+        {
             throw new ArgumentNullException(nameof(key));
+        }
+
         if (key == string.Empty)
+        {
             throw new ArgumentException("Key cannot be empty.", nameof(key));
+        }
 
         try
         {
@@ -159,9 +178,14 @@ public sealed class DistributedCacheService : IDistributedCache {
     public async Task RemoveByPatternAsync(string pattern)
     {
         if (pattern == null)
+        {
             throw new ArgumentNullException(nameof(pattern));
+        }
+
         if (pattern == string.Empty)
+        {
             throw new ArgumentException("Pattern cannot be empty.", nameof(pattern));
+        }
 
         try
         {
@@ -172,7 +196,9 @@ public sealed class DistributedCacheService : IDistributedCache {
                 .ToList();
 
             foreach (var key in keysToRemove)
+            {
                 _cache.Remove(key);
+            }
 
             _logger.LogDebug("Cache pattern removal: {Pattern}, Removed: {Count}", pattern, keysToRemove.Count);
         }
@@ -246,10 +272,14 @@ public sealed class DistributedCacheService : IDistributedCache {
                 .ToList();
 
             foreach (var key in keysToRemove)
+            {
                 _cache.Remove(key);
+            }
 
             if (keysToRemove.Count > 0)
+            {
                 _logger.LogInformation("Cleaned up {Count} expired cache entries", keysToRemove.Count);
+            }
         }
         finally
         {
@@ -275,7 +305,8 @@ public sealed class DistributedCacheService : IDistributedCache {
     }
 }
 
-public sealed class CacheEntry {
+public sealed class CacheEntry
+{
     public object? Value { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime LastAccessedAt { get; set; }
@@ -284,7 +315,8 @@ public sealed class CacheEntry {
     public long Size { get; set; }
 }
 
-public sealed class DistributedCacheStatistics {
+public sealed class DistributedCacheStatistics
+{
     public int ItemCount { get; set; }
     public long TotalSizeBytes { get; set; }
     public long Hits { get; set; }

@@ -23,7 +23,8 @@ public interface IStatisticsService
 /// Implements statistics collection and analysis functionality.
 /// Thread-safe service for recording system events and generating metrics.
 /// </summary>
-public sealed class StatisticsService : IStatisticsService {
+public sealed class StatisticsService : IStatisticsService
+{
     private readonly List<SystemEvent> _events;
     private readonly SemaphoreSlim _semaphore;
     private readonly ILogger<StatisticsService> _logger;
@@ -57,7 +58,9 @@ public sealed class StatisticsService : IStatisticsService {
 
             // Maintain memory limit
             if (_events.Count > MaxEventsInMemory)
+            {
                 _events.RemoveRange(0, _events.Count - MaxEventsInMemory);
+            }
 
             _logger.LogDebug($"Event recorded: {(@event.EventType)}");
         }
@@ -156,7 +159,9 @@ public sealed class StatisticsService : IStatisticsService {
                 .ToList();
 
             if (relevantEvents.Count < 2)
+            {
                 return new TrendAnalysis { TrendDirection = "Insufficient data" };
+            }
 
             var values = relevantEvents.Select(e => e.Value).ToList();
 
@@ -187,7 +192,9 @@ public sealed class StatisticsService : IStatisticsService {
     private int GetPeakEventCount(List<SystemEvent> events)
     {
         if (events.Count == 0)
+        {
             return 0;
+        }
 
         return events
             .GroupBy(e => e.Timestamp.AddSeconds(-(e.Timestamp.Second)))
@@ -197,7 +204,9 @@ public sealed class StatisticsService : IStatisticsService {
     private double CalculateTrend(List<double> values)
     {
         if (values.Count < 2)
+        {
             return 0;
+        }
 
         // Simple linear regression trend
         int n = values.Count;
@@ -213,7 +222,9 @@ public sealed class StatisticsService : IStatisticsService {
     private double CalculateVolatility(List<double> values)
     {
         if (values.Count < 2)
+        {
             return 0;
+        }
 
         double mean = values.Average();
         double variance = values.Average(x => Math.Pow(x - mean, 2));
@@ -224,7 +235,8 @@ public sealed class StatisticsService : IStatisticsService {
 /// <summary>
 /// Represents a system event with associated metrics and metadata.
 /// </summary>
-public sealed class SystemEvent {
+public sealed class SystemEvent
+{
     /// <summary>
     /// Unique identifier for the event.
     /// </summary>
@@ -259,7 +271,8 @@ public sealed class SystemEvent {
 /// <summary>
 /// Contains statistical data for a specific time period.
 /// </summary>
-public sealed class SystemStatistics {
+public sealed class SystemStatistics
+{
     /// <summary>
     /// The time period for which statistics are collected.
     /// </summary>
@@ -299,7 +312,8 @@ public sealed class SystemStatistics {
 /// <summary>
 /// Represents an aggregated metric over a time interval.
 /// </summary>
-public sealed class AggregatedMetric {
+public sealed class AggregatedMetric
+{
     /// <summary>
     /// The timestamp of the aggregation interval (start of the interval).
     /// </summary>
@@ -329,7 +343,8 @@ public sealed class AggregatedMetric {
 /// <summary>
 /// Contains the result of a trend analysis for a metric over a time period.
 /// </summary>
-public sealed class TrendAnalysis {
+public sealed class TrendAnalysis
+{
     /// <summary>
     /// The name of the metric that was analyzed.
     /// </summary>

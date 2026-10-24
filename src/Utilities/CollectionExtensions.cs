@@ -27,7 +27,9 @@ public static class CollectionExtensions
         ArgumentNullException.ThrowIfNull(list);
 
         if (index < 0 || index >= list.Count)
+        {
             return defaultValue;
+        }
 
         return list[index];
     }
@@ -85,7 +87,9 @@ public static class CollectionExtensions
         }
 
         if (currentChunk.Count > 0)
+        {
             chunks.Add(currentChunk);
+        }
 
         return chunks;
     }
@@ -116,7 +120,9 @@ public static class CollectionExtensions
         ArgumentNullException.ThrowIfNull(action);
 
         foreach (var item in source)
+        {
             action(item);
+        }
     }
 
     /// <summary>
@@ -159,7 +165,9 @@ public static class CollectionExtensions
         {
             var key = keySelector(item);
             if (seen.Add(key))
+            {
                 yield return item;
+            }
         }
     }
 
@@ -282,9 +290,13 @@ public static class CollectionExtensions
         foreach (var item in source)
         {
             if (predicate(item))
+            {
                 matches.Add(item);
+            }
             else
+            {
                 nonMatches.Add(item);
+            }
         }
 
         return (matches, nonMatches);

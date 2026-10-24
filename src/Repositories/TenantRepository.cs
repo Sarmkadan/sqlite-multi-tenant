@@ -4,17 +4,18 @@
 // CTO & Software Architect
 // =============================================================================
 
-using SqliteMultiTenant.Constants;
-using SqliteMultiTenant.Models;
 using System.Data;
 using System.Data.SQLite;
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Repositories;
 
 /// <summary>
 /// SQLite implementation of the tenant repository
 /// </summary>
-public sealed class TenantRepository : ITenantRepository {
+public sealed class TenantRepository : ITenantRepository
+{
     private readonly string _connectionString;
     private readonly ILogger<TenantRepository> _logger;
 
@@ -189,7 +190,9 @@ public sealed class TenantRepository : ITenantRepository {
         try
         {
             if (!tenant.Validate(out var errors))
+            {
                 throw new ArgumentException($"Tenant validation failed: {string.Join(", ", errors)}");
+            }
 
             using var connection = new SQLiteConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);
@@ -235,7 +238,9 @@ public sealed class TenantRepository : ITenantRepository {
         try
         {
             if (!tenant.Validate(out var errors))
+            {
                 throw new ArgumentException($"Tenant validation failed: {string.Join(", ", errors)}");
+            }
 
             using var connection = new SQLiteConnection(_connectionString);
             await connection.OpenAsync(cancellationToken);

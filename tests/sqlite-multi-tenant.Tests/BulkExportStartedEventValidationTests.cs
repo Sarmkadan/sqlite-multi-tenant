@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Xunit;
 using SqliteMultiTenant.Events;
+using Xunit;
 
 namespace SqliteMultiTenant.Tests;
 

@@ -4,8 +4,8 @@
 // CTO & Software Architect
 // =============================================================================
 
-using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Models;
 
 namespace SqliteMultiTenant.Monitoring;
@@ -27,7 +27,8 @@ public interface IMetricsService
 /// <summary>
 /// Snapshot of current system metrics.
 /// </summary>
-public sealed class MetricsSnapshot {
+public sealed class MetricsSnapshot
+{
     public DateTime CapturedAt { get; set; } = DateTime.UtcNow;
     public long TotalRequests { get; set; }
     public long TotalErrors { get; set; }
@@ -44,7 +45,8 @@ public sealed class MetricsSnapshot {
 /// <summary>
 /// Metrics for individual endpoint.
 /// </summary>
-public sealed class RequestMetrics {
+public sealed class RequestMetrics
+{
     public string Endpoint { get; set; }
     public long RequestCount { get; set; }
     public long SuccessCount { get; set; }
@@ -57,7 +59,8 @@ public sealed class RequestMetrics {
 /// <summary>
 /// In-memory metrics collection with thread-safe aggregation.
 /// </summary>
-public sealed class MetricsService : IMetricsService {
+public sealed class MetricsService : IMetricsService
+{
     private const double PercentFactor = 100;
     private const double MillisecondsPerSecond = 1000.0;
     private const string MetricPrefix = "sqlite_multi_tenant_";
@@ -88,7 +91,9 @@ public sealed class MetricsService : IMetricsService {
         Interlocked.Increment(ref _totalRequests);
 
         if (statusCode >= 400)
+        {
             Interlocked.Increment(ref _totalErrors);
+        }
 
         lock (_timeLock)
         {
@@ -111,9 +116,13 @@ public sealed class MetricsService : IMetricsService {
             {
                 existing.RequestCount++;
                 if (statusCode < 400)
+                {
                     existing.SuccessCount++;
+                }
                 else
+                {
                     existing.ErrorCount++;
+                }
 
                 existing.AverageResponseTimeMs = (existing.AverageResponseTimeMs * (existing.RequestCount - 1) + durationMs) / existing.RequestCount;
                 existing.MaxResponseTimeMs = Math.Max(existing.MaxResponseTimeMs, durationMs);
@@ -132,7 +141,9 @@ public sealed class MetricsService : IMetricsService {
         Interlocked.Increment(ref _totalBackups);
 
         if (!success)
+        {
             Interlocked.Increment(ref _failedBackups);
+        }
 
         _logger.LogDebug("Backup recorded: {size}MB, {duration}ms, success: {success}",
             sizeBytes / 1_000_000, durationMs, success);
@@ -146,7 +157,9 @@ public sealed class MetricsService : IMetricsService {
         Interlocked.Increment(ref _totalMigrations);
 
         if (!success)
+        {
             Interlocked.Increment(ref _failedMigrations);
+        }
 
         _logger.LogDebug("Migration recorded: v{version}, {duration}ms, success: {success}",
             version, durationMs, success);
@@ -171,7 +184,9 @@ public sealed class MetricsService : IMetricsService {
         lock (_timeLock)
         {
             if (_responseTimes.Count > 0)
+            {
                 avgResponseTime = _responseTimes.Average();
+            }
         }
 
         return new MetricsSnapshot
@@ -383,7 +398,9 @@ public sealed class MetricsService : IMetricsService {
     private static string EscapePrometheusLabel(string input)
     {
         if (string.IsNullOrEmpty(input))
+        {
             return input;
+        }
 
         // Prometheus requires: backslash, double quote, and newline to be escaped
         return input

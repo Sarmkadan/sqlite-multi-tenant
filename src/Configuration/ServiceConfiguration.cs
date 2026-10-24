@@ -21,7 +21,9 @@ public static class ServiceConfiguration
     public static IServiceCollection AddSqliteMultiTenant(this IServiceCollection services, string masterConnectionString)
     {
         if (string.IsNullOrWhiteSpace(masterConnectionString))
+        {
             throw new ArgumentException("Connection string cannot be empty", nameof(masterConnectionString));
+        }
 
         // Register repositories
         services.AddSingleton<ITenantRepository>(sp =>
@@ -50,7 +52,9 @@ public static class ServiceConfiguration
         Action<SqliteMultiTenantOptions> configureOptions)
     {
         if (configureOptions is null)
+        {
             throw new ArgumentNullException(nameof(configureOptions));
+        }
 
         var options = new SqliteMultiTenantOptions();
         configureOptions(options);

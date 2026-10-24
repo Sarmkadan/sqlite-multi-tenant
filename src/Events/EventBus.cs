@@ -21,18 +21,19 @@ public interface IEventBus
     Task UnsubscribeAsync<T>(Func<T, Task> handler) where T : DomainEvent;
 }
 
-public sealed class EventBus : IEventBus {
+public sealed class EventBus : IEventBus
+{
     private readonly Dictionary<Type, List<Delegate>> _subscribers;
     private readonly ILogger<EventBus> _logger;
     private readonly SemaphoreSlim _semaphore;
     private readonly DeadLetterQueue _deadLetterQueue;
 
     /// <summary>
-/// Initializes a new instance of the <see cref="EventBus"/> class.
-/// </summary>
-/// <param name="logger">The logger instance for recording operational events and errors.</param>
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is <see langword="null"/>.</exception>
-public EventBus(ILogger<EventBus> logger)
+    /// Initializes a new instance of the <see cref="EventBus"/> class.
+    /// </summary>
+    /// <param name="logger">The logger instance for recording operational events and errors.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is <see langword="null"/>.</exception>
+    public EventBus(ILogger<EventBus> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -103,7 +104,9 @@ public EventBus(ILogger<EventBus> logger)
             var eventType = typeof(T);
 
             if (!_subscribers.ContainsKey(eventType))
+            {
                 _subscribers[eventType] = new List<Delegate>();
+            }
 
             _subscribers[eventType].Add(handler);
 
@@ -162,7 +165,8 @@ public EventBus(ILogger<EventBus> logger)
 /// Dead letter queue for events that failed to be processed.
 /// Stores failed events and exceptions for later analysis and retry.
 /// </summary>
-public sealed class DeadLetterQueue {
+public sealed class DeadLetterQueue
+{
     private readonly List<FailedEvent> _failedEvents;
     private readonly SemaphoreSlim _semaphore;
     private const int MaxQueueSize = 1000;
@@ -187,7 +191,9 @@ public sealed class DeadLetterQueue {
             await _semaphore.WaitAsync();
 
             if (_failedEvents.Count >= MaxQueueSize)
+            {
                 _failedEvents.RemoveAt(0); // Remove oldest
+            }
 
             var failedEvent = new FailedEvent
             {
@@ -268,7 +274,8 @@ public sealed class DeadLetterQueue {
     }
 }
 
-public sealed class FailedEvent {
+public sealed class FailedEvent
+{
     /// <summary>Gets or sets the failed event identifier.</summary>
     public string Id { get; set; } = string.Empty;
     /// <summary>Gets or sets the event type.</summary>

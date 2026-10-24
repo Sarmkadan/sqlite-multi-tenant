@@ -111,7 +111,9 @@ public static class FileSystemExtensions
         try
         {
             if (!File.Exists(filePath))
+            {
                 return true;
+            }
 
             for (int i = 0; i < maxRetries; i++)
             {
@@ -215,7 +217,9 @@ public static class FileSystemExtensions
         try
         {
             if (!Directory.Exists(directoryPath))
+            {
                 return 0;
+            }
 
             var dirInfo = new DirectoryInfo(directoryPath);
             var files = dirInfo.GetFiles("*", SearchOption.AllDirectories);
@@ -256,7 +260,9 @@ public static class FileSystemExtensions
         try
         {
             if (!File.Exists(sourcePath))
+            {
                 return false;
+            }
 
             File.Copy(sourcePath, destPath, overwrite);
             return true;

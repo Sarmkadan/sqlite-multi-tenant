@@ -1,7 +1,7 @@
 #nullable enable
 using FluentAssertions;
-using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Models;
 using Xunit;
 
 namespace SqliteMultiTenant.Tests;

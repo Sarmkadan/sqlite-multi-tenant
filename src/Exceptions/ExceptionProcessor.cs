@@ -18,7 +18,8 @@ public interface IExceptionProcessor
     string GetErrorCategory(Exception exception);
 }
 
-public sealed class ExceptionProcessor : IExceptionProcessor {
+public sealed class ExceptionProcessor : IExceptionProcessor
+{
     private readonly ILogger<ExceptionProcessor> _logger;
 
     public ExceptionProcessor(ILogger<ExceptionProcessor> logger)
@@ -150,7 +151,8 @@ public sealed class ExceptionProcessor : IExceptionProcessor {
     }
 }
 
-public sealed class ErrorResponse {
+public sealed class ErrorResponse
+{
     public string ErrorId { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;

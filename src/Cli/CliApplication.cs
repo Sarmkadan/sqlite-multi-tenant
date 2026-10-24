@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Cli;
 /// Provides structured error handling and user-friendly command-line interface.
 /// Integrates with dependency injection to access all required services.
 /// </summary>
-public sealed class CliApplication {
+public sealed class CliApplication
+{
     private readonly CommandParser _parser;
     private readonly CommandExecutor _executor;
     private readonly ILogger<CliApplication> _logger;
@@ -88,7 +89,8 @@ public interface IConsoleWriter
 /// <summary>
 /// Console output implementation with colored output support
 /// </summary>
-public sealed class ConsoleWriter : IConsoleWriter {
+public sealed class ConsoleWriter : IConsoleWriter
+{
     public void WriteSuccess(string message)
     {
         Console.ForegroundColor = ConsoleColor.Green;

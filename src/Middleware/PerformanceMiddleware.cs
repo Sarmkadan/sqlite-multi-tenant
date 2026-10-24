@@ -15,7 +15,8 @@ namespace SqliteMultiTenant.Middleware;
 /// Tracks elapsed time, memory usage, and logs warnings for operations exceeding threshold.
 /// Useful for identifying performance bottlenecks in the system.
 /// </summary>
-public sealed class PerformanceMiddleware {
+public sealed class PerformanceMiddleware
+{
     private readonly RequestDelegate _next;
     private readonly ILogger<PerformanceMiddleware> _logger;
     private readonly long _slowRequestThresholdMs;
@@ -32,14 +33,14 @@ public sealed class PerformanceMiddleware {
         ILogger<PerformanceMiddleware> logger,
         long slowRequestThresholdMs = 1000)
     {
-            ArgumentNullException.ThrowIfNull(next);
-            ArgumentNullException.ThrowIfNull(logger);
-            ArgumentNullException.ThrowIfNull(next);
-ArgumentNullException.ThrowIfNull(logger);
-_next = next;
-            _logger = logger;
-            _slowRequestThresholdMs = slowRequestThresholdMs;
-            _monitor = new PerformanceMonitor();
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(logger);
+        _next = next;
+        _logger = logger;
+        _slowRequestThresholdMs = slowRequestThresholdMs;
+        _monitor = new PerformanceMonitor();
     }
 
     /// <summary>
@@ -119,7 +120,8 @@ _next = next;
 /// <summary>
 /// Contains metrics for a single HTTP request.
 /// </summary>
-public sealed class RequestMetrics {
+public sealed class RequestMetrics
+{
     /// <summary>
     /// Gets or sets the HTTP method of the request.
     /// </summary>
@@ -154,7 +156,8 @@ public sealed class RequestMetrics {
 /// <summary>
 /// Tracks overall system performance statistics
 /// </summary>
-public sealed class PerformanceMonitor {
+public sealed class PerformanceMonitor
+{
     private readonly List<RequestMetrics> _metrics = new();
     private readonly SemaphoreSlim _semaphore = new(1);
     private const int MaxMetricsStored = 1000;
@@ -168,7 +171,9 @@ public sealed class PerformanceMonitor {
 
             // Keep only recent metrics
             if (_metrics.Count > MaxMetricsStored)
+            {
                 _metrics.RemoveRange(0, _metrics.Count - MaxMetricsStored);
+            }
         }
         finally
         {
@@ -182,7 +187,9 @@ public sealed class PerformanceMonitor {
         try
         {
             if (_metrics.Count == 0)
+            {
                 return new PerformanceStats();
+            }
 
             return new PerformanceStats
             {
@@ -214,7 +221,8 @@ public sealed class PerformanceMonitor {
     }
 }
 
-public sealed class PerformanceStats {
+public sealed class PerformanceStats
+{
     public int TotalRequests { get; set; }
     public double AverageElapsedMs { get; set; }
     public long MaxElapsedMs { get; set; }
@@ -247,7 +255,9 @@ public static class PerformanceMiddlewareExtensions
     public static RequestMetrics? GetRequestMetrics(this HttpContext context)
     {
         if (context.Items.TryGetValue("RequestMetrics", out var metrics))
+        {
             return metrics as RequestMetrics;
+        }
 
         return null;
     }

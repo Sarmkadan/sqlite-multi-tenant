@@ -30,7 +30,8 @@ public interface ICacheService
 /// Memory cache implementation using IMemoryCache.
 /// Thread-safe via underlying MemoryCache synchronization.
 /// </summary>
-public sealed class CacheService : ICacheService {
+public sealed class CacheService : ICacheService
+{
     private static readonly TimeSpan DefaultSlidingExpiration = TimeSpan.FromHours(1);
 
     private readonly IMemoryCache _cache;
@@ -52,7 +53,9 @@ public sealed class CacheService : ICacheService {
     public T Get<T>(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
+        {
             return default;
+        }
 
         if (_cache.TryGetValue(key, out object? cached) && cached is T value)
         {
@@ -71,7 +74,9 @@ public sealed class CacheService : ICacheService {
     public void Set<T>(string key, T value, TimeSpan? expiration = null)
     {
         if (string.IsNullOrWhiteSpace(key) || value is null)
+        {
             return;
+        }
 
         var cacheOptions = new MemoryCacheEntryOptions();
 
@@ -98,7 +103,9 @@ public sealed class CacheService : ICacheService {
     public void Remove(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
+        {
             return;
+        }
 
         _cache.Remove(key);
         _keyTimestamps.TryRemove(key, out _);
@@ -172,7 +179,8 @@ public static class CacheKeys
 /// Cache invalidation handler for updating cache when data changes.
 /// Implements event-driven cache invalidation for consistency.
 /// </summary>
-public sealed class CacheInvalidationService {
+public sealed class CacheInvalidationService
+{
     private readonly ICacheService _cache;
     private readonly ILogger<CacheInvalidationService> _logger;
 

@@ -35,7 +35,9 @@ public static class ConfigurationExtensions
             var value = config[key];
 
             if (string.IsNullOrEmpty(value))
+            {
                 return defaultValue;
+            }
 
             return value switch
             {
@@ -75,7 +77,9 @@ public static class ConfigurationExtensions
         var value = config[key];
 
         if (string.IsNullOrWhiteSpace(value))
+        {
             throw new InvalidOperationException($"Required configuration '{key}' is missing or empty");
+        }
 
         return value;
     }
@@ -123,7 +127,9 @@ public static class ConfigurationExtensions
         var connectionString = config.GetConnectionString(name);
 
         if (string.IsNullOrEmpty(connectionString))
+        {
             return defaultValue ?? throw new InvalidOperationException($"Connection string '{name}' not found");
+        }
 
         return connectionString;
     }
@@ -190,7 +196,9 @@ public static class ConfigurationExtensions
         foreach (var key in requiredKeys)
         {
             if (!config.HasValue(key))
+            {
                 errors.Add($"Required configuration key '{key}' is missing");
+            }
         }
 
         return errors;
@@ -227,7 +235,9 @@ public static class ConfigurationExtensions
         var envValue = Environment.GetEnvironmentVariable(envVarName);
 
         if (!string.IsNullOrEmpty(envValue))
+        {
             return envValue;
+        }
 
         return config[key];
     }

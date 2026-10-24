@@ -40,7 +40,8 @@ namespace SqliteMultiTenant.Services;
 /// </para>
 /// </remarks>
 [DebuggerDisplay("{ToString(),nq}")]
-public sealed class TenantManager : IDisposable {
+public sealed class TenantManager : IDisposable
+{
     private readonly ITenantService _tenantService;
     private readonly IConnectionPoolManager _connectionPool;
     private readonly IBackupService _backupService;
@@ -101,7 +102,9 @@ public sealed class TenantManager : IDisposable {
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(name))
+        {
             throw new ArgumentException("Tenant name is required.", nameof(name));
+        }
 
         _logger.LogInformation("Provisioning tenant '{Name}'", name);
 
@@ -137,7 +140,9 @@ public sealed class TenantManager : IDisposable {
     public async Task SuspendTenantAsync(string tenantId, string reason, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
 
         var semaphore = _tenantLocks.GetOrAdd(tenantId, _ => new SemaphoreSlim(1, 1));
         await semaphore.WaitAsync(cancellationToken);
@@ -182,14 +187,18 @@ public sealed class TenantManager : IDisposable {
     public async Task ReactivateTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
 
         var tenant = await _tenantService.GetTenantAsync(tenantId, cancellationToken)
             ?? throw new TenantNotFoundException(tenantId);
 
         if (tenant.Status != TenantStatus.Suspended && tenant.Status != TenantStatus.Inactive)
+        {
             throw new InvalidOperationException(
                 $"Tenant '{tenantId}' is in state '{tenant.Status}' and cannot be reactivated.");
+        }
 
         await _tenantService.ActivateTenantAsync(tenantId, cancellationToken);
         _logger.LogInformation("Tenant '{TenantId}' reactivated", tenantId);
@@ -224,7 +233,9 @@ public sealed class TenantManager : IDisposable {
     public async Task<string?> DecommissionTenantAsync(string tenantId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
 
         var semaphore = _tenantLocks.GetOrAdd(tenantId, _ => new SemaphoreSlim(1, 1));
         await semaphore.WaitAsync(cancellationToken);
@@ -302,7 +313,11 @@ public sealed class TenantManager : IDisposable {
     /// </remarks>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         foreach (var kvp in _tenantLocks)

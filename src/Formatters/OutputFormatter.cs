@@ -24,7 +24,8 @@ public interface IOutputFormatter
 /// JSON formatter for API responses and data exports.
 /// Implements camelCase property naming and indentation for readability.
 /// </summary>
-public sealed class JsonFormatter : IOutputFormatter {
+public sealed class JsonFormatter : IOutputFormatter
+{
     public string ContentType => "application/json";
 
     private static readonly JsonSerializerOptions Options = new()
@@ -42,9 +43,9 @@ public sealed class JsonFormatter : IOutputFormatter {
     public string Format<T>(T data)
     {
         ArgumentNullException.ThrowIfNull(data);
-    ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(data);
 
-    try
+        try
         {
             return JsonSerializer.Serialize(data, Options);
         }
@@ -59,7 +60,8 @@ public sealed class JsonFormatter : IOutputFormatter {
 /// CSV formatter for exporting tabular data (backups, migrations, tenants).
 /// Handles escaping of special characters and quote wrapping.
 /// </summary>
-public sealed class CsvFormatter : IOutputFormatter {
+public sealed class CsvFormatter : IOutputFormatter
+{
     public string ContentType => "text/csv";
 
     /// <summary>
@@ -70,15 +72,19 @@ public sealed class CsvFormatter : IOutputFormatter {
     public string Format<T>(T data)
     {
         ArgumentNullException.ThrowIfNull(data);
-    ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(data);
 
-    try
+        try
         {
             if (data is IEnumerable<object> collection)
+            {
                 return FormatCollection(collection);
+            }
 
             if (data is object obj)
+            {
                 return FormatSingleObject(obj);
+            }
 
             return string.Empty;
         }
@@ -96,7 +102,9 @@ public sealed class CsvFormatter : IOutputFormatter {
     {
         var items = collection.ToList();
         if (items.Count == 0)
+        {
             return string.Empty;
+        }
 
         var firstItem = items.First();
         var properties = firstItem.GetType().GetProperties();
@@ -134,10 +142,14 @@ public sealed class CsvFormatter : IOutputFormatter {
     private string EscapeCsvField(string field)
     {
         if (string.IsNullOrEmpty(field))
+        {
             return string.Empty;
+        }
 
         if (!field.Contains(",") && !field.Contains("\"") && !field.Contains("\n"))
+        {
             return field;
+        }
 
         // Escape quotes by doubling them and wrap in quotes
         return $"\"{field.Replace("\"", "\"\"")}\"";
@@ -148,7 +160,8 @@ public sealed class CsvFormatter : IOutputFormatter {
 /// XML formatter for structured data exports and integration scenarios.
 /// Generates well-formed XML with root element wrapper.
 /// </summary>
-public sealed class XmlFormatter : IOutputFormatter {
+public sealed class XmlFormatter : IOutputFormatter
+{
     public string ContentType => "application/xml";
 
     /// <summary>
@@ -158,9 +171,9 @@ public sealed class XmlFormatter : IOutputFormatter {
     public string Format<T>(T data)
     {
         ArgumentNullException.ThrowIfNull(data);
-    ArgumentNullException.ThrowIfNull(data);
+        ArgumentNullException.ThrowIfNull(data);
 
-    try
+        try
         {
             XElement root = data switch
             {
@@ -222,7 +235,8 @@ public sealed class XmlFormatter : IOutputFormatter {
 /// <summary>
 /// Factory for selecting formatter based on content type or file extension.
 /// </summary>
-public sealed class FormatterFactory {
+public sealed class FormatterFactory
+{
     private readonly Dictionary<string, IOutputFormatter> _formatters;
 
     public FormatterFactory()
@@ -265,7 +279,8 @@ public sealed class FormatterFactory {
 /// Renders objects as plain text or delegates to <see cref="FormatterFactory"/> for
 /// json/csv/xml output.
 /// </summary>
-public sealed class OutputFormatter {
+public sealed class OutputFormatter
+{
     private readonly FormatterFactory _formatterFactory;
 
     public OutputFormatter()
@@ -285,7 +300,9 @@ public sealed class OutputFormatter {
     public string FormatObject(object data, string format)
     {
         if (data is null)
+        {
             return string.Empty;
+        }
 
         if (string.Equals(format, "text", StringComparison.OrdinalIgnoreCase))
         {

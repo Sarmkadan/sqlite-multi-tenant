@@ -16,7 +16,8 @@ namespace SqliteMultiTenant.Api.Controllers;
 /// Handles versioning, applying migrations, and rollback operations.
 /// Ensures schema consistency across all tenant databases.
 /// </summary>
-public sealed class MigrationController {
+public sealed class MigrationController
+{
     private readonly IMigrationService _migrationService;
     private readonly ILogger<MigrationController> _logger;
 
@@ -38,10 +39,14 @@ public sealed class MigrationController {
         try
         {
             if (string.IsNullOrWhiteSpace(request.Version) || string.IsNullOrWhiteSpace(request.Name))
+            {
                 return ApiResponse<MigrationResponse>.BadRequest("Version and name are required");
+            }
 
             if (string.IsNullOrWhiteSpace(request.UpScript))
+            {
                 return ApiResponse<MigrationResponse>.BadRequest("UpScript cannot be empty");
+            }
 
             var migration = await _migrationService.CreateMigrationAsync(
                 databaseId: request.DatabaseId,
@@ -116,7 +121,9 @@ public sealed class MigrationController {
         {
             var pending = await _migrationService.GetPendingMigrationsAsync(databaseId);
             if (pending.Count == 0)
+            {
                 return ApiResponse<MigrationBatchResponse>.BadRequest("No pending migrations");
+            }
 
             int successCount = 0;
             foreach (var migration in pending)
@@ -157,11 +164,15 @@ public sealed class MigrationController {
         {
             var applied = await _migrationService.GetAppliedMigrationsAsync(databaseId);
             if (applied.Count == 0)
+            {
                 return ApiResponse<MigrationResponse>.BadRequest("No migrations to rollback");
+            }
 
             var lastMigration = applied.Last();
             if (!lastMigration.IsRollbackable)
+            {
                 return ApiResponse<MigrationResponse>.BadRequest($"Migration {lastMigration.Version} cannot be rolled back");
+            }
 
             var response = new MigrationResponse
             {

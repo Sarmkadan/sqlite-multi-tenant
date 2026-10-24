@@ -24,7 +24,9 @@ public static class PathUtilities
         ArgumentException.ThrowIfNullOrEmpty(basePath);
 
         if (string.IsNullOrEmpty(relativePath))
+        {
             return basePath;
+        }
 
         var fullPath = Path.Combine(basePath, relativePath);
         var resolvedPath = Path.GetFullPath(fullPath);
@@ -32,7 +34,9 @@ public static class PathUtilities
 
         // Ensure the resolved path is within the base path (prevent directory traversal)
         if (!resolvedPath.StartsWith(baseResolved, StringComparison.OrdinalIgnoreCase))
+        {
             throw new InvalidOperationException("Path traversal detected - access denied");
+        }
 
         return resolvedPath;
     }
@@ -48,7 +52,9 @@ public static class PathUtilities
         try
         {
             if (Directory.Exists(path))
+            {
                 return true;
+            }
 
             Directory.CreateDirectory(path);
             return true;
@@ -70,7 +76,9 @@ public static class PathUtilities
         try
         {
             if (!Directory.Exists(path))
+            {
                 return 0;
+            }
 
             var directoryInfo = new DirectoryInfo(path);
             return GetDirectorySizeRecursive(directoryInfo);
@@ -118,7 +126,9 @@ public static class PathUtilities
         try
         {
             if (!Directory.Exists(path))
+            {
                 return true;
+            }
 
             int attempts = 0;
             while (attempts < retryCount)
@@ -155,7 +165,9 @@ public static class PathUtilities
         try
         {
             if (!Directory.Exists(path))
+            {
                 return files;
+            }
 
             var directory = new DirectoryInfo(path);
             return GetFilesRecursiveInternal(directory, searchPattern);
@@ -199,7 +211,9 @@ public static class PathUtilities
     public static string NormalizePath(string? path)
     {
         if (string.IsNullOrEmpty(path))
+        {
             return path!;
+        }
 
         return path.Replace('/', Path.DirectorySeparatorChar)
                    .Replace('\\', Path.DirectorySeparatorChar);
@@ -256,7 +270,9 @@ public static class PathUtilities
         try
         {
             if (!Directory.Exists(path))
+            {
                 return true;
+            }
 
             return !Directory.EnumerateFileSystemEntries(path).Any();
         }
@@ -278,7 +294,9 @@ public static class PathUtilities
         try
         {
             if (!Directory.Exists(path))
+            {
                 return 0;
+            }
 
             var cutoffTime = DateTime.UtcNow - maxAge;
             var files = Directory.GetFiles(path);

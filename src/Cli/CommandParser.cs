@@ -10,7 +10,8 @@ namespace SqliteMultiTenant.Cli;
 /// Parses command-line arguments into structured command objects.
 /// Handles validation, error messages, and help text generation.
 /// </summary>
-public sealed class CommandParser {
+public sealed class CommandParser
+{
     private readonly Dictionary<string, CommandHandler> _commands;
     private readonly ILogger<CommandParser> _logger;
 
@@ -80,15 +81,15 @@ public sealed class CommandParser {
             }
         };
 
-    _commands["explain"] = new CommandHandler
-    {
-        Name = "explain",
-        Description = "Explain SQL query execution plan",
-        Subcommands = new[]
+        _commands["explain"] = new CommandHandler
         {
+            Name = "explain",
+            Description = "Explain SQL query execution plan",
+            Subcommands = new[]
+            {
             new Subcommand { Name = "query", Description = "Explain a SQL query", RequiredArgs = new[] { "sqlQuery" } }
         }
-    };
+        };
     }
 
     /// <summary>
@@ -103,12 +104,16 @@ public sealed class CommandParser {
         try
         {
             if (args.Length == 0)
+            {
                 return CreateHelpCommand();
+            }
 
             string mainCommand = args[0].ToLower();
 
             if (mainCommand == "help" || mainCommand == "-h" || mainCommand == "--help")
+            {
                 return CreateHelpCommand();
+            }
 
             if (!_commands.TryGetValue(mainCommand, out var handler))
             {
@@ -117,21 +122,27 @@ public sealed class CommandParser {
             }
 
             if (args.Length < 2)
+            {
                 return CreateHelpCommand(mainCommand);
+            }
 
             string subcommand = args[1].ToLower();
             var subcommandDef = handler.Subcommands?.FirstOrDefault(s => s.Name == subcommand);
 
             if (subcommandDef is null)
+            {
                 return CreateErrorCommand($"Unknown subcommand '{subcommand}' for '{mainCommand}'");
+            }
 
             var commandArgs = args.Skip(2).ToList();
 
             // Validate required arguments
             if (commandArgs.Count < subcommandDef.RequiredArgs.Length)
+            {
                 return CreateErrorCommand(
                     $"Missing required arguments for '{mainCommand} {subcommand}'. " +
                     $"Expected: {string.Join(", ", subcommandDef.RequiredArgs)}");
+            }
 
             _logger.LogInformation("Parse completed successfully: {MainCommand} {Subcommand}", mainCommand, subcommand);
             return new ParsedCommand
@@ -180,7 +191,9 @@ public sealed class CommandParser {
                 helpText.AppendLine($"  {command} {sub.Name}");
                 helpText.AppendLine($"    {sub.Description}");
                 if (sub.RequiredArgs.Length > 0)
+                {
                     helpText.AppendLine($"    Arguments: {string.Join(", ", sub.RequiredArgs)}");
+                }
             }
         }
 
@@ -208,7 +221,8 @@ public sealed class CommandParser {
 /// <summary>
 /// Describes a top-level command and its available subcommands.
 /// </summary>
-public sealed class CommandHandler {
+public sealed class CommandHandler
+{
     /// <summary>
     /// Gets or sets the command name.
     /// </summary>
@@ -228,7 +242,8 @@ public sealed class CommandHandler {
 /// <summary>
 /// Describes a subcommand and the arguments it requires.
 /// </summary>
-public sealed class Subcommand {
+public sealed class Subcommand
+{
     /// <summary>
     /// Gets or sets the subcommand name.
     /// </summary>
@@ -248,7 +263,8 @@ public sealed class Subcommand {
 /// <summary>
 /// Represents the result of parsing command-line arguments.
 /// </summary>
-public sealed class ParsedCommand {
+public sealed class ParsedCommand
+{
     /// <summary>
     /// Gets or sets a value indicating whether parsing succeeded.
     /// </summary>

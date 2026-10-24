@@ -4,9 +4,9 @@
 // CTO & Software Architect
 // =============================================================================
 
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Events;
-using System.Text.Json;
 
 namespace SqliteMultiTenant.Integration;
 
@@ -25,7 +25,8 @@ public interface IWebhookHandler
 /// <summary>
 /// Webhook subscription configuration.
 /// </summary>
-public sealed class WebhookHandlerSubscription {
+public sealed class WebhookHandlerSubscription
+{
     public string WebhookId { get; set; } = Guid.NewGuid().ToString();
     public string Url { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
@@ -37,7 +38,8 @@ public sealed class WebhookHandlerSubscription {
 /// <summary>
 /// Webhook delivery request.
 /// </summary>
-public sealed class WebhookDelivery {
+public sealed class WebhookDelivery
+{
     public string DeliveryId { get; set; } = Guid.NewGuid().ToString();
     public string WebhookId { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
@@ -54,10 +56,14 @@ public sealed class WebhookDelivery {
     public bool VerifySignature(string secret)
     {
         if (string.IsNullOrEmpty(secret))
+        {
             throw new ArgumentException("Secret cannot be null or empty.", nameof(secret));
+        }
 
         if (!Headers.TryGetValue("X-Signature", out var signature) || string.IsNullOrEmpty(signature))
+        {
             return false;
+        }
 
         var payload = JsonSerializer.Serialize(Event);
         return WebhookService.VerifySignature(payload, signature, secret);
@@ -67,7 +73,8 @@ public sealed class WebhookDelivery {
 /// <summary>
 /// Webhook handler implementation with HTTP delivery and retry logic.
 /// </summary>
-public sealed class WebhookHandler : IWebhookHandler {
+public sealed class WebhookHandler : IWebhookHandler
+{
     private static readonly TimeSpan DefaultWebhookTimeout = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan DefaultRetryDelay = TimeSpan.FromSeconds(2);
 
@@ -88,7 +95,9 @@ public sealed class WebhookHandler : IWebhookHandler {
     public async Task DeliverAsync(WebhookDelivery delivery, CancellationToken cancellationToken)
     {
         if (delivery is null)
+        {
             throw new ArgumentNullException(nameof(delivery));
+        }
 
         while (delivery.RetryCount <= delivery.MaxRetries)
         {
@@ -166,7 +175,9 @@ public sealed class WebhookHandler : IWebhookHandler {
     public Task RegisterAsync(WebhookHandlerSubscription subscription)
     {
         if (subscription is null)
+        {
             throw new ArgumentNullException(nameof(subscription));
+        }
 
         _subscriptions[subscription.WebhookId] = subscription;
 
@@ -185,7 +196,9 @@ public sealed class WebhookHandler : IWebhookHandler {
     public Task UnregisterAsync(string webhookId)
     {
         if (string.IsNullOrWhiteSpace(webhookId))
+        {
             return Task.CompletedTask;
+        }
 
         _subscriptions.Remove(webhookId);
 
@@ -208,7 +221,8 @@ public sealed class WebhookHandler : IWebhookHandler {
 /// <summary>
 /// Event handler that delivers webhook notifications for all domain events.
 /// </summary>
-public sealed class WebhookEventHandler<T> : IEventHandler<T> where T : DomainEvent {
+public sealed class WebhookEventHandler<T> : IEventHandler<T> where T : DomainEvent
+{
     private readonly IWebhookHandler _webhookHandler;
     private readonly ILogger<WebhookEventHandler<T>> _logger;
 

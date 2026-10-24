@@ -15,9 +15,10 @@ namespace SqliteMultiTenant.Benchmarks;
 /// </summary>
 [MemoryDiagnoser]
 [HideColumns("Error", "StdDev")]
-public sealed class TenantValidationBenchmarks {
-    private const string ValidId        = "acme-corp-production";
-    private const string ValidName      = "Acme Corporation Ltd";
+public sealed class TenantValidationBenchmarks
+{
+    private const string ValidId = "acme-corp-production";
+    private const string ValidName = "Acme Corporation Ltd";
     private const string NameToGenerate = "My Awesome SaaS Company";
 
     [Benchmark(Baseline = true)]

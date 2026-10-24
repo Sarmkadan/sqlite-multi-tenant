@@ -17,7 +17,8 @@ namespace SqliteMultiTenant.Services;
 /// Executes migration scripts against tenant databases. Handles ordering, transaction
 /// wrapping, rollback on failure, and records each migration result via <see cref="IMigrationService"/>.
 /// </summary>
-public sealed class MigrationRunner {
+public sealed class MigrationRunner
+{
     private readonly IMigrationService _migrationService;
     private readonly IConnectionPoolManager _connectionPool;
     private readonly ILogger<MigrationRunner> _logger;
@@ -58,11 +59,19 @@ public sealed class MigrationRunner {
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
+        {
             throw new ArgumentException("Tenant ID is required.", nameof(tenantId));
+        }
+
         if (string.IsNullOrWhiteSpace(migrationSql))
+        {
             throw new ArgumentException("Migration SQL is required.", nameof(migrationSql));
+        }
+
         if (string.IsNullOrWhiteSpace(migrationName))
+        {
             throw new ArgumentException("Migration name is required.", nameof(migrationName));
+        }
 
         _logger.LogInformation("Running migration '{Name}' for tenant '{TenantId}'", migrationName, tenantId);
         var sw = Stopwatch.StartNew();
@@ -89,7 +98,8 @@ public sealed class MigrationRunner {
             }
             catch (Exception ex)
             {
-                try { transaction.Rollback(); }
+                try
+                { transaction.Rollback(); }
                 catch (Exception rbEx)
                 {
                     _logger.LogError(rbEx, "Rollback failed for migration '{Name}' on tenant '{TenantId}'",
@@ -123,7 +133,9 @@ public sealed class MigrationRunner {
         CancellationToken cancellationToken = default)
     {
         if (migrations == null || migrations.Count == 0)
+        {
             throw new ArgumentException("At least one migration is required.", nameof(migrations));
+        }
 
         var results = new List<MigrationResult>(migrations.Count);
         var sw = Stopwatch.StartNew();
@@ -157,7 +169,9 @@ public sealed class MigrationRunner {
         };
 
         if (failed == 0)
+        {
             return MigrationBatchResult.SuccessResult(migrations.Count, succeeded, new List<TenantMigrationResult> { tenantResult });
+        }
 
         var failureDetails = results.Where(r => !r.Success).Select(r => r.Error ?? "Unknown error").First();
         return MigrationBatchResult.FailureResult(failureDetails!, new List<TenantMigrationResult> { tenantResult });
@@ -197,7 +211,9 @@ public sealed class MigrationRunner {
     public bool ValidateMigrationSyntax(string connectionString, string migrationSql)
     {
         if (string.IsNullOrWhiteSpace(migrationSql))
+        {
             return false;
+        }
 
         try
         {

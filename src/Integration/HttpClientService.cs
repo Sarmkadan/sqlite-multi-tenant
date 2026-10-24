@@ -4,9 +4,9 @@
 // CTO & Software Architect
 // =============================================================================
 
-using Microsoft.Extensions.Logging;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace SqliteMultiTenant.Integration;
 
@@ -25,7 +25,8 @@ public interface IHttpClientService
 /// <summary>
 /// HTTP client service implementation with retry and timeout policies.
 /// </summary>
-public sealed class HttpClientService : IHttpClientService {
+public sealed class HttpClientService : IHttpClientService
+{
     private const int RetryBaseDelayMs = 1000;
     private const int ServerErrorStatusCodeThreshold = 500;
 
@@ -102,7 +103,9 @@ public sealed class HttpClientService : IHttpClientService {
             var request = new HttpRequestMessage(method, url);
 
             if (!string.IsNullOrEmpty(content))
+            {
                 request.Content = new StringContent(content, System.Text.Encoding.UTF8, "application/json");
+            }
 
             return await SendWithRetryAsync(request);
         }
@@ -173,7 +176,9 @@ public sealed class HttpClientService : IHttpClientService {
     private void ApplyHeaders(HttpRequestMessage request, Dictionary<string, string> headers)
     {
         if (headers is null)
+        {
             return;
+        }
 
         foreach (var header in headers)
         {
@@ -195,7 +200,8 @@ public sealed class HttpClientService : IHttpClientService {
 /// <summary>
 /// Configuration options for HTTP client behavior.
 /// </summary>
-public sealed class HttpClientOptions {
+public sealed class HttpClientOptions
+{
     /// <summary>
     /// Request timeout in seconds (default: 30s).
     /// </summary>

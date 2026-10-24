@@ -136,22 +136,34 @@ public static class MigrationExceptionExtensions
         ArgumentNullException.ThrowIfNull(exception);
 
         if (exception.IsVersionAlreadyApplied())
+        {
             return "This migration has already been applied to the database";
+        }
 
         if (exception.IsConstraintViolation())
+        {
             return "Database constraint violation detected - check your schema changes";
+        }
 
         if (exception.IsDuplicateKeyError())
+        {
             return "Duplicate key or already exists error - the object may already be in the database";
+        }
 
         if (exception.IsTimeoutOrDeadlock())
+        {
             return "Database operation timed out or deadlock detected - retry the migration";
+        }
 
         if (exception.IsExecutionFailure())
+        {
             return "Migration execution failed - check the database logs for details";
+        }
 
         if (exception.IsTenantRelatedFailure())
+        {
             return "Tenant-related migration failure - verify tenant context and database associations";
+        }
 
         return "Migration failed - check the exception details for more information";
     }

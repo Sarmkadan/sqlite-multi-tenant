@@ -1,127 +1,126 @@
-using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using SqliteMultiTenant.Configuration;
 using System;
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.Configuration;
+using Xunit;
 
-namespace SqliteMultiTenant.Tests
+namespace SqliteMultiTenant.Tests;
+
+public class DependencyInjectionSetupTests
 {
-    public class DependencyInjectionSetupTests
+    [Fact]
+    public void AddApiControllers_ValidInput_ReturnsServiceCollection()
     {
-        [Fact]
-        public void AddApiControllers_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddApiControllers(services);
+        // Act
+        var result = DependencyInjectionSetup.AddApiControllers(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddMiddlewareServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddMiddlewareServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddMiddlewareServices(services);
+        // Act
+        var result = DependencyInjectionSetup.AddMiddlewareServices(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddCachingServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddCachingServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddCachingServices(services);
+        // Act
+        var result = DependencyInjectionSetup.AddCachingServices(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddEventServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddEventServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddEventServices(services);
+        // Act
+        var result = DependencyInjectionSetup.AddEventServices(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddFormatterServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddFormatterServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddFormatterServices(services);
+        // Act
+        var result = DependencyInjectionSetup.AddFormatterServices(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddValidationServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddValidationServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddValidationServices(services);
+        // Act
+        var result = DependencyInjectionSetup.AddValidationServices(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddHealthCheckServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddHealthCheckServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddHealthCheckServices(services, "databasePath");
+        // Act
+        var result = DependencyInjectionSetup.AddHealthCheckServices(services, "databasePath");
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddBackgroundWorkers_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddBackgroundWorkers_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddBackgroundWorkers(services);
+        // Act
+        var result = DependencyInjectionSetup.AddBackgroundWorkers(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
+    }
 
-        [Fact]
-        public void AddIntegrationServices_ValidInput_ReturnsServiceCollection()
-        {
-            // Arrange
-            var services = new ServiceCollection();
+    [Fact]
+    public void AddIntegrationServices_ValidInput_ReturnsServiceCollection()
+    {
+        // Arrange
+        var services = new ServiceCollection();
 
-            // Act
-            var result = DependencyInjectionSetup.AddIntegrationServices(services);
+        // Act
+        var result = DependencyInjectionSetup.AddIntegrationServices(services);
 
-            // Assert
-            Assert.NotNull(result);
-        }
+        // Assert
+        Assert.NotNull(result);
     }
 }

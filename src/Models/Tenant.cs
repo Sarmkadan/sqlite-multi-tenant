@@ -11,7 +11,8 @@ namespace SqliteMultiTenant.Models;
 /// <summary>
 /// Represents a tenant in the multi-tenant system
 /// </summary>
-public sealed class Tenant {
+public sealed class Tenant
+{
     /// <summary>
     /// Gets or sets the tenant identifier.
     /// </summary>
@@ -81,16 +82,24 @@ public sealed class Tenant {
         errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(TenantId) || TenantId.Length > TenantConstants.MaxTenantIdLength)
+        {
             errors.Add($"TenantId must be non-empty and less than {TenantConstants.MaxTenantIdLength} characters");
+        }
 
         if (string.IsNullOrWhiteSpace(Name) || Name.Length > TenantConstants.MaxTenantNameLength)
+        {
             errors.Add($"Name must be non-empty and less than {TenantConstants.MaxTenantNameLength} characters");
+        }
 
         if (MaxConnections <= 0)
+        {
             errors.Add("MaxConnections must be greater than zero");
+        }
 
         if (CreatedAt > UpdatedAt)
+        {
             errors.Add("CreatedAt cannot be after UpdatedAt");
+        }
 
         return errors.Count == 0;
     }
