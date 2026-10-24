@@ -11,6 +11,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Utilities;
 
 namespace SqliteMultiTenant.Events;
 
@@ -20,11 +22,14 @@ namespace SqliteMultiTenant.Events;
 /// <remarks>
 /// This implementation provides thread-safe event publishing and subscription management using concurrent collections.
 /// It maintains an event history for monitoring and debugging purposes, and supports both synchronous and asynchronous publishing.
+/// Each handler is invoked inside a tenant scope taken from the event's own <see cref="DomainEvent.TenantId"/>,
+/// so handlers never observe the ambient tenant of whichever code happened to publish the event.
 /// </remarks>
 public sealed class EventBusImpl : IDisposable
 {
     private readonly ConcurrentDictionary<string, List<EventSubscription>> _subscriptions;
     private readonly ILogger<EventBusImpl> _logger;
+    private readonly TenantContextHelper _tenantContextHelper;
     private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
     private readonly ConcurrentDictionary<string, int> _handlerFailureCounts;
     private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
@@ -39,10 +44,15 @@ public sealed class EventBusImpl : IDisposable
     /// </summary>
     /// <param name="logger">The logger instance for recording operational events and errors.</param>
     /// <param name="historySize">Maximum number of published events to retain in history (default: 1000).</param>
+    /// <param name="tenantContextHelper">
+    /// The helper used to establish the tenant scope around each handler invocation.
+    /// When null, a private helper is created; it shares the same ambient tenant state as every other <see cref="TenantContextHelper"/>.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
-    public EventBusImpl(ILogger<EventBusImpl> logger, int historySize = 1000)
+    public EventBusImpl(ILogger<EventBusImpl> logger, int historySize = 1000, TenantContextHelper? tenantContextHelper = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _tenantContextHelper = tenantContextHelper ?? new TenantContextHelper(NullLogger<TenantContextHelper>.Instance);
         _subscriptions = new ConcurrentDictionary<string, List<EventSubscription>>();
         _eventHistory = new ConcurrentQueue<PublishedEvent>();
         _handlerFailureCounts = new ConcurrentDictionary<string, int>();
@@ -126,10 +136,10 @@ public sealed class EventBusImpl : IDisposable
 
             if (_subscriptions.TryGetValue(eventType, out var handlers) && handlers.Count > 0)
             {
-                var tasks = handlers.Select(h => ExecuteHandlerSafelyAsync(h, @event, eventType));
-                await Task.WhenAll(tasks);
-                successfulHandlerCount = handlers.Count(h => h.LastExecutionSucceeded);
-                failedHandlerCount = handlers.Count - successfulHandlerCount;
+                // Outcomes are returned per invocation: a shared per-subscription flag would mix results of concurrent publishes (e.g. different tenants)
+                var outcomes = await Task.WhenAll(handlers.Select(h => ExecuteHandlerSafelyAsync(h, @event, eventType)));
+                successfulHandlerCount = outcomes.Count(succeeded => succeeded);
+                failedHandlerCount = outcomes.Length - successfulHandlerCount;
             }
             else
             {
@@ -304,20 +314,19 @@ public sealed class EventBusImpl : IDisposable
         _disposed = true;
     }
 
-    private async Task ExecuteHandlerSafelyAsync(EventSubscription subscription, DomainEvent @event, string eventType)
+    private async Task<bool> ExecuteHandlerSafelyAsync(EventSubscription subscription, DomainEvent @event, string eventType)
     {
         try
         {
+            using IDisposable? tenantScope = EnterEventTenantScope(@event);
             await subscription.Handler(@event);
-            subscription.LastExecutionSucceeded = true;
 
             // Reset failure count on successful execution
             _handlerFailureCounts.AddOrUpdate(eventType, 0, (_, _) => 0);
+            return true;
         }
         catch (Exception ex)
         {
-            subscription.LastExecutionSucceeded = false;
-
             // Increment failure count for this event type
             var failureCount = _handlerFailureCounts.AddOrUpdate(
                 eventType,
@@ -333,8 +342,20 @@ public sealed class EventBusImpl : IDisposable
             {
                 AddToDeadLetterQueue(eventType, @event, ex);
             }
+
+            return false;
         }
     }
+
+    /// <summary>
+    /// Establishes the ambient tenant context for a handler invocation from the event's own tenant identifier,
+    /// so the handler does not depend on whichever tenant happens to be current at the publish site.
+    /// </summary>
+    /// <returns>A scope that restores the previous tenant context, or null when the event carries no tenant.</returns>
+    private IDisposable? EnterEventTenantScope(DomainEvent @event) =>
+        string.IsNullOrWhiteSpace(@event.TenantId)
+            ? null
+            : _tenantContextHelper.CreateScope(@event.TenantId);
 
     private void AddToHistory(PublishedEvent publishedEvent)
     {
@@ -373,7 +394,6 @@ public sealed class EventBusImpl : IDisposable
         public string EventType { get; set; } = string.Empty;
         public Func<DomainEvent, Task> Handler { get; set; } = null!;
         public int Priority { get; set; }
-        public bool LastExecutionSucceeded { get; set; }
     }
 
     private class Unsubscriber : IDisposable
