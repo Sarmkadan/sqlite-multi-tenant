@@ -292,31 +292,33 @@ public sealed class RateLimiterTests
         // Arrange
         var identifier = "test-ip-cleanup";
         var maxRequests = 100; // High limit to allow many requests
-        var smallWindow = TimeSpan.FromMilliseconds(50);
+        // Window is generous relative to the delays so that scheduler jitter under
+        // full-suite load cannot expire the first request before the second check.
+        var window = TimeSpan.FromMilliseconds(400);
 
         // Make first request
-        await _rateLimiter.CheckLimitAsync(identifier, maxRequests, smallWindow);
+        await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
         var status1 = await _rateLimiter.GetStatusAsync(identifier);
         status1.CurrentCount.Should().Be(1);
 
-        // Wait for window to be mostly passed
-        await Task.Delay(40);
+        // Wait while the first request is still inside the window
+        await Task.Delay(150);
 
         // Make second request
-        await _rateLimiter.CheckLimitAsync(identifier, maxRequests, smallWindow);
+        await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
         var status2 = await _rateLimiter.GetStatusAsync(identifier);
         status2.CurrentCount.Should().Be(2);
 
-        // Wait for old request to expire
-        await Task.Delay(20);
+        // Wait until the first request is outside the window (>400ms old)
+        // while the second is still inside it
+        await Task.Delay(300);
 
         // Make third request - old one should be cleaned up
-        await _rateLimiter.CheckLimitAsync(identifier, maxRequests, smallWindow);
+        await _rateLimiter.CheckLimitAsync(identifier, maxRequests, window);
         var status3 = await _rateLimiter.GetStatusAsync(identifier);
 
         // Count should be 2 (first expired, second and third remain)
-        // The cleanup happens during CheckLimitAsync, so we expect count to be 2
-        status3.CurrentCount.Should().BeGreaterOrEqualTo(2);
+        status3.CurrentCount.Should().Be(2);
     }
 
     /// <summary>
