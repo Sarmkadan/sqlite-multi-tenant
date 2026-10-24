@@ -1,29 +1,36 @@
 ---
 name: Bug Report
-about: Report a bug to help improve SqliteMultiTenant
-title: '[BUG] '
+about: Report a bug in SqliteMultiTenant
+title: '[Bug]: '
 labels: bug
 assignees: ''
 ---
 
 ## Description
-A clear and concise description of the bug.
+<!-- What is wrong? Name the affected class or API (e.g. TenantService, MigrationService). -->
 
-## Steps to Reproduce
-1. Step one
-2. Step two
-3. Step three
+## Steps to reproduce
+1.
+2.
+3.
 
-## Expected Behavior
-What you expected to happen.
+## Expected behavior
 
-## Actual Behavior
-What actually happened.
+
+## Actual behavior
+
 
 ## Environment
-- OS: [e.g., Windows 11, Ubuntu 22.04]
-- .NET Version: [e.g., 8.0]
-- Package Version: [e.g., 1.0.0]
+- .NET SDK version (`dotnet --version`):
+- OS:
+- SQLite provider version (System.Data.SQLite):
+- SqliteMultiTenant package version:
 
-## Additional Context
-Add any other context, logs, or screenshots.
+## Logs/stack trace
+<!-- Paste the exception and stack trace, with tenant IDs and secrets removed. -->
+
+```
+```
+
+## Additional context
+<!-- Tenant count, database size, whether encryption (SQLCipher) is enabled, anything else relevant. -->
