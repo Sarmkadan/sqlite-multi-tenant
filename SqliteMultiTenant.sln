@@ -1,13 +1,18 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqliteMultiTenant", "src\SqliteMultiTenant.csproj", "{A1B2C3D4-E5F6-47G8-H9I0-J1K2L3M4N5O6}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqlite-multi-tenant.Tests", "tests\sqlite-multi-tenant.Tests\sqlite-multi-tenant.Tests.csproj", "{C5D6E7F8-A9B0-4C1D-2E3F-4A5B6C7D8E9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqliteMultiTenant", "src\SqliteMultiTenant.csproj", "{539FA65A-ACE6-4524-B4D0-69541157BA56}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "sqlite-multi-tenant.Benchmarks", "benchmarks\sqlite-multi-tenant.Benchmarks\sqlite-multi-tenant.Benchmarks.csproj", "{D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F6A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlite-multi-tenant.Tests", "tests\sqlite-multi-tenant.Tests\sqlite-multi-tenant.Tests.csproj", "{6AFF28D7-00B1-40DD-951A-6ADD03B94A24}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{66320409-64EC-F7C5-3DEF-65E7510DAAD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sqlite-multi-tenant.Benchmarks", "benchmarks\sqlite-multi-tenant.Benchmarks\sqlite-multi-tenant.Benchmarks.csproj", "{B46645D5-4089-4F97-B0D7-31422503764D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,17 +20,25 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A1B2C3D4-E5F6-47G8-H9I0-J1K2L3M4N5O6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1B2C3D4-E5F6-47G8-H9I0-J1K2L3M4N5O6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1B2C3D4-E5F6-47G8-H9I0-J1K2L3M4N5O6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1B2C3D4-E5F6-47G8-H9I0-J1K2L3M4N5O6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C5D6E7F8-A9B0-4C1D-2E3F-4A5B6C7D8E9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C5D6E7F8-A9B0-4C1D-2E3F-4A5B6C7D8E9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C5D6E7F8-A9B0-4C1D-2E3F-4A5B6C7D8E9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C5D6E7F8-A9B0-4C1D-2E3F-4A5B6C7D8E9F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D1E2F3A4-B5C6-7D8E-9F0A-1B2C3D4E5F6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{539FA65A-ACE6-4524-B4D0-69541157BA56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{539FA65A-ACE6-4524-B4D0-69541157BA56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{539FA65A-ACE6-4524-B4D0-69541157BA56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{539FA65A-ACE6-4524-B4D0-69541157BA56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6AFF28D7-00B1-40DD-951A-6ADD03B94A24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6AFF28D7-00B1-40DD-951A-6ADD03B94A24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6AFF28D7-00B1-40DD-951A-6ADD03B94A24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6AFF28D7-00B1-40DD-951A-6ADD03B94A24}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B46645D5-4089-4F97-B0D7-31422503764D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B46645D5-4089-4F97-B0D7-31422503764D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B46645D5-4089-4F97-B0D7-31422503764D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B46645D5-4089-4F97-B0D7-31422503764D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{539FA65A-ACE6-4524-B4D0-69541157BA56} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{6AFF28D7-00B1-40DD-951A-6ADD03B94A24} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{B46645D5-4089-4F97-B0D7-31422503764D} = {66320409-64EC-F7C5-3DEF-65E7510DAAD1}
 	EndGlobalSection
 EndGlobal
