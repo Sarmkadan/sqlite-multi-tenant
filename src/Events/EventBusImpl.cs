@@ -30,7 +30,10 @@ public sealed class EventBusImpl : IDisposable
     private readonly ConcurrentDictionary<string, List<EventSubscription>> _subscriptions;
     private readonly ILogger<EventBusImpl> _logger;
     private readonly TenantContextHelper _tenantContextHelper;
-    private readonly ConcurrentQueue<PublishedEvent> _eventHistory;
+    private readonly object _historyLock = new();
+    private readonly Queue<PublishedEvent> _eventHistory;
+    private readonly int _historyCapacity;
+    private readonly Dictionary<string, int> _publishedCounts;
     private readonly ConcurrentDictionary<string, int> _handlerFailureCounts;
     private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
     private readonly ConcurrentDictionary<string, int> _publishAttempts;
@@ -43,18 +46,26 @@ public sealed class EventBusImpl : IDisposable
     /// Initializes a new instance of the <see cref="EventBusImpl"/> class.
     /// </summary>
     /// <param name="logger">The logger instance for recording operational events and errors.</param>
-    /// <param name="historySize">Maximum number of published events to retain in history (default: 1000).</param>
+    /// <param name="historySize">
+    /// Maximum number of published events kept in history (default: 1000). Once full, the oldest event is evicted for each new one.
+    /// Eviction does not affect the publication counts reported by <see cref="GetEventStatistics"/>.
+    /// </param>
     /// <param name="tenantContextHelper">
     /// The helper used to establish the tenant scope around each handler invocation.
     /// When null, a private helper is created; it shares the same ambient tenant state as every other <see cref="TenantContextHelper"/>.
     /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="historySize"/> is less than or equal to zero.</exception>
     public EventBusImpl(ILogger<EventBusImpl> logger, int historySize = 1000, TenantContextHelper? tenantContextHelper = null)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(historySize);
+
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _historyCapacity = historySize;
         _tenantContextHelper = tenantContextHelper ?? new TenantContextHelper(NullLogger<TenantContextHelper>.Instance);
         _subscriptions = new ConcurrentDictionary<string, List<EventSubscription>>();
-        _eventHistory = new ConcurrentQueue<PublishedEvent>();
+        _eventHistory = new Queue<PublishedEvent>(Math.Min(historySize, 1024));
+        _publishedCounts = new Dictionary<string, int>();
         _handlerFailureCounts = new ConcurrentDictionary<string, int>();
         _successfulHandlerCounts = new ConcurrentDictionary<string, int>();
         _publishAttempts = new ConcurrentDictionary<string, int>();
@@ -191,24 +202,13 @@ public sealed class EventBusImpl : IDisposable
     /// <returns>A list of published events ordered by publication time (most recent first).</returns>
     public List<PublishedEvent> GetEventHistory(int take = 100)
     {
-        var history = new List<PublishedEvent>();
-        var tempQueue = new Queue<PublishedEvent>();
-
-        while (_eventHistory.TryDequeue(out var evt))
+        lock (_historyLock)
         {
-            tempQueue.Enqueue(evt);
-            history.Add(evt);
+            // History is kept in publication order, so reversing it yields most recent first
+            return _eventHistory.Reverse()
+                .Take(take)
+                .ToList();
         }
-
-        // Re-queue events to maintain history
-        while (tempQueue.TryDequeue(out var evt))
-        {
-            _eventHistory.Enqueue(evt);
-        }
-
-        return history.OrderByDescending(e => e.PublishedAt)
-            .Take(take)
-            .ToList();
     }
 
     /// <summary>
@@ -218,6 +218,12 @@ public sealed class EventBusImpl : IDisposable
     public Dictionary<string, EventStatistics> GetEventStatistics()
     {
         var stats = new Dictionary<string, EventStatistics>();
+
+        Dictionary<string, int> publishedCounts;
+        lock (_historyLock)
+        {
+            publishedCounts = new Dictionary<string, int>(_publishedCounts);
+        }
 
         foreach (var kvp in _subscriptions)
         {
@@ -230,7 +236,7 @@ public sealed class EventBusImpl : IDisposable
             {
                 EventType = eventType,
                 SubscriberCount = kvp.Value.Count,
-                TotalPublished = _eventHistory.Count(e => e.EventType == eventType),
+                TotalPublished = publishedCounts.GetValueOrDefault(eventType),
                 TotalPublishAttempts = publishAttempts,
                 SuccessfulHandlerInvocations = successfulHandlers,
                 FailedHandlerInvocations = failureCount
@@ -284,8 +290,11 @@ public sealed class EventBusImpl : IDisposable
     /// </summary>
     public void ClearHistory()
     {
-        while (_eventHistory.TryDequeue(out _))
-        { }
+        lock (_historyLock)
+        {
+            _eventHistory.Clear();
+            _publishedCounts.Clear();
+        }
     }
 
     /// <summary>
@@ -359,7 +368,16 @@ public sealed class EventBusImpl : IDisposable
 
     private void AddToHistory(PublishedEvent publishedEvent)
     {
-        _eventHistory.Enqueue(publishedEvent);
+        lock (_historyLock)
+        {
+            if (_eventHistory.Count >= _historyCapacity)
+            {
+                _eventHistory.Dequeue();
+            }
+
+            _eventHistory.Enqueue(publishedEvent);
+            _publishedCounts[publishedEvent.EventType] = _publishedCounts.GetValueOrDefault(publishedEvent.EventType) + 1;
+        }
     }
 
     private void AddToDeadLetterQueue(string eventType, DomainEvent @event, Exception exception)
