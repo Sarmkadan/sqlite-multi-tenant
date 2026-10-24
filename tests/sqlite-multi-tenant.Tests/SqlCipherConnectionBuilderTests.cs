@@ -43,7 +43,7 @@ public class SqlCipherConnectionBuilderTests
     [InlineData(null, "validKey")]
     [InlineData("", "validKey")]
     [InlineData("   ", "validKey")]
-    public void BuildConnectionString_InvalidDatabasePath_ThrowsArgumentException(string dbPath, string key)
+    public void BuildConnectionString_InvalidDatabasePath_ThrowsArgumentException(string? dbPath, string key)
     {
         // Act
         Action act = () => SqlCipherConnectionBuilder.BuildConnectionString(dbPath!, key);
@@ -63,7 +63,7 @@ public class SqlCipherConnectionBuilderTests
     [InlineData("validPath.db", null)]
     [InlineData("validPath.db", "")]
     [InlineData("validPath.db", "   ")]
-    public void BuildConnectionString_InvalidEncryptionKey_ThrowsArgumentException(string dbPath, string key)
+    public void BuildConnectionString_InvalidEncryptionKey_ThrowsArgumentException(string dbPath, string? key)
     {
         // Act
         Action act = () => SqlCipherConnectionBuilder.BuildConnectionString(dbPath, key!);
@@ -127,7 +127,7 @@ public class SqlCipherConnectionBuilderTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task ApplyEncryptionKeyAsync_InvalidKey_ThrowsArgumentException(string key)
+    public async Task ApplyEncryptionKeyAsync_InvalidKey_ThrowsArgumentException(string? key)
     {
         // Arrange
         var tempFile = Path.GetTempFileName();
@@ -141,7 +141,7 @@ public class SqlCipherConnectionBuilderTests
         await connection.OpenAsync();
 
         // Act
-        Func<Task> act = async () => await SqlCipherConnectionBuilder.ApplyEncryptionKeyAsync(connection, key);
+        Func<Task> act = async () => await SqlCipherConnectionBuilder.ApplyEncryptionKeyAsync(connection, key!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()
@@ -205,7 +205,7 @@ public class SqlCipherConnectionBuilderTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task RekeyAsync_InvalidNewKey_ThrowsArgumentException(string newKey)
+    public async Task RekeyAsync_InvalidNewKey_ThrowsArgumentException(string? newKey)
     {
         // Arrange
         var tempFile = Path.GetTempFileName();
@@ -219,7 +219,7 @@ public class SqlCipherConnectionBuilderTests
         await connection.OpenAsync();
 
         // Act
-        Func<Task> act = async () => await SqlCipherConnectionBuilder.RekeyAsync(connection, newKey);
+        Func<Task> act = async () => await SqlCipherConnectionBuilder.RekeyAsync(connection, newKey!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>()

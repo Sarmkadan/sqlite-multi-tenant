@@ -173,28 +173,28 @@ public class DatabaseUtilities
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table'";
-                stats.TableCount = (long)await command.ExecuteScalarAsync();
+                stats.TableCount = Convert.ToInt64(await command.ExecuteScalarAsync());
             }
 
             // Get index count
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='index'";
-                stats.IndexCount = (long)await command.ExecuteScalarAsync();
+                stats.IndexCount = Convert.ToInt64(await command.ExecuteScalarAsync());
             }
 
             // Get page count
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = PageCountPragma;
-                stats.PageCount = (long)await command.ExecuteScalarAsync();
+                stats.PageCount = Convert.ToInt64(await command.ExecuteScalarAsync());
             }
 
             // Get page size
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = PageSizePragma;
-                stats.PageSize = (long)await command.ExecuteScalarAsync();
+                stats.PageSize = Convert.ToInt64(await command.ExecuteScalarAsync());
             }
 
             stats.EstimatedSize = stats.PageCount * stats.PageSize;
@@ -226,7 +226,7 @@ public class DatabaseUtilities
                 command.Parameters.AddWithValue("@name", tableName);
 
                 var result = await command.ExecuteScalarAsync();
-                return (long)result > 0;
+                return Convert.ToInt64(result) > 0;
             }
         }
         catch
@@ -373,12 +373,12 @@ public sealed class ColumnInfo
     /// <summary>
     /// Gets or sets the name of the column.
     /// </summary>
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the data type of the column (e.g., "INTEGER", "TEXT", "BLOB").
     /// </summary>
-    public string Type { get; set; }
+    public required string Type { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the column is defined as NOT NULL.
@@ -388,7 +388,7 @@ public sealed class ColumnInfo
     /// <summary>
     /// Gets or sets the default value of the column, or null if no default is defined.
     /// </summary>
-    public string DefaultValue { get; set; }
+    public string? DefaultValue { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the column is part of the primary key.

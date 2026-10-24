@@ -80,7 +80,7 @@ public static class EncryptionKeyManagerExtensions
     /// <returns>The active encryption key, or <c>null</c> if no active key exists.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="manager"/> or <paramref name="tenantId"/> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="tenantId"/> is empty or whitespace.</exception>
-    public static async Task<EncryptionKey> GetActiveKeyForTenantAsync(this EncryptionKeyManager manager, string tenantId)
+    public static async Task<EncryptionKey?> GetActiveKeyForTenantAsync(this EncryptionKeyManager manager, string tenantId)
     {
         ArgumentNullException.ThrowIfNull(manager);
         ArgumentException.ThrowIfNullOrEmpty(tenantId);
@@ -115,7 +115,7 @@ public static class EncryptionKeyManagerExtensions
     /// <returns>The encryption key for the specified version, or <c>null</c> if not found.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="manager"/> is <c>null</c>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="tenantId"/> is empty or whitespace.</exception>
-    public static async Task<EncryptionKey> GetKeyVersionForTenantAsync(this EncryptionKeyManager manager, string tenantId, int version)
+    public static async Task<EncryptionKey?> GetKeyVersionForTenantAsync(this EncryptionKeyManager manager, string tenantId, int version)
     {
         ArgumentNullException.ThrowIfNull(manager);
         ArgumentException.ThrowIfNullOrEmpty(tenantId);

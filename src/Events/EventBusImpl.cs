@@ -30,7 +30,6 @@ public sealed class EventBusImpl : IDisposable
     private readonly ConcurrentDictionary<string, int> _successfulHandlerCounts;
     private readonly ConcurrentDictionary<string, int> _publishAttempts;
     private readonly ConcurrentDictionary<string, List<DeadLetterEvent>> _deadLetterQueue;
-    private readonly ConcurrentDictionary<string, EventStatistics> _statistics;
     private const int MaxDeadLetterSize = 1000;
     private const int MaxRetryAttempts = 3;
     private bool _disposed;
@@ -96,9 +95,9 @@ public sealed class EventBusImpl : IDisposable
     /// Asynchronously publishes an event to all registered subscribers.
     /// </summary>
     /// <typeparam name="TEvent">The type of domain event to publish.</typeparam>
-    /// <param name="@event">The event instance to publish.</param>
+    /// <param name="event">The event instance to publish.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="@event"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="event"/> is null.</exception>
     public async Task PublishAsync<TEvent>(TEvent @event) where TEvent : DomainEvent
     {
         if (@event is null)
@@ -169,7 +168,7 @@ public sealed class EventBusImpl : IDisposable
     /// Synchronously publishes an event to all registered subscribers.
     /// </summary>
     /// <typeparam name="TEvent">The type of domain event to publish.</typeparam>
-    /// <param name="@event">The event instance to publish.</param>
+    /// <param name="event">The event instance to publish.</param>
     public void Publish<TEvent>(TEvent @event) where TEvent : DomainEvent
     {
         PublishAsync(@event).GetAwaiter().GetResult();
@@ -424,7 +423,7 @@ public sealed class PublishedEvent
     /// <summary>Gets or sets the UTC timestamp when the event was published.</summary>
     public DateTime PublishedAt { get; set; }
     /// <summary>Gets or sets the tenant identifier associated with the event.</summary>
-    public string TenantId { get; set; } = string.Empty;
+    public string? TenantId { get; set; }
     /// <summary>Gets or sets the number of handlers that successfully processed the event.</summary>
     public int SuccessfulHandlers { get; set; }
 }

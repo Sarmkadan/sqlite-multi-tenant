@@ -55,7 +55,7 @@ public static class OptionsValidator
     public static void Validate(BackupOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        if (options?.MaxConcurrentBackups <= 0)
+        if (options.MaxConcurrentBackups <= 0)
         {
             throw new ArgumentException("MaxConcurrentBackups must be greater than 0");
         }
@@ -76,7 +76,7 @@ public static class OptionsValidator
     public static void Validate(SecurityOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        if (options?.SessionTimeout <= TimeSpan.Zero)
+        if (options.SessionTimeout <= TimeSpan.Zero)
         {
             throw new ArgumentException("SessionTimeout must be positive");
         }

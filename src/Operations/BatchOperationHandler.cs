@@ -20,7 +20,7 @@ namespace SqliteMultiTenant.Operations;
 public interface IBatchOperationHandler
 {
     Task<BatchOperationResult> ExecuteAsync(BatchOperation operation, CancellationToken cancellationToken);
-    Task<BatchOperationStatus> GetStatusAsync(string operationId);
+    Task<BatchOperationStatus?> GetStatusAsync(string operationId);
 }
 
 /// <summary>
@@ -157,7 +157,7 @@ public sealed class BatchOperationStatus : OperationStatusBase
     /// <summary>
     /// Updates the status to running.
     /// </summary>
-    public void MarkRunning()
+    public new void MarkRunning()
     {
         base.MarkRunning();
     }
@@ -165,7 +165,7 @@ public sealed class BatchOperationStatus : OperationStatusBase
     /// <summary>
     /// Updates the status to completed successfully.
     /// </summary>
-    public void MarkCompleted()
+    public new void MarkCompleted()
     {
         base.MarkCompleted();
     }
@@ -174,7 +174,7 @@ public sealed class BatchOperationStatus : OperationStatusBase
     /// Updates the status to failed.
     /// </summary>
     /// <param name="error">The error message.</param>
-    public void MarkFailed(string error)
+    public new void MarkFailed(string error)
     {
         base.MarkFailed(error);
     }
@@ -477,14 +477,14 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
     /// </summary>
     /// <param name="operationId">The operation identifier.</param>
     /// <returns>The current status of the batch operation.</returns>
-    public Task<BatchOperationStatus> GetStatusAsync(string operationId)
+    public Task<BatchOperationStatus?> GetStatusAsync(string operationId)
     {
         if (_statusTracker.TryGetValue(operationId, out var status))
         {
-            return Task.FromResult(status);
+            return Task.FromResult<BatchOperationStatus?>(status);
         }
 
-        return Task.FromResult<BatchOperationStatus>(null);
+        return Task.FromResult<BatchOperationStatus?>(null);
     }
 
     /// <summary>

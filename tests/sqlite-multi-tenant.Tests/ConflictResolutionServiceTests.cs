@@ -68,7 +68,7 @@ public class ConflictResolutionServiceTests
     public void DetectConflicts_NullInputs_ReturnsEmptyResult()
     {
         // Act
-        var result = _service.DetectConflicts(null, null);
+        var result = _service.DetectConflicts(null!, null!);
 
         // Assert
         Assert.False(result.HasConflicts);

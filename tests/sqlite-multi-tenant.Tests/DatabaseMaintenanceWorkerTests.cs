@@ -20,7 +20,7 @@ public sealed class DatabaseMaintenanceWorkerTests
         var maintenanceService = Substitute.For<ITenantDatabaseMaintenanceService>();
 
         // Act
-        Action act = () => new DatabaseMaintenanceWorker(null, maintenanceService);
+        Action act = () => new DatabaseMaintenanceWorker(null!, maintenanceService);
 
         // Assert
         Assert.Throws<ArgumentNullException>(act);
@@ -33,7 +33,7 @@ public sealed class DatabaseMaintenanceWorkerTests
         var logger = Substitute.For<ILogger<DatabaseMaintenanceWorker>>();
 
         // Act
-        Action act = () => new DatabaseMaintenanceWorker(logger, null);
+        Action act = () => new DatabaseMaintenanceWorker(logger, null!);
 
         // Assert
         Assert.Throws<ArgumentNullException>(act);
@@ -52,7 +52,7 @@ public sealed class DatabaseMaintenanceWorkerTests
         // Assert
         var intervalField = typeof(DatabaseMaintenanceWorker)
             .GetField("_interval", BindingFlags.NonPublic | BindingFlags.Instance);
-        var interval = (TimeSpan)intervalField.GetValue(worker);
+        var interval = (TimeSpan)intervalField!.GetValue(worker)!;
         Assert.Equal(TimeSpan.FromHours(24), interval);
     }
 
@@ -70,7 +70,7 @@ public sealed class DatabaseMaintenanceWorkerTests
         // Assert
         var intervalField = typeof(DatabaseMaintenanceWorker)
             .GetField("_interval", BindingFlags.NonPublic | BindingFlags.Instance);
-        var actual = (TimeSpan)intervalField.GetValue(worker);
+        var actual = (TimeSpan)intervalField!.GetValue(worker)!;
         Assert.Equal(interval, actual);
     }
 }

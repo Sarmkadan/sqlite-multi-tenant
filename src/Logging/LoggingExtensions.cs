@@ -323,7 +323,7 @@ public static class LoggingExtensions
         string componentName,
         bool healthy,
         long durationMs,
-        string message = null)
+        string? message = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(componentName);
@@ -350,7 +350,7 @@ public static class LoggingExtensions
         this ILogger logger,
         string configKey,
         string expectedValue,
-        string actualValue = null)
+        string? actualValue = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(configKey);

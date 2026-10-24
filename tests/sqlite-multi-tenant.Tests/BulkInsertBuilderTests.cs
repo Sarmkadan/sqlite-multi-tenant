@@ -248,7 +248,7 @@ public class BulkInsertBuilderTests
         var record = new Dictionary<string, object>
         {
             { "Id", 1 },
-            { "Name", null },
+            { "Name", null! },
             { "Value", DBNull.Value }
         };
         builder.AddRecord(record);

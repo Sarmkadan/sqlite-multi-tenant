@@ -48,6 +48,7 @@ public static class CommandLineParserExtensions
     /// <summary>
     /// Checks if a specific option was provided in the parsed command.
     /// </summary>
+    /// <param name="_">The command-line parser this method extends.</param>
     /// <param name="parsedCommand">The parsed command.</param>
     /// <param name="optionName">Option name to check.</param>
     /// <returns>True if the option was provided; otherwise, false.</returns>
@@ -63,6 +64,7 @@ public static class CommandLineParserExtensions
     /// <summary>
     /// Gets the number of positional arguments in the parsed command.
     /// </summary>
+    /// <param name="_">The command-line parser this method extends.</param>
     /// <param name="parsedCommand">The parsed command.</param>
     /// <returns>Number of positional arguments.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="parsedCommand"/> is null.</exception>

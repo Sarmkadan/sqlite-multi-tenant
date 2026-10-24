@@ -115,7 +115,7 @@ public sealed class BackupExtensionsTests
         Backup? backup = null;
 
         // Act
-        Action act = () => backup.GetSavedSpaceBytes();
+        Action act = () => backup!.GetSavedSpaceBytes();
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -182,7 +182,7 @@ public sealed class BackupExtensionsTests
         Backup? backup = null;
 
         // Act
-        Action act = () => backup.IsFullBackup();
+        Action act = () => backup!.IsFullBackup();
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -255,7 +255,7 @@ public sealed class BackupExtensionsTests
         Backup? backup = null;
 
         // Act
-        Action act = () => backup.IsSystemBackup();
+        Action act = () => backup!.IsSystemBackup();
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -339,7 +339,7 @@ public sealed class BackupExtensionsTests
         Backup? backup = null;
 
         // Act
-        Action act = () => backup.GetHumanReadableSize();
+        Action act = () => backup!.GetHumanReadableSize();
 
         // Assert
         act.Should().Throw<ArgumentNullException>();
@@ -440,7 +440,7 @@ public sealed class BackupExtensionsTests
         Backup? backup = null;
 
         // Act
-        Action act = () => backup.GetHumanReadableDuration();
+        Action act = () => backup!.GetHumanReadableDuration();
 
         // Assert
         act.Should().Throw<ArgumentNullException>();

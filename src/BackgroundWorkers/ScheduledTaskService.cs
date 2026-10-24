@@ -328,7 +328,7 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
             // Execute the task within the tenant context if TenantId is set
             if (!string.IsNullOrWhiteSpace(task.TenantId))
             {
-                _tenantContextHelper.ExecuteInTenantContext(task.TenantId, async () =>
+                await _tenantContextHelper.ExecuteInTenantContextAsync(task.TenantId, async () =>
                 {
                     await task.Action();
                 });
@@ -486,9 +486,9 @@ public sealed class TaskExecutionStatus : OperationStatusBase
     /// <summary>
     /// Updates the status to running.
     /// </summary>
-    public void MarkRunning()
+    public new void MarkRunning()
     {
-        MarkRunning();
+        base.MarkRunning();
     }
 
     /// <summary>

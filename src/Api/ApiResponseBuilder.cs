@@ -22,9 +22,9 @@ namespace SqliteMultiTenant.Api;
 // Ensures standardized response structure across all endpoints
 public sealed class ApiResponseBuilder<T>
 {
-    private T _data;
+    private T? _data;
     private HttpStatusCode _statusCode;
-    private string _message;
+    private string? _message;
     private List<ApiError> _errors;
     private Dictionary<string, object> _metadata;
     private bool _success;
@@ -85,8 +85,8 @@ public sealed class ApiResponseBuilder<T>
     /// <param name="field">Optional field name associated with the error.</param>
     /// <param name="detail">Optional additional details about the error.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> AddError(string message, string code = null,
-        string field = null, object detail = null)
+    public ApiResponseBuilder<T> AddError(string message, string? code = null,
+        string? field = null, object? detail = null)
     {
         _errors.Add(new ApiError
         {
@@ -193,7 +193,7 @@ public sealed class ApiResponseBuilder<T>
     /// </summary>
     /// <param name="message">Optional custom message for the not found response.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> NotFound(string message = null)
+    public ApiResponseBuilder<T> NotFound(string? message = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.NotFound;
@@ -210,7 +210,7 @@ public sealed class ApiResponseBuilder<T>
     /// </summary>
     /// <param name="message">Optional custom message for the conflict response.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> Conflict(string message = null)
+    public ApiResponseBuilder<T> Conflict(string? message = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.Conflict;
@@ -227,7 +227,7 @@ public sealed class ApiResponseBuilder<T>
     /// </summary>
     /// <param name="message">Optional custom message for the unauthorized response.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> Unauthorized(string message = null)
+    public ApiResponseBuilder<T> Unauthorized(string? message = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.Unauthorized;
@@ -244,7 +244,7 @@ public sealed class ApiResponseBuilder<T>
     /// </summary>
     /// <param name="message">Optional custom message for the forbidden response.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> Forbidden(string message = null)
+    public ApiResponseBuilder<T> Forbidden(string? message = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.Forbidden;
@@ -261,7 +261,7 @@ public sealed class ApiResponseBuilder<T>
     /// </summary>
     /// <param name="fieldErrors">Optional dictionary of field-specific validation errors.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> ValidationError(Dictionary<string, List<string>> fieldErrors = null)
+    public ApiResponseBuilder<T> ValidationError(Dictionary<string, List<string>>? fieldErrors = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.BadRequest;
@@ -294,7 +294,7 @@ public sealed class ApiResponseBuilder<T>
     /// <param name="message">Optional custom message for the server error response.</param>
     /// <param name="exception">Optional exception to include details from.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> ServerError(string message = null, Exception exception = null)
+    public ApiResponseBuilder<T> ServerError(string? message = null, Exception? exception = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.InternalServerError;
@@ -318,7 +318,7 @@ public sealed class ApiResponseBuilder<T>
     /// <param name="message">Optional custom message for the rate limit response.</param>
     /// <param name="retryAfter">Optional value indicating when to retry the request.</param>
     /// <returns>The current builder instance for fluent chaining.</returns>
-    public ApiResponseBuilder<T> TooManyRequests(string message = null, object retryAfter = null)
+    public ApiResponseBuilder<T> TooManyRequests(string? message = null, object? retryAfter = null)
     {
         _success = false;
         _statusCode = HttpStatusCode.TooManyRequests;
@@ -354,7 +354,7 @@ public sealed class ApiResponseBuilder<T>
         {
             IsSuccess = _success,
             Data = _data,
-            Message = _message,
+            Message = _message ?? string.Empty,
             Errors = _errors.Count > 0
                 ? _errors
                     .Select((e, i) => new { Key = e.Code ?? e.Field ?? i.ToString(), Value = e.Message })
@@ -383,8 +383,8 @@ public sealed class ExceptionResponseBuilder
     /// </summary>
     /// <param name="ex">The exception to convert to an API response.</param>
     /// <param name="userMessage">Optional custom message to override default error messages.</param>
-    /// <returns>An <see cref="ApiResponseBuilder{object}"/> configured with the exception details.</returns>
-    public static ApiResponseBuilder<object> FromException(Exception ex, string userMessage = null)
+    /// <returns>An <c>ApiResponseBuilder&lt;object&gt;</c> configured with the exception details.</returns>
+    public static ApiResponseBuilder<object> FromException(Exception ex, string? userMessage = null)
     {
         var builder = new ApiResponseBuilder<object>();
 
@@ -430,20 +430,20 @@ public sealed class ApiError
     /// <summary>
     /// Gets or sets the error message describing what went wrong.
     /// </summary>
-    public string Message { get; set; }
+    public required string Message { get; set; }
 
     /// <summary>
     /// Gets or sets the error code identifying the error type.
     /// </summary>
-    public string Code { get; set; }
+    public string? Code { get; set; }
 
     /// <summary>
     /// Gets or sets the field name associated with the error, if applicable.
     /// </summary>
-    public string Field { get; set; }
+    public string? Field { get; set; }
 
     /// <summary>
     /// Gets or sets additional details about the error.
     /// </summary>
-    public object Detail { get; set; }
+    public object? Detail { get; set; }
 }

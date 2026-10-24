@@ -45,7 +45,7 @@ public sealed class EncryptionKeyManager
     /// <param name="tenantId">The tenant to generate the key for.</param>
     /// <param name="masterPassword">Optional master password for additional key derivation.</param>
     /// <returns>The newly created <see cref="EncryptionKey"/> with version 1.</returns>
-    public async Task<EncryptionKey> GenerateKeyAsync(string tenantId, string masterPassword = null)
+    public async Task<EncryptionKey> GenerateKeyAsync(string tenantId, string? masterPassword = null)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -67,13 +67,10 @@ public sealed class EncryptionKeyManager
             // If master password provided, derive additional entropy
             if (!string.IsNullOrEmpty(masterPassword))
             {
-                using (var kdf = new Rfc2898DeriveBytes(masterPassword, 16, 10000, HashAlgorithmName.SHA256))
+                var derived = Rfc2898DeriveBytes.Pbkdf2(masterPassword, RandomNumberGenerator.GetBytes(16), 10000, HashAlgorithmName.SHA256, 32);
+                for (int i = 0; i < key.KeyMaterial.Length; i++)
                 {
-                    var derived = kdf.GetBytes(32);
-                    for (int i = 0; i < key.KeyMaterial.Length; i++)
-                    {
-                        key.KeyMaterial[i] ^= derived[i];
-                    }
+                    key.KeyMaterial[i] ^= derived[i];
                 }
             }
 
@@ -96,7 +93,7 @@ public sealed class EncryptionKeyManager
     /// </summary>
     /// <param name="tenantId">The tenant to look up.</param>
     /// <returns>The active <see cref="EncryptionKey"/>, or <c>null</c> if no active key exists.</returns>
-    public async Task<EncryptionKey> GetActiveKeyAsync(string tenantId)
+    public async Task<EncryptionKey?> GetActiveKeyAsync(string tenantId)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -144,7 +141,7 @@ public sealed class EncryptionKeyManager
     /// <param name="tenantId">The tenant whose key should be rotated.</param>
     /// <param name="masterPassword">Optional master password for key derivation.</param>
     /// <returns>The newly generated <see cref="EncryptionKey"/> with incremented version.</returns>
-    public async Task<EncryptionKey> RotateKeyAsync(string tenantId, string masterPassword = null)
+    public async Task<EncryptionKey> RotateKeyAsync(string tenantId, string? masterPassword = null)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -175,13 +172,10 @@ public sealed class EncryptionKeyManager
             // Apply master password if provided
             if (!string.IsNullOrEmpty(masterPassword))
             {
-                using (var kdf = new Rfc2898DeriveBytes(masterPassword, 16, 10000, HashAlgorithmName.SHA256))
+                var derived = Rfc2898DeriveBytes.Pbkdf2(masterPassword, RandomNumberGenerator.GetBytes(16), 10000, HashAlgorithmName.SHA256, 32);
+                for (int i = 0; i < newKey.KeyMaterial.Length; i++)
                 {
-                    var derived = kdf.GetBytes(32);
-                    for (int i = 0; i < newKey.KeyMaterial.Length; i++)
-                    {
-                        newKey.KeyMaterial[i] ^= derived[i];
-                    }
+                    newKey.KeyMaterial[i] ^= derived[i];
                 }
             }
 
@@ -207,7 +201,7 @@ public sealed class EncryptionKeyManager
     /// <param name="tenantId">The tenant to look up.</param>
     /// <param name="version">The key version number to retrieve.</param>
     /// <returns>The <see cref="EncryptionKey"/> for the specified version, or <c>null</c> if not found.</returns>
-    public async Task<EncryptionKey> GetKeyVersionAsync(string tenantId, int version)
+    public async Task<EncryptionKey?> GetKeyVersionAsync(string tenantId, int version)
     {
         try
         {
@@ -274,7 +268,7 @@ public sealed class EncryptionKeyManager
             await File.WriteAllTextAsync(path, json);
 
             var fileInfo = new FileInfo(path);
-            if (!IsWindowsPlatform())
+            if (!OperatingSystem.IsWindows())
             {
                 // On Unix-like systems, set permissions to 600 (rw-------)
                 File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserWrite);
@@ -296,10 +290,6 @@ public sealed class EncryptionKeyManager
             return bytes;
         }
     }
-
-    private bool IsWindowsPlatform() =>
-        System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(
-            System.Runtime.InteropServices.OSPlatform.Windows);
 }
 
 /// <summary>
@@ -309,11 +299,11 @@ public sealed class EncryptionKeyManager
 public sealed class EncryptionKey
 {
     /// <summary>Unique identifier for this key instance.</summary>
-    public string KeyId { get; set; }
+    public string KeyId { get; set; } = string.Empty;
     /// <summary>The tenant this key belongs to.</summary>
-    public string TenantId { get; set; }
+    public string TenantId { get; set; } = string.Empty;
     /// <summary>Raw 256-bit key bytes used for AES encryption.</summary>
-    public byte[] KeyMaterial { get; set; }
+    public byte[] KeyMaterial { get; set; } = Array.Empty<byte>();
     /// <summary>UTC timestamp when this key was generated.</summary>
     public DateTime CreatedAt { get; set; }
     /// <summary>UTC timestamp when this key was deactivated, or <c>null</c> if still active.</summary>
@@ -323,5 +313,5 @@ public sealed class EncryptionKey
     /// <summary>Monotonically increasing version number, incremented on each rotation.</summary>
     public int Version { get; set; }
     /// <summary>KeyId of the previous key in the rotation chain, or <c>null</c> for version 1.</summary>
-    public string PreviousKeyId { get; set; }
+    public string? PreviousKeyId { get; set; }
 }

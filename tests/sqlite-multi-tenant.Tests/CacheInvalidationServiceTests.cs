@@ -33,7 +33,7 @@ public sealed class CacheInvalidationServiceTests
     public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenCacheServiceIsNull()
     {
         // Act & Assert
-        this.Invoking(_ => new CacheInvalidationService(null, _mockLogger))
+        this.Invoking(_ => new CacheInvalidationService(null!, _mockLogger))
             .Should().Throw<ArgumentNullException>()
             .WithParameterName("cache");
     }
@@ -42,7 +42,7 @@ public sealed class CacheInvalidationServiceTests
     public void CacheInvalidationService_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
         // Act & Assert
-        this.Invoking(_ => new CacheInvalidationService(_mockCacheService, null))
+        this.Invoking(_ => new CacheInvalidationService(_mockCacheService, null!))
             .Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }

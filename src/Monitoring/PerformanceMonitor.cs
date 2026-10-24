@@ -67,7 +67,7 @@ public sealed class PerformanceMonitor
     /// <param name="tenantId">The optional tenant identifier for multi-tenant scenarios. Can be null.</param>
     /// <returns>A <see cref="PerformanceTracker"/> instance that records the operation duration when disposed.</returns>
     /// <exception cref="ArgumentException">Thrown when operationName is null or whitespace.</exception>
-    public PerformanceTracker StartOperation(string operationName, string tenantId = null)
+    public PerformanceTracker StartOperation(string operationName, string? tenantId = null)
     {
         if (string.IsNullOrWhiteSpace(operationName))
         {
@@ -86,8 +86,8 @@ public sealed class PerformanceMonitor
     /// <param name="tenantId">The optional tenant identifier for multi-tenant scenarios. Can be null.</param>
     /// <param name="isSuccess">Whether the operation completed successfully. Defaults to true.</param>
     /// <param name="exception">Optional exception that occurred during the operation. Can be null.</param>
-    public void RecordMetric(string operationName, long elapsedMilliseconds, string tenantId = null,
-        bool isSuccess = true, Exception exception = null)
+    public void RecordMetric(string operationName, long elapsedMilliseconds, string? tenantId = null,
+        bool isSuccess = true, Exception? exception = null)
     {
         if (string.IsNullOrWhiteSpace(operationName))
         {
@@ -123,7 +123,7 @@ public sealed class PerformanceMonitor
     /// </summary>
     /// <param name="operationName">The name of the operation to get statistics for.</param>
     /// <returns>An <see cref="OperationStatistics"/> object containing performance metrics, or null if no metrics exist for the operation.</returns>
-    public OperationStatistics GetOperationStats(string operationName)
+    public OperationStatistics? GetOperationStats(string operationName)
     {
         if (!_metrics.TryGetValue(operationName, out var metrics) || !metrics.Any())
         {
@@ -291,7 +291,7 @@ public sealed class PerformanceTracker : IDisposable
 {
     private readonly PerformanceMonitor _monitor;
     private readonly string _operationName;
-    private readonly string _tenantId;
+    private readonly string? _tenantId;
     private readonly Stopwatch _stopwatch;
 
     /// <summary>
@@ -300,7 +300,7 @@ public sealed class PerformanceTracker : IDisposable
     /// <param name="monitor">The <see cref="PerformanceMonitor"/> instance to record metrics with.</param>
     /// <param name="operationName">The name of the operation being tracked.</param>
     /// <param name="tenantId">The optional tenant identifier for multi-tenant scenarios. Can be null.</param>
-    public PerformanceTracker(PerformanceMonitor monitor, string operationName, string tenantId)
+    public PerformanceTracker(PerformanceMonitor monitor, string operationName, string? tenantId)
     {
         _monitor = monitor;
         _operationName = operationName;
@@ -347,7 +347,7 @@ public sealed class PerformanceMetric
     /// <summary>
     /// Gets or sets the name of the operation being tracked.
     /// </summary>
-    public string OperationName { get; set; }
+    public string? OperationName { get; set; }
 
     /// <summary>
     /// Gets or sets the elapsed time in milliseconds for the operation.
@@ -357,7 +357,7 @@ public sealed class PerformanceMetric
     /// <summary>
     /// Gets or sets the tenant identifier associated with the operation. Can be null.
     /// </summary>
-    public string TenantId { get; set; }
+    public string? TenantId { get; set; }
 
     /// <summary>
     /// Gets or sets the UTC timestamp when the metric was recorded.
@@ -372,7 +372,7 @@ public sealed class PerformanceMetric
     /// <summary>
     /// Gets or sets the type name of the exception that occurred during the operation, if any. Can be null.
     /// </summary>
-    public string ExceptionType { get; set; }
+    public string? ExceptionType { get; set; }
 
     /// <summary>
     /// Returns a string representation of the performance metric.
@@ -392,7 +392,7 @@ public sealed class OperationStatistics
     /// <summary>
     /// Gets or sets the name of the operation being tracked.
     /// </summary>
-    public string OperationName { get; set; }
+    public string? OperationName { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of executions for the operation.

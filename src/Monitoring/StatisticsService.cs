@@ -336,7 +336,7 @@ public sealed class AggregatedMetric
 
     /// <summary>
     /// The maximum value of the metric in the interval.
-    /// </>
+    /// </summary>
     public double Max { get; set; }
 }
 

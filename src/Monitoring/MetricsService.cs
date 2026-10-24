@@ -47,7 +47,7 @@ public sealed class MetricsSnapshot
 /// </summary>
 public sealed class RequestMetrics
 {
-    public string Endpoint { get; set; }
+    public string? Endpoint { get; set; }
     public long RequestCount { get; set; }
     public long SuccessCount { get; set; }
     public long ErrorCount { get; set; }

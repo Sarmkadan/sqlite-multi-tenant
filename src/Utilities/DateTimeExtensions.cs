@@ -50,7 +50,7 @@ public static class DateTimeExtensions
 
     /// <summary>
     /// Checks if a date falls within a retention window.
-    /// Example: IsWithinRetentionWindow(backup.CreatedAt, 30) checks if backup is < 30 days old.
+    /// Example: IsWithinRetentionWindow(backup.CreatedAt, 30) checks if backup is &lt; 30 days old.
     /// </summary>
     /// <param name="date">The date to check.</param>
     /// <param name="retentionDays">The retention period in days.</param>

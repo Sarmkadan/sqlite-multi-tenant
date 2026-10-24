@@ -22,7 +22,7 @@ public static class CollectionExtensions
     /// <param name="defaultValue">The value to return if index is out of bounds.</param>
     /// <returns>The element at the specified index, or <paramref name="defaultValue"/> if index is out of bounds.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="list"/> is null.</exception>
-    public static T SafeGet<T>(this IList<T> list, int index, T defaultValue = default)
+    public static T? SafeGet<T>(this IList<T> list, int index, T? defaultValue = default)
     {
         ArgumentNullException.ThrowIfNull(list);
 
@@ -41,7 +41,7 @@ public static class CollectionExtensions
     /// <param name="list">The list to access. Can be null.</param>
     /// <param name="defaultValue">The value to return if collection is empty.</param>
     /// <returns>The first element, or <paramref name="defaultValue"/> if collection is empty.</returns>
-    public static T SafeFirst<T>(this IList<T>? list, T defaultValue = default)
+    public static T? SafeFirst<T>(this IList<T>? list, T? defaultValue = default)
     {
         return list?.Count > 0 ? list[0] : defaultValue;
     }
@@ -52,7 +52,7 @@ public static class CollectionExtensions
     /// <param name="list">The list to access. Can be null.</param>
     /// <param name="defaultValue">The value to return if collection is empty.</param>
     /// <returns>The last element, or <paramref name="defaultValue"/> if collection is empty.</returns>
-    public static T SafeLast<T>(this IList<T>? list, T defaultValue = default)
+    public static T? SafeLast<T>(this IList<T>? list, T? defaultValue = default)
     {
         return list?.Count > 0 ? list[list.Count - 1] : defaultValue;
     }

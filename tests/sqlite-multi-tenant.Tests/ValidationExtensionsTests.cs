@@ -37,7 +37,7 @@ public class ValidationExtensionsTests
     public void IsValidEmail_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string email = null;
+        string email = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => email.IsValidEmail());
@@ -99,7 +99,7 @@ public class ValidationExtensionsTests
     public void IsValidUuid_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string uuid = null;
+        string uuid = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => uuid.IsValidUuid());
@@ -161,7 +161,7 @@ public class ValidationExtensionsTests
     public void IsValidSemanticVersion_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string version = null;
+        string version = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => version.IsValidSemanticVersion());
@@ -210,7 +210,7 @@ public class ValidationExtensionsTests
     public void IsValidDatabaseName_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string name = null;
+        string name = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => name.IsValidDatabaseName());
@@ -259,7 +259,7 @@ public class ValidationExtensionsTests
     public void IsValidTenantName_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string name = null;
+        string name = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => name.IsValidTenantName());
@@ -295,7 +295,7 @@ public class ValidationExtensionsTests
     public void IsValidRelativePath_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string path = null;
+        string path = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => path.IsValidRelativePath());
@@ -331,7 +331,7 @@ public class ValidationExtensionsTests
     public void IsValidSqlScript_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string script = null;
+        string script = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => script.IsValidSqlScript());
@@ -419,7 +419,7 @@ public class ValidationExtensionsTests
     public void IsValidConnectionString_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string connectionString = null;
+        string connectionString = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => connectionString.IsValidConnectionString());
@@ -468,7 +468,7 @@ public class ValidationExtensionsTests
     public void IsValidBackupTag_NullInput_ThrowsArgumentNullException()
     {
         // Arrange
-        string tag = null;
+        string tag = null!;
 
         // Act & Assert
         Assert.Throws<ArgumentNullException>(() => tag.IsValidBackupTag());

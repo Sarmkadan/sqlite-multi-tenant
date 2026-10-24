@@ -25,8 +25,6 @@ public class TenantRecoveryService
     /// <summary>
     /// Initializes a new instance of the <see cref="TenantRecoveryService"/> class.
     /// </summary>
-    /// <param name="tenantRepository">The tenant repository instance.</param>
-    /// <param name="logger">The logger instance for this service.</param>
     [System.Text.Json.Serialization.JsonConstructor]
     public TenantRecoveryService() : this(null!, Microsoft.Extensions.Logging.Abstractions.NullLogger<TenantRecoveryService>.Instance) { }
 
@@ -157,6 +155,11 @@ public class TenantRecoveryService
             }
 
             var originalPath = tenant.DatabasePath;
+            if (originalPath is null)
+            {
+                _logger.LogWarning("Tenant has no database path for restore: {TenantId}", tenantId);
+                return false;
+            }
 
             // Create a safety backup of current state
             var safetyBackupPath = $"{originalPath}.pre_restore.{DateTime.UtcNow:yyyyMMddHHmmss}";
@@ -238,6 +241,11 @@ public class TenantRecoveryService
 
             var dbPath = tenant.DatabasePath;
             var dbDir = Path.GetDirectoryName(dbPath);
+            if (dbDir is null)
+            {
+                return 0;
+            }
+
             var filePattern = $"{Path.GetFileName(dbPath)}.backup.*";
 
             var backupFiles = Directory.GetFiles(dbDir, filePattern);
@@ -300,7 +308,7 @@ public class TenantRecoveryService
                 $"{tenantId}_*.backup");
 
             DateTime? closestBackupTime = null;
-            string closestBackupPath = null;
+            string? closestBackupPath = null;
 
             foreach (var backupFile in backupFiles)
             {

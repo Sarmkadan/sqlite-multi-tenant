@@ -30,7 +30,7 @@ internal static class HttpClientAddressValidator
     /// <param name="allowedHosts">An optional list of allowed hosts.</param>
     /// <param name="allowedHostRegex">An optional regex for allowed hosts.</param>
     /// <exception cref="ArgumentException">Thrown when the base address is invalid.</exception>
-    internal static void ValidateBaseAddress(string baseAddress, string paramName,
+    internal static void ValidateBaseAddress(string? baseAddress, string paramName,
         IEnumerable<string>? allowedHosts = null, Regex? allowedHostRegex = null)
     {
         if (string.IsNullOrEmpty(baseAddress))
@@ -230,8 +230,8 @@ public sealed class MultiTenantHttpClientFactory
     /// <param name="baseAddress">The base address (optional).</param>
     /// <returns>The HTTP client instance.</returns>
     /// <exception cref="ArgumentException">Thrown when baseAddress is invalid.</exception>
-    public HttpClient CreateClientForTenant(string tenantId, string apiKey = null,
-        int timeoutSeconds = 30, string baseAddress = null)
+    public HttpClient CreateClientForTenant(string tenantId, string? apiKey = null,
+        int timeoutSeconds = 30, string? baseAddress = null)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -270,7 +270,7 @@ public sealed class MultiTenantHttpClientFactory
     /// </summary>
     /// <param name="tenantId">The tenant ID.</param>
     /// <returns>The cached HTTP client instance or null if not found.</returns>
-    public HttpClient GetCachedClient(string tenantId)
+    public HttpClient? GetCachedClient(string tenantId)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -327,7 +327,7 @@ public sealed class MultiTenantHttpClientFactory
     /// <param name="client">The HTTP client instance.</param>
     /// <param name="tenantId">The tenant ID.</param>
     /// <param name="apiKey">The API key (optional).</param>
-    private void SetDefaultHeaders(HttpClient client, string tenantId, string apiKey = null)
+    private void SetDefaultHeaders(HttpClient client, string tenantId, string? apiKey = null)
     {
         client.DefaultRequestHeaders.Add("X-Tenant-Id", tenantId);
         client.DefaultRequestHeaders.Add("User-Agent", _defaultUserAgent);
@@ -356,10 +356,10 @@ public sealed class MultiTenantHttpClientFactory
 /// </summary>
 public sealed class TenantHttpClientBuilder
 {
-    private string _tenantId;
-    private string _apiKey;
+    private string? _tenantId;
+    private string? _apiKey;
     private int _timeoutSeconds = 30;
-    private string _baseAddress;
+    private string? _baseAddress;
     private readonly Dictionary<string, string> _defaultHeaders;
     private IEnumerable<string>? _allowedHosts;
     private Regex? _allowedHostRegex;

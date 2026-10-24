@@ -39,7 +39,7 @@ public sealed class CacheServiceTests
     public void CacheService_Constructor_ThrowsArgumentNullException_WhenMemoryCacheIsNull()
     {
         // Act & Assert
-        this.Invoking(_ => new CacheService(null, _mockLogger))
+        this.Invoking(_ => new CacheService(null!, _mockLogger))
             .Should().Throw<ArgumentNullException>()
             .WithParameterName("cache");
     }
@@ -51,7 +51,7 @@ public sealed class CacheServiceTests
     public void CacheService_Constructor_ThrowsArgumentNullException_WhenLoggerIsNull()
     {
         // Act & Assert
-        this.Invoking(_ => new CacheService(_mockMemoryCache, null))
+        this.Invoking(_ => new CacheService(_mockMemoryCache, null!))
             .Should().Throw<ArgumentNullException>()
             .WithParameterName("logger");
     }
@@ -66,7 +66,7 @@ public sealed class CacheServiceTests
         // Arrange
         var key = "testKey";
         var expectedValue = "testValue";
-        _mockMemoryCache.TryGetValue(key, out Arg.Any<object>())
+        _mockMemoryCache.TryGetValue(key, out Arg.Any<object?>())
             .Returns(x => { x[1] = expectedValue; return true; });
 
         // Act
@@ -86,7 +86,7 @@ public sealed class CacheServiceTests
     {
         // Arrange
         var key = "nonExistentKey";
-        _mockMemoryCache.TryGetValue(key, out Arg.Any<object>())
+        _mockMemoryCache.TryGetValue(key, out Arg.Any<object?>())
             .Returns(x => { x[1] = null; return false; });
 
         // Act
@@ -105,11 +105,11 @@ public sealed class CacheServiceTests
     public void Get_NullKey_ReturnsDefault()
     {
         // Act
-        var result = _sut.Get<string>(null);
+        var result = _sut.Get<string>(null!);
 
         // Assert
         result.Should().BeNull();
-        _mockMemoryCache.DidNotReceiveWithAnyArgs().TryGetValue(Arg.Any<string>(), out Arg.Any<object>());
+        _mockMemoryCache.DidNotReceiveWithAnyArgs().TryGetValue(Arg.Any<string>(), out Arg.Any<object?>());
     }
 
     /// <summary>
@@ -124,7 +124,7 @@ public sealed class CacheServiceTests
 
         // Assert
         result.Should().BeNull();
-        _mockMemoryCache.DidNotReceiveWithAnyArgs().TryGetValue(Arg.Any<string>(), out Arg.Any<object>());
+        _mockMemoryCache.DidNotReceiveWithAnyArgs().TryGetValue(Arg.Any<string>(), out Arg.Any<object?>());
     }
 
     /// <summary>
@@ -185,7 +185,7 @@ public sealed class CacheServiceTests
     public void Set_NullKey_DoesNothing()
     {
         // Act
-        _sut.Set<string>(null, "value");
+        _sut.Set<string>(null!, "value");
 
         // Assert
         _mockMemoryCache.DidNotReceiveWithAnyArgs().CreateEntry(Arg.Any<string>());
@@ -213,7 +213,7 @@ public sealed class CacheServiceTests
     public void Set_NullValue_DoesNothing()
     {
         // Act
-        _sut.Set<string>("key", null);
+        _sut.Set<string>("key", null!);
 
         // Assert
         _mockMemoryCache.DidNotReceiveWithAnyArgs().CreateEntry(Arg.Any<string>());
@@ -263,7 +263,7 @@ public sealed class CacheServiceTests
     public void Remove_NullKey_DoesNothing()
     {
         // Act
-        _sut.Remove(null);
+        _sut.Remove(null!);
 
         // Assert
         _mockMemoryCache.DidNotReceiveWithAnyArgs().Remove(Arg.Any<string>());
@@ -335,7 +335,7 @@ public sealed class CacheServiceTests
     public void RemoveByPattern_NullPattern_DoesNothing()
     {
         // Act
-        _sut.RemoveByPattern(null);
+        _sut.RemoveByPattern(null!);
 
         // Assert
         _mockMemoryCache.DidNotReceiveWithAnyArgs().Remove(Arg.Any<string>());

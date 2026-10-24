@@ -71,7 +71,7 @@ public sealed class TenantContextInterceptor : IRequestInterceptor
         if (context.Items.TryGetValue(TenantContextKey, out var tenantContextObj) &&
             tenantContextObj is TenantContext tenantContext)
         {
-            context.Response.Headers.Add("X-Tenant-Id", tenantContext.TenantId);
+            context.Response.Headers["X-Tenant-Id"] = tenantContext.TenantId;
         }
 
         return Task.CompletedTask;
@@ -83,7 +83,7 @@ public sealed class TenantContextInterceptor : IRequestInterceptor
 /// </summary>
 public sealed class TenantContext
 {
-    public string TenantId { get; set; }
+    public string? TenantId { get; set; }
     public DateTime ExtractedAt { get; set; } = DateTime.UtcNow;
 }
 
@@ -165,7 +165,7 @@ public sealed class CorrelationIdInterceptor : IRequestInterceptor
         }
 
         context.Items[CorrelationIdKey] = correlationId;
-        context.Response.Headers.Add(CorrelationIdHeader, correlationId);
+        context.Response.Headers[CorrelationIdHeader] = correlationId;
 
         _logger.LogDebug("Correlation ID: {correlationId}", correlationId);
 

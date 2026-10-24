@@ -224,7 +224,7 @@ public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker>
                 using (var command = connection.CreateCommand())
                 {
                     command.CommandText = $"SELECT COUNT(*) FROM {kvp.Key}";
-                    var actualCount = (long)await command.ExecuteScalarAsync();
+                    var actualCount = Convert.ToInt64(await command.ExecuteScalarAsync());
 
                     if (actualCount != kvp.Value)
                     {
@@ -351,7 +351,7 @@ public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker>
                         $@"SELECT COUNT(*) FROM sqlite_master
                                WHERE type='index' AND tbl_name='{table}' AND sql LIKE '%{column}%'";
 
-                    var exists = (long)await command.ExecuteScalarAsync();
+                    var exists = Convert.ToInt64(await command.ExecuteScalarAsync());
                     if (exists == 0)
                     {
                         missing.Add($"Missing index on {table}.{column}");
@@ -387,7 +387,7 @@ public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker>
                         using (var countCmd = connection.CreateCommand())
                         {
                             countCmd.CommandText = $"SELECT COUNT(*) FROM {tableName}";
-                            var rowCount = (long)await countCmd.ExecuteScalarAsync();
+                            var rowCount = Convert.ToInt64(await countCmd.ExecuteScalarAsync());
 
                             stats[tableName] = new TableStatistics
                             {
@@ -471,7 +471,7 @@ public sealed class ConstraintViolation
     /// <summary>
     /// Gets or sets the name of the table that contains the violating record.
     /// </summary>
-    public string Table { get; set; }
+    public required string Table { get; set; }
     /// <summary>
     /// Gets or sets the row ID of the violating record.
     /// </summary>
@@ -479,7 +479,7 @@ public sealed class ConstraintViolation
     /// <summary>
     /// Gets or sets the name of the parent table that should have a valid reference.
     /// </summary>
-    public string ParentTable { get; set; }
+    public required string ParentTable { get; set; }
     /// <summary>
     /// Gets or sets the row ID of the parent record that should have a valid reference.
     /// </summary>
@@ -491,13 +491,13 @@ public sealed class ConstraintViolation
 /// </summary>
 public sealed class TableStatistics
 {
-    public string TableName { get; set; }
+    public required string TableName { get; set; }
     public long RowCount { get; set; }
 }
 
 public sealed class DuplicateRecord
 {
-    public string TableName { get; set; }
+    public required string TableName { get; set; }
     public int RecordIndex1 { get; set; }
     public int RecordIndex2 { get; set; }
     public double Similarity { get; set; }

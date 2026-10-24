@@ -208,5 +208,5 @@ public sealed class ValidationResult
     /// <summary>
     /// Gets or sets an error message if the validation was not successful.
     /// </summary>
-    public string Error { get; set; }
+    public string Error { get; set; } = string.Empty;
 }

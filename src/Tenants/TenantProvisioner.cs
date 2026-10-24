@@ -55,7 +55,7 @@ public sealed class TenantProvisioner
     /// <returns>The newly created <see cref="Tenant"/> entity.</returns>
     /// <exception cref="ArgumentException">Thrown when tenantId or tenantName is empty.</exception>
     public async Task<Tenant> ProvisionTenantAsync(string tenantId, string tenantName,
-        TenantSettings settings = null)
+        TenantSettings? settings = null)
     {
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -342,7 +342,7 @@ public sealed class TenantProvisioner
 SELECT COUNT(*) FROM sqlite_master
 WHERE type='table' AND name IN ('Tenants', 'AuditLog')";
 
-                    var count = (long)await command.ExecuteScalarAsync();
+                    var count = Convert.ToInt64(await command.ExecuteScalarAsync());
                     return count == 2;
                 }
             }

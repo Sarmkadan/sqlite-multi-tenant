@@ -78,7 +78,7 @@ public class MigrationExtensionsTests
     public void IsTerminal_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.IsTerminal(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.IsTerminal(null!));
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class MigrationExtensionsTests
     public void GetAgeInDays_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetAgeInDays(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetAgeInDays(null!));
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class MigrationExtensionsTests
     public void GetExecutionDuration_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetExecutionDuration(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetExecutionDuration(null!));
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public class MigrationExtensionsTests
     public void GetStatusDisplay_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetStatusDisplay(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetStatusDisplay(null!));
     }
 
     [Fact]
@@ -199,7 +199,7 @@ public class MigrationExtensionsTests
     public void GetStatusCounts_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetStatusCounts(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetStatusCounts(null!));
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class MigrationExtensionsTests
     public void GetPendingMigrations_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetPendingMigrations(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetPendingMigrations(null!));
     }
 
     [Fact]
@@ -282,7 +282,7 @@ public class MigrationExtensionsTests
     public void GetTotalExecutionTimeMs_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetTotalExecutionTimeMs(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetTotalExecutionTimeMs(null!));
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public class MigrationExtensionsTests
     public void GetAverageExecutionTimeMs_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetAverageExecutionTimeMs(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetAverageExecutionTimeMs(null!));
     }
 
     [Fact]
@@ -396,7 +396,7 @@ public class MigrationExtensionsTests
     public void GetRollbackableMigrations_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetRollbackableMigrations(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetRollbackableMigrations(null!));
     }
 
     [Fact]
@@ -447,6 +447,6 @@ public class MigrationExtensionsTests
     public void GetDatabaseName_NullInput_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetDatabaseName(null));
+        Assert.Throws<ArgumentNullException>(() => MigrationExtensions.GetDatabaseName(null!));
     }
 }

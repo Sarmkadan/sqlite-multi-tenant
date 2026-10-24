@@ -43,7 +43,7 @@ public sealed class WebhookDelivery
     public string DeliveryId { get; set; } = Guid.NewGuid().ToString();
     public string WebhookId { get; set; } = string.Empty;
     public string Url { get; set; } = string.Empty;
-    public DomainEvent Event { get; set; }
+    public DomainEvent? Event { get; set; }
     public Dictionary<string, string> Headers { get; set; } = new();
     public int RetryCount { get; set; } = 0;
     public int MaxRetries { get; set; } = 3;

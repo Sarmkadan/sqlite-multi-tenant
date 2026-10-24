@@ -73,7 +73,7 @@ public sealed class BackupServiceTests
         // Arrange
         var backupId = "non_existent_id";
         _mockBackupRepository.GetByIdAsync(backupId, Arg.Any<CancellationToken>())
-            .Returns((Backup)null);
+            .Returns((Backup)null!);
 
         // Act
         var result = await _backupService.GetBackupAsync(backupId);
@@ -178,7 +178,7 @@ public sealed class BackupServiceTests
         backup.Status.Should().Be(BackupStatus.Completed);
         backup.SizeBytes.Should().Be(1024);
         backup.DurationMs.Should().Be(500);
-        _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
+        await _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
 
 
         _mockLogger.LogInformation("Completed {MethodName} test successfully", nameof(MarkBackupAsCompletedAsync_ShouldUpdateBackupStatus));
@@ -194,7 +194,7 @@ public sealed class BackupServiceTests
         // Arrange
         var backupId = "non_existent_id";
         _mockBackupRepository.GetByIdAsync(backupId, Arg.Any<CancellationToken>())
-            .Returns((Backup)null);
+            .Returns((Backup)null!);
 
         // Act
         Func<Task> action = async () => await _backupService.MarkBackupAsCompletedAsync(backupId, 1024, 500);
@@ -225,7 +225,7 @@ public sealed class BackupServiceTests
         // Assert
         backup.Status.Should().Be(BackupStatus.Failed);
         backup.ErrorMessage.Should().Be(errorMessage);
-        _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
+        await _mockBackupRepository.Received(1).UpdateAsync(backup, Arg.Any<CancellationToken>());
 
     }
 }

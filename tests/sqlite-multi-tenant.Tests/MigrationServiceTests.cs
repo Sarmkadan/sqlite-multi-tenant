@@ -69,7 +69,7 @@ public sealed class MigrationServiceTests
         // Arrange
         var migrationId = "non_existent_id";
         _mockMigrationRepository.GetByIdAsync(migrationId, Arg.Any<CancellationToken>())
-            .Returns((Migration)null);
+            .Returns((Migration?)null);
 
         // Act
         var result = await _migrationService.GetMigrationAsync(migrationId);
@@ -109,7 +109,7 @@ public sealed class MigrationServiceTests
         var newMigration = new Migration { DatabaseId = databaseId, Version = version, Name = name, UpScript = upScript };
 
         _mockMigrationRepository.GetByVersionAsync(databaseId, version, Arg.Any<CancellationToken>())
-            .Returns((Migration)null); // No existing migration
+            .Returns((Migration?)null); // No existing migration
         _mockMigrationRepository.GetByDatabaseAsync(databaseId, Arg.Any<CancellationToken>())
             .Returns(new List<Migration>()); // No existing migrations for execution order
         _mockMigrationRepository.AddAsync(Arg.Any<Migration>(), Arg.Any<CancellationToken>())
@@ -172,7 +172,7 @@ public sealed class MigrationServiceTests
         // Assert
         migration.Status.Should().Be(MigrationStatus.Completed);
         migration.ExecutionTimeMs.Should().Be(100);
-        _mockMigrationRepository.Received(1).UpdateAsync(migration, Arg.Any<CancellationToken>());
+        await _mockMigrationRepository.Received(1).UpdateAsync(migration, Arg.Any<CancellationToken>());
         _mockLogger.AssertLoggedAny(LogLevel.Information);
     }
 
@@ -185,7 +185,7 @@ public sealed class MigrationServiceTests
         // Arrange
         var migrationId = "non_existent_id";
         _mockMigrationRepository.GetByIdAsync(migrationId, Arg.Any<CancellationToken>())
-            .Returns((Migration)null);
+            .Returns((Migration?)null);
 
         // Act
         Func<Task> action = async () => await _migrationService.MarkMigrationAsCompletedAsync(migrationId, 100);
@@ -215,7 +215,7 @@ public sealed class MigrationServiceTests
         // Assert
         migration.Status.Should().Be(MigrationStatus.Failed);
         migration.ErrorMessage.Should().Be(errorMessage);
-        _mockMigrationRepository.Received(1).UpdateAsync(migration, Arg.Any<CancellationToken>());
+        await _mockMigrationRepository.Received(1).UpdateAsync(migration, Arg.Any<CancellationToken>());
         _mockLogger.AssertLoggedAny(LogLevel.Error);
     }
 }

@@ -17,9 +17,9 @@ namespace SqliteMultiTenant.Integration;
 /// </summary>
 public interface IHttpClientService
 {
-    Task<T> GetAsync<T>(string url, Dictionary<string, string> headers = null);
-    Task<T> PostAsync<T>(string url, object body, Dictionary<string, string> headers = null);
-    Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, string content = null);
+    Task<T?> GetAsync<T>(string url, Dictionary<string, string>? headers = null);
+    Task<T?> PostAsync<T>(string url, object body, Dictionary<string, string>? headers = null);
+    Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, string? content = null);
 }
 
 /// <summary>
@@ -34,7 +34,7 @@ public sealed class HttpClientService : IHttpClientService
     private readonly ILogger<HttpClientService> _logger;
     private readonly HttpClientOptions _options;
 
-    public HttpClientService(HttpClient httpClient, ILogger<HttpClientService> logger, HttpClientOptions options = null)
+    public HttpClientService(HttpClient httpClient, ILogger<HttpClientService> logger, HttpClientOptions? options = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -47,7 +47,7 @@ public sealed class HttpClientService : IHttpClientService
     /// <summary>
     /// Performs GET request with retry logic and JSON deserialization.
     /// </summary>
-    public async Task<T> GetAsync<T>(string url, Dictionary<string, string> headers = null)
+    public async Task<T?> GetAsync<T>(string url, Dictionary<string, string>? headers = null)
     {
         try
         {
@@ -70,7 +70,7 @@ public sealed class HttpClientService : IHttpClientService
     /// <summary>
     /// Performs POST request with JSON body and response deserialization.
     /// </summary>
-    public async Task<T> PostAsync<T>(string url, object body, Dictionary<string, string> headers = null)
+    public async Task<T?> PostAsync<T>(string url, object body, Dictionary<string, string>? headers = null)
     {
         try
         {
@@ -96,7 +96,7 @@ public sealed class HttpClientService : IHttpClientService
     /// <summary>
     /// Sends raw HTTP request with custom method and body.
     /// </summary>
-    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, string content = null)
+    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, string? content = null)
     {
         try
         {
@@ -173,7 +173,7 @@ public sealed class HttpClientService : IHttpClientService
     /// <summary>
     /// Applies custom headers to request.
     /// </summary>
-    private void ApplyHeaders(HttpRequestMessage request, Dictionary<string, string> headers)
+    private void ApplyHeaders(HttpRequestMessage request, Dictionary<string, string>? headers)
     {
         if (headers is null)
         {

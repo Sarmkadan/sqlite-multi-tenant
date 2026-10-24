@@ -43,7 +43,7 @@ public sealed class OperationRetryPolicy
     /// <param name="operation">The operation to execute.</param>
     /// <param name="operationName">The name of the operation.</param>
     /// <returns>The result of the operation.</returns>
-    public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, string operationName = null)
+    public async Task<T> ExecuteAsync<T>(Func<Task<T>> operation, string? operationName = null)
     {
         if (operation is null)
         {
@@ -90,7 +90,7 @@ public sealed class OperationRetryPolicy
     /// </summary>
     /// <param name="operation">The operation to execute.</param>
     /// <param name="operationName">The name of the operation.</param>
-    public async Task ExecuteAsync(Func<Task> operation, string operationName = null)
+    public async Task ExecuteAsync(Func<Task> operation, string? operationName = null)
     {
         if (operation is null)
         {
@@ -174,7 +174,7 @@ public sealed class RetryPolicyBuilder
     private int _maxRetries = 3;
     private int _initialDelayMs = 100;
     private double _backoffMultiplier = 2.0;
-    private ILogger<OperationRetryPolicy> _logger;
+    private ILogger<OperationRetryPolicy>? _logger;
 
     /// <summary>
     /// Sets the maximum number of retries.

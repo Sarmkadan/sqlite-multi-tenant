@@ -28,7 +28,7 @@ public class OptionsValidatorTests
         // Arrange
         var options = new MultiTenantOptions
         {
-            BasePath = null,
+            BasePath = null!,
             MaxConnectionsPerTenant = 5,
             MaxBackupCount = 7,
             BackupRetention = TimeSpan.FromDays(10)

@@ -42,7 +42,6 @@ public static class JsonHelper
     /// <returns>The serialized JSON string.</returns>
     public static string Serialize<T>(T obj, bool indented = true)
     {
-        ArgumentNullException.ThrowIfNull(nameof(obj));
         try
         {
             var options = indented ? DefaultOptions : CompactOptions;
@@ -60,7 +59,7 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to deserialize to.</typeparam>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized object.</returns>
-    public static T Deserialize<T>(string json)
+    public static T? Deserialize<T>(string json)
     {
         ArgumentException.ThrowIfNullOrEmpty(nameof(json));
         if (string.IsNullOrWhiteSpace(json))
@@ -83,9 +82,8 @@ public static class JsonHelper
     /// </summary>
     /// <param name="json">The JSON string to deserialize.</param>
     /// <returns>The deserialized dynamic object.</returns>
-    public static dynamic DeserializeDynamic(string json)
+    public static dynamic? DeserializeDynamic(string json)
     {
-        ArgumentNullException.ThrowIfNull(nameof(json));
         if (string.IsNullOrWhiteSpace(json))
         {
             return null;
@@ -110,8 +108,6 @@ public static class JsonHelper
     /// <returns>The merged JSON string.</returns>
     public static string MergeJson(string json1, string json2)
     {
-        ArgumentNullException.ThrowIfNull(nameof(json1));
-        ArgumentNullException.ThrowIfNull(nameof(json2));
         try
         {
             using var doc1 = JsonDocument.Parse(json1);
@@ -139,10 +135,8 @@ public static class JsonHelper
     /// <param name="json">The JSON string to extract from.</param>
     /// <param name="propertyPath">The path to the property to extract.</param>
     /// <returns>The extracted property value.</returns>
-    public static T GetProperty<T>(string json, string propertyPath)
+    public static T? GetProperty<T>(string json, string propertyPath)
     {
-        ArgumentNullException.ThrowIfNull(nameof(json));
-        ArgumentNullException.ThrowIfNull(nameof(propertyPath));
         if (string.IsNullOrWhiteSpace(json))
         {
             return default;
@@ -160,7 +154,7 @@ public static class JsonHelper
 
             if (typeof(T) == typeof(string))
             {
-                return (T)(object)element.GetString();
+                return (T?)(object?)element.GetString();
             }
 
             return JsonSerializer.Deserialize<T>(element.GetRawText(), DefaultOptions);
@@ -178,7 +172,6 @@ public static class JsonHelper
     /// <returns>True if the JSON is valid, false otherwise.</returns>
     public static bool IsValidJson(string json)
     {
-        ArgumentNullException.ThrowIfNull(nameof(json));
         if (string.IsNullOrWhiteSpace(json))
         {
             return false;
@@ -201,7 +194,7 @@ public static class JsonHelper
     /// <typeparam name="T">The type of the object to clone.</typeparam>
     /// <param name="obj">The object to clone.</param>
     /// <returns>The cloned object.</returns>
-    public static T DeepClone<T>(T obj)
+    public static T? DeepClone<T>(T obj)
     {
         var json = Serialize(obj);
         return Deserialize<T>(json);

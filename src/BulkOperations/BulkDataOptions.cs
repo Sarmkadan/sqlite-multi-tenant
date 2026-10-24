@@ -8,8 +8,8 @@ namespace SqliteMultiTenant.BulkOperations;
 
 /// <summary>
 /// Global configuration for the async bulk import/export subsystem.
-/// Register via <c>services.Configure<BulkDataOptions>(config.GetSection("BulkData"))</c>
-/// or supply an <c>Action<BulkDataOptions></c> to
+/// Register via <c>services.Configure&lt;BulkDataOptions&gt;(config.GetSection("BulkData"))</c>
+/// or supply an <c>Action&lt;BulkDataOptions&gt;</c> to
 /// <see cref="BulkDataExtensions.AddBulkDataServices"/>.
 /// Individual operations can override these values through
 /// <see cref="ExportOptions"/> or <see cref="ImportOptions"/>.

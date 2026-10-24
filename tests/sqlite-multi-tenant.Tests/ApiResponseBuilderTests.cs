@@ -117,7 +117,7 @@ public class ApiResponseBuilderTests
     {
         // Arrange
         var builder = new ApiResponseBuilder<string>()
-            .WithData(null)
+            .WithData(null!)
             .Success();
 
         // Act

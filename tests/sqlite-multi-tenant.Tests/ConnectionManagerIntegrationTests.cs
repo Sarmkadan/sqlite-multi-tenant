@@ -227,7 +227,7 @@ public sealed class ConnectionManagerIntegrationTests : IDisposable
     {
         _mockLogger.LogInformation("Starting test: {TestName}", nameof(GetConnectionAsync_ShouldThrowArgumentNullException_WhenTenantIdIsNull));
         // Arrange
-        string tenantId = null;
+        string tenantId = null!;
 
         // Act
         Func<Task> act = async () => await _connectionManager.GetConnectionAsync(tenantId, ConnectionString1);
@@ -247,7 +247,7 @@ public sealed class ConnectionManagerIntegrationTests : IDisposable
     {
         _mockLogger.LogInformation("Starting test: {TestName}", nameof(GetConnectionAsync_ShouldThrowArgumentNullException_WhenConnectionStringIsNull));
         // Arrange
-        string connectionString = null;
+        string connectionString = null!;
 
         // Act
         Func<Task> act = async () => await _connectionManager.GetConnectionAsync(TenantId1, connectionString);

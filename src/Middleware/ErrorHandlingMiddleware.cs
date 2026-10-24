@@ -100,7 +100,7 @@ public sealed class ErrorHandlingMiddleware
 
 /// <summary>
 /// Result pattern exception handling for controllers.
-/// Allows methods to return Result<T> instead of throwing, reducing allocations.
+/// Allows methods to return Result&lt;T&gt; instead of throwing, reducing allocations.
 /// </summary>
 public sealed class Result<T>
 {

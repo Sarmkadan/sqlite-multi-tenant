@@ -58,7 +58,7 @@ public sealed class DataRetentionPolicy
             foreach (var rule in policy.Rules)
             {
                 var ruleResult = await ApplyRetentionRuleAsync(connection, rule);
-                result.ProcessedRules.Add(rule.TableName, ruleResult);
+                result.ProcessedRules.Add(rule.TableName!, ruleResult);
                 result.TotalRecordsDeleted += ruleResult.RecordsDeleted;
             }
 
@@ -174,7 +174,7 @@ public sealed class DataRetentionPolicy
             foreach (var rule in policy.Rules)
             {
                 var ruleResult = await SimulateRetentionRuleAsync(connection, rule);
-                result.ProcessedRules.Add(rule.TableName, ruleResult);
+                result.ProcessedRules.Add(rule.TableName!, ruleResult);
                 result.TotalRecordsWouldDelete += ruleResult.RecordsWouldDelete;
             }
 
@@ -301,7 +301,7 @@ public sealed class RetentionPolicyConfig
     /// <summary>
     /// Gets or sets the tenant ID.
     /// </summary>
-    public string TenantId { get; set; }
+    public string? TenantId { get; set; }
 
     /// <summary>
     /// Gets or sets the list of retention rules.
@@ -324,12 +324,12 @@ public sealed class RetentionRule
     /// <summary>
     /// Gets or sets the table name.
     /// </summary>
-    public string TableName { get; set; }
+    public string? TableName { get; set; }
 
     /// <summary>
     /// Gets or sets the date column name.
     /// </summary>
-    public string DateColumn { get; set; }
+    public string? DateColumn { get; set; }
 
     /// <summary>
     /// Gets or sets the retention type.
@@ -354,7 +354,7 @@ public sealed class RetentionRule
     /// <summary>
     /// Gets or sets the archive table name.
     /// </summary>
-    public string ArchiveTableName { get; set; }
+    public string? ArchiveTableName { get; set; }
 }
 
 /// <summary>
@@ -399,7 +399,7 @@ public sealed class RetentionResult
     /// <summary>
     /// Gets or sets the error message (if any).
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 
     /// <summary>
     /// Gets or sets the dictionary of processed rules.
@@ -416,7 +416,7 @@ public sealed class RuleExecutionResult
     /// <summary>
     /// Gets or sets the table name.
     /// </summary>
-    public string TableName { get; set; }
+    public string? TableName { get; set; }
 
     /// <summary>
     /// Gets or sets the number of records deleted.
@@ -426,7 +426,7 @@ public sealed class RuleExecutionResult
     /// <summary>
     /// Gets or sets the status message.
     /// </summary>
-    public string Status { get; set; }
+    public string? Status { get; set; }
 
     /// <summary>
     /// Gets or sets the cutoff date (if any).
@@ -442,7 +442,7 @@ public sealed class DryRunResult
     /// <summary>
     /// Gets or sets the tenant ID.
     /// </summary>
-    public string TenantId { get; set; }
+    public string? TenantId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the simulation was successful.
@@ -462,7 +462,7 @@ public sealed class DryRunResult
     /// <summary>
     /// Gets or sets the error message (if any).
     /// </summary>
-    public string Error { get; set; }
+    public string? Error { get; set; }
 
     /// <summary>
     /// Gets or sets the dictionary of processed rules.
@@ -479,7 +479,7 @@ public sealed class DryRunRuleResult
     /// <summary>
     /// Gets or sets the table name.
     /// </summary>
-    public string TableName { get; set; }
+    public string? TableName { get; set; }
 
     /// <summary>
     /// Gets or sets the number of records that would be deleted.
@@ -489,7 +489,7 @@ public sealed class DryRunRuleResult
     /// <summary>
     /// Gets or sets the status message.
     /// </summary>
-    public string Status { get; set; }
+    public string? Status { get; set; }
 
     /// <summary>
     /// Gets or sets the cutoff date (if any).

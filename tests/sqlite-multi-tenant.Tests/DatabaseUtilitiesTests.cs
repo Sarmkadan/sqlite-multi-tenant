@@ -232,7 +232,7 @@ public class DatabaseUtilitiesTests
         SQLiteConnection? connection = null;
 
         // Act & Assert
-        Assert.False(await DatabaseUtilities.TableExistsAsync(connection, "AnyTable"));
+        Assert.False(await DatabaseUtilities.TableExistsAsync(connection!, "AnyTable"));
         Assert.False(await DatabaseUtilities.TableExistsAsync(new SQLiteConnection($"Data Source={TestDbPath};Version=3;"), string.Empty));
     }
 
@@ -276,7 +276,7 @@ public class DatabaseUtilitiesTests
         SQLiteConnection? connection = null;
 
         // Act & Assert
-        Assert.False(await DatabaseUtilities.ColumnExistsAsync(connection, "Table", "Column"));
+        Assert.False(await DatabaseUtilities.ColumnExistsAsync(connection!, "Table", "Column"));
         Assert.False(await DatabaseUtilities.ColumnExistsAsync(new SQLiteConnection($"Data Source={TestDbPath};Version=3;"), string.Empty, "Column"));
         Assert.False(await DatabaseUtilities.ColumnExistsAsync(new SQLiteConnection($"Data Source={TestDbPath};Version=3;"), "Table", string.Empty));
     }
@@ -326,7 +326,7 @@ public class DatabaseUtilitiesTests
         SQLiteConnection? connection = null;
 
         // Act & Assert
-        Assert.Empty(await DatabaseUtilities.GetTableColumnsAsync(connection, "AnyTable"));
+        Assert.Empty(await DatabaseUtilities.GetTableColumnsAsync(connection!, "AnyTable"));
         Assert.Empty(await DatabaseUtilities.GetTableColumnsAsync(new SQLiteConnection($"Data Source={TestDbPath};Version=3;"), string.Empty));
     }
 

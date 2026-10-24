@@ -80,6 +80,7 @@ public class DatabaseControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
         var payload = okResult.Value.GetType().GetProperty("Data")?.GetValue(okResult.Value);
         Assert.NotNull(payload);
         var optResult = Assert.IsType<OptimizationResult>(payload);
@@ -107,6 +108,7 @@ public class DatabaseControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
         var payload = okResult.Value.GetType().GetProperty("Data")?.GetValue(okResult.Value);
         Assert.NotNull(payload);
         var integrity = Assert.IsType<IntegrityCheckResult>(payload);
@@ -123,6 +125,7 @@ public class DatabaseControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
         var payload = okResult.Value.GetType().GetProperty("Data")?.GetValue(okResult.Value);
         Assert.NotNull(payload);
         var schema = Assert.IsType<DatabaseSchema>(payload);
@@ -150,6 +153,7 @@ public class DatabaseControllerTests : IDisposable
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
         var payload = okResult.Value.GetType().GetProperty("Data")?.GetValue(okResult.Value);
         Assert.NotNull(payload);
         var export = Assert.IsType<ExportResult>(payload);

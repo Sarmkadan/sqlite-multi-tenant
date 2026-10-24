@@ -68,7 +68,7 @@ public class StringExtensionsTests
     public void SafeTruncate_NullInput_ReturnsNull()
     {
         string? nullStr = null;
-        var result = nullStr.SafeTruncate(5);
+        var result = nullStr!.SafeTruncate(5);
         Assert.Null(result);
     }
 
@@ -130,7 +130,7 @@ public class StringExtensionsTests
     public void ToEnum_NullOrWhiteSpace_ReturnsDefault()
     {
         string? nullStr = null;
-        var result1 = nullStr.ToEnum(SampleEnum.First);
+        var result1 = nullStr!.ToEnum(SampleEnum.First);
         var result2 = "".ToEnum(SampleEnum.First);
         Assert.Equal(SampleEnum.First, result1);
         Assert.Equal(SampleEnum.First, result2);
@@ -152,7 +152,7 @@ public class StringExtensionsTests
     public void EscapeForJson_NullOrEmpty_ReturnsSame()
     {
         string? nullStr = null;
-        Assert.Null(nullStr.EscapeForJson());
+        Assert.Null(nullStr!.EscapeForJson());
         Assert.Equal(string.Empty, string.Empty.EscapeForJson());
     }
 
@@ -189,7 +189,7 @@ public class StringExtensionsTests
     [Fact]
     public void NormalizeWhitespace_NullOrWhiteSpace_ReturnsEmpty()
     {
-        Assert.Equal(string.Empty, ((string?)null).NormalizeWhitespace());
+        Assert.Equal(string.Empty, ((string)null!).NormalizeWhitespace());
         Assert.Equal(string.Empty, "   ".NormalizeWhitespace());
     }
 
@@ -215,7 +215,7 @@ public class StringExtensionsTests
     [Fact]
     public void IsValidFilePath_NullOrEmpty_ReturnsFalse()
     {
-        Assert.False(((string?)null).IsValidFilePath());
+        Assert.False(((string)null!).IsValidFilePath());
         Assert.False(string.Empty.IsValidFilePath());
     }
 
@@ -233,7 +233,7 @@ public class StringExtensionsTests
     public void Reverse_NullOrEmpty_ReturnsSame()
     {
         string? nullStr = null;
-        Assert.Null(nullStr.Reverse());
+        Assert.Null(nullStr!.Reverse());
         Assert.Equal(string.Empty, string.Empty.Reverse());
     }
 

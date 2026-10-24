@@ -546,7 +546,7 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
         return tableDiff;
     }
 
-    private async Task<Dictionary<string, string>> GetTableColumnsAsync(string connectionString, string tableName)
+    private async Task<Dictionary<string, string>?> GetTableColumnsAsync(string connectionString, string tableName)
     {
         try
         {
@@ -578,7 +578,7 @@ CREATE INDEX IF NOT EXISTS idx_AuditLog_CreatedAt ON AuditLog(CreatedAt);
         }
     }
 
-    private async Task<HashSet<string>> GetTableIndexesAsync(string connectionString, string tableName)
+    private async Task<HashSet<string>?> GetTableIndexesAsync(string connectionString, string tableName)
     {
         try
         {

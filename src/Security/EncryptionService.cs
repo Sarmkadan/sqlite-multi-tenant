@@ -92,6 +92,8 @@ public sealed class EncryptionService : IEncryptionService
     {
         try
         {
+            ArgumentNullException.ThrowIfNull(data);
+
             using (var aes = Aes.Create())
             {
                 aes.KeySize = _options.KeySize;
@@ -136,6 +138,8 @@ public sealed class EncryptionService : IEncryptionService
     {
         try
         {
+            ArgumentNullException.ThrowIfNull(data);
+
             if (data.Length < _options.IvSize / 8)
             {
                 throw new InvalidOperationException("Invalid encrypted data");
@@ -251,17 +255,11 @@ public sealed class EncryptionService : IEncryptionService
         byte[] keyBytes = Encoding.UTF8.GetBytes(key);
         byte[] salt = Encoding.UTF8.GetBytes(_options.DerivationSalt);
 
-        using (var pbkdf2 = new Rfc2898DeriveBytes(keyBytes, salt, _options.Iterations, HashAlgorithmName.SHA256))
-        {
-            return pbkdf2.GetBytes(_options.KeySize / 8);
-        }
+        return Rfc2898DeriveBytes.Pbkdf2(keyBytes, salt, _options.Iterations, HashAlgorithmName.SHA256, _options.KeySize / 8);
     }
 
     private byte[] DeriveKeyFromPassword(string password, byte[] salt)
     {
-        using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, _options.Iterations, HashAlgorithmName.SHA256))
-        {
-            return pbkdf2.GetBytes(_options.KeySize / 8);
-        }
+        return Rfc2898DeriveBytes.Pbkdf2(password, salt, _options.Iterations, HashAlgorithmName.SHA256, _options.KeySize / 8);
     }
 }

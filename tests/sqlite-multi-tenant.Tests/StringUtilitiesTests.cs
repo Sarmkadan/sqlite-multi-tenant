@@ -25,10 +25,10 @@ public class StringUtilitiesTests
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void ComputeSha256Hash_ShouldReturnEmptyStringForNullOrEmpty(string input)
+        public void ComputeSha256Hash_ShouldReturnEmptyStringForNullOrEmpty(string? input)
         {
             // Act
-            var result = StringUtilities.ComputeSha256Hash(input);
+            var result = StringUtilities.ComputeSha256Hash(input!);
 
             // Assert
             result.Should().BeEmpty();
@@ -61,10 +61,10 @@ public class StringUtilitiesTests
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void ComputeMd5Hash_ShouldReturnEmptyStringForNullOrEmpty(string input)
+        public void ComputeMd5Hash_ShouldReturnEmptyStringForNullOrEmpty(string? input)
         {
             // Act
-            var result = StringUtilities.ComputeMd5Hash(input);
+            var result = StringUtilities.ComputeMd5Hash(input!);
 
             // Assert
             result.Should().BeEmpty();
@@ -105,10 +105,10 @@ public class StringUtilitiesTests
         [InlineData("short", "short")]
         [InlineData("a", "a")]
         [InlineData("ab", "ab")]
-        public void TruncateWithEllipsis_ShouldHandleEdgeCases(string input, string expected)
+        public void TruncateWithEllipsis_ShouldHandleEdgeCases(string? input, string? expected)
         {
             // Act
-            var result = StringUtilities.TruncateWithEllipsis(input, 100);
+            var result = StringUtilities.TruncateWithEllipsis(input!, 100);
 
             // Assert
             result.Should().Be(expected);
@@ -171,10 +171,10 @@ public class StringUtilitiesTests
         [InlineData("hElLo WoRlD", "Hello World")]
         [InlineData("this is a test string", "This Is A Test String")]
         [InlineData("single", "Single")]
-        public void ToTitleCase_ShouldConvertToTitleCase(string input, string expected)
+        public void ToTitleCase_ShouldConvertToTitleCase(string? input, string? expected)
         {
             // Act
-            var result = StringUtilities.ToTitleCase(input);
+            var result = StringUtilities.ToTitleCase(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -202,10 +202,10 @@ public class StringUtilitiesTests
         [InlineData("PascalCaseString", "pascal_case_string")]
         [InlineData("already_snake_case", "already_snake_case")]
         [InlineData("xmlHttpRequest", "xml_http_request")]
-        public void ToSnakeCase_ShouldConvertToSnakeCase(string input, string expected)
+        public void ToSnakeCase_ShouldConvertToSnakeCase(string? input, string? expected)
         {
             // Act
-            var result = StringUtilities.ToSnakeCase(input);
+            var result = StringUtilities.ToSnakeCase(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -224,10 +224,10 @@ public class StringUtilitiesTests
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void ToCamelCase_ShouldReturnInputForNullOrEmpty(string input)
+        public void ToCamelCase_ShouldReturnInputForNullOrEmpty(string? input)
         {
             // Act
-            var result = StringUtilities.ToCamelCase(input);
+            var result = StringUtilities.ToCamelCase(input!);
 
             // Assert
             result.Should().Be(input);
@@ -271,10 +271,10 @@ public class StringUtilitiesTests
         [InlineData("hello\tworld", "helloworld")]
         [InlineData("hello\nworld", "helloworld")]
         [InlineData("a b c d e", "abcde")]
-        public void RemoveWhitespace_ShouldRemoveAllWhitespace(string input, string expected)
+        public void RemoveWhitespace_ShouldRemoveAllWhitespace(string? input, string? expected)
         {
             // Act
-            var result = StringUtilities.RemoveWhitespace(input);
+            var result = StringUtilities.RemoveWhitespace(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -293,10 +293,10 @@ public class StringUtilitiesTests
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void SanitizeForFilePath_ShouldReturnInputForNullOrEmpty(string input)
+        public void SanitizeForFilePath_ShouldReturnInputForNullOrEmpty(string? input)
         {
             // Act
-            var result = StringUtilities.SanitizeForFilePath(input);
+            var result = StringUtilities.SanitizeForFilePath(input!);
 
             // Assert
             result.Should().Be(input);
@@ -340,10 +340,10 @@ public class StringUtilitiesTests
         [InlineData("&<>'\"", "&amp;&lt;&gt;&#39;&quot;")]
         [InlineData("test & more", "test &amp; more")]
         [InlineData("5 > 3 and 3 < 5", "5 &gt; 3 and 3 &lt; 5")]
-        public void SanitizeForHtml_ShouldEscapeHtmlCharacters(string input, string expected)
+        public void SanitizeForHtml_ShouldEscapeHtmlCharacters(string? input, string? expected)
         {
             // Act
-            var result = StringUtilities.SanitizeForHtml(input);
+            var result = StringUtilities.SanitizeForHtml(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -370,10 +370,10 @@ public class StringUtilitiesTests
         [InlineData("email@domain.name", true)]
         [InlineData("email@domain.co.jp", true)]
         [InlineData("firstname-lastname@domain.com", true)]
-        public void IsValidEmail_ShouldValidateEmailFormat(string input, bool expected)
+        public void IsValidEmail_ShouldValidateEmailFormat(string? input, bool expected)
         {
             // Act
-            var result = StringUtilities.IsValidEmail(input);
+            var result = StringUtilities.IsValidEmail(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -395,10 +395,10 @@ public class StringUtilitiesTests
         [InlineData("example.com", false)]
         [InlineData("https://example.com:8080/path", true)]
         [InlineData("http://localhost:5000", true)]
-        public void IsValidUrl_ShouldValidateUrlFormat(string input, bool expected)
+        public void IsValidUrl_ShouldValidateUrlFormat(string? input, bool expected)
         {
             // Act
-            var result = StringUtilities.IsValidUrl(input);
+            var result = StringUtilities.IsValidUrl(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -418,10 +418,10 @@ public class StringUtilitiesTests
         [InlineData("(550e8400-e29b-41d4-a716-446655440000)", true)]
         [InlineData("550e8400e29b41d4a716446655440000", true)]
         [InlineData("00000000-0000-0000-0000-000000000000", true)]
-        public void IsValidGuid_ShouldValidateGuidFormat(string input, bool expected)
+        public void IsValidGuid_ShouldValidateGuidFormat(string? input, bool expected)
         {
             // Act
-            var result = StringUtilities.IsValidGuid(input);
+            var result = StringUtilities.IsValidGuid(input!);
 
             // Assert
             result.Should().Be(expected);
@@ -468,10 +468,10 @@ public class StringUtilitiesTests
         [InlineData("a", 1, "a")]
         [InlineData("abc", 3, "abcabcabc")]
         [InlineData("test", 5, "testtesttesttesttest")]
-        public void Repeat_ShouldRepeatStringCorrectly(string input, int count, string expected)
+        public void Repeat_ShouldRepeatStringCorrectly(string? input, int count, string expected)
         {
             // Act
-            var result = StringUtilities.Repeat(input, count);
+            var result = StringUtilities.Repeat(input!, count);
 
             // Assert
             result.Should().Be(expected);
@@ -484,7 +484,7 @@ public class StringUtilitiesTests
         public void SplitPreservingQuotes_ShouldThrowOnNullInput()
         {
             // Arrange
-            string input = null;
+            string input = null!;
 
             // Act
             var action = () => StringUtilities.SplitPreservingQuotes(input);
@@ -533,10 +533,10 @@ public class StringUtilitiesTests
         [InlineData("", "test")]
         [InlineData("test", null)]
         [InlineData("test", "")]
-        public void GetStringSimilarity_ShouldReturnZeroForNullOrEmpty(string str1, string str2)
+        public void GetStringSimilarity_ShouldReturnZeroForNullOrEmpty(string? str1, string? str2)
         {
             // Act
-            var result = StringUtilities.GetStringSimilarity(str1, str2);
+            var result = StringUtilities.GetStringSimilarity(str1!, str2!);
 
             // Assert
             result.Should().Be(0.0);
