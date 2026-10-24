@@ -7,14 +7,17 @@
 using System;
 using System.Data.SQLite;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using SqliteMultiTenant.Constants;
 using SqliteMultiTenant.Database;
 using SqliteMultiTenant.Events;
+using SqliteMultiTenant.Exceptions;
 using SqliteMultiTenant.Models;
 using SqliteMultiTenant.Repositories;
 using SqliteMultiTenant.Security;
+using SqliteMultiTenant.Utilities;
 
 namespace SqliteMultiTenant.Tenants;
 
@@ -249,6 +252,163 @@ public sealed class TenantProvisioner
     }
 
     /// <summary>
+    /// Renames a tenant by moving its database to a location keyed by the new identifier.
+    /// The database is copied, the copy is verified against the source, the registry is switched
+    /// to the new identifier, and only then is the original file removed.
+    /// </summary>
+    /// <param name="oldTenantId">Current identifier of the tenant.</param>
+    /// <param name="newTenantId">New identifier; validated with <see cref="TenantNameValidator.ValidateTenantId"/>.</param>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>The tenant registered under <paramref name="newTenantId"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown when an identifier is empty or <paramref name="newTenantId"/> fails validation.</exception>
+    /// <exception cref="TenantNotFoundException">Thrown when no tenant matches <paramref name="oldTenantId"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the new identifier is already in use or a file already exists at the target location.</exception>
+    /// <exception cref="IOException">Thrown when the database is busy or the copy does not match the source.</exception>
+    /// <remarks>
+    /// <para>
+    /// Callers must evict any pooled connections to the old database before renaming; this method
+    /// does not manage connection pools. Identifiers that differ only by case are rejected, since
+    /// they would resolve to the same file on case-insensitive file systems.
+    /// </para>
+    /// <para>
+    /// If anything fails before the original file is removed, the copy is discarded and the tenant
+    /// keeps its original identifier and database file. Once the registry has switched, a failure to
+    /// delete the original file is logged as a warning and does not roll back the rename.
+    /// </para>
+    /// </remarks>
+    public async Task<Tenant> RenameTenantAsync(string oldTenantId, string newTenantId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(oldTenantId))
+        {
+            throw new ArgumentException("Source tenant ID cannot be empty", nameof(oldTenantId));
+        }
+
+        if (string.IsNullOrWhiteSpace(newTenantId))
+        {
+            throw new ArgumentException("New tenant ID cannot be empty", nameof(newTenantId));
+        }
+
+        var targetId = newTenantId.Trim();
+
+        var validation = TenantNameValidator.ValidateTenantId(targetId);
+        if (!validation.IsValid)
+        {
+            throw new ArgumentException(validation.Error, nameof(newTenantId));
+        }
+
+        if (string.Equals(oldTenantId, targetId, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("New tenant ID must differ from the current tenant ID", nameof(newTenantId));
+        }
+
+        try
+        {
+            var source = await _tenantRepository.GetByIdAsync(oldTenantId, cancellationToken)
+                ?? throw new TenantNotFoundException(oldTenantId);
+
+            if (await _tenantRepository.ExistsAsync(targetId, cancellationToken))
+            {
+                throw new InvalidOperationException($"Tenant {targetId} already exists");
+            }
+
+            var sourcePath = source.DatabasePath
+                ?? throw new InvalidOperationException($"Tenant {oldTenantId} has no database path");
+
+            if (!File.Exists(sourcePath))
+            {
+                throw new InvalidOperationException($"Database file for tenant {oldTenantId} not found at {sourcePath}");
+            }
+
+            var targetDir = Path.Combine(_basePath, targetId);
+            var targetPath = Path.Combine(targetDir, $"{targetId}.db");
+            var tempPath = targetPath + ".rename-tmp";
+
+            if (File.Exists(targetPath))
+            {
+                throw new InvalidOperationException($"A database already exists at {targetPath}");
+            }
+
+            Directory.CreateDirectory(targetDir);
+
+            try
+            {
+                // Fold the WAL into the main file so the copy below contains all committed data.
+                await CheckpointDatabaseAsync(sourcePath, cancellationToken);
+
+                var sourceHash = await ComputeFileHashAsync(sourcePath, cancellationToken);
+                File.Copy(sourcePath, tempPath, overwrite: false);
+
+                var copyHash = await ComputeFileHashAsync(tempPath, cancellationToken);
+                if (!CryptographicOperations.FixedTimeEquals(sourceHash, copyHash))
+                {
+                    throw new IOException($"Copy verification failed: '{tempPath}' does not match '{sourcePath}'");
+                }
+
+                await CheckIntegrityAsync(tempPath, cancellationToken);
+                File.Move(tempPath, targetPath, overwrite: false);
+            }
+            catch
+            {
+                DeleteFileIfExists(tempPath);
+                throw;
+            }
+
+            var renamed = new Tenant
+            {
+                TenantId = targetId,
+                Name = source.Name,
+                Description = source.Description,
+                Status = source.Status,
+                CreatedAt = source.CreatedAt,
+                UpdatedAt = DateTime.UtcNow,
+                LastAccessedAt = source.LastAccessedAt,
+                ContactEmail = source.ContactEmail,
+                DatabasePath = targetPath,
+                IsDataIsolated = source.IsDataIsolated,
+                MaxConnections = source.MaxConnections,
+                Metadata = source.Metadata is null ? null : new Dictionary<string, string>(source.Metadata)
+            };
+
+            // Switch the registry: insert under the new id, then drop the old record.
+            // If the second step fails, undo the first so the registry and disk stay consistent.
+            await _tenantRepository.AddAsync(renamed, cancellationToken);
+            try
+            {
+                await _tenantRepository.DeleteAsync(oldTenantId, cancellationToken);
+            }
+            catch
+            {
+                await _tenantRepository.DeleteAsync(targetId, cancellationToken);
+                DeleteFileIfExists(targetPath);
+                throw;
+            }
+
+            DeleteOriginalDatabase(sourcePath, oldTenantId);
+
+            if (_eventBus is not null)
+            {
+                await _eventBus.PublishAsync(new TenantRenamedEvent
+                {
+                    OldTenantId = oldTenantId,
+                    NewTenantId = targetId,
+                    DatabasePath = targetPath,
+                    TenantId = targetId
+                }, cancellationToken);
+            }
+
+            _logger.LogInformation("Tenant renamed from {OldId} to {NewId} at {DbPath}",
+                oldTenantId, targetId, targetPath);
+
+            return renamed;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to rename tenant from {OldId} to {NewId}", oldTenantId, targetId);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Deprovisions a tenant by removing the database file, tenant directory,
     /// and metadata record. This operation is irreversible.
     /// </summary>
@@ -430,6 +590,84 @@ WHERE type='table' AND name IN ('Tenants', 'AuditLog')";
         {
             _logger.LogError(ex, "Failed to provision encrypted tenant: {TenantId}", tenantId);
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Runs a full WAL checkpoint and truncates the WAL, failing if the database is busy
+    /// or a non-empty WAL remains (its contents would not be in the main file being copied).
+    /// </summary>
+    private static async Task CheckpointDatabaseAsync(string databasePath, CancellationToken cancellationToken)
+    {
+        await using var connection = new SQLiteConnection($"Data Source={databasePath};");
+        await connection.OpenAsync(cancellationToken);
+
+        using (var command = new SQLiteCommand("PRAGMA wal_checkpoint(TRUNCATE);", connection))
+        using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken) && reader.GetInt32(0) != 0)
+            {
+                throw new IOException($"Database '{databasePath}' is busy; retry the rename later");
+            }
+        }
+
+        var walPath = databasePath + "-wal";
+        if (File.Exists(walPath) && new FileInfo(walPath).Length > 0)
+        {
+            throw new IOException($"Database '{databasePath}' has uncheckpointed WAL data; retry the rename later");
+        }
+    }
+
+    private static async Task<byte[]> ComputeFileHashAsync(string path, CancellationToken cancellationToken)
+    {
+        await using var stream = File.OpenRead(path);
+        return await SHA256.HashDataAsync(stream, cancellationToken);
+    }
+
+    private static async Task CheckIntegrityAsync(string databasePath, CancellationToken cancellationToken)
+    {
+        await using var connection = new SQLiteConnection($"Data Source={databasePath};");
+        await connection.OpenAsync(cancellationToken);
+
+        using var command = new SQLiteCommand("PRAGMA quick_check;", connection);
+        var result = (await command.ExecuteScalarAsync(cancellationToken))?.ToString();
+        if (!string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new IOException($"Integrity check failed for '{databasePath}': {result}");
+        }
+    }
+
+    /// <summary>
+    /// Removes the original database file after a rename and deletes its directory if that
+    /// directory is now empty. Failures are logged rather than thrown, because the rename has already committed.
+    /// </summary>
+    private void DeleteOriginalDatabase(string sourcePath, string oldTenantId)
+    {
+        try
+        {
+            File.Delete(sourcePath);
+
+            var sourceDir = Path.GetDirectoryName(Path.GetFullPath(sourcePath));
+            if (sourceDir is not null
+                && !string.Equals(sourceDir, Path.GetFullPath(_basePath), StringComparison.Ordinal)
+                && Directory.Exists(sourceDir)
+                && !Directory.EnumerateFileSystemEntries(sourceDir).Any())
+            {
+                Directory.Delete(sourceDir);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Tenant {OldId} was renamed, but its original database could not be removed: {Path}",
+                oldTenantId, sourcePath);
+        }
+    }
+
+    private static void DeleteFileIfExists(string path)
+    {
+        if (File.Exists(path))
+        {
+            File.Delete(path);
         }
     }
 }
