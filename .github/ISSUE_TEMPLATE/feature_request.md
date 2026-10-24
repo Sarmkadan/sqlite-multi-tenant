@@ -1,19 +1,25 @@
 ---
 name: Feature Request
 about: Suggest a feature for SqliteMultiTenant
-title: '[FEATURE] '
+title: '[Feature]: '
 labels: enhancement
 assignees: ''
 ---
 
-## Problem Statement
-A clear description of the problem or limitation.
+## Problem statement
+<!-- What can't you do today, or what is painful? -->
 
-## Proposed Solution
-Describe the solution you'd like to see.
+## Proposed solution
+<!-- Describe the API or behavior you would like. Code sketches are welcome. -->
 
-## Alternatives Considered
-List any alternative solutions or workarounds you've considered.
+## Alternatives considered
+<!-- Workarounds or other designs you have considered. -->
 
-## Additional Context
-Any other context, mockups, or examples.
+## Multi-tenancy impact
+<!-- How does this affect the library's guarantees? Please address each: -->
+- Tenant isolation:
+- Migrations:
+- Connection handling:
+
+## Additional context
+<!-- Anything else: links, benchmarks, related issues. -->
