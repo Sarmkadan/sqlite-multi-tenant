@@ -784,3 +784,7 @@ if (!ruleResult.IsValid)
         Console.WriteLine($"{error.FieldName}: {error.Message}");
 }
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
