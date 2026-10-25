@@ -13,6 +13,16 @@ namespace SqliteMultiTenant.Models;
 public sealed class TenantMaintenanceResult
 {
     /// <summary>
+    /// Multiplier used to express a size reduction as a percentage.
+    /// </summary>
+    private const double PercentScale = 100;
+
+    /// <summary>
+    /// Number of bytes in one kilobyte, used when formatting file sizes.
+    /// </summary>
+    private const int BytesPerKilobyte = 1024;
+
+    /// <summary>
     /// The tenant identifier.
     /// </summary>
     public string TenantId { get; set; } = string.Empty;
@@ -94,7 +104,7 @@ public sealed class TenantMaintenanceResult
                 return "N/A";
             }
 
-            var reductionPercent = (double)SizeReductionBytes / SizeBeforeBytes * 100;
+            var reductionPercent = (double)SizeReductionBytes / SizeBeforeBytes * PercentScale;
             var before = FormatFileSize(SizeBeforeBytes);
             var after = FormatFileSize(SizeAfterBytes);
             var saved = FormatFileSize(SizeReductionBytes);
@@ -119,13 +129,19 @@ public sealed class TenantMaintenanceResult
         int counter = 0;
         double size = bytes;
 
-        while (size >= 1024 && counter < suffixes.Length - 1)
+        while (size >= BytesPerKilobyte && counter < suffixes.Length - 1)
         {
-            size /= 1024;
+            size /= BytesPerKilobyte;
             counter++;
         }
 
         return $"{size:F2} {suffixes[counter]}";
     }
-    public override string ToString() => $"TenantMaintenanceResult {{ TenantId = {TenantId}, TenantName = {TenantName}, Operation = {Operation}, StartedAt = {StartedAt}, CompletedAt = {CompletedAt}, SizeBeforeBytes = {SizeBeforeBytes} }}";
+
+    /// <summary>
+    /// Returns a short summary of the result: tenant id, success flag, and file sizes before and after maintenance.
+    /// </summary>
+    /// <returns>A single-line, human-readable description of this result.</returns>
+    public override string ToString() =>
+        $"TenantMaintenanceResult {{ TenantId = {TenantId}, Success = {IsSuccess}, SizeBefore = {FormatFileSize(SizeBeforeBytes)}, SizeAfter = {FormatFileSize(SizeAfterBytes)} }}";
 }
