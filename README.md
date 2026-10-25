@@ -925,6 +925,104 @@ if (!ruleResult.IsValid)
 }
 ```
 
+## EncryptionService
+
+`src/Security/EncryptionService.cs` implements `IEncryptionService`. It encrypts and decrypts sensitive strings and byte arrays with AES-256-CBC, and hashes passwords with PBKDF2-SHA256. The AES key is derived from a single secret in configuration (`Encryption:Key`). `src/Security/EncryptionOptions.cs` holds the tunable parameters. `src/Security/EncryptionKeyManager.cs` is a separate component: it generates, stores, rotates and deletes a random AES-256 key per tenant.
+
+`EncryptionService` is not registered by `AddSqliteMultiTenant`; create it yourself or register it in your host.
+
+**Configuration**
+
+The constructor reads `Encryption:Key` and throws `InvalidOperationException` if the value is missing or shorter than 32 characters. Supply it from a secret store or environment variable, never from source control:
+
+```json
+{
+  "Encryption": {
+    "Key": "<at least 32 characters, from a secret store>"
+  }
+}
+```
+
+**`EncryptionOptions`**
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `KeySize` | `256` | AES key size in bits |
+| `IvSize` | `128` | IV length in bits. A fresh random IV is prepended to every ciphertext |
+| `SaltSize` | `128` | Salt length in bits for password hashes |
+| `Iterations` | `10000` | PBKDF2 iteration count |
+| `DerivationSalt` | `"SqliteMultiTenant"` | Salt used to derive the AES key from `Encryption:Key` |
+
+Changing `KeySize`, `Iterations`, `DerivationSalt` or the configured key makes existing ciphertext undecryptable. Changing `SaltSize` makes existing password hashes fail verification. Set these once, before you store data.
+
+**`EncryptionService` methods**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Encrypt(string)` | `string` | AES-256-CBC encryption. Output is Base64 of `IV \|\| ciphertext`. Null or empty input returns an empty string |
+| `Decrypt(string)` | `string` | Reverses `Encrypt`. Throws on malformed or tampered input |
+| `EncryptBytes(byte[])` | `byte[]` | Raw-byte variant with the same `IV \|\| ciphertext` layout |
+| `DecryptBytes(byte[])` | `byte[]` | Reverses `EncryptBytes`. Throws on malformed input |
+| `HashPassword(string)` | `string` | Random salt plus PBKDF2-SHA256 derived key, returned as Base64 of `salt \|\| hash` |
+| `VerifyHash(string, string)` | `bool` | Recomputes the hash from the stored salt. Returns `false` for empty, malformed or non-matching input instead of throwing |
+
+Every `Encrypt`, `Decrypt` and `EncryptBytes` call re-runs PBKDF2 to derive the key. In hot paths, batch values or cache the result rather than calling per field.
+
+### EncryptionKeyManager
+
+`EncryptionKeyManager` stores one AES-256 key per tenant as JSON under `keyStorePath`, which is created if it does not exist. Active keys are written to `{tenantId}_key.json`. Rotated keys are archived to `{tenantId}_key_v{version}.json`. Keys are cached in memory after the first read.
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `GenerateKeyAsync(tenantId, masterPassword?)` | `EncryptionKey` | Creates a random 256-bit key at version 1. **Overwrites the active key file if one exists.** Use `RotateKeyAsync` for existing tenants |
+| `GetActiveKeyAsync(tenantId)` | `EncryptionKey?` | Returns the active key, or `null` if none exists or the file cannot be read |
+| `RotateKeyAsync(tenantId, masterPassword?)` | `EncryptionKey` | Archives the current key as `v{n}`, then creates a new key at version `n + 1` with `PreviousKeyId` set |
+| `GetKeyVersionAsync(tenantId, version)` | `EncryptionKey?` | Loads an archived key version, for example to re-encrypt data after a rotation |
+| `DeleteTenantKeysAsync(tenantId)` | `bool` | Deletes all key files for the tenant and removes the cache entry. Returns `false` on error |
+
+`EncryptionKey` exposes `KeyId`, `TenantId`, `KeyMaterial` (raw key bytes), `CreatedAt`, `DeactivatedAt`, `IsActive`, `Version` and `PreviousKeyId`.
+
+The optional `masterPassword` is XORed with PBKDF2-derived bytes at generation time. The stored `KeyMaterial` is the final key, so the password is not needed to read the key later. Anyone with read access to the key file can use the key. On Unix, key files are set to mode `600` after they are written, so protect the key directory accordingly.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Security;
+
+// IConfiguration is normally injected; it must contain Encryption:Key
+var encryption = new EncryptionService(
+    config,
+    loggerFactory.CreateLogger<EncryptionService>());
+
+// Field-level encryption of a sensitive string
+string cipher = encryption.Encrypt("123-45-6789");
+string plain = encryption.Decrypt(cipher);
+
+// Password hashing and verification
+string stored = encryption.HashPassword("correct horse battery staple");
+bool ok = encryption.VerifyHash("correct horse battery staple", stored);   // true
+bool bad = encryption.VerifyHash("wrong password", stored);                // false
+
+// Per-tenant keys with rotation
+var keyManager = new EncryptionKeyManager(
+    loggerFactory.CreateLogger<EncryptionKeyManager>(),
+    keyStorePath: "./keys");
+
+var key = await keyManager.GenerateKeyAsync("tenant-42");
+Console.WriteLine($"Created key v{key.Version} ({key.KeyId})");
+
+var rotated = await keyManager.RotateKeyAsync("tenant-42");
+Console.WriteLine($"Rotated to v{rotated.Version}, previous key {rotated.PreviousKeyId}");
+
+// Archived key, needed to decrypt data written before the rotation
+var previous = await keyManager.GetKeyVersionAsync("tenant-42", 1);
+
+// Remove all key material when the tenant is deprovisioned
+await keyManager.DeleteTenantKeysAsync("tenant-42");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
