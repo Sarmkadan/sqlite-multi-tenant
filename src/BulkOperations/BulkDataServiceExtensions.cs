@@ -18,6 +18,11 @@ namespace SqliteMultiTenant.BulkOperations;
 public static class BulkDataServiceExtensions
 {
     /// <summary>
+    /// Default number of rows per batch used when streaming data between databases.
+    /// </summary>
+    public const int DefaultBatchSize = 1000;
+
+    /// <summary>
     /// Exports a single table to a new SQLite database file, creating the database
     /// and table structure if they don't exist.
     /// </summary>
@@ -202,7 +207,7 @@ public static class BulkDataServiceExtensions
         string tableName,
         BulkDataFormat format = BulkDataFormat.Json,
         Func<Dictionary<string, object?>, Dictionary<string, object?>>? transform = null,
-        int batchSize = 1000,
+        int batchSize = DefaultBatchSize,
         ImportOptions? options = null,
         CancellationToken cancellationToken = default)
     {
