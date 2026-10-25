@@ -2499,6 +2499,96 @@ public sealed class TenantSuspendedHandler : IEventHandler<TenantSuspendedEvent>
 }
 ```
 
+## Command Line Interface
+
+The `src/Cli/` folder holds a small command-line front end. Four classes take part in a command run, and a fifth, `CommandLineParser`, is a separate builder-style parser that the front end does not use.
+
+`CliApplication` (`src/Cli/CliApplication.cs`) is the host. Its constructor takes a `CommandParser`, a `CommandExecutor`, an `ILogger<CliApplication>` and an `IConsoleWriter`. `RunAsync(string[] args)` parses the arguments, executes the command, writes the result and returns an exit code: `0` on success and `1` for a failed command or an unhandled exception. The file also defines `IConsoleWriter` and `ConsoleWriter`, which prints success, error, warning and info lines in colour with `✓`, `✗`, `⚠` and `ℹ` prefixes.
+
+`CommandParser` (`src/Cli/CommandParser.cs`) turns the arguments into a `ParsedCommand`. Its constructor takes an `ILogger<CommandParser>`. The command and subcommand names are case-insensitive. It validates the required arguments itself, and it returns help text or an error in place of a command when the arguments do not name a runnable subcommand. The command table is built in code (`RegisterDefaultCommands`), so there is no way to add commands from outside the class.
+
+`CommandExecutor` (`src/Cli/CommandExecutor.cs`) runs a `ParsedCommand` through `ExecuteAsync(ParsedCommand, CancellationToken)`. Its constructor takes `ITenantService`, `IBackupService`, `IMigrationService`, `HealthCheckService`, `ConnectionManager`, an `ILogger<CommandExecutor>` and an `OutputFormatter`. `ExecuteAsync` does not throw: cancellation and other exceptions become a `CommandResult` with `Success = false`.
+
+`CommandLineParser` (`src/Cli/CommandLineParser.cs`) is a general-purpose parser with registered commands, value options and flags. Its constructor takes the arguments as `params string[]`. `RegisterCommand` returns the parser for chaining, and `RegisterOption` and `RegisterFlag` attach an option or flag to the most recently registered command. `Parse()` returns a `LegacyParsedCommand` and does not call the registered handler, so the caller has to invoke it. `GetHelpText()` lists the registered commands. This parser has limitations to account for:
+
+- `CliApplication` does not use it, and it registers no commands of its own.
+- Long flags (`--name`) are never recognised, because the long-option branch only checks options. Use the short name for a flag.
+- Values in the `--name=value` form are not supported. A value must be the next argument, and it cannot start with `-`.
+- Flags and options attach to `_commands.Values.Last()`, which depends on dictionary enumeration order rather than registration order.
+
+Nothing in the repository registers `CliApplication` or `CommandParser` in the DI container, and `src/Program.cs` does not call them, so the host program has to construct and call them itself.
+
+### Supported Commands
+
+These are the commands and subcommands that `CommandParser` accepts and `CommandExecutor` runs. Arguments in `<angle brackets>` are required and are checked by the parser. The `tenant create` description and email are optional, and the parser passes any extra arguments through to the executor.
+
+| Command | Subcommand | Arguments | Behaviour |
+|---------|------------|-----------|-----------|
+| `tenant` | `create` | `<name>` `[description]` `[email]` | Calls `CreateTenantAsync` and prints the new tenant's details |
+| `tenant` | `list` | none | Prints the tenant count, then each tenant's ID, name, status and creation time |
+| `tenant` | `get` | `<tenantId>` | Prints the tenant's details, or fails with "not found" |
+| `tenant` | `status` | `<tenantId>` | Prints `Tenant <tenantId>: <status>` |
+| `tenant` | `delete` | `<tenantId>` | Calls `DeleteTenantAsync`. There is no confirmation prompt |
+| `backup` | `create` | `<databaseId>` | Creates a full backup with the creator `cli` and prints its backup ID |
+| `backup` | `list` | `<databaseId>` | Prints how many backups the database has |
+| `backup` | `verify` | `<backupId>` | Calls `VerifyBackupAsync` and reports success |
+| `backup` | `restore` | `<backupId>` `<targetPath>` | Placeholder: reports success without restoring anything |
+| `backup` | `delete` | `<backupId>` | Placeholder: reports success without deleting anything |
+| `migration` | `pending` | `<databaseId>` | Lists the pending migrations and their count |
+| `migration` | `apply` | `<databaseId>` | Placeholder: reports success without applying anything |
+| `migration` | `rollback` | `<databaseId>` | Placeholder: reports success without rolling anything back |
+| `migration` | `history` | `<databaseId>` | Placeholder: prints a one-line message without history |
+| `health` | `check` | none | Placeholder: reports completion without calling `HealthCheckService` |
+| `health` | `status` | none | Placeholder: always reports `System is operational` |
+| `explain` | `query` | `<sqlQuery>` | Runs `EXPLAIN QUERY PLAN` on the arguments joined with spaces, against the first tenant from `GetAllTenantsAsync` |
+
+The help command is handled by the parser and needs no service. `help`, `-h`, `--help` and running with no arguments print the full command list. A command name without a subcommand, such as `backup`, prints the help for that command. An unknown command or subcommand, or a missing required argument, fails with exit code `1` and a message. The message for a missing argument lists the arguments that were expected.
+
+### Usage Example
+
+`CliApplication` is constructed by hand here, because nothing in the repository registers it. The services come from your container or from your own setup.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Cli;
+
+// The services below come from your DI container or are built by hand
+CommandParser parser = new(NullLogger<CommandParser>.Instance);
+CommandExecutor executor = new(
+    tenantService, backupService, migrationService, healthService,
+    connectionManager, NullLogger<CommandExecutor>.Instance, formatter);
+
+var app = new CliApplication(parser, executor, NullLogger<CliApplication>.Instance, new ConsoleWriter());
+
+// args are the process arguments from the top-level program
+int exitCode = await app.RunAsync(args);
+return exitCode;
+```
+
+With that host, the arguments are typed as ordinary shell words. Quote any value that contains spaces or characters the shell would expand, such as the `*` in the SQL query. The tenant ID is the one printed by `tenant create` or `tenant list`, so `acme` below stands for that value.
+
+```bash
+# Create a tenant with a description and a contact email
+tenant create "Acme Corp" "Production tenant" ops@acme.example
+
+# Look up a tenant and print only its status
+tenant get acme
+tenant status acme
+
+# Create a full backup, then count the backups for the database
+backup create acme
+backup list acme
+
+# Explain a query against the first tenant
+explain query "SELECT * FROM Users WHERE Id = 1"
+
+# Print the command list
+help
+
+# Print the help for one command
+backup
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
