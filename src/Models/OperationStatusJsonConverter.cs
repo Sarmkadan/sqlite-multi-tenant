@@ -23,11 +23,14 @@ public sealed class OperationStatusJsonConverter : JsonConverter<OperationStatus
     /// <param name="typeToConvert">The type to convert.</param>
     /// <param name="options">Serializer options.</param>
     /// <returns>The converted value.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="typeToConvert"/> is null.</exception>
     public override OperationStatus Read(
         ref Utf8JsonReader reader,
         Type typeToConvert,
         JsonSerializerOptions options)
     {
+        ArgumentNullException.ThrowIfNull(typeToConvert);
+
         var value = reader.GetString();
 
         return value?.ToLowerInvariant() switch
@@ -46,11 +49,14 @@ public sealed class OperationStatusJsonConverter : JsonConverter<OperationStatus
     /// <param name="writer">The writer.</param>
     /// <param name="value">The value to write.</param>
     /// <param name="options">Serializer options.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="writer"/> is null.</exception>
     public override void Write(
         Utf8JsonWriter writer,
         OperationStatus value,
         JsonSerializerOptions options)
     {
+        ArgumentNullException.ThrowIfNull(writer);
+
         writer.WriteStringValue(value.ToString().ToLowerInvariant());
     }
 }
