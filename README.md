@@ -1573,6 +1573,220 @@ RetentionResult result = await retention.ApplyRetentionPolicyAsync(connection, p
 Console.WriteLine($"Deleted {result.TotalRecordsDeleted} rows: {(result.IsSuccessful ? "ok" : result.Error)}");
 ```
 
+## BatchProcessor
+
+`src/Operations/BatchProcessor.cs` runs an asynchronous operation over a collection of items with a bounded concurrency level. Each item is isolated: a failure is recorded in `BatchProcessResult<T>.Errors` and does not stop the other items. The class implements `IBatchProcessor`.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `ProcessAsync<TItem, TResult>(items, Func<TItem, Task<TResult>>, maxConcurrency = 4)` | `BatchProcessResult<TResult>` | Collects each successful result |
+| `ProcessAsync<TItem>(items, Func<TItem, Task>, maxConcurrency = 4)` | `BatchProcessResult<object>` | Fire-and-forget style; successes are stored as placeholder `object` values |
+| `BatchProcessResult<T>.SuccessCount`, `ErrorCount`, `SuccessRate` | `int` / `double` | Summary counters |
+
+Notes:
+- `SuccessfulResults` is in completion order, not input order. Errors carry the zero-based input index as `ItemId`, so map failures back to inputs through that index.
+- `maxConcurrency` is passed directly to `SemaphoreSlim`, so it must be at least 1.
+- `items` and `operation` throw `ArgumentNullException` when null.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Operations;
+
+// 'logger' is an ILogger<BatchProcessor> obtained from your logging setup
+var processor = new BatchProcessor(logger);
+
+var tenantIds = new List<string> { "tenant-a", "tenant-b", "tenant-c" };
+
+// Run at most two operations at a time; each item's failure is isolated
+BatchProcessResult<int> result = await processor.ProcessAsync(
+    tenantIds,
+    async tenantId => await CountOrdersAsync(tenantId), // your Func<string, Task<int>>
+    maxConcurrency: 2);
+
+Console.WriteLine(result); // BatchProcessResult: 2 success, 1 errors, Success Rate: 66.67%
+
+foreach (var error in result.Errors)
+{
+    // ItemId is the input index of the failed item, e.g. "2"
+    Console.WriteLine($"Item {error.ItemId} failed: {error.Exception} - {error.Message}");
+}
+```
+
+## BulkInsertBuilder
+
+`src/Operations/BulkInsertBuilder.cs` collects records as `Dictionary<string, object>` and inserts them into one table through a fluent API. Records are written in batches inside a single SQLite transaction. The file also contains `BulkUpdateBuilder`, which runs one `UPDATE` for a set of column assignments and a caller-supplied `WHERE` clause.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `new BulkInsertBuilder(connection, logger, tableName, batchSize = 1000)` | `BulkInsertBuilder` | `batchSize` values of 0 or less fall back to 1000 |
+| `AddRecord(record)` / `AddRecords(records)` | `BulkInsertBuilder` | Queue records for insertion |
+| `ExecuteAsync()` | `Task<BulkInsertResult>` | Inserts all records in one transaction |
+| `GenerateSqlStatements()` | `string` | Returns the `INSERT` statements as text without executing them |
+
+Notes:
+- Column names are taken from the first record of each batch. Records missing a column receive `DBNull`, and extra keys in later records are ignored.
+- The connection must be open before `ExecuteAsync()` is called.
+- On failure the transaction is rolled back, the error is logged, and the exception is rethrown. `BulkInsertResult.Error` is set as well.
+- `GenerateSqlStatements()` escapes values but not table or column names. Use it for inspection and logging only.
+- `BulkUpdateBuilder.ExecuteAsync()` inserts the `WHERE` clause verbatim. Never pass untrusted input as that clause. It catches exceptions and reports them through `BulkUpdateResult.Error` instead of rethrowing.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using SqliteMultiTenant.Operations;
+
+using var connection = new SQLiteConnection("Data Source=tenant-a.db;Version=3;");
+await connection.OpenAsync();
+
+var newOrders = new List<Dictionary<string, object>>
+{
+    new() { ["Id"] = 101, ["CustomerId"] = 7, ["Total"] = 19.99m },
+    new() { ["Id"] = 102, ["CustomerId"] = 9, ["Total"] = 5.00m }
+};
+
+// 'logger' is an ILogger<BulkInsertBuilder>; insert in batches of 500 rows
+var builder = new BulkInsertBuilder(connection, logger, "Orders", batchSize: 500)
+    .AddRecord(new Dictionary<string, object> { ["Id"] = 100, ["CustomerId"] = 3, ["Total"] = 42.50m })
+    .AddRecords(newOrders);
+
+BulkInsertResult result = await builder.ExecuteAsync();
+Console.WriteLine($"Inserted {result.InsertedRecords}/{result.TotalRecords} rows, successful: {result.IsSuccessful}");
+
+// Inspect the generated SQL without executing it
+string preview = builder.GenerateSqlStatements();
+Console.WriteLine(preview);
+```
+
+## BatchOperationHandler
+
+`src/Operations/BatchOperationHandler.cs` executes a `BatchOperation` against a list of resource (tenant) IDs and returns a `BatchOperationResult` with per-resource outcomes. It enforces size limits before any work starts, supports two atomicity modes, and tracks progress by operation ID so callers can poll `GetStatusAsync`.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `ExecuteAsync(operation, cancellationToken)` | `Task<BatchOperationResult>` | Runs the operation, one resource group at a time |
+| `GetStatusAsync(operationId)` | `Task<BatchOperationStatus?>` | Progress for an operation tracked by this handler instance, or `null` |
+| `BatchOperation.AtomicityMode` | `BatchAtomicityMode` | `CrossTenant` (default, best-effort) or `SingleTenant` |
+| `BatchOperationResult.GetOverallStatus()` | `BatchOperationAggregateStatus` | `AllSucceeded`, `AllFailed`, `PartialSuccess`, or `Empty` |
+
+Notes:
+- The handler constructor takes `ILogger<BatchOperationHandler>`, a `TenantContextHelper`, and an optional `SqliteMultiTenantOptions`. The options supply `MaxBatchItems` (default 500) and `MaxBatchPayloadSizeBytes` (default 1 MB). Exceeding either limit throws `BatchTooLargeException` before any resource is processed.
+- In `SingleTenant` mode, if a tenant context is set, every resource ID must match the current tenant. Otherwise `UnauthorizedAccessException` is thrown.
+- The per-resource operation is not implemented yet. `ExecuteOperationAsync` only logs, and `SingleTenant` mode returns a simulated transactional result without touching the database. Treat the results as a contract for the future implementation, not as proof that data changed.
+- Status is stored in memory per handler instance. It is lost on restart and not shared between instances.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Operations;
+using SqliteMultiTenant.Utilities;
+
+// 'logger' is an ILogger<BatchOperationHandler>; 'tenantContextHelper' comes from DI
+var options = new SqliteMultiTenantOptions
+{
+    MaxBatchItems = 100,
+    MaxBatchPayloadSizeBytes = 256 * 1024
+};
+var handler = new BatchOperationHandler(logger, tenantContextHelper, options);
+
+var operation = new BatchOperation
+{
+    OperationType = "apply-migration",
+    ResourceIds = new List<string> { "tenant-a", "tenant-b", "tenant-c" },
+    Parameters = new Dictionary<string, object> { ["Version"] = "2026.10.1" },
+    AtomicityMode = BatchAtomicityMode.CrossTenant, // best-effort: one failure does not stop the rest
+    ContinueOnError = true
+};
+
+BatchOperationResult result = await handler.ExecuteAsync(operation, cancellationToken);
+Console.WriteLine($"{result.SuccessCount} succeeded, {result.FailureCount} failed ({result.GetOverallStatus()})");
+
+foreach (var resource in result.ResourceResults.Where(r => !r.Success))
+{
+    Console.WriteLine($"{resource.ResourceId}: {resource.Message}");
+}
+
+// Progress can be read by operation ID after (or during) execution
+BatchOperationStatus? status = await handler.GetStatusAsync(operation.OperationId);
+Console.WriteLine($"Progress: {status?.ProgressPercent ?? 0}%");
+```
+
+## ConflictResolutionService
+
+`src/Operations/ConflictResolutionService.cs` compares two versions of a record (`Dictionary<string, object>`), reports the differences as `DataConflict` items, resolves them with a `ConflictResolutionStrategy`, and can write the resolved values to a table. Extension methods in `ConflictResolutionServiceExtensions.cs` add helpers for filtering and retrying, and `ConflictResolutionServiceValidation.cs` adds `Validate`, `IsValid`, and `EnsureValid` checks.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `DetectConflicts(local, remote)` | `ConflictDetectionResult` | Finds `ValueDifference`, `DeletedRemotely` (in local only), and `CreatedRemotely` (in remote only) fields |
+| `ResolveConflictsAsync(conflicts, strategy)` | `Task<ConflictResolutionResult>` | Applies one `ConflictResolutionStrategy` to every conflict |
+| `ApplyResolutionAsync(connection, table, keyColumn, keyValue, resolution)` | `Task<bool>` | Runs one `UPDATE` in a transaction. Returns `false` on any failure instead of throwing |
+| `GetConflictingFields(local, remote)` (extension) | `Dictionary<string, ConflictResolutionStrategy>` | Suggested strategy per conflicting field |
+| `ResolveConflictsAsync(conflicts, customResolver)` (extension) | `Task<ConflictResolutionResult>` | Resolves each field with your own function |
+| `ApplyResolutionWithRetryAsync(...)` (extension) | `Task<bool>` | Wraps `ApplyResolutionAsync` with retries |
+
+Strategy behavior:
+
+| Strategy | Result for each field |
+|----------|-----------------------|
+| `PreferLocal` / `PreferRemote` | The local or remote value |
+| `KeepBoth` | `"{local}|{remote}"` |
+| `DiscardBoth` | `null` |
+| `Merge` | Average for two `int` or two `long` values, `"{local}; {remote}"` for other values, or whichever side is non-null |
+
+Notes:
+- `ApplyResolutionAsync` uses resolved field names directly as column names in the SQL. Only pass field names that come from a trusted schema.
+- `ApplyResolutionAsync` catches every exception and returns `false`. Because of that, the `SQLiteException` retry in `ApplyResolutionWithRetryAsync` never fires. Check the boolean result, and do not rely on the retry for transient SQLite errors.
+- `ResolveConflictsAsync` with a strategy records any failure in `ConflictResolutionResult.Error` and does not throw.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using SqliteMultiTenant.Operations;
+
+// 'logger' is an ILogger<ConflictResolutionService>
+var service = new ConflictResolutionService(logger);
+
+var local = new Dictionary<string, object> { ["Name"] = "Acme", ["Credits"] = 10 };
+var remote = new Dictionary<string, object> { ["Name"] = "Acme Corp", ["Credits"] = 14, ["Region"] = "EU" };
+
+// Name and Credits differ; Region exists only in the remote version
+ConflictDetectionResult conflicts = service.DetectConflicts(local, remote);
+Console.WriteLine($"Conflicts found: {conflicts.Conflicts.Count}");
+
+// Merge: Name -> "Acme; Acme Corp", Credits -> 12 (average), Region -> "EU"
+ConflictResolutionResult resolution =
+    await service.ResolveConflictsAsync(conflicts, ConflictResolutionStrategy.Merge);
+
+if (resolution.IsSuccessful)
+{
+    using var connection = new SQLiteConnection("Data Source=tenant-a.db;Version=3;");
+    await connection.OpenAsync();
+
+    bool applied = await service.ApplyResolutionWithRetryAsync(
+        connection, "Customers", "Id", 42, resolution);
+    Console.WriteLine(applied ? "Resolution written" : "Resolution failed");
+}
+
+// Custom per-field rule: keep the remote value for Region, otherwise the local value
+ConflictResolutionResult custom = await service.ResolveConflictsAsync(
+    conflicts,
+    (field, type, localValue, remoteValue) =>
+        field == "Region" ? remoteValue : localValue);
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
