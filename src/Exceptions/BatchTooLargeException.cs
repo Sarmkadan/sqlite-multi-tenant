@@ -28,8 +28,15 @@ public sealed class BatchTooLargeException : Exception
     /// </summary>
     /// <param name="maxItemCount">The maximum allowed item count.</param>
     /// <param name="actualItemCount">The actual item count in the batch.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="maxItemCount"/> or <paramref name="actualItemCount"/> is negative.
+    /// </exception>
     public BatchTooLargeException(int maxItemCount, int actualItemCount)
-        : base(FormatMessage(maxItemCount, actualItemCount, 0, 0))
+        : base(FormatMessage(
+            ValidateNonNegative(maxItemCount, nameof(maxItemCount)),
+            ValidateNonNegative(actualItemCount, nameof(actualItemCount)),
+            0,
+            0))
     {
         MaxItemCount = maxItemCount;
         ActualItemCount = actualItemCount;
@@ -93,6 +100,28 @@ public sealed class BatchTooLargeException : Exception
         ActualItemCount = actualItemCount;
         MaxPayloadSizeBytes = 0;
         ActualPayloadSizeBytes = 0;
+    }
+
+    /// <summary>
+    /// Returns the value unchanged after verifying that it is not negative.
+    /// </summary>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="paramName">The name of the parameter being validated.</param>
+    /// <returns>The validated value.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="value"/> is negative.</exception>
+    private static int ValidateNonNegative(int value, string paramName)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(value, paramName);
+        return value;
+    }
+
+    /// <summary>
+    /// Returns a string representation of the exception including the item counts.
+    /// </summary>
+    /// <returns>The base exception string followed by the max and actual item counts.</returns>
+    public override string ToString()
+    {
+        return $"{base.ToString()}{Environment.NewLine}MaxItemCount: {MaxItemCount}, ActualItemCount: {ActualItemCount}";
     }
 
     private static string FormatMessage(
