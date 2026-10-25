@@ -13,6 +13,16 @@ namespace SqliteMultiTenant.Exceptions;
 public static class MigrationExceptionValidation
 {
     /// <summary>
+    /// Maximum allowed length of <see cref="MigrationException.MigrationId"/>
+    /// </summary>
+    private const int MaxMigrationIdLength = 255;
+
+    /// <summary>
+    /// Maximum allowed length of <see cref="MigrationException.MigrationVersion"/>
+    /// </summary>
+    private const int MaxMigrationVersionLength = 50;
+
+    /// <summary>
     /// Validates a <see cref="MigrationException"/> instance and returns a list of validation problems
     /// </summary>
     /// <param name="value">The exception to validate</param>
@@ -31,9 +41,9 @@ public static class MigrationExceptionValidation
             {
                 problems.Add("MigrationId cannot be empty or whitespace");
             }
-            else if (value.MigrationId.Length > 255)
+            else if (value.MigrationId.Length > MaxMigrationIdLength)
             {
-                problems.Add("MigrationId exceeds maximum length of 255 characters");
+                problems.Add($"MigrationId exceeds maximum length of {MaxMigrationIdLength} characters");
             }
         }
 
@@ -44,9 +54,9 @@ public static class MigrationExceptionValidation
             {
                 problems.Add("MigrationVersion cannot be empty or whitespace");
             }
-            else if (value.MigrationVersion.Length > 50)
+            else if (value.MigrationVersion.Length > MaxMigrationVersionLength)
             {
-                problems.Add("MigrationVersion exceeds maximum length of 50 characters");
+                problems.Add($"MigrationVersion exceeds maximum length of {MaxMigrationVersionLength} characters");
             }
         }
 
