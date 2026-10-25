@@ -56,6 +56,9 @@ public sealed class BulkExportCompletedEvent : DomainEvent
 
     /// <inheritdoc />
     public BulkExportCompletedEvent() : base(nameof(BulkExportCompletedEvent)) { }
+
+    /// <summary>Returns a single-line summary of this event's export results for logging.</summary>
+    public override string ToString() => $"BulkExportCompletedEvent {{ DatabaseId = {DatabaseId}, RowsExported = {RowsExported}, TablesExported = {TablesExported}, DurationMs = {DurationMs}, OutputPath = {OutputPath}, OperationId = {OperationId} }}";
 }
 
 /// <summary>
@@ -75,6 +78,9 @@ public sealed class BulkExportFailedEvent : DomainEvent
 
     /// <inheritdoc />
     public BulkExportFailedEvent() : base(nameof(BulkExportFailedEvent)) { }
+
+    /// <summary>Returns a single-line summary of this event's failure details for logging.</summary>
+    public override string ToString() => $"BulkExportFailedEvent {{ DatabaseId = {DatabaseId}, ErrorMessage = {ErrorMessage}, OperationId = {OperationId} }}";
 }
 
 /// <summary>
@@ -97,6 +103,9 @@ public sealed class BulkImportStartedEvent : DomainEvent
 
     /// <inheritdoc />
     public BulkImportStartedEvent() : base(nameof(BulkImportStartedEvent)) { }
+
+    /// <summary>Returns a single-line summary of this event's import request for logging.</summary>
+    public override string ToString() => $"BulkImportStartedEvent {{ DatabaseId = {DatabaseId}, TableNames = {TableNames}, Format = {Format}, OperationId = {OperationId} }}";
 }
 
 /// <summary>
@@ -122,6 +131,9 @@ public sealed class BulkImportCompletedEvent : DomainEvent
 
     /// <inheritdoc />
     public BulkImportCompletedEvent() : base(nameof(BulkImportCompletedEvent)) { }
+
+    /// <summary>Returns a single-line summary of this event's import results for logging.</summary>
+    public override string ToString() => $"BulkImportCompletedEvent {{ DatabaseId = {DatabaseId}, RowsImported = {RowsImported}, RowsFailed = {RowsFailed}, DurationMs = {DurationMs}, OperationId = {OperationId} }}";
 }
 
 /// <summary>
@@ -144,4 +156,7 @@ public sealed class BulkImportFailedEvent : DomainEvent
 
     /// <inheritdoc />
     public BulkImportFailedEvent() : base(nameof(BulkImportFailedEvent)) { }
+
+    /// <summary>Returns a single-line summary of this event's failure details for logging.</summary>
+    public override string ToString() => $"BulkImportFailedEvent {{ DatabaseId = {DatabaseId}, ErrorMessage = {ErrorMessage}, RowsFailedBeforeAbort = {RowsFailedBeforeAbort}, OperationId = {OperationId} }}";
 }
