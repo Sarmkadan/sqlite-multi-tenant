@@ -1787,6 +1787,117 @@ ConflictResolutionResult custom = await service.ResolveConflictsAsync(
         field == "Region" ? remoteValue : localValue);
 ```
 
+## BulkDataService
+
+`src/BulkOperations/BulkDataService.cs` implements `IBulkDataService` for importing and exporting tenant SQLite data. It supports whole-database and single-table exports, streaming export as `IAsyncEnumerable<ExportBatch>`, single-table import from a `Stream`, and streaming import from an `IAsyncEnumerable<ImportBatch>`. Tenant files are resolved as `{BaseDatabasePath}/{databaseId}.db`. Supported formats are `BulkDataFormat.Json`, `Csv` and `Sql`. Configuration lives in `BulkDataOptions` (`src/BulkOperations/BulkDataOptions.cs`). Request and result types live in `src/BulkOperations/BulkDataModels.cs`.
+
+Register the service with `AddBulkDataServices`, which is defined in `src/BulkOperations/BulkDataExtensions.cs`. It registers `IBulkDataService` as scoped, `BulkDataOptions` as a singleton, and `IEventBus` as a singleton only if one is not already registered.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `ExportDatabaseAsync(databaseId, format, options?, progress?, ct)` | `Task<BulkExportResult>` | Exports every user table (up to `MaxConcurrentTables` at a time) into one buffer and writes one artifact |
+| `ExportTableAsync(databaseId, tableName, format, options?, progress?, ct)` | `Task<BulkExportResult>` | Exports one table and writes one artifact |
+| `StreamExportAsync(databaseId, tableName, format, batchSize = 1000, ct)` | `IAsyncEnumerable<ExportBatch>` | Yields rows in batches; the last batch has `IsLastBatch = true` |
+| `ImportTableAsync(databaseId, tableName, dataStream, format, options?, progress?, ct)` | `Task<BulkImportResult>` | Reads the whole stream into memory and imports it into one table |
+| `StreamImportAsync(databaseId, batches, options?, progress?, ct)` | `Task<BulkImportResult>` | Imports each `ImportBatch` on one shared connection; with `SkipFailedRows`, failed batches are counted and skipped |
+
+**Configuration (`BulkDataOptions`):**
+
+| Property | Default | Applied by the service |
+|----------|---------|------------------------|
+| `DefaultBatchSize` | `1000` | Default for `StreamExportAsync` when `batchSize <= 0` |
+| `MaxConcurrentTables` | `3` | Concurrency for `ExportDatabaseAsync` |
+| `OperationTimeout` | `1 hour` | No (validated only) |
+| `MaxBufferSizeBytes` | `10_000_000` | No (validated only) |
+| `PublishDomainEvents` | `true` | Publishes `BulkExport*` and `BulkImport*` events on `IEventBus` |
+| `EnableProgressReporting` | `true` | Calls `IProgress<T>` callbacks |
+| `DefaultExportDirectory` | `./exports` | Artifact directory when `ExportOptions.OutputFilePath` is `null` |
+| `BaseDatabasePath` | `./databases` | Directory containing `{databaseId}.db` files |
+
+**Result and progress types (`BulkDataModels.cs`):**
+
+| Type | Key members |
+|------|-------------|
+| `BulkDataFormat` | `Json` (0), `Csv` (1), `Sql` (2) |
+| `DuplicateStrategy` | `Abort`, `Skip`, `Replace`. Not read by the service yet (see notes) |
+| `ExportOptions` | `IncludeMetadata` (JSON envelope), `IncludeCsvHeaders`, `OutputFilePath` |
+| `ImportOptions` | `TruncateBeforeImport`, `SkipFailedRows` (streaming import), `CsvDelimiter`, `CsvHasHeaders` |
+| `ExportBatch` | `TableName`, `Data`, `RowCount`, `SequenceNumber`, `IsLastBatch` |
+| `ImportBatch` | `TableName`, `Data`, `Format`, `SequenceNumber`, `IsLastBatch` |
+| `ExportProgress` | `TableName`, `RowsProcessed`, `TotalRowsEstimate`, `BatchSequence`, `PercentComplete` |
+| `ImportProgress` | `TableName`, `RowsImported`, `RowsFailed`, `BatchSequence`, `TotalAttempted`, `SuccessRate` |
+| `BulkExportResult` | `IsSuccess`, `TablesProcessed`, `TotalRowsExported`, `OutputPath`, `Duration`, `Warnings`, `ErrorMessage` |
+| `BulkImportResult` | `IsSuccess`, `TablesProcessed`, `TotalRowsImported`, `TotalRowsFailed`, `Duration`, `Warnings`, `ErrorMessage` |
+
+Notes:
+- Every method takes a `databaseId` and a `tableName`, but the service does not validate table names. `StreamExportAsync` builds `SELECT * FROM [{tableName}]` by string interpolation, so never pass untrusted table names.
+- `ExportDatabaseAsync` returns `IsSuccess = true` even when some tables fail. Per-table failures are added to `Warnings` as `Table export failed [index]: message`.
+- Exceptions raised before the `try` block are thrown, not returned. This includes opening the database in `ExportDatabaseAsync`, `ExportTableAsync`, `StreamExportAsync` and `StreamImportAsync`. Other failures are returned as `IsSuccess = false` with `ErrorMessage` set.
+- `ExportOptions.BatchSize`, `WhereClause` and `IncludeSchema`, and `ImportOptions.DuplicateHandling` and `CommitEveryNRows`, are declared but not read by the current implementation. `OperationTimeout` and `MaxBufferSizeBytes` are validated but not enforced. Do not rely on them.
+- `StreamExportAsync` with `BulkDataFormat.Sql` emits `INSERT INTO [...]` using the first column name as the table name. Use `ExportTableAsync` for SQL export.
+- `TotalRowsEstimate` in export progress equals the number of rows in the batch, so `PercentComplete` reaches 100 once a table has been reported. It does not reflect the table's real total.
+- `ImportTableAsync` always reports `TotalRowsFailed = 0`. Only `StreamImportAsync` counts failed rows.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using SqliteMultiTenant.BulkOperations;
+
+// Register the service; options are applied through the configure delegate
+services.AddBulkDataServices(opts =>
+{
+    opts.BaseDatabasePath = "./databases";
+    opts.DefaultExportDirectory = "./exports";
+    opts.MaxConcurrentTables = 2;
+});
+
+using var scope = provider.CreateScope();
+var bulk = scope.ServiceProvider.GetRequiredService<IBulkDataService>();
+
+// Export one tenant table to CSV with a progress callback
+var export = await bulk.ExportTableAsync(
+    "tenant-a",
+    "Orders",
+    BulkDataFormat.Csv,
+    new ExportOptions { IncludeCsvHeaders = true, OutputFilePath = "./exports/tenant-a-orders.csv" },
+    new Progress<ExportProgress>(p => Console.WriteLine($"{p.TableName}: {p.RowsProcessed} rows")));
+
+if (export.IsSuccess)
+{
+    Console.WriteLine($"Exported {export.TotalRowsExported} rows to {export.OutputPath}");
+}
+
+// Stream a table in 500-row JSON batches without holding the whole result in memory
+await foreach (ExportBatch batch in bulk.StreamExportAsync("tenant-a", "Orders", BulkDataFormat.Json, batchSize: 500))
+{
+    Console.WriteLine($"Batch {batch.SequenceNumber}: {batch.RowCount} rows (last: {batch.IsLastBatch})");
+}
+
+// Import streamed JSON batches into another tenant; failed batches are skipped and counted
+static async IAsyncEnumerable<ImportBatch> ReadBatchesAsync()
+{
+    yield return new ImportBatch("Orders", "[{\"Id\":101,\"CustomerId\":7,\"Total\":19.99}]", BulkDataFormat.Json, 0, IsLastBatch: false);
+    yield return new ImportBatch("Orders", "[{\"Id\":102,\"CustomerId\":9,\"Total\":5.00}]", BulkDataFormat.Json, 1, IsLastBatch: true);
+}
+
+BulkImportResult import = await bulk.StreamImportAsync(
+    "tenant-b",
+    ReadBatchesAsync(),
+    new ImportOptions { SkipFailedRows = true });
+
+if (!import.IsSuccess)
+{
+    Console.WriteLine($"Import failed: {import.ErrorMessage}");
+}
+else
+{
+    Console.WriteLine($"Imported {import.TotalRowsImported} rows, failed {import.TotalRowsFailed}");
+}
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
