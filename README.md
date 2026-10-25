@@ -2157,6 +2157,69 @@ app.MapControllers();
 app.Run();
 ```
 
+## Exception Hierarchy
+
+All library exceptions are in the `SqliteMultiTenant.Exceptions` namespace. `MultiTenantException` is an abstract base class with a `TenantId` property, which is `null` when the failure is not tied to a tenant. Four of its subclasses inherit from it. `QuotaExceededException` and `BatchTooLargeException` derive directly from `Exception`, so a `catch (MultiTenantException)` block does not catch them.
+
+| Exception | Base class | Thrown when | Extra properties |
+|-----------|------------|-------------|------------------|
+| `MultiTenantException` | `Exception` (abstract) | Never thrown directly. It is the base type for the subclasses below | `TenantId` |
+| `TenantNotFoundException` | `MultiTenantException` | A tenant lookup or update fails because the tenant does not exist. Raised by `TenantService`, `TenantManager`, `TenantProvisioner`, `TenantQuotaEnforcer`, `TenantDatabaseMaintenanceService`, `IntegrityCheckService` and `TenantSizeReportService` | `TenantId` |
+| `MigrationException` | `MultiTenantException` | A migration fails. `MigrationService` raises it when a migration script fails during execution, and `MigrationResultExtensions` raises it for a failed migration result | `MigrationId`, `MigrationVersion` |
+| `BackupException` | `MultiTenantException` | A backup verification fails. `BackupVerificationResultExtensions` raises it when a verification result is a failure | `BackupId`, `DatabaseId` |
+| `DatabaseAccessException` | `MultiTenantException` | A database operation fails. No code in `src/` throws it at present. `ErrorHandlingMiddleware` maps it to HTTP 500 with the code `DATABASE_ERROR` | `DatabaseId`, `OperationType` |
+| `QuotaExceededException` | `Exception` | A tenant database is over its configured quota. Raised by `QuotaCheckResultExtensions.ThrowIfExceeded()`, which sets `DeltaBytes` to `0` because the check result has no pending size change | `TenantId`, `QuotaBytes`, `CurrentSizeBytes`, `DeltaBytes` |
+| `BatchTooLargeException` | `Exception` | A batch operation has more items than the configured maximum, or a payload larger than the configured maximum size. Raised by `BatchOperationHandler` | `MaxItemCount`, `ActualItemCount`, `MaxPayloadSizeBytes`, `ActualPayloadSizeBytes` |
+
+`ErrorHandlingMiddleware` maps `TenantNotFoundException`, `DatabaseAccessException`, `MigrationException` and `BackupException` to HTTP responses. See [Middleware Pipeline](#middleware-pipeline).
+
+### Usage Example
+
+Catch the most specific types first. Catch `MultiTenantException` last, and catch `QuotaExceededException` and `BatchTooLargeException` separately because they are not part of that hierarchy.
+
+```csharp
+using SqliteMultiTenant.Exceptions;
+
+static async Task RunSafelyAsync(Func<Task> operation)
+{
+    try
+    {
+        await operation();
+    }
+    catch (TenantNotFoundException ex)
+    {
+        Console.WriteLine($"Tenant '{ex.TenantId}' does not exist.");
+    }
+    catch (QuotaExceededException ex)
+    {
+        Console.WriteLine($"Tenant '{ex.TenantId}' is over its quota of {ex.QuotaBytes} bytes.");
+    }
+    catch (BatchTooLargeException ex)
+    {
+        Console.WriteLine($"Batch of {ex.ActualItemCount} items exceeds the limit of {ex.MaxItemCount}.");
+    }
+    catch (MigrationException ex)
+    {
+        Console.WriteLine($"Migration {ex.MigrationId} (v{ex.MigrationVersion}) failed: {ex.Message}");
+    }
+    catch (BackupException ex)
+    {
+        Console.WriteLine($"Backup {ex.BackupId} failed: {ex.Message}");
+    }
+    catch (DatabaseAccessException ex)
+    {
+        Console.WriteLine($"Database {ex.DatabaseId} failed during {ex.OperationType}.");
+    }
+    catch (MultiTenantException ex)
+    {
+        // Any other library error that carries a tenant ID (may be null)
+        Console.WriteLine($"Tenant error for '{ex.TenantId}': {ex.Message}");
+    }
+}
+
+await RunSafelyAsync(() => tenantService.DeleteTenantAsync("acme"));
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
