@@ -17,8 +17,23 @@ namespace SqliteMultiTenant.Integration;
 /// </summary>
 public interface IWebhookHandler
 {
+    /// <summary>
+    /// Delivers a webhook request, retrying on failure.
+    /// </summary>
+    /// <param name="delivery">The delivery request to send.</param>
+    /// <param name="cancellationToken">A token to cancel the delivery.</param>
     Task DeliverAsync(WebhookDelivery delivery, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Registers a webhook subscription.
+    /// </summary>
+    /// <param name="subscription">The subscription to register.</param>
     Task RegisterAsync(WebhookHandlerSubscription subscription);
+
+    /// <summary>
+    /// Unregisters a webhook subscription by its identifier.
+    /// </summary>
+    /// <param name="webhookId">The identifier of the subscription to remove.</param>
     Task UnregisterAsync(string webhookId);
 }
 
@@ -27,12 +42,43 @@ public interface IWebhookHandler
 /// </summary>
 public sealed class WebhookHandlerSubscription
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of the subscription.
+    /// </summary>
     public string WebhookId { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets or sets the callback URL that receives the webhook requests.
+    /// </summary>
     public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the event type to subscribe to, or <c>*</c> for all events.
+    /// </summary>
     public string EventType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the subscription is active.
+    /// </summary>
     public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the custom HTTP headers sent with each request.
+    /// </summary>
     public Dictionary<string, string> Headers { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the UTC time when the subscription was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Returns a summary of the subscription. The URL and header values are omitted
+    /// because they may contain credentials or signing keys.
+    /// </summary>
+    /// <returns>A string describing the subscription without secrets.</returns>
+    public override string ToString() =>
+        $"WebhookHandlerSubscription {{ WebhookId = {WebhookId}, EventType = {EventType}, Enabled = {Enabled}, Headers = {Headers.Count}, CreatedAt = {CreatedAt:O} }}";
 }
 
 /// <summary>
@@ -40,13 +86,48 @@ public sealed class WebhookHandlerSubscription
 /// </summary>
 public sealed class WebhookDelivery
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of this delivery attempt sequence.
+    /// </summary>
     public string DeliveryId { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets or sets the identifier of the subscription this delivery belongs to.
+    /// </summary>
     public string WebhookId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the callback URL the payload is posted to.
+    /// </summary>
     public string Url { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the domain event being delivered.
+    /// </summary>
     public DomainEvent? Event { get; set; }
+
+    /// <summary>
+    /// Gets or sets the custom HTTP headers sent with the request, including any signature header.
+    /// </summary>
     public Dictionary<string, string> Headers { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the number of retries already performed.
+    /// </summary>
     public int RetryCount { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets the maximum number of retries allowed.
+    /// </summary>
     public int MaxRetries { get; set; } = 3;
+
+    /// <summary>
+    /// Returns a summary of the delivery. The URL, header values and event payload are omitted
+    /// because they may contain credentials, signatures or sensitive data.
+    /// </summary>
+    /// <returns>A string describing the delivery without secrets or payload.</returns>
+    public override string ToString() =>
+        $"WebhookDelivery {{ DeliveryId = {DeliveryId}, WebhookId = {WebhookId}, EventId = {Event?.EventId ?? "null"}, EventType = {Event?.EventType ?? "null"}, Headers = {Headers.Count}, RetryCount = {RetryCount}, MaxRetries = {MaxRetries} }}";
 
     /// <summary>
     /// Verifies the HMAC-SHA256 signature of the webhook payload.
@@ -82,6 +163,12 @@ public sealed class WebhookHandler : IWebhookHandler
     private readonly ILogger<WebhookHandler> _logger;
     private readonly Dictionary<string, WebhookHandlerSubscription> _subscriptions = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebhookHandler"/> class.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client used to deliver webhooks.</param>
+    /// <param name="logger">The logger for delivery diagnostics.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="httpClient"/> or <paramref name="logger"/> is <see langword="null"/>.</exception>
     public WebhookHandler(HttpClient httpClient, ILogger<WebhookHandler> logger)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
@@ -226,6 +313,12 @@ public sealed class WebhookEventHandler<T> : IEventHandler<T> where T : DomainEv
     private readonly IWebhookHandler _webhookHandler;
     private readonly ILogger<WebhookEventHandler<T>> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WebhookEventHandler{T}"/> class.
+    /// </summary>
+    /// <param name="webhookHandler">The webhook handler used to deliver notifications.</param>
+    /// <param name="logger">The logger for diagnostics.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="webhookHandler"/> or <paramref name="logger"/> is <see langword="null"/>.</exception>
     public WebhookEventHandler(IWebhookHandler webhookHandler, ILogger<WebhookEventHandler<T>> logger)
     {
         _webhookHandler = webhookHandler ?? throw new ArgumentNullException(nameof(webhookHandler));
