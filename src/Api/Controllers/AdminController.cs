@@ -281,38 +281,127 @@ public sealed class AdminController : ControllerBase
     }
 }
 
+/// <summary>
+/// Represents the response body of the system health check endpoint.
+/// </summary>
 public sealed class HealthCheckResponse
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the system is healthy.
+    /// </summary>
     public bool IsHealthy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the detailed status description reported by the health check service.
+    /// </summary>
     public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the health check was performed.
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the version of the executing assembly.
+    /// </summary>
     public string Version { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Represents a point-in-time snapshot of system resource and request metrics.
+/// </summary>
 public sealed class SystemMetrics
 {
+    /// <summary>
+    /// Gets or sets the UTC time at which the metrics were captured.
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the managed memory used by the process, in megabytes.
+    /// </summary>
     public long ProcessMemoryMb { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of threads in the current process.
+    /// </summary>
     public int ThreadCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of active database connections.
+    /// Always 0, because this value is not available from the metrics snapshot.
+    /// </summary>
     public int ActiveConnections { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of requests processed.
+    /// </summary>
     public long RequestsProcessed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average response time, in milliseconds.
+    /// </summary>
     public double AverageResponseTimeMs { get; set; }
 }
 
+/// <summary>
+/// Represents the result of a cache clear operation.
+/// </summary>
 public sealed class CacheClearResult
 {
+    /// <summary>
+    /// Gets or sets the number of bytes freed by the garbage collection performed during the cache clear.
+    /// </summary>
     public long MemoryFreedBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the cache was cleared.
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets a human-readable message describing the outcome.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Represents diagnostic information about the running system.
+/// </summary>
 public sealed class DiagnosticsInfo
 {
+    /// <summary>
+    /// Gets or sets the .NET runtime framework description.
+    /// </summary>
     public string DotNetVersion { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the operating system description.
+    /// </summary>
     public string OSVersion { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the number of logical processors available to the process.
+    /// </summary>
     public int ProcessorCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the version of the executing application assembly.
+    /// </summary>
     public string ApplicationVersion { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the time at which the current process started.
+    /// </summary>
     public DateTime StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the elapsed time since the current process started.
+    /// </summary>
     public TimeSpan Uptime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the diagnostics were captured.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
