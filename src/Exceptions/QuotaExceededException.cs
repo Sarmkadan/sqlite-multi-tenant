@@ -11,6 +11,9 @@ namespace SqliteMultiTenant.Exceptions;
 /// </summary>
 public sealed class QuotaExceededException : Exception
 {
+    private const int BytesPerKilobyte = 1024;
+    private const int PercentScale = 100;
+
     /// <summary>Gets the tenant identifier.</summary>
     public string? TenantId { get; }
 
@@ -30,8 +33,10 @@ public sealed class QuotaExceededException : Exception
     /// <param name="quotaBytes">The quota limit in bytes.</param>
     /// <param name="currentSizeBytes">The current database size in bytes.</param>
     /// <param name="deltaBytes">The size delta that would be added by the operation.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="tenantId"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="quotaBytes"/> or <paramref name="currentSizeBytes"/> is negative.</exception>
     public QuotaExceededException(string tenantId, long quotaBytes, long currentSizeBytes, long deltaBytes)
-        : base(FormatMessage(tenantId, quotaBytes, currentSizeBytes, deltaBytes))
+        : base(FormatMessage(ValidateArguments(tenantId, quotaBytes, currentSizeBytes), quotaBytes, currentSizeBytes, deltaBytes))
     {
         TenantId = tenantId;
         QuotaBytes = quotaBytes;
@@ -85,10 +90,18 @@ public sealed class QuotaExceededException : Exception
         DeltaBytes = deltaBytes;
     }
 
+    private static string ValidateArguments(string tenantId, long quotaBytes, long currentSizeBytes)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        ArgumentOutOfRangeException.ThrowIfNegative(quotaBytes);
+        ArgumentOutOfRangeException.ThrowIfNegative(currentSizeBytes);
+        return tenantId;
+    }
+
     private static string FormatMessage(string tenantId, long quotaBytes, long currentSizeBytes, long deltaBytes)
     {
         var newSize = currentSizeBytes + deltaBytes;
-        var percent = (double)newSize / quotaBytes * 100;
+        var percent = (double)newSize / quotaBytes * PercentScale;
         return $"Tenant '{tenantId}' would exceed storage quota. " +
                $"Quota: {FormatSize(quotaBytes)}, " +
                $"Current: {FormatSize(currentSizeBytes)}, " +
@@ -101,10 +114,10 @@ public sealed class QuotaExceededException : Exception
         string[] sizes = { "B", "KB", "MB", "GB", "TB" };
         int order = 0;
         double len = bytes;
-        while (len >= 1024 && order < sizes.Length - 1)
+        while (len >= BytesPerKilobyte && order < sizes.Length - 1)
         {
             order++;
-            len /= 1024;
+            len /= BytesPerKilobyte;
         }
         return $"{len:0.##} {sizes[order]}";
     }
