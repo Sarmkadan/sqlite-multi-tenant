@@ -13,25 +13,96 @@ namespace SqliteMultiTenant.Models;
 /// </summary>
 public sealed class Migration
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of the migration
+    /// </summary>
     public string MigrationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the identifier of the database the migration is applied to
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the version of the migration
+    /// </summary>
     public string Version { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the name of the migration
+    /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets an optional description of the migration
+    /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Gets or sets the SQL script that applies the migration
+    /// </summary>
     public string UpScript { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the optional SQL script that reverts the migration
+    /// </summary>
     public string? DownScript { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current status of the migration
+    /// </summary>
     public MigrationStatus Status { get; set; } = MigrationStatus.Pending;
+
+    /// <summary>
+    /// Gets or sets the UTC date and time when the migration was created
+    /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the UTC date and time when the migration execution started
+    /// </summary>
     public DateTime? ExecutedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC date and time when the migration completed
+    /// </summary>
     public DateTime? CompletedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC date and time when the migration was rolled back
+    /// </summary>
     public DateTime? RolledBackAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the identifier of the actor that executed the migration
+    /// </summary>
     public string? ExecutedBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message recorded when the migration failed
+    /// </summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution time of the migration in milliseconds
+    /// </summary>
     public long ExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the position of the migration in the execution sequence
+    /// </summary>
     public int ExecutionOrder { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the migration can be rolled back
+    /// </summary>
     public bool IsRollbackable { get; set; } = true;
 
     // Navigation properties
+
+    /// <summary>
+    /// Gets or sets the database the migration belongs to
+    /// </summary>
     public TenantDatabase? Database { get; set; }
 
     /// <summary>
