@@ -1898,6 +1898,173 @@ else
 }
 ```
 
+## DataExporter
+
+`src/DataOperations/DataExporter.cs` exports every row of one table from an open `SQLiteConnection` into JSON, CSV, raw SQL `INSERT` statements or JSON Lines. It is `sealed` and has two constructors: a parameterless one (used for JSON deserialization, logs to a `NullLogger`) and one that takes `ILogger<DataExporter>`. Failures are logged and rethrown.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `ExportAsJsonAsync(connection, tableName, includeMeta = true)` | `Task<string>` | Indented JSON. With `includeMeta`, the output is `{ "meta": { "Table", "RowCount", "ExportedAt" }, "data": [...] }`; otherwise a bare array |
+| `ExportAsCsvAsync(connection, tableName, includeHeaders = true)` | `Task<string>` | CSV with `\n` line endings. Fields containing quotes, commas or newlines are quoted |
+| `ExportAsSqlAsync(connection, tableName)` | `Task<string>` | `INSERT INTO [table] ([col], ...) VALUES (...);` per row, preceded by a two-line comment header |
+| `ExportAsJsonLinesAsync(connection, tableName, outputPath)` | `Task` | Streams one JSON object per line to `outputPath` (UTF-8, overwrites an existing file) |
+
+Notes:
+- `tableName` is interpolated into `SELECT * FROM {tableName}` without quoting or validation. Never pass an untrusted table name.
+- The string-returning methods buffer the whole table in memory. `ExportAsJsonLinesAsync` is the only one that writes rows as it reads them.
+- NULL and an empty string both export as `""` in CSV. The importer reads empty CSV fields back as NULL, so the two are not distinguishable after a round trip.
+- CSV and SQL output use `ToString()` for BLOB values, so byte arrays come out as `System.Byte[]` rather than their contents. JSON serializes them as base64.
+- Booleans are written as `1`/`0` in SQL output. Other non-numeric values are written as single-quoted strings with `'` doubled.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.DataOperations;
+
+using var connection = new SQLiteConnection("Data Source=./databases/tenant-a_primary.db");
+await connection.OpenAsync();
+
+var exporter = new DataExporter(NullLogger<DataExporter>.Instance);
+Directory.CreateDirectory("./exports");
+
+// JSON with the metadata envelope: { "meta": { ... }, "data": [ ... ] }
+string json = await exporter.ExportAsJsonAsync(connection, "Orders");
+await File.WriteAllTextAsync("./exports/orders.json", json);
+
+// CSV without a header row
+string csv = await exporter.ExportAsCsvAsync(connection, "Orders", includeHeaders: false);
+
+// INSERT statements that recreate the rows in another SQLite database
+string sql = await exporter.ExportAsSqlAsync(connection, "Orders");
+await File.WriteAllTextAsync("./exports/orders.sql", sql);
+
+// Streamed JSON Lines, written row by row straight to disk
+await exporter.ExportAsJsonLinesAsync(connection, "Orders", "./exports/orders.jsonl");
+```
+
+## DataImporter
+
+`src/DataOperations/DataImporter.cs` imports JSON, CSV and raw SQL into an open `SQLiteConnection`. Each import runs in one transaction, so a failure rolls back the whole batch. The class is `sealed` and has no parameterless constructor; it requires an `ILogger<DataImporter>`. The class also has a tenant-scoped CSV overload that opens the tenant database itself.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `ImportFromJsonAsync(connection, tableName, jsonData, truncateTable = false)` | `Task<int>` | Accepts a top-level array of objects, or an object with a `data` array. An object without `data` imports 0 rows |
+| `ImportFromCsvAsync(connection, tableName, csvData, hasHeaders = true, delimiter = ",", truncateTable = false)` | `Task<int>` | Parses the first line as column names when `hasHeaders` is true. Empty fields are inserted as NULL |
+| `ImportFromSqlAsync(connection, sqlStatements)` | `Task<int>` | Splits the input on `;`, runs each non-empty statement and returns the total rows affected |
+| `ImportFromCsvAsync(tenantId, tableName, csvText)` | `Task<int>` | Opens `databases/{tenantId}_primary.db` relative to the working directory and imports with headers, comma delimiter and no truncation |
+
+Notes:
+- **JSON only imports string and null values.** A number or boolean property throws `InvalidOperationException`, because the value is read with `GetString()`.
+- **Every JSON row is written with the values of the first record.** The column names and values both come from the first object, so a multi-record array inserts the first record repeatedly. Until this is fixed, import one record per call.
+- An empty JSON input returns 0 without running `truncateTable`, so the target table is left as it is.
+- CSV rows whose column count differs from the header are skipped with a warning and are not counted. Lines are split on `\r\n`, `\r` or `\n` before parsing, so a quoted field cannot contain a line break.
+- `ImportFromSqlAsync` splits on every `;`, including ones inside string literals. Do not use it with values that contain semicolons.
+- `ImportFromSqlAsync` runs any statement it receives, not only `INSERT`. Only pass trusted SQL.
+- The tenant overload requires `tenantId` to be a positive integer made of digits only (for example `"42"`). It does not accept names such as `tenant-a`, and it does not truncate the table.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.DataOperations;
+
+using var connection = new SQLiteConnection("Data Source=./databases/tenant-b_primary.db");
+await connection.OpenAsync();
+
+var importer = new DataImporter(NullLogger<DataImporter>.Instance);
+
+// CSV with a header row; the empty Email field is stored as NULL
+string csv = "Id,Name,Email\n1,Ada,ada@example.com\n2,Grace,\n";
+int imported = await importer.ImportFromCsvAsync(connection, "Customers", csv, truncateTable: true);
+Console.WriteLine($"Imported {imported} rows from CSV");
+
+// Raw INSERT statements, all applied in one transaction
+string sql = "INSERT INTO Customers (Id, Name, Email) VALUES (3, 'Linus', NULL); " +
+             "INSERT INTO Customers (Id, Name, Email) VALUES (4, 'Ken', 'ken@example.com');";
+int affected = await importer.ImportFromSqlAsync(connection, sql);
+Console.WriteLine($"SQL statements affected {affected} rows");
+
+// JSON: a single object, with every value written as a JSON string (numbers would throw)
+string json = "[{\"Id\":\"5\",\"Name\":\"Barbara\",\"Email\":\"barbara@example.com\"}]";
+int fromJson = await importer.ImportFromJsonAsync(connection, "Customers", json);
+Console.WriteLine($"JSON imported {fromJson} rows");
+
+// Tenant overload: opens databases/42_primary.db itself and appends the CSV rows
+int tenantRows = await importer.ImportFromCsvAsync("42", "Customers", csv);
+Console.WriteLine($"Tenant 42 received {tenantRows} rows");
+```
+
+## DataConsistencyChecker
+
+`src/DataOperations/DataConsistencyChecker.cs` checks a tenant database for integrity problems, foreign key violations, a hard-coded set of expected indexes, and table row counts. It also finds likely duplicate rows and validates expected row counts. The class is `sealed`, implements `IEquatable<DataConsistencyChecker>`, and requires an `ILogger<DataConsistencyChecker>`. `CheckDatabaseIntegrityAsync` returns its results in a new `ConsistencyCheckResult`; the checker's own properties (`IsHealthy`, `OrphanedRecords`, `CheckedAt` and so on) are never set by any method.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `CheckDatabaseIntegrityAsync(connection)` | `Task<ConsistencyCheckResult>` | Runs all five checks and sets `IsHealthy` |
+| `FindDuplicatesAsync(connection, tableName, keyColumns, similarityThreshold = 0.95)` | `Task<List<DuplicateRecord>>` | Compares every pair of rows on the key columns |
+| `ValidateRecordCountsAsync(connection, expectedCounts)` | `Task<bool>` | `true` only if every `COUNT(*)` matches its expected value |
+
+`ConsistencyCheckResult` holds `IsHealthy`, `IntegrityCheckPassed`, `OrphanedRecords`, `ForeignKeyViolations`, `MissingIndexes`, `TableStatistics` (keyed by table name) and `CheckedAt`. `ConstraintViolation`, `TableStatistics` and `DuplicateRecord` are declared in the same file.
+
+Notes:
+- `CheckDatabaseIntegrityAsync` throws `InvalidOperationException` if the connection is not open.
+- `IsHealthy` is true only when the integrity check returns `ok`, and there are no orphaned records and no foreign key violations. `OrphanedRecords` and `ForeignKeyViolations` both come from `PRAGMA foreign_key_check`.
+- Errors inside the individual checks are logged and swallowed. A failed foreign key check reports no violations, and a failed orphan check reports no orphans. A failed integrity check makes `IsHealthy` false; a failed orphan or foreign key check does not.
+- `MissingIndexes` checks a hard-coded pair, `AuditLog.TenantId` and `AuditLog.CreatedAt`. A database without an `AuditLog` table reports both as missing. `MissingIndexes` does not affect `IsHealthy`.
+- `TableStatistics` counts every user table with `SELECT COUNT(*) FROM {name}`. Table names are not quoted.
+- `FindDuplicatesAsync` loads the whole table and compares every pair of rows, so it is O(n²) in memory and time. Similarity is the number of matching key columns divided by the number of key columns, and values are compared with `object.Equals`, so `1` and `"1"` do not match. With the default threshold of 0.95 every key column must match, unless there are 20 or more of them.
+- `FindDuplicatesAsync` reports 0-based positions in the `SELECT *` result, not row IDs. Any error, including an unknown table name, is logged and returns an empty list.
+- `ValidateRecordCountsAsync` stops at the first mismatch and returns `false`. Any exception, including a `null` argument, is logged and also returns `false`. Its XML documentation says it throws `ArgumentNullException`, but it does not.
+- `Equals` compares every result property, including `CheckedAt`, so two separate runs are practically never equal.
+
+### Usage Example
+
+```csharp
+using System.Collections.Generic;
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.DataOperations;
+
+using var connection = new SQLiteConnection("Data Source=./databases/tenant-a_primary.db");
+await connection.OpenAsync();
+
+var checker = new DataConsistencyChecker(NullLogger<DataConsistencyChecker>.Instance);
+
+// Runs the integrity, orphan, foreign key, index and table statistics checks
+ConsistencyCheckResult result = await checker.CheckDatabaseIntegrityAsync(connection);
+Console.WriteLine(result);
+
+foreach (var violation in result.ForeignKeyViolations)
+{
+    Console.WriteLine($"Foreign key violation: {violation}");
+}
+
+foreach (var stats in result.TableStatistics.Values)
+{
+    Console.WriteLine($"{stats.TableName}: {stats.RowCount} rows");
+}
+
+// Customers whose Name and Email both match (similarity 1.0, at or above the 0.95 threshold)
+List<DuplicateRecord> duplicates =
+    await checker.FindDuplicatesAsync(connection, "Customers", new[] { "Name", "Email" });
+Console.WriteLine($"Found {duplicates.Count} duplicate pairs");
+
+// Expect exactly two rows in Customers; returns false on the first mismatch or any error
+bool countsMatch = await checker.ValidateRecordCountsAsync(
+    connection,
+    new Dictionary<string, int> { ["Customers"] = 2 });
+Console.WriteLine($"Counts match: {countsMatch}");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
