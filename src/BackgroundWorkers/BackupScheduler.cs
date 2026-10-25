@@ -18,6 +18,18 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// </summary>
 public sealed class BackupSchedulerService : BackgroundService
 {
+    // Default time between scheduled backup runs (daily).
+    private static readonly TimeSpan DefaultBackupInterval = TimeSpan.FromHours(24);
+
+    // Hour of day (UTC) at which the first scheduled backup is aimed for.
+    private const int BackupHourUtc = 2;
+
+    // Longest single wait between scheduler checks.
+    private static readonly TimeSpan MaxSchedulerPollInterval = TimeSpan.FromMinutes(1);
+
+    // Pause after an unexpected error before the scheduler loop resumes.
+    private static readonly TimeSpan SchedulerErrorBackoff = TimeSpan.FromMinutes(5);
+
     private readonly IBackupService _backupService;
     private readonly ITenantService _tenantService;
     private readonly ILogger<BackupSchedulerService> _logger;
@@ -32,7 +44,7 @@ public sealed class BackupSchedulerService : BackgroundService
         _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
         _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _interval = interval ?? TimeSpan.FromHours(24); // Default: daily
+        _interval = interval ?? DefaultBackupInterval; // Default: daily
     }
 
     /// <summary>
@@ -45,7 +57,7 @@ public sealed class BackupSchedulerService : BackgroundService
 
         // Calculate next run time (daily at 2 AM UTC by default)
         var nextRun = DateTime.UtcNow
-            .AddHours(2)
+            .AddHours(BackupHourUtc)
             .RoundDownToMinute();
 
         while (!stoppingToken.IsCancellationRequested)
@@ -66,8 +78,8 @@ public sealed class BackupSchedulerService : BackgroundService
 
                 // Sleep until next scheduled time or 1 minute, whichever is shorter
                 var delayUntilNextRun = nextRun - DateTime.UtcNow;
-                var delay = delayUntilNextRun > TimeSpan.FromMinutes(1)
-                    ? TimeSpan.FromMinutes(1)
+                var delay = delayUntilNextRun > MaxSchedulerPollInterval
+                    ? MaxSchedulerPollInterval
                     : delayUntilNextRun;
 
                 await Task.Delay(delay, stoppingToken);
@@ -81,7 +93,7 @@ public sealed class BackupSchedulerService : BackgroundService
             {
                 _logger.LogError(ex, "Error in backup scheduler");
                 // Continue on error to prevent service from exiting
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                await Task.Delay(SchedulerErrorBackoff, stoppingToken);
             }
         }
     }
@@ -109,12 +121,10 @@ public sealed class BackupSchedulerService : BackgroundService
 
                 try
                 {
-                    // In production, get tenant's database ID from relationship
-                    // For now, create a backup with tenant context
+                    // Integration point: once tenant databases can be enumerated, create
+                    // an incremental backup for each one through IBackupService here.
                     _logger.LogInformation("Creating backup for tenant: {tenantId}", tenant.TenantId);
 
-                    // This would be replaced with actual database enumeration
-                    // await _backupService.CreateBackupAsync(databaseId, BackupType.Incremental, "scheduler", null);
                     successCount++;
                 }
                 catch (Exception ex)
@@ -142,6 +152,20 @@ public sealed class BackupSchedulerService : BackgroundService
 /// </summary>
 public sealed class BackupCleanupService : BackgroundService
 {
+    /// <summary>
+    /// Default number of days a backup is kept before cleanup removes it.
+    /// </summary>
+    public const int DefaultRetentionDays = 30;
+
+    // Hour of day (UTC) at which the daily cleanup pass runs.
+    private const int CleanupHourUtc = 3;
+
+    // Default wait before the next cleanup pass when the computed run time has already passed.
+    private static readonly TimeSpan DefaultCleanupDelay = TimeSpan.FromHours(24);
+
+    // Pause after an unexpected error before the cleanup loop resumes.
+    private static readonly TimeSpan CleanupErrorBackoff = TimeSpan.FromHours(1);
+
     private readonly IBackupService _backupService;
     private readonly ILogger<BackupCleanupService> _logger;
     private readonly int _retentionDays;
@@ -149,7 +173,7 @@ public sealed class BackupCleanupService : BackgroundService
     public BackupCleanupService(
         IBackupService backupService,
         ILogger<BackupCleanupService> logger,
-        int retentionDays = 30)
+        int retentionDays = DefaultRetentionDays)
     {
         _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -170,14 +194,14 @@ public sealed class BackupCleanupService : BackgroundService
             {
                 // Run cleanup once daily at 3 AM UTC
                 var nextRun = DateTime.UtcNow
-                    .AddHours(3)
+                    .AddHours(CleanupHourUtc)
                     .Date
-                    .AddHours(3);
+                    .AddHours(CleanupHourUtc);
 
                 var delay = nextRun - DateTime.UtcNow;
                 if (delay < TimeSpan.Zero)
                 {
-                    delay = TimeSpan.FromHours(24);
+                    delay = DefaultCleanupDelay;
                 }
 
                 _logger.LogDebug("Next cleanup in {hours}h", delay.TotalHours);
@@ -193,7 +217,7 @@ public sealed class BackupCleanupService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in backup cleanup");
-                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
+                await Task.Delay(CleanupErrorBackoff, stoppingToken);
             }
         }
     }
@@ -211,8 +235,8 @@ public sealed class BackupCleanupService : BackgroundService
             var cutoffDate = DateTime.UtcNow.AddDays(-_retentionDays);
             int deletedCount = 0;
 
-            // In production, implement repository query for expired backups
-            // var expiredBackups = await _backupService.GetExpiredBackupsAsync(cutoffDate);
+            // Integration point: ask IBackupService for backups older than cutoffDate
+            // and delete them here, then count the removed backups.
 
             _logger.LogInformation("Backup cleanup completed: {count} backups removed", deletedCount);
         }
