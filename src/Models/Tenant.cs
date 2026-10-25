@@ -136,8 +136,13 @@ public sealed class Tenant
     /// </summary>
     /// <param name="key">The metadata key.</param>
     /// <param name="value">The metadata value.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is null, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
     public void SetMetadata(string key, string value)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(value);
+
         Metadata ??= new Dictionary<string, string>();
         Metadata[key] = value;
         UpdatedAt = DateTime.UtcNow;
@@ -148,8 +153,11 @@ public sealed class Tenant
     /// </summary>
     /// <param name="key">The metadata key.</param>
     /// <returns>The metadata value if found; otherwise, null.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="key"/> is null, empty, or whitespace.</exception>
     public string? GetMetadata(string key)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
         return Metadata?.TryGetValue(key, out var value) == true ? value : null;
     }
 
