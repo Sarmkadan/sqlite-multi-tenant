@@ -73,7 +73,7 @@ public static class DateTimeExtensions
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="intervalMinutes"/> is not positive.</exception>
     public static DateTime GetNextScheduledTime(this DateTime baseTime, int intervalMinutes)
     {
-        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(intervalMinutes, 0, nameof(intervalMinutes));
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(intervalMinutes, nameof(intervalMinutes));
 
         var now = DateTime.UtcNow;
         var nextRun = baseTime;
