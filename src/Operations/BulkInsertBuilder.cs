@@ -21,6 +21,11 @@ namespace SqliteMultiTenant.Operations;
 /// </summary>
 public sealed class BulkInsertBuilder
 {
+    /// <summary>
+    /// The default number of records processed per batch when no valid batch size is supplied.
+    /// </summary>
+    public const int DefaultBatchSize = 1000;
+
     private readonly SQLiteConnection _connection;
     private readonly ILogger<BulkInsertBuilder> _logger;
     private readonly string _tableName;
@@ -37,7 +42,7 @@ public sealed class BulkInsertBuilder
     /// <exception cref="ArgumentNullException">Thrown when connection or logger is null.</exception>
     /// <exception cref="ArgumentException">Thrown when tableName is null or whitespace.</exception>
     public BulkInsertBuilder(SQLiteConnection connection, ILogger<BulkInsertBuilder> logger,
-        string tableName, int batchSize = 1000)
+        string tableName, int batchSize = DefaultBatchSize)
     {
         if (connection is null)
         {
@@ -53,7 +58,7 @@ public sealed class BulkInsertBuilder
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _tableName = tableName;
         _records = new List<Dictionary<string, object>>();
-        _batchSize = batchSize > 0 ? batchSize : 1000;
+        _batchSize = batchSize > 0 ? batchSize : DefaultBatchSize;
     }
 
     /// <summary>
