@@ -266,6 +266,12 @@ public sealed class RateLimitBucket
     /// Gets or sets the list of request timestamps for this bucket.
     /// </summary>
     public List<DateTime> Requests { get; set; } = new();
+
+    /// <summary>
+    /// Returns a string summary of this bucket, including the number of tracked requests.
+    /// </summary>
+    /// <returns>A string representation of the bucket.</returns>
+    public override string ToString() => $"RateLimitBucket {{ Identifier = {Identifier}, CreatedAt = {CreatedAt:O}, LastAccessedAt = {LastAccessedAt:O}, RequestCount = {Requests.Count} }}";
 }
 
 /// <summary>
@@ -297,6 +303,12 @@ public sealed class RateLimitResult
     /// Gets the time span until the rate limit resets.
     /// </summary>
     public TimeSpan TimeUntilReset => ResetTime - DateTime.UtcNow;
+
+    /// <summary>
+    /// Returns a string summary of this rate limit check result.
+    /// </summary>
+    /// <returns>A string representation of the result.</returns>
+    public override string ToString() => $"RateLimitResult {{ IsAllowed = {IsAllowed}, CurrentCount = {CurrentCount}, MaxCount = {MaxCount}, RemainingRequests = {RemainingRequests}, ResetTime = {ResetTime:O} }}";
 }
 
 /// <summary>
@@ -320,6 +332,12 @@ public sealed class RateLimitStatus
     /// Gets or sets the timestamp when this bucket was last accessed.
     /// </summary>
     public DateTime LastAccessedAt { get; set; }
+
+    /// <summary>
+    /// Returns a string summary of this rate limit status.
+    /// </summary>
+    /// <returns>A string representation of the status.</returns>
+    public override string ToString() => $"RateLimitStatus {{ Identifier = {Identifier}, CurrentCount = {CurrentCount}, CreatedAt = {CreatedAt:O}, LastAccessedAt = {LastAccessedAt:O} }}";
 }
 
 /// <summary>
@@ -347,4 +365,10 @@ public sealed class RateLimiterStatistics
     /// Gets or sets the timestamp when these statistics were collected.
     /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Returns a string summary of these rate limiter statistics.
+    /// </summary>
+    /// <returns>A string representation of the statistics.</returns>
+    public override string ToString() => $"RateLimiterStatistics {{ ActiveBuckets = {ActiveBuckets}, TotalRequests = {TotalRequests}, OldestBucket = {OldestBucket:O}, NewestBucket = {NewestBucket:O}, Timestamp = {Timestamp:O} }}";
 }
