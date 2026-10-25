@@ -16,6 +16,16 @@ namespace SqliteMultiTenant.Services;
 /// </summary>
 public sealed class TenantService : ITenantService
 {
+    /// <summary>
+    /// Page size assumed when SQLite does not report one (SQLite's own default).
+    /// </summary>
+    private const int DefaultSqlitePageSize = 4096;
+
+    /// <summary>
+    /// Maximum number of concurrent connections assigned to newly created tenants.
+    /// </summary>
+    private const int DefaultMaxConnections = 10;
+
     private readonly ITenantRepository _repository;
     private readonly ILogger<TenantService> _logger;
 
@@ -98,7 +108,7 @@ public sealed class TenantService : ITenantService
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsDataIsolated = true,
-                MaxConnections = 10
+                MaxConnections = DefaultMaxConnections
             };
 
             if (!tenant.Validate(out var errors))
@@ -478,7 +488,7 @@ public sealed class TenantService : ITenantService
                 using (var cmd = connection.CreateCommand())
                 {
                     cmd.CommandText = "PRAGMA page_size;";
-                    pageSize = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? 4096);
+                    pageSize = Convert.ToInt32(await cmd.ExecuteScalarAsync(cancellationToken) ?? DefaultSqlitePageSize);
                 }
             }
 
