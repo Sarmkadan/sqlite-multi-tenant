@@ -2065,6 +2065,98 @@ bool countsMatch = await checker.ValidateRecordCountsAsync(
 Console.WriteLine($"Counts match: {countsMatch}");
 ```
 
+## Middleware Pipeline
+
+The five ASP.NET Core middleware classes in `src/Middleware/` run inside an `IApplicationBuilder` pipeline, for example a `WebApplication`. `AddSqliteMultiTenant` does not add any of them, so add the ones you need to your pipeline yourself.
+
+**Recommended registration order**
+
+1. `CorrelationIdMiddleware`: first, so every later log entry and response carries the correlation ID.
+2. `ErrorHandlingMiddleware`: outside every middleware that can throw, so it catches their exceptions and writes the JSON error response.
+3. `RateLimitingMiddleware`: before the logging and performance middleware, so rejected requests cost little work. It rethrows exceptions from the rest of the pipeline, which `ErrorHandlingMiddleware` then handles.
+4. `LoggingMiddleware`: wraps the endpoint, so it logs the status and duration of the real response.
+5. `PerformanceMiddleware`: innermost, so it measures the endpoint itself.
+
+The `UseRequestResponseLogging()` extension in `src/Configuration/ServiceCollectionExtensions.cs` registers only `CorrelationIdMiddleware` and `PerformanceMiddleware`. It does not replace the full order above.
+
+### CorrelationIdMiddleware
+
+Reads the correlation ID from the `X-Correlation-Id` request header. If the header is missing or blank, it reads the `correlationId` query string value. If neither is present, it generates a new GUID in `N` format. The ID is stored in `HttpContext.Items` and written to the `X-Correlation-Id` response header when the response starts, unless the header is already set. The middleware logs the request and the response status with the ID.
+
+Read the ID later with the `HttpContext.GetCorrelationId()` extension, which returns an empty string when no ID is stored.
+
+### ErrorHandlingMiddleware
+
+Catches exceptions from the rest of the pipeline and writes a JSON `ErrorResponse` with the camelCase properties `code`, `message` and `traceId`. `traceId` is `HttpContext.TraceIdentifier`. Exceptions are mapped as follows:
+
+| Exception | Status | `code` | `message` returned to the client |
+|-----------|--------|--------|----------------------------------|
+| `TenantNotFoundException` | 404 | `TENANT_NOT_FOUND` | The exception message |
+| `DatabaseAccessException` | 500 | `DATABASE_ERROR` | `Database operation failed` |
+| `MigrationException` | 400 | `MIGRATION_FAILED` | The exception message |
+| `BackupException` | 500 | `BACKUP_FAILED` | The exception message |
+| `ArgumentException` | 400 | `INVALID_ARGUMENT` | The exception message |
+| `UnauthorizedAccessException` | 401 | `UNAUTHORIZED` | The exception message |
+| Any other exception | 500 | `INTERNAL_SERVER_ERROR` | `An unexpected error occurred` |
+
+For the exceptions that return their own message, that message is sent to the client unchanged, so keep internal details out of those exception messages. The stack trace is not sent to the client. The middleware logs only the message for the mapped exceptions, and the type, message and stack trace for any other exception.
+
+The middleware has no `Use...` extension method; register it with `UseMiddleware`.
+
+### LoggingMiddleware
+
+Logs each request with its method, path, `TraceIdentifier` as the request ID and the remote IP address. After the response it logs the status code and the duration in milliseconds. Responses with status 400 or higher are logged at Warning. Responses slower than 5000 ms are logged at Warning as `Slow HTTP Response`. Exceptions are logged at Error and rethrown.
+
+The middleware replaces the response body with a `MemoryStream` while the rest of the pipeline runs, so each in-flight response is held in memory until it completes.
+
+### PerformanceMiddleware
+
+Measures the elapsed time of each request and the change in `GC.GetTotalMemory` during it. The memory figure is process-wide, so it is only an estimate when requests run concurrently. Requests slower than `slowRequestThresholdMs` (default 1000 ms) are logged at Warning, and the others at Information.
+
+Each request's `RequestMetrics` is stored in `HttpContext.Items`. Read it with the `HttpContext.GetRequestMetrics()` extension.
+
+The middleware also sets the `X-Response-Time-Ms` and `X-Memory-Used-Kb` response headers. It sets them after the response body has been copied back to the client, so the headers can only be added if the response has not started. Do not rely on them until this is fixed.
+
+The middleware has a `UsePerformanceTracking(thresholdMs)` extension method. It is equivalent to `UseMiddleware<PerformanceMiddleware>()` with a different threshold.
+
+### RateLimitingMiddleware
+
+Applies one token bucket per key. The key is the value of the `X-Tenant-Id` request header if it is present. Otherwise it is the remote IP address, or `unknown` if there is none. Each bucket holds `RequestsPerMinute` tokens and refills at `RequestsPerMinute / 60` tokens per second. A request with no token available gets status 429, a `Retry-After: 60` header and the JSON body `{ "error": "Rate limit exceeded. Try again later." }`.
+
+Requests to paths that start with `/health` or `/admin` are not limited.
+
+The middleware reads its settings from a `RateLimitingOptions` instance in DI. Only `RequestsPerMinute` (default 300) is used. `BurstCapacity` and `CleanupIntervalSeconds` are defined but have no effect. `AddSqliteMultiTenant` does not register `RateLimitingOptions`, so register it yourself.
+
+The limiter has these limitations:
+
+- The `X-Tenant-Id` header is not authenticated. A client can send a new value for each request to get a fresh bucket, so the limit does not apply to it. Use this middleware for abuse protection, not for enforcing per-tenant quotas.
+- Buckets are never removed, so the dictionary grows with each distinct key.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Configuration;
+using SqliteMultiTenant.Middleware;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSqliteMultiTenant("Data Source=master.db;Version=3;");
+builder.Services.AddSingleton(new RateLimitingOptions { RequestsPerMinute = 120 });
+builder.Services.AddControllers();
+
+var app = builder.Build();
+
+// Recommended order: correlation ID, error handling, rate limiting, logging, performance
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<RateLimitingMiddleware>();
+app.UseMiddleware<LoggingMiddleware>();
+app.UseMiddleware<PerformanceMiddleware>();
+
+app.MapControllers();
+app.Run();
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
