@@ -338,16 +338,78 @@ public sealed class ConfigurationValidator
 /// </summary>
 public sealed class AppConfiguration
 {
+    /// <summary>Default value of <see cref="MaxConnections"/>.</summary>
+    public const int DefaultMaxConnections = 20;
+
+    /// <summary>Default value of <see cref="ConnectionTimeoutSeconds"/>.</summary>
+    public const int DefaultConnectionTimeoutSeconds = 30;
+
+    /// <summary>Default value of <see cref="BackupRetentionDays"/>.</summary>
+    public const int DefaultBackupRetentionDays = 30;
+
+    /// <summary>Default value of <see cref="EnableLogging"/>.</summary>
+    public const bool DefaultEnableLogging = true;
+
+    /// <summary>Default value of <see cref="EnableAuiting"/>.</summary>
+    public const bool DefaultEnableAuditing = true;
+
+    /// <summary>Default value of <see cref="AuditRetentionDays"/>.</summary>
+    public const int DefaultAuditRetentionDays = 90;
+
+    /// <summary>Default value of <see cref="MaxCacheItems"/>.</summary>
+    public const int DefaultMaxCacheItems = 1000;
+
+    /// <summary>Default value of <see cref="CacheExpirationMinutes"/>.</summary>
+    public const int DefaultCacheExpirationMinutes = 60;
+
+    /// <summary>Master database connection string. May contain credentials; it is excluded from <see cref="ToString"/>.</summary>
     public string MasterConnectionString { get; set; } = string.Empty;
+
+    /// <summary>Directory holding tenant database files.</summary>
     public string DatabaseDirectory { get; set; } = string.Empty;
+
+    /// <summary>Directory holding backup files.</summary>
     public string BackupDirectory { get; set; } = string.Empty;
-    public int MaxConnections { get; set; } = 20;
-    public int ConnectionTimeoutSeconds { get; set; } = 30;
-    public int BackupRetentionDays { get; set; } = 30;
+
+    /// <summary>Maximum number of pooled connections.</summary>
+    public int MaxConnections { get; set; } = DefaultMaxConnections;
+
+    /// <summary>Connection timeout in seconds.</summary>
+    public int ConnectionTimeoutSeconds { get; set; } = DefaultConnectionTimeoutSeconds;
+
+    /// <summary>Number of days backups are retained.</summary>
+    public int BackupRetentionDays { get; set; } = DefaultBackupRetentionDays;
+
+    /// <summary>Whether database encryption is enabled.</summary>
     public bool EnableEncryption { get; set; }
-    public bool EnableLogging { get; set; } = true;
-    public bool EnableAuiting { get; set; } = true;
-    public int AuditRetentionDays { get; set; } = 90;
-    public int MaxCacheItems { get; set; } = 1000;
-    public int CacheExpirationMinutes { get; set; } = 60;
+
+    /// <summary>Whether logging is enabled.</summary>
+    public bool EnableLogging { get; set; } = DefaultEnableLogging;
+
+    /// <summary>Whether auditing is enabled.</summary>
+    public bool EnableAuiting { get; set; } = DefaultEnableAuditing;
+
+    /// <summary>Number of days audit entries are retained.</summary>
+    public int AuditRetentionDays { get; set; } = DefaultAuditRetentionDays;
+
+    /// <summary>Maximum number of items held in the cache.</summary>
+    public int MaxCacheItems { get; set; } = DefaultMaxCacheItems;
+
+    /// <summary>Cache entry expiration in minutes.</summary>
+    public int CacheExpirationMinutes { get; set; } = DefaultCacheExpirationMinutes;
+
+    /// <summary>
+    /// Returns a summary of the non-secret option values.
+    /// <see cref="MasterConnectionString"/> is deliberately omitted because it may contain credentials.
+    /// </summary>
+    /// <returns>A single-line representation of the configuration.</returns>
+    public override string ToString()
+    {
+        return $"AppConfiguration(DatabaseDirectory={DatabaseDirectory}, BackupDirectory={BackupDirectory}, " +
+               $"MaxConnections={MaxConnections}, ConnectionTimeoutSeconds={ConnectionTimeoutSeconds}, " +
+               $"BackupRetentionDays={BackupRetentionDays}, EnableEncryption={EnableEncryption}, " +
+               $"EnableLogging={EnableLogging}, EnableAuiting={EnableAuiting}, " +
+               $"AuditRetentionDays={AuditRetentionDays}, MaxCacheItems={MaxCacheItems}, " +
+               $"CacheExpirationMinutes={CacheExpirationMinutes})";
+    }
 }
