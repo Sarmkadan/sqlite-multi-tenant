@@ -1235,6 +1235,101 @@ await limiter.ResetAsync(clientIp);
 limiter.Dispose();
 ```
 
+## TenantProvisioner
+
+`src/Tenants/TenantProvisioner.cs` is a sealed class that handles the lifecycle of tenant databases on disk: provisioning, encrypted provisioning, cloning, renaming, deprovisioning and validation. Each tenant gets its own directory under `basePath`, named after the tenant ID, containing `{tenantId}.db`. The class is not registered by `AddSqliteMultiTenant`; create it yourself or register it in your host.
+
+**Constructor**
+
+`TenantProvisioner(ITenantRepository tenantRepository, SchemaManager schemaManager, ILogger<TenantProvisioner> logger, string basePath, ILoggerFactory? loggerFactory = null, IEventBus? eventBus = null)`
+
+- `loggerFactory` is used to create the logger for the per-tenant `SchemaManager`. When it is `null`, a null logger factory is used.
+- `eventBus` receives `TenantClonedEvent` and `TenantRenamedEvent`. `RenameTenantAsync` skips publishing when it is `null`, but `CloneTenantAsync` does not check for it, so pass an event bus if you use cloning.
+
+**Key members**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `ProvisionTenantAsync(tenantId, tenantName, settings?)` | `Tenant` | Creates `{basePath}/{tenantId}/{tenantId}.db`, initializes the schema for that tenant and stores the `Tenant` record with status `Active`. `settings` is accepted but not used by this method. Throws `ArgumentException` when the ID or name is empty |
+| `ProvisionEncryptedTenantAsync(tenantId, tenantName, encryptionKey, settings?)` | `Tenant` | Same as above, but the database is created with the SQLCipher connection string built by `SqlCipherConnectionBuilder`. Requires the `SQLitePCLRaw.bundle_sqlcipher` package. The key is never stored by this method; keep it in your own key store, for example `EncryptionKeyManager` |
+| `CloneTenantAsync(sourceTenantId, targetTenantId)` | `string` | Creates a new database for `targetTenantId`, copies every user table (schema and rows) with `ATTACH` and `INSERT ... SELECT`, stores a tenant named `Clone of {source name}`, publishes `TenantClonedEvent` and returns the new database path. Throws `InvalidOperationException` when the source does not exist. Only tables are copied: indexes, triggers, views and constraints such as primary keys are not, because `CREATE TABLE ... AS SELECT` does not carry them over |
+| `RenameTenantAsync(oldTenantId, newTenantId, cancellationToken = default)` | `Tenant` | Renames a tenant (see the flow below). Throws `ArgumentException` for empty or invalid IDs, or when the new ID differs only by case from the old one. Throws `TenantNotFoundException` when the old tenant does not exist. Throws `InvalidOperationException` when the new ID is taken or a file already exists at the target. Throws `IOException` when the database is busy or verification fails |
+| `DeprovisionTenantAsync(tenantId, deleteBackups = false)` | `bool` | Deletes the database file, the tenant directory (recursively) and the tenant record. Returns `false` when the tenant does not exist. The `deleteBackups` parameter is accepted but the current implementation does not delete any backup files |
+| `ValidateTenantDatabaseAsync(tenantId)` | `bool` | Returns `true` only when the tenant record exists, the database file exists, it opens, and the tables `Tenants` and `AuditLog` are present. Any exception is logged and returns `false`. Throws `ArgumentNullException` or `ArgumentException` for a null or blank ID |
+
+Failures in provisioning, cloning, renaming and deprovisioning are logged with `ILogger<TenantProvisioner>` and rethrown.
+
+**Rename flow (`RenameTenantAsync`)**
+
+1. Validates the new ID with `TenantNameValidator.ValidateTenantId` after trimming it, and checks that it is not already registered.
+2. Runs a `PRAGMA wal_checkpoint(TRUNCATE)` on the source. If the database is busy or a non-empty WAL file remains, the rename fails with `IOException` and can be retried later.
+3. Copies the file to `{newId}.db.rename-tmp` in the new directory, compares SHA-256 hashes of the source and the copy, and runs `PRAGMA quick_check` on the copy.
+4. Moves the copy to its final name. If any step before this fails, the temporary file is deleted and the tenant is unchanged.
+5. Inserts the new tenant record, then deletes the old one. If deleting the old record fails, the new record and its file are removed.
+6. Deletes the original database file and its directory when that directory is empty. A failure here is logged as a warning and the rename is kept.
+
+> **Note:** callers must evict pooled connections to the old database before renaming. `TenantProvisioner` does not manage connection pools.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Database;
+using SqliteMultiTenant.Events;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Tenants;
+
+// Assume 'loggerFactory' is the application's ILoggerFactory
+const string registryConnectionString = "Data Source=registry.db;";
+const string tenantsBasePath = "/var/lib/app/tenants";
+
+var tenantRepository = new TenantRepository(
+    registryConnectionString,
+    loggerFactory.CreateLogger<TenantRepository>());
+
+var provisioner = new TenantProvisioner(
+    tenantRepository: tenantRepository,
+    schemaManager: new SchemaManager(loggerFactory.CreateLogger<SchemaManager>(), registryConnectionString),
+    logger: loggerFactory.CreateLogger<TenantProvisioner>(),
+    basePath: tenantsBasePath,
+    loggerFactory: loggerFactory,
+    eventBus: new EventBus(loggerFactory.CreateLogger<EventBus>()));
+
+// Create a tenant. Creates /var/lib/app/tenants/acme/acme.db with the schema
+Tenant acme = await provisioner.ProvisionTenantAsync("acme", "Acme Corporation");
+Console.WriteLine($"Provisioned {acme.TenantId} at {acme.DatabasePath}");
+
+// Create an encrypted tenant. The key comes from your own secret store
+string encryptionKey = Environment.GetEnvironmentVariable("ACME_DB_KEY")
+    ?? throw new InvalidOperationException("ACME_DB_KEY is not set");
+await provisioner.ProvisionEncryptedTenantAsync("globex", "Globex", encryptionKey);
+
+// Copy an existing tenant for testing or replication. Returns the new database path
+string clonePath = await provisioner.CloneTenantAsync("acme", "acme-staging");
+Console.WriteLine($"Clone written to {clonePath}");
+
+// Rename a tenant. The old database is removed only after the copy is verified
+// Evict any pooled connections to "acme" before calling this
+try
+{
+    Tenant renamed = await provisioner.RenameTenantAsync("acme", "acme-corp");
+    Console.WriteLine($"Renamed to {renamed.TenantId}");
+}
+catch (IOException ex)
+{
+    // The database was busy or the copy failed verification. The tenant is unchanged; retry later
+    Console.WriteLine($"Rename deferred: {ex.Message}");
+}
+
+// Check that the database is present and has the expected tables
+bool healthy = await provisioner.ValidateTenantDatabaseAsync("acme-corp");
+
+// Remove a tenant. Deletes its database and directory. This cannot be undone
+bool removed = await provisioner.DeprovisionTenantAsync("acme-staging");
+Console.WriteLine($"Validated: {healthy}, removed staging: {removed}");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
