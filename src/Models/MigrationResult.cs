@@ -60,8 +60,11 @@ public sealed record MigrationResult
     /// <summary>
     /// Creates a successful migration result with the specified applied count.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="appliedCount"/> is negative.</exception>
     public static MigrationResult SuccessResult(int appliedCount = 0)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(appliedCount);
+
         return new MigrationResult
         {
             Success = true,
@@ -73,8 +76,11 @@ public sealed record MigrationResult
     /// <summary>
     /// Creates a failed migration result with the specified error message.
     /// </summary>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="error"/> is null, empty, or consists only of white-space characters.</exception>
     public static MigrationResult FailureResult(string error)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(error);
+
         return new MigrationResult
         {
             Success = false,
