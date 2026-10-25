@@ -22,8 +22,12 @@ public abstract class DomainEvent
     /// <summary>Gets or sets the tenant identifier associated with the event.</summary>
     public string? TenantId { get; set; }
 
+    /// <summary>Initializes a new instance of the <see cref="DomainEvent"/> class.</summary>
+    /// <param name="eventType">The type name of the event.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="eventType"/> is null, empty, or white space.</exception>
     protected DomainEvent(string eventType)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(eventType);
         EventType = eventType;
     }
 }
@@ -41,9 +45,13 @@ public sealed class TenantCreatedEvent : DomainEvent
     /// <summary>Gets or sets the contact email.</summary>
     public string ContactEmail { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="TenantCreatedEvent"/> class.</summary>
     public TenantCreatedEvent() : base(nameof(TenantCreatedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event without the contact email.</summary>
+    public override string ToString() => $"TenantCreatedEvent {{ TenantId = {TenantId}, TenantName = {TenantName} }}";
 }
 
 /// <summary>
@@ -59,9 +67,13 @@ public sealed class TenantUpdatedEvent : DomainEvent
     /// <summary>Gets or sets the new name.</summary>
     public string NewName { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="TenantUpdatedEvent"/> class.</summary>
     public TenantUpdatedEvent() : base(nameof(TenantUpdatedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the tenant identifier and old and new names.</summary>
+    public override string ToString() => $"TenantUpdatedEvent {{ TenantId = {TenantId}, OldName = {OldName}, NewName = {NewName} }}";
 }
 
 /// <summary>
@@ -77,9 +89,13 @@ public sealed class TenantSuspendedEvent : DomainEvent
     /// <summary>Gets or sets the reason for suspension.</summary>
     public string Reason { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="TenantSuspendedEvent"/> class.</summary>
     public TenantSuspendedEvent() : base(nameof(TenantSuspendedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the tenant identifier, suspending user, and reason.</summary>
+    public override string ToString() => $"TenantSuspendedEvent {{ TenantId = {TenantId}, SuspendedBy = {SuspendedBy}, Reason = {Reason} }}";
 }
 
 /// <summary>
@@ -95,9 +111,13 @@ public sealed class BackupStartedEvent : DomainEvent
     /// <summary>Gets or sets the backup type.</summary>
     public string BackupType { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="BackupStartedEvent"/> class.</summary>
     public BackupStartedEvent() : base(nameof(BackupStartedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the backup and database identifiers and backup type.</summary>
+    public override string ToString() => $"BackupStartedEvent {{ BackupId = {BackupId}, DatabaseId = {DatabaseId}, BackupType = {BackupType} }}";
 }
 
 /// <summary>
@@ -115,9 +135,13 @@ public sealed class BackupCompletedEvent : DomainEvent
     /// <summary>Gets or sets the backup duration in milliseconds.</summary>
     public long DurationMilliseconds { get; set; }
 
+    /// <summary>Initializes a new instance of the <see cref="BackupCompletedEvent"/> class.</summary>
     public BackupCompletedEvent() : base(nameof(BackupCompletedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the backup and database identifiers, size, and duration.</summary>
+    public override string ToString() => $"BackupCompletedEvent {{ BackupId = {BackupId}, DatabaseId = {DatabaseId}, SizeBytes = {SizeBytes}, DurationMilliseconds = {DurationMilliseconds} }}";
 }
 
 /// <summary>
@@ -133,9 +157,13 @@ public sealed class BackupFailedEvent : DomainEvent
     /// <summary>Gets or sets the error message.</summary>
     public string ErrorMessage { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="BackupFailedEvent"/> class.</summary>
     public BackupFailedEvent() : base(nameof(BackupFailedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the backup and database identifiers and error message.</summary>
+    public override string ToString() => $"BackupFailedEvent {{ BackupId = {BackupId}, DatabaseId = {DatabaseId}, ErrorMessage = {ErrorMessage} }}";
 }
 
 /// <summary>
@@ -153,9 +181,13 @@ public sealed class MigrationAppliedEvent : DomainEvent
     /// <summary>Gets or sets the migration name.</summary>
     public string MigrationName { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="MigrationAppliedEvent"/> class.</summary>
     public MigrationAppliedEvent() : base(nameof(MigrationAppliedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the migration and database identifiers, version, and name.</summary>
+    public override string ToString() => $"MigrationAppliedEvent {{ MigrationId = {MigrationId}, DatabaseId = {DatabaseId}, Version = {Version}, MigrationName = {MigrationName} }}";
 }
 
 /// <summary>
@@ -173,9 +205,13 @@ public sealed class MigrationFailedEvent : DomainEvent
     /// <summary>Gets or sets the error message.</summary>
     public string ErrorMessage { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="MigrationFailedEvent"/> class.</summary>
     public MigrationFailedEvent() : base(nameof(MigrationFailedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the migration and database identifiers, version, and error message.</summary>
+    public override string ToString() => $"MigrationFailedEvent {{ MigrationId = {MigrationId}, DatabaseId = {DatabaseId}, Version = {Version}, ErrorMessage = {ErrorMessage} }}";
 }
 
 /// <summary>
@@ -193,9 +229,13 @@ public sealed class MigrationRolledBackEvent : DomainEvent
     /// <summary>Gets or sets the user who rolled back the migration.</summary>
     public string RolledBackBy { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="MigrationRolledBackEvent"/> class.</summary>
     public MigrationRolledBackEvent() : base(nameof(MigrationRolledBackEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the migration and database identifiers, version, and rolling-back user.</summary>
+    public override string ToString() => $"MigrationRolledBackEvent {{ MigrationId = {MigrationId}, DatabaseId = {DatabaseId}, Version = {Version}, RolledBackBy = {RolledBackBy} }}";
 }
 
 /// <summary>
@@ -211,9 +251,13 @@ public sealed class TenantClonedEvent : DomainEvent
     /// <summary>Gets or sets the database path.</summary>
     public string DatabasePath { get; set; } = string.Empty;
 
+    /// <summary>Initializes a new instance of the <see cref="TenantClonedEvent"/> class.</summary>
     public TenantClonedEvent() : base(nameof(TenantClonedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the source and target tenant identifiers and database path.</summary>
+    public override string ToString() => $"TenantClonedEvent {{ SourceTenantId = {SourceTenantId}, TargetTenantId = {TargetTenantId}, DatabasePath = {DatabasePath} }}";
 }
 
 /// <summary>
@@ -229,9 +273,13 @@ public sealed class HealthCheckFailedEvent : DomainEvent
     /// <summary>Gets or sets the response time in milliseconds.</summary>
     public long ResponseTimeMs { get; set; }
 
+    /// <summary>Initializes a new instance of the <see cref="HealthCheckFailedEvent"/> class.</summary>
     public HealthCheckFailedEvent() : base(nameof(HealthCheckFailedEvent))
     {
     }
+
+    /// <summary>Returns a summary of the event including the component name, error message, and response time.</summary>
+    public override string ToString() => $"HealthCheckFailedEvent {{ ComponentName = {ComponentName}, ErrorMessage = {ErrorMessage}, ResponseTimeMs = {ResponseTimeMs} }}";
 }
 
 /// <summary>
@@ -243,7 +291,13 @@ public sealed class CustomDomainEvent : DomainEvent
     /// <summary>Gets or sets the custom event data.</summary>
     public Dictionary<string, object> Data { get; set; } = new();
 
+    /// <summary>Initializes a new instance of the <see cref="CustomDomainEvent"/> class.</summary>
+    /// <param name="eventType">The type name of the custom event.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="eventType"/> is null, empty, or white space.</exception>
     public CustomDomainEvent(string eventType) : base(eventType)
     {
     }
+
+    /// <summary>Returns a summary of the event including the event type, tenant identifier, and number of data entries.</summary>
+    public override string ToString() => $"CustomDomainEvent {{ EventType = {EventType}, TenantId = {TenantId}, DataCount = {Data.Count} }}";
 }
