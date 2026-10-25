@@ -100,8 +100,14 @@ public static class TimeUtilities
     /// <summary>
     /// Rounds a DateTime to the nearest specified interval.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="interval"/> is zero or negative.</exception>
     public static DateTime RoundToNearest(DateTime dateTime, TimeSpan interval)
     {
+        if (interval <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(interval), "Interval must be greater than zero.");
+        }
+
         var offset = dateTime.Ticks % interval.Ticks;
         var delta = offset < (interval.Ticks / 2) ? -offset : (interval.Ticks - offset);
 
