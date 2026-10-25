@@ -16,6 +16,11 @@ namespace SqliteMultiTenant.Integration;
 /// </summary>
 public sealed class WebhookService
 {
+    /// <summary>
+    /// Default timeout applied to the HTTP client used for webhook deliveries.
+    /// </summary>
+    private static readonly TimeSpan DefaultHttpTimeout = TimeSpan.FromSeconds(30);
+
     private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookService> _logger;
     private readonly Dictionary<string, List<WebhookSubscription>> _subscriptions;
@@ -24,7 +29,7 @@ public sealed class WebhookService
     public WebhookService(ILogger<WebhookService> logger)
     {
         _logger = logger;
-        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        _httpClient = new HttpClient { Timeout = DefaultHttpTimeout };
         _subscriptions = new Dictionary<string, List<WebhookSubscription>>();
         _semaphore = new SemaphoreSlim(1);
     }
@@ -276,4 +281,11 @@ public sealed class WebhookSubscription
     public DateTime? LastDeliveryAt { get; set; }
     public bool IsActive { get; set; }
     public int FailureCount { get; set; }
+
+    /// <summary>
+    /// Returns a summary of the subscription: ID, webhook URL, event type and active flag.
+    /// Headers and the signing secret are intentionally omitted.
+    /// </summary>
+    /// <returns>A human-readable summary of the subscription.</returns>
+    public override string ToString() => $"WebhookSubscription {{ Id = {Id}, WebhookUrl = {WebhookUrl}, EventType = {EventType}, IsActive = {IsActive} }}";
 }
