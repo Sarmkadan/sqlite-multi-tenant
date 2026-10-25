@@ -2994,6 +2994,79 @@ List<AuditLogEntry> recent = await audit.GetEntriesAsync(new AuditLogFilter
 await audit.PurgeOldEntriesAsync(TimeSpan.FromDays(30));
 ```
 
+## Output Formatters
+
+The `src/Formatters/` folder turns objects and collections into JSON, CSV, XML or plain text. It holds two families of types:
+
+- The `IOutputFormatter` family in `src/Formatters/OutputFormatter.cs`. `JsonFormatter`, `CsvFormatter` and `XmlFormatter` implement the interface, `FormatterFactory` picks one by name or content type, and `OutputFormatter` adds a plain-text mode. `CommandExecutor` uses `OutputFormatter`, and the DI setup registers `FormatterFactory`, `OutputFormatter` and `IOutputFormatter`.
+- The `*ExportFormatter` classes, one per file: `CsvExportFormatter` in `src/Formatters/CsvFormatter.cs`, `JsonExportFormatter` in `src/Formatters/JsonFormatter.cs` and `XmlExportFormatter` in `src/Formatters/XmlFormatter.cs`. Each takes an `ILogger` and has more options. Nothing in the repository registers or uses them.
+
+The file names do not match the type names inside the `*ExportFormatter` files: `CsvFormatter.cs` contains `CsvExportFormatter`, not `CsvFormatter`. The `CsvFormatter`, `JsonFormatter` and `XmlFormatter` classes live in `OutputFormatter.cs`.
+
+### IOutputFormatter Family
+
+`IOutputFormatter` has one method, `string Format<T>(T data)`, and one property, `string ContentType`. The three implementations differ as follows:
+
+| Type | Name | `ContentType` | Output |
+|------|------|---------------|--------|
+| `JsonFormatter` | `json` | `application/json` | Indented JSON with camelCase names. Null properties are omitted and enums are written as strings. Serialization errors return `{"error": "<message>"}` |
+| `CsvFormatter` | `csv` | `text/csv` | A collection gives a header row of the first item's public property names, then one row per item. A single object gives a two-column `Property,Value` table. Every public property is written with `ToString()`, so a collection-valued property prints its type name. Fields are quoted when they contain a comma, a quote or a newline. Errors return `Error formatting CSV: <message>` as text |
+| `XmlFormatter` | `xml` | `application/xml` | An XML document whose root element is named after the type. A collection is wrapped in `<Items>`, and each item becomes an element named after its type. Each public property becomes a child element. Errors return an `<Error>` element with the message HTML-encoded |
+
+`JsonFormatter`, `CsvFormatter` and `XmlFormatter` throw `ArgumentNullException` when `data` is `null`. Their XML comments say they handle `null` without throwing, which is not true.
+
+`FormatterFactory` maps names to formatters. `GetFormatter(string type)` takes `json`, `csv` or `xml` in any case, and returns one shared instance for each. An unknown name returns a new `JsonFormatter`. `GetFormatterByContentType(string contentType)` maps `text/csv` and `application/xml` to their formatters. Any other value, `application/json` included, returns a new `JsonFormatter`. The content-type match is case-sensitive.
+
+`OutputFormatter` has `FormatObject(object data, string format)`. The format `text` writes one `Name: Value` line per public property. Any other format goes to the factory. A `null` object returns an empty string.
+
+### Export Formatters
+
+Each `*ExportFormatter` takes an `ILogger<T>` as its first constructor argument and logs any formatting error before returning a fallback value.
+
+`CsvExportFormatter` (`src/Formatters/CsvFormatter.cs`) takes a `delimiter` (default `","`) and an `includeHeader` flag (default `true`). The delimiter must not be empty. `Format<T>(T? data)` only writes properties of simple types: primitives, `string`, `decimal`, `DateTime`, `TimeSpan` and `Guid`. Enums, collections and other objects are left out. The header comes from the first non-null item, and null items are skipped. A `null` input returns an empty string.
+
+`JsonExportFormatter` (`src/Formatters/JsonFormatter.cs`) takes `prettyPrint` (default `false`). `Format<T>(T? data)` returns `"null"` for `null`, and returns `{"error":"<message>"}` if serialization fails. `Parse<T>(string? json)` returns `null` for a null or whitespace string. Invalid JSON is logged and rethrown as `FormatException`. Its XML comments say that invalid input returns `null` or throws `ArgumentNullException`, which does not match the code. `FormatWithOptions<T>(T? data, JsonSerializerOptions options)` uses the options you pass, and returns an empty string if serialization fails. Two static presets are available: `GetMinimalOptions()` gives compact camelCase output with nulls omitted, and `GetVerboseOptions()` gives indented output with nulls included. Neither preset has the string enum converter, so enums are written as numbers.
+
+`XmlExportFormatter` (`src/Formatters/XmlFormatter.cs`) takes `includeDeclaration` (default `true`). `Format<T>(T? data, string rootName = "root")` throws `ArgumentException` when `rootName` is null or whitespace. A `null` input returns an empty root element. A collection gives a root with one `<item>` child per non-null item. An object gives a root with one child per public readable property, using camelCase names. Null properties are skipped, collection properties become `<item>` children, and nested objects are written as nested elements. Enum properties come out as empty elements, because enums are not treated as simple values. The writer has no cycle detection, so a cyclic object graph recurses until it overflows the stack.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Formatters;
+using SqliteMultiTenant.Models;
+
+var tenants = new List<Tenant>
+{
+    new() { TenantId = "t-001", Name = "Acme", ContactEmail = "ops@acme.example" },
+    new() { TenantId = "t-002", Name = "Globex, Inc." },
+};
+
+// Pick a formatter by name (json, csv, xml) or by content type
+var factory = new FormatterFactory();
+IOutputFormatter csv = factory.GetFormatter("csv");
+string csvText = csv.Format(tenants);
+
+IOutputFormatter xmlByType = factory.GetFormatterByContentType("application/xml");
+string xmlText = xmlByType.Format(tenants[0]);
+Console.WriteLine(xmlByType.ContentType);   // application/xml
+
+// Plain-text listing, as used by the CLI
+var output = new OutputFormatter();
+string text = output.FormatObject(tenants[0], "text");
+
+// Export formatters take an ILogger and have more options
+var csvExport = new CsvExportFormatter(NullLogger<CsvExportFormatter>.Instance, delimiter: ";");
+string semicolonCsv = csvExport.Format(tenants);
+
+var jsonExport = new JsonExportFormatter(NullLogger<JsonExportFormatter>.Instance, prettyPrint: true);
+string json = jsonExport.Format(tenants[0]);
+Tenant? parsed = jsonExport.Parse<Tenant>(json);
+
+var xmlExport = new XmlExportFormatter(NullLogger<XmlExportFormatter>.Instance);
+string xml = xmlExport.Format(tenants, "tenants");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
