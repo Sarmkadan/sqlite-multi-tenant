@@ -1116,6 +1116,125 @@ var previous = await keyManager.GetKeyVersionAsync("tenant-42", 1);
 await keyManager.DeleteTenantKeysAsync("tenant-42");
 ```
 
+## RateLimiter
+
+`src/Security/RateLimiter.cs` implements `IRateLimiter` and limits how many requests an identifier (an IP address, user ID or API key) can make within a time window. `src/Security/RateLimiterOptions.cs` holds the cleanup settings. All state is kept in memory, so limits are per process and reset on restart.
+
+`RateLimiter` is not registered by `AddSqliteMultiTenant`; create it yourself or register it in your host.
+
+**Buckets**
+
+Each identifier has one `RateLimitBucket` with `Identifier`, `CreatedAt`, `LastAccessedAt` and `Requests`. `Requests` is the list of UTC timestamps of accepted requests. On every `CheckLimitAsync` call the limiter first removes timestamps older than the window, then:
+
+- if fewer than `maxRequests` timestamps remain, the request is accepted and its timestamp is added;
+- otherwise the request is denied and nothing is recorded.
+
+This is a sliding-window log. A denied request does not count against the limit, so a client that keeps retrying is only blocked by the window, not extended by its own attempts. `maxRequests` and `window` are passed per call and the bucket is keyed by identifier only, so the values of the latest call apply to that check.
+
+**Cleanup**
+
+A timer runs every `CleanupInterval` and removes buckets whose `LastAccessedAt` is older than `ExpirationTime`. The timer starts in the constructor, so set the options before creating the limiter. `RateLimiter` has a `Dispose()` method but does not implement `IDisposable`, so a DI container will not dispose it. Call `Dispose()` on the instance at shutdown to stop the timer.
+
+**`RateLimiterOptions`**
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `CleanupInterval` | `5 minutes` | How often the cleanup timer runs |
+| `ExpirationTime` | `1 hour` | How long a bucket may go unused before it is removed |
+
+Passing `null` to the constructor uses the defaults.
+
+**`RateLimiter` methods**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `CheckLimitAsync(identifier, maxRequests, window)` | `RateLimitResult` | Accepts or denies one request (see Buckets). Throws `ArgumentException` when `identifier` is null or empty |
+| `GetStatusAsync(identifier)` | `RateLimitStatus` | Returns the bucket state without recording a request. An unknown identifier returns `CurrentCount` 0 and default timestamps |
+| `ResetAsync(identifier)` | `Task` | Removes the bucket, so the identifier starts again with an empty window |
+| `GetStatisticsAsync()` | `RateLimiterStatistics` | Available on the concrete class only. Returns the bucket count, the total tracked requests and the oldest and newest bucket creation times. Throws `InvalidOperationException` when there are no buckets |
+
+**`RateLimitResult`** (returned by `CheckLimitAsync`)
+
+| Property | Description |
+|----------|-------------|
+| `IsAllowed` | `true` when the request was recorded |
+| `CurrentCount` | Requests in the window after this check. When denied, equals `MaxCount` |
+| `MaxCount` | The `maxRequests` value used for the check |
+| `ResetTime` | UTC time when the oldest tracked request leaves the window. When nothing is tracked, the current time plus `window` |
+| `RemainingRequests` | `MaxCount - CurrentCount`, never below 0 |
+| `TimeUntilReset` | `ResetTime` minus the current UTC time, evaluated when read |
+
+**`RateLimitStatus`** (returned by `GetStatusAsync`)
+
+| Property | Description |
+|----------|-------------|
+| `Identifier` | The identifier that was queried |
+| `CurrentCount` | Number of timestamps stored in the bucket. Timestamps are only pruned by `CheckLimitAsync`, so this can include requests that are already outside the window |
+| `CreatedAt` | When the bucket was created (UTC) |
+| `LastAccessedAt` | When the bucket was last used by `CheckLimitAsync` (UTC). `GetStatusAsync` does not update it |
+
+**Helpers in `RateLimitResultExtensions`**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `ToRetryAfterHeaderValue()` | `string?` | Seconds until reset, rounded up and at least 1, for a denied result. `null` when the request was allowed |
+| `ToRateLimitHeaders()` | `IReadOnlyDictionary<string, string>` | `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` (Unix epoch seconds) |
+| `ToDisplayString()` | `string` | Human-readable summary, for example `Denied: 10/10 requests, resets in 42s`. Overloads exist for `RateLimitResult` and `RateLimitStatus` |
+
+### Usage Example
+
+```csharp
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Security;
+
+// Assume 'loggerFactory' is the application's ILoggerFactory
+var limiter = new RateLimiter(
+    loggerFactory.CreateLogger<RateLimiter>(),
+    new RateLimiterOptions
+    {
+        CleanupInterval = TimeSpan.FromMinutes(5),
+        ExpirationTime = TimeSpan.FromHours(1)
+    });
+
+// Allow 10 requests per client IP per minute
+string clientIp = "203.0.113.7";
+RateLimitResult result = await limiter.CheckLimitAsync(
+    identifier: clientIp,
+    maxRequests: 10,
+    window: TimeSpan.FromMinutes(1));
+
+if (!result.IsAllowed)
+{
+    // 'httpContext' is the current HttpContext in an ASP.NET Core endpoint
+    httpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+    foreach (var header in result.ToRateLimitHeaders())
+    {
+        httpContext.Response.Headers[header.Key] = header.Value;
+    }
+
+    string? retryAfter = result.ToRetryAfterHeaderValue();
+    if (retryAfter is not null)
+    {
+        httpContext.Response.Headers["Retry-After"] = retryAfter;
+    }
+
+    Console.WriteLine(result.ToDisplayString());
+    return;
+}
+
+// Inspect the current state without recording a request
+RateLimitStatus status = await limiter.GetStatusAsync(clientIp);
+Console.WriteLine(status.ToDisplayString());
+
+// Clear the window for an identifier, for example after a manual unblock
+await limiter.ResetAsync(clientIp);
+
+// Stop the cleanup timer when the application shuts down
+limiter.Dispose();
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
