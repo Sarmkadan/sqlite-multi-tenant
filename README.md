@@ -2220,6 +2220,196 @@ static async Task RunSafelyAsync(Func<Task> operation)
 await RunSafelyAsync(() => tenantService.DeleteTenantAsync("acme"));
 ```
 
+## WebhookService
+
+`WebhookService` (`src/Integration/WebhookService.cs`) keeps subscriptions in memory, grouped by event type. `TriggerWebhooksAsync` POSTs a JSON envelope (`EventType`, `Timestamp`, `Data`, `Attempt`) to every active subscriber for that event type. Each delivery gets up to three attempts with a five-second pause between them. When a subscription has a secret, the request carries an `X-Signature` header with the hex-encoded HMAC-SHA256 of the request body. Receivers check it with the static `WebhookService.VerifySignature`, passing the raw body they received. A subscription is deactivated after more than 10 consecutive failed deliveries.
+
+Subscriptions are not persisted, so they are lost when the process restarts. The service creates its own `HttpClient` (30-second timeout) and is not `IDisposable`, so create one instance and reuse it.
+
+`WebhookHandler` (`src/Integration/WebhookHandler.cs`) is a separate, DI-friendly delivery component built on the `IWebhookHandler` interface. It takes an injected `HttpClient` and stores `WebhookHandlerSubscription` objects. A subscription with `EventType = "*"` matches every event. `GetSubscriptions(eventType)` returns the enabled subscriptions that match an event type. `DeliverAsync` posts a `WebhookDelivery` (the target `Url`, the `DomainEvent` payload and custom `Headers`), with `MaxRetries` (default 3) retries after the first attempt and delays of 2, 4 and 8 seconds. Each attempt times out after 30 seconds. `WebhookHandler` does not sign requests itself, so set `X-Signature` in `Headers` yourself if receivers need one.
+
+`WebhookEventHandler<T>` is a placeholder. Its `HandleAsync` only logs at debug level and does not deliver anything yet, so do not rely on it for delivery.
+
+### Usage Example
+
+`WebhookService`: subscribe, trigger, and verify on the receiver side.
+
+```csharp
+using System.Collections.Generic;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Integration;
+
+var webhooks = new WebhookService(NullLogger<WebhookService>.Instance);
+
+// Subscribe a receiver to tenant events; the secret signs every request body
+string subscriptionId = await webhooks.SubscribeAsync(
+    "TenantCreated",
+    "https://hooks.example.com/tenants",
+    headers: new Dictionary<string, string> { ["X-Api-Source"] = "sqlite-multi-tenant" },
+    secret: "replace-with-shared-secret");
+
+// Delivers to every active subscriber of this event type
+await webhooks.TriggerWebhooksAsync("TenantCreated", new { TenantId = "acme", TenantName = "Acme Corp" });
+
+List<WebhookSubscription> active = await webhooks.GetSubscriptionsAsync("TenantCreated");
+Console.WriteLine($"Active subscribers: {active.Count}");
+
+bool removed = await webhooks.UnsubscribeAsync(subscriptionId);
+```
+
+Receiver side: verify the signature against the raw body before acting on it.
+
+```csharp
+static bool IsTrustedWebhook(string rawBody, string? signature) =>
+    !string.IsNullOrEmpty(signature) &&
+    WebhookService.VerifySignature(rawBody, signature, "replace-with-shared-secret");
+```
+
+`WebhookHandler`: register a wildcard subscription and deliver one event with a signature header.
+
+```csharp
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Events;
+using SqliteMultiTenant.Integration;
+
+var handler = new WebhookHandler(new HttpClient(), NullLogger<WebhookHandler>.Instance);
+
+// "*" matches every event type
+await handler.RegisterAsync(new WebhookHandlerSubscription
+{
+    Url = "https://hooks.example.com/events",
+    EventType = "*",
+    Headers = new Dictionary<string, string> { ["X-Api-Source"] = "sqlite-multi-tenant" }
+});
+
+var domainEvent = new TenantCreatedEvent
+{
+    TenantId = "acme",
+    TenantName = "Acme Corp",
+    ContactEmail = "ops@acme.example"
+};
+
+foreach (WebhookHandlerSubscription subscription in handler.GetSubscriptions(domainEvent.EventType))
+{
+    var delivery = new WebhookDelivery
+    {
+        WebhookId = subscription.WebhookId,
+        Url = subscription.Url,
+        Event = domainEvent,
+        Headers = new Dictionary<string, string>(subscription.Headers),
+        MaxRetries = 3
+    };
+
+    // Sign the same serialization that DeliverAsync sends, so WebhookDelivery.VerifySignature can check it
+    string body = JsonSerializer.Serialize(delivery.Event);
+    byte[] hash = HMACSHA256.HashData(Encoding.UTF8.GetBytes("replace-with-shared-secret"), Encoding.UTF8.GetBytes(body));
+    delivery.Headers["X-Signature"] = Convert.ToHexString(hash);
+
+    await handler.DeliverAsync(delivery, CancellationToken.None);
+    Console.WriteLine($"Delivered to {subscription.Url}, signature valid: {delivery.VerifySignature("replace-with-shared-secret")}");
+}
+```
+
+## MultiTenantHttpClientFactory
+
+`MultiTenantHttpClientFactory` (`src/Integration/MultiTenantHttpClientFactory.cs`) creates `HttpClient` instances that carry tenant context. Each client gets an `X-Tenant-Id` header, a User-Agent, a fixed `X-Request-Id` and `X-Timestamp`, and a Bearer `Authorization` header when an API key is given. Clients are cached by tenant ID, API key and base address, so repeating the same arguments returns the same instance.
+
+Every non-empty `baseAddress` passes an SSRF check. The address must be HTTP or HTTPS, and loopback, link-local, private (RFC 1918, RFC 6598, RFC 4193), `0.0.0.0` and `::` addresses are rejected with `ArgumentException`. The exception is a host listed in `allowedHosts` or matching `allowedHostRegex`, which skips the address-range checks. The same validation applies to `TenantHttpClientBuilder` (in the same file), which builds an uncached client with a fluent API.
+
+`HttpClientWrapper` (`src/Integration/HttpClientWrapper.cs`) wraps an `HttpClient` and implements `IHttpClientWrapper`. `GetAsync<T>` and `PostAsync<T>` deserialize the response body with case-insensitive property names. They return `null` on a non-success status or an exception. `PutAsync` and `DeleteAsync` return `true` only for a success status code. `maxRetries` (default 3) is the total number of attempts, not the number of extra retries, and a value of 0 sends no request. The delay starts at `retryDelayMs` (default 1000 ms) and doubles after each attempt. Retries happen on 5xx responses and on `HttpRequestException` with a `TimeoutException` inner exception. Requests that hit `HttpClient.Timeout` surface as `TaskCanceledException` and are not retried.
+
+Known limitations to account for:
+
+- `GetCachedClient(tenantId)` returns the first cached client that has an `X-Tenant-Id` header. It does not filter by tenant, so use `CreateClientForTenant` to get a specific tenant's client.
+- `InvalidateClient(tenantId)` matches cache keys by prefix, so invalidating `"acme"` also removes the clients cached for `"acme-corp"`.
+
+### Usage Example
+
+`MultiTenantHttpClientFactory` and `TenantHttpClientBuilder`:
+
+```csharp
+using System.Collections.Generic;
+using System.Net.Http;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Integration;
+
+var factory = new MultiTenantHttpClientFactory(
+    NullLogger<MultiTenantHttpClientFactory>.Instance,
+    defaultUserAgent: "MyApp/1.0",
+    allowedHosts: new[] { "api.partner.example" });
+
+// The same tenant, API key and base address return the cached instance
+HttpClient client = factory.CreateClientForTenant(
+    "acme",
+    apiKey: "tenant-api-key",
+    timeoutSeconds: 10,
+    baseAddress: "https://api.partner.example/v2/");
+
+HttpResponseMessage response = await client.GetAsync("customers");
+Console.WriteLine($"Status: {response.StatusCode}");
+
+// Private addresses are rejected unless the host is in allowedHosts
+try
+{
+    factory.CreateClientForTenant("acme", baseAddress: "http://10.0.0.5/");
+}
+catch (ArgumentException ex)
+{
+    Console.WriteLine(ex.Message);
+}
+
+// The builder returns a new, uncached client each time
+HttpClient builtClient = new TenantHttpClientBuilder()
+    .ForTenant("acme")
+    .WithApiKey("tenant-api-key")
+    .WithBaseAddress("https://api.partner.example/v2/")
+    .WithAllowedHosts(new[] { "api.partner.example" })
+    .AddHeader("X-Client", "my-app")
+    .Build();
+
+// Disposes all cached clients
+factory.Dispose();
+```
+
+`HttpClientWrapper`: retries, typed responses, and success flags.
+
+```csharp
+using System.Net.Http;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Integration;
+
+var httpClient = new HttpClient { BaseAddress = new Uri("https://api.partner.example/v2/") };
+
+// Up to 3 attempts in total, waiting 1 s and then 2 s between attempts
+var wrapper = new HttpClientWrapper(
+    httpClient,
+    NullLogger<HttpClientWrapper>.Instance,
+    maxRetries: 3,
+    retryDelayMs: 1000);
+
+wrapper.SetBearerToken("tenant-api-key");
+wrapper.AddDefaultHeader("X-Tenant-Id", "acme");
+
+// Null when the request fails or the body cannot be deserialized
+Customer? customer = await wrapper.GetAsync<Customer>("customers/42");
+Console.WriteLine(customer is null ? "Not found or failed" : $"Loaded {customer.Name}");
+
+// The payload is serialized as JSON; the response is deserialized
+Order? order = await wrapper.PostAsync<Order>("orders", new { CustomerId = 42, Total = 99.90m });
+
+// PUT and DELETE report only success or failure
+bool updated = await wrapper.PutAsync("customers/42", new { Name = "Acme Corp" });
+bool deleted = await wrapper.DeleteAsync("customers/41");
+
+public sealed record Customer(int Id, string Name);
+
+public sealed record Order(int Id, decimal Total);
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
