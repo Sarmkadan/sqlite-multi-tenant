@@ -2589,6 +2589,202 @@ help
 backup
 ```
 
+## SchemaManager
+
+`src/Database/SchemaManager.cs` manages the schema of a single SQLite database file. It creates the base multi-tenant tables, adds columns, renames tables, creates indexes, lists tables and compares schemas with another database. It is `sealed`, implements `IEquatable<SchemaManager>` (equality is based on `ConnectionString` only), and takes an `ILogger<SchemaManager>` and the connection string of the target database. Every method opens its own `SQLiteConnection`, so the instance holds no open connection.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `InitializeSchemaAsync(tenantId)` | `Task` | Creates the Tenants and AuditLog tables with foreign keys enabled. Uses `CREATE TABLE IF NOT EXISTS`, so it is safe to call repeatedly |
+| `AddColumnAsync(tenantId, tableName, columnName, columnDefinition)` | `Task<bool>` | `ALTER TABLE ... ADD COLUMN`. Returns `false` if the column already exists |
+| `RenameTableAsync(oldTableName, newTableName)` | `Task` | `ALTER TABLE ... RENAME TO`. SQLite does not update foreign keys that reference the old name |
+| `CreateIndexAsync(tableName, indexName, params string[] columns)` | `Task<bool>` | Creates a non-unique index. Returns `false` if the index already exists |
+| `GetTablesAsync()` | `Task<List<string>>` | Names of user tables, excluding `sqlite_*`. Returns an empty list on error |
+| `CompareSchemasAsync(otherConnectionString)` | `Task<DatabaseSchemaDiff>` | Compares every table against another database |
+| `CompareTableSchemasAsync(tableName, otherConnectionString)` | `Task<TableSchemaDiff>` | Compares one table: columns, column types and indexes |
+
+`DatabaseSchemaDiff` exposes `MissingTables`, `TablesWithDifferences`, `IdenticalTables` and `IsIdentical`. `TableSchemaDiff` exposes `MissingColumns`, `ExtraColumns`, `TypeMismatches`, `MissingIndexes`, `ExtraIndexes` and `IsIdentical`.
+
+Notes:
+- `tableName`, `indexName`, `columnName` and `columnDefinition` are interpolated into SQL without quoting or validation. Never pass untrusted identifiers.
+- Failing statements are logged and the exception is rethrown. `AddColumnAsync` and `CreateIndexAsync` only return `false` for an existing column or index, not for other errors.
+- The schema manager does not run migrations. Use `IMigrationService` for versioned changes.
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Database;
+
+var schemaManager = new SchemaManager(
+    NullLogger<SchemaManager>.Instance,
+    "Data Source=./databases/tenant-a_primary.db");
+
+// Creates Tenants and AuditLog if they do not exist yet
+await schemaManager.InitializeSchemaAsync("tenant-a");
+
+// Assumes an Orders table already exists
+bool columnAdded = await schemaManager.AddColumnAsync(
+    "tenant-a", "Orders", "Notes", "TEXT NOT NULL DEFAULT ''");
+bool indexCreated = await schemaManager.CreateIndexAsync(
+    "Orders", "IX_Orders_CustomerId", "CustomerId");
+
+List<string> tables = await schemaManager.GetTablesAsync();
+Console.WriteLine($"Tables: {string.Join(", ", tables)}");
+
+// Compare against another tenant database
+var diff = await schemaManager.CompareSchemasAsync(
+    "Data Source=./databases/tenant-b_primary.db");
+
+if (!diff.IsIdentical)
+{
+    foreach (var table in diff.TablesWithDifferences)
+    {
+        Console.WriteLine($"{table.TableName}: missing columns {string.Join(", ", table.MissingColumns)}");
+    }
+}
+```
+
+## ConnectionManager
+
+`src/Database/ConnectionManager.cs` keeps one connection pool per tenant ID and hands out open `SQLiteConnection` instances. It is `sealed`, implements `IDisposable`, and is constructed with an `ILogger<ConnectionManager>` and `maxConnectionsPerPool` (default `10`). A tenant's pool is created on the first call for that tenant. The connection string passed on that first call is used for the pool's whole lifetime; later calls with a different connection string for the same tenant ID do not change it.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `GetConnectionAsync(tenantId, connectionString, cancellationToken)` | `Task<SQLiteConnection>` | Reuses an idle connection or opens a new one. Waits when the pool is full, until a connection is released or the token is cancelled |
+| `GetEncryptedConnectionAsync(tenantId, connectionString, encryptionKey, cancellationToken)` | `Task<SQLiteConnection>` | Same as above, then applies the SQLCipher `PRAGMA key`. Requires the `SQLitePCLRaw.bundle_sqlcipher` package |
+| `ReleaseConnectionAsync(tenantId, connection)` | `Task` | Returns the connection to the tenant's pool. A connection that is no longer open is disposed instead |
+| `ClearTenantPoolAsync(tenantId)` | `Task` | Removes the tenant's pool and disposes its connections |
+| `GetPoolStatistics()` | `Dictionary<string, PoolStatistics>` | Per-tenant counts: `AvailableConnections`, `TotalConnections`, `WaitingRequests` |
+| `Dispose()` | `void` | Disposes all pools. Later calls throw `ObjectDisposedException` |
+
+Notes:
+- Every connection from `GetConnectionAsync` holds a pool slot until it is passed to `ReleaseConnectionAsync`. Unreleased connections eventually block other callers for that tenant.
+- `GetConnectionAsync` has no acquire timeout of its own. Pass a cancellation token if callers must not wait indefinitely.
+- If the tenant's pool was already cleared, `ReleaseConnectionAsync` does nothing. The connection is not closed by the manager, so dispose it yourself in that case.
+- `GetPoolStatistics()` reports one entry per tenant with a pool. For the more detailed snapshot, including pruning and pragma data, use `ConnectionPoolManager`.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Database;
+
+using var manager = new ConnectionManager(
+    NullLogger<ConnectionManager>.Instance,
+    maxConnectionsPerPool: 5);
+
+const string connectionString = "Data Source=./databases/tenant-a_primary.db";
+
+SQLiteConnection connection = await manager.GetConnectionAsync("tenant-a", connectionString);
+try
+{
+    using var command = connection.CreateCommand();
+    command.CommandText = "SELECT COUNT(*) FROM Orders";
+    long count = (long)(await command.ExecuteScalarAsync())!;
+    Console.WriteLine($"Orders: {count}");
+}
+finally
+{
+    // Always return the connection, otherwise its pool slot stays occupied
+    await manager.ReleaseConnectionAsync("tenant-a", connection);
+}
+
+foreach (var (tenantId, stats) in manager.GetPoolStatistics())
+{
+    Console.WriteLine($"{tenantId}: {stats.AvailableConnections} idle / {stats.TotalConnections} total");
+}
+
+// Remove the tenant's pool, for example when the tenant is deleted
+await manager.ClearTenantPoolAsync("tenant-a");
+```
+
+## ConnectionPoolManager
+
+`src/Database/ConnectionPoolManager.cs` is the pool implementation behind `IConnectionPoolManager`. Compared with `ConnectionManager`, it enforces an acquire timeout, closes idle and over-age connections in a background loop, and applies SQLite pragmas to every connection it opens. Its constructor takes a `ConnectionPoolOptions` and an `ILogger<ConnectionPoolManager>`. The constructor calls `Validate()` on the options, so invalid settings throw before any pool is created. It starts the background prune loop immediately.
+
+`AddConnectionPooling(...)` registers `IConnectionPoolManager` as a singleton. Settings are taken from the `ConnectionPoolOptions` passed to it.
+
+**Key members:**
+
+| Member | Returns | Description |
+|--------|---------|-------------|
+| `AcquireAsync(tenantId, connectionString, cancellationToken)` | `Task<SQLiteConnection>` | Returns a healthy idle connection or opens a new one. Throws `TimeoutException` if no slot frees within `AcquireTimeout` |
+| `ReleaseAsync(tenantId, connection)` | `Task` | Returns the connection to the idle queue. A connection that is no longer open is disposed |
+| `EvictTenantAsync(tenantId)` | `Task` | Closes and disposes every connection of the tenant's pool. Intended for tenant deletion or deprovisioning |
+| `GetStatistics()` | `IReadOnlyDictionary<string, PoolStatisticsSnapshot>` | Snapshot per tenant: `Available`, `Total`, `Waiting`, `PrunedTotal`, `LastPruneAt` and `Pragmas` |
+| `DisposeAsync()` | `ValueTask` | Stops the prune loop and disposes all pools |
+
+### ConnectionPoolOptions
+
+`src/Database/ConnectionPoolOptions.cs` holds the pool settings. All properties are settable.
+
+| Property | Default | Meaning |
+|----------|---------|---------|
+| `MinPoolSize` | `1` | Idle connections kept per tenant even after `IdleTimeout`. Must be `>= 0` and not greater than `MaxPoolSize` |
+| `MaxPoolSize` | `10` | Maximum concurrent connections per tenant. Must be `>= 1` |
+| `IdleTimeout` | `5 minutes` | How long an idle connection may stay before it can be pruned. Must be positive |
+| `AcquireTimeout` | `30 seconds` | How long `AcquireAsync` waits for a free slot. Must be positive |
+| `MaxConnectionLifetime` | `1 hour` | Maximum age of a connection, regardless of activity. Must be positive |
+| `PruneInterval` | `60 seconds` | How often the background loop runs. Must be positive |
+| `Pragmas` | `new SqlitePragmaOptions()` | Applied on open: `JournalMode` (`WAL`), `Synchronous` (`NORMAL`), `BusyTimeoutMs` (`5000`), `ForeignKeys` (`true`) |
+
+`Validate()` checks these rules and the `Pragmas` values. Invalid numbers and timespans throw `ArgumentOutOfRangeException`, and `MinPoolSize > MaxPoolSize` throws `ArgumentException`. Invalid pragma values throw `OptionsValidationException`. Allowed `JournalMode` values are `DELETE`, `TRUNCATE`, `PERSIST`, `MEMORY`, `WAL` and `OFF`. Allowed `Synchronous` values are `OFF`, `NORMAL`, `FULL` and `EXTRA`.
+
+Notes:
+- Pruning never reduces a tenant's idle pool below `MinPoolSize`.
+- A timed-out `AcquireAsync` throws `TimeoutException`. Its message suggests raising `MaxPoolSize`. A cancelled token throws `OperationCanceledException`.
+- Pools are per tenant. `EvictTenantAsync` affects only that tenant.
+
+### Usage Example
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Database;
+
+var options = new ConnectionPoolOptions
+{
+    MinPoolSize = 2,
+    MaxPoolSize = 20,
+    IdleTimeout = TimeSpan.FromMinutes(10),
+    AcquireTimeout = TimeSpan.FromSeconds(15),
+    MaxConnectionLifetime = TimeSpan.FromHours(2),
+    PruneInterval = TimeSpan.FromMinutes(2)
+};
+
+await using IConnectionPoolManager pools =
+    new ConnectionPoolManager(options, NullLogger<ConnectionPoolManager>.Instance);
+
+const string connectionString = "Data Source=./databases/tenant-a_primary.db";
+
+SQLiteConnection connection = await pools.AcquireAsync("tenant-a", connectionString);
+try
+{
+    using var command = connection.CreateCommand();
+    command.CommandText = "SELECT COUNT(*) FROM Orders";
+    Console.WriteLine($"Orders: {await command.ExecuteScalarAsync()}");
+}
+finally
+{
+    await pools.ReleaseAsync("tenant-a", connection);
+}
+
+foreach (var (tenantId, snapshot) in pools.GetStatistics())
+{
+    Console.WriteLine(
+        $"{tenantId}: {snapshot.Available} idle / {snapshot.Total} total, pruned {snapshot.PrunedTotal}");
+}
+
+// Close all connections for a deleted tenant
+await pools.EvictTenantAsync("tenant-a");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
