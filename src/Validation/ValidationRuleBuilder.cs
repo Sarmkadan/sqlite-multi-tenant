@@ -283,6 +283,11 @@ public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<
 
     #region Equality members
 
+    /// <summary>
+    /// Determines whether the specified <see cref="ValidationRuleBuilder{T}"/> has the same registered rules as this instance.
+    /// </summary>
+    /// <param name="other">The builder to compare with this instance.</param>
+    /// <returns>true if both builders have the same rules (field name, predicate and error message) in the same order; otherwise, false.</returns>
     public bool Equals(ValidationRuleBuilder<T>? other)
     {
         if (ReferenceEquals(null, other))
@@ -324,8 +329,17 @@ public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<
         return true;
     }
 
+    /// <summary>
+    /// Determines whether the specified object is a <see cref="ValidationRuleBuilder{T}"/> equal to this instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with this instance.</param>
+    /// <returns>true if <paramref name="obj"/> is an equal <see cref="ValidationRuleBuilder{T}"/>; otherwise, false.</returns>
     public override bool Equals(object? obj) => Equals(obj as ValidationRuleBuilder<T>);
 
+    /// <summary>
+    /// Returns a hash code for this instance, computed from the registered rules.
+    /// </summary>
+    /// <returns>A hash code for this instance.</returns>
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -339,12 +353,28 @@ public sealed class ValidationRuleBuilder<T> : IEquatable<ValidationRuleBuilder<
         return hash.ToHashCode();
     }
 
+    /// <summary>
+    /// Determines whether two <see cref="ValidationRuleBuilder{T}"/> instances are equal.
+    /// </summary>
+    /// <param name="left">The first builder to compare.</param>
+    /// <param name="right">The second builder to compare.</param>
+    /// <returns>true if the builders are equal; otherwise, false.</returns>
     public static bool operator ==(ValidationRuleBuilder<T>? left, ValidationRuleBuilder<T>? right) => Equals(left, right);
 
+    /// <summary>
+    /// Determines whether two <see cref="ValidationRuleBuilder{T}"/> instances are not equal.
+    /// </summary>
+    /// <param name="left">The first builder to compare.</param>
+    /// <param name="right">The second builder to compare.</param>
+    /// <returns>true if the builders are not equal; otherwise, false.</returns>
     public static bool operator !=(ValidationRuleBuilder<T>? left, ValidationRuleBuilder<T>? right) => !Equals(left, right);
 
     #endregion
 
+    /// <summary>
+    /// Returns a string that summarizes the first registered rule and the rule count.
+    /// </summary>
+    /// <returns>A string representation of this builder.</returns>
     public override string ToString()
     {
         string fieldName = "none";
