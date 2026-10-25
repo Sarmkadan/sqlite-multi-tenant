@@ -50,6 +50,8 @@ public sealed class PerformanceMiddleware
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
+        _logger.LogInformation("Performance tracking started for {Method} {Path}", context.Request.Method, context.Request.Path.ToString());
+
         var stopwatch = Stopwatch.StartNew();
         var memoryBefore = GC.GetTotalMemory(false);
         var originalBodyStream = context.Response.Body;
@@ -67,6 +69,11 @@ public sealed class PerformanceMiddleware
                 responseBody.Seek(0, SeekOrigin.Begin);
                 await responseBody.CopyToAsync(originalBodyStream);
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Request {Method} {Path} failed after {ElapsedMs}ms", context.Request.Method, context.Request.Path.ToString(), stopwatch.ElapsedMilliseconds);
+            throw;
         }
         finally
         {
@@ -91,6 +98,11 @@ public sealed class PerformanceMiddleware
 
             // Store in items for later retrieval
             context.Items["RequestMetrics"] = requestMetrics;
+
+            if (context.Response.HasStarted)
+            {
+                _logger.LogWarning("Response already started for {Method} {Path}, performance headers may fail to be set", requestMetrics.Method, requestMetrics.Path);
+            }
 
             // Add performance headers to response
             context.Response.Headers["X-Response-Time-Ms"] = stopwatch.ElapsedMilliseconds.ToString();
