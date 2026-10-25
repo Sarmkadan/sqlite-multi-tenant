@@ -554,6 +554,69 @@ if (!await healthService.IsSystemHealthyAsync())
 }
 ```
 
+## TenantService
+
+`src/Services/TenantService.cs` implements `ITenantService` and is the main entry point for tenant lifecycle management. It creates, reads, updates and deletes tenants, controls their status (active, inactive, suspended), manages per-tenant metadata and reports tenant database storage usage. It is registered as a scoped service by `AddSqliteMultiTenant`.
+
+**Key members:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `CreateTenantAsync(name, description?, contactEmail?)` | `Tenant` | Creates an active tenant with a generated GUID identifier. Throws `InvalidOperationException` if the name is already in use |
+| `GetTenantAsync(tenantId)` | `Tenant?` | Returns the tenant or `null`. Records the access time on the tenant as a side effect |
+| `UpdateTenantAsync(tenant)` | `Task` | Validates and saves changes. Throws `TenantNotFoundException` if the tenant does not exist |
+| `DeleteTenantAsync(tenantId)` | `Task` | Deletes a tenant. Throws `TenantNotFoundException` if the tenant does not exist |
+| `GetAllTenantsAsync()` / `GetActiveTenantsAsync()` | `List<Tenant>` | Lists all tenants, or only those currently active |
+| `ActivateTenantAsync(tenantId)` / `DeactivateTenantAsync(tenantId)` | `Task` | Changes the tenant's active state |
+| `SuspendTenantAsync(tenantId)` | `Task` | Sets the status to `TenantStatus.Suspended` |
+| `TenantExistsAsync(tenantId)` | `bool` | Returns `false` for blank identifiers instead of throwing |
+| `GetTenantCountAsync()` | `int` | Total number of tenants |
+| `SearchTenantsAsync(searchTerm)` | `List<Tenant>` | Searches tenants by a term; the term must not be blank |
+| `SetTenantMetadataAsync(tenantId, key, value)` | `Task` | Stores a metadata key/value pair on the tenant |
+| `GetTenantDatabaseSizeAsync(tenantId)` | `TenantStorageInfo` | Reads `PRAGMA page_count` and `page_size` from the tenant database and the size of its `-wal` file. Requires `DatabasePath` to be set on the tenant |
+
+Argument validation failures throw `ArgumentException`. Every method logs failures with `ILogger<TenantService>` and rethrows the original exception.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Exceptions;
+using SqliteMultiTenant.Services;
+
+// Assume 'serviceProvider' is the application's IServiceProvider
+var tenantService = serviceProvider.GetRequiredService<ITenantService>();
+
+// Create a tenant
+var tenant = await tenantService.CreateTenantAsync(
+    name: "Globex Industries",
+    description: "Enterprise customer",
+    contactEmail: "ops@globex.example.com");
+
+// Store a metadata value and read the tenant back
+await tenantService.SetTenantMetadataAsync(tenant.TenantId, "plan", "enterprise");
+var loaded = await tenantService.GetTenantAsync(tenant.TenantId);
+Console.WriteLine($"{loaded?.Name} is active: {loaded?.Status == TenantStatus.Active}");
+
+// Suspend and later reactivate the tenant
+await tenantService.SuspendTenantAsync(tenant.TenantId);
+await tenantService.ActivateTenantAsync(tenant.TenantId);
+
+// Inspect storage usage (requires DatabasePath to be set on the tenant)
+var storage = await tenantService.GetTenantDatabaseSizeAsync(tenant.TenantId);
+Console.WriteLine($"Size: {storage.SizeBytes} bytes, WAL: {storage.WalSizeBytes} bytes");
+
+// Handle missing tenants explicitly
+try
+{
+    await tenantService.DeleteTenantAsync("does-not-exist");
+}
+catch (TenantNotFoundException ex)
+{
+    Console.WriteLine($"Tenant not found: {ex.TenantId}");
+}
+```
+
 ## Configuration
 
 The following configuration options are available in `MultiTenantOptions` and related classes:
