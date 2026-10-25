@@ -17,6 +17,10 @@ public sealed class DataValidator
     private readonly List<ValidationError> _errors;
     private readonly ILogger<DataValidator> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DataValidator"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to trace validation calls.</param>
     public DataValidator(ILogger<DataValidator> logger)
     {
         _logger = logger;
@@ -238,25 +242,58 @@ public sealed class DataValidator
     }
 }
 
+/// <summary>
+/// Represents a single validation failure for a named field.
+/// </summary>
 public sealed class ValidationError
 {
+    /// <summary>
+    /// Gets or sets the name of the field that failed validation.
+    /// </summary>
     public string FieldName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the human-readable description of the failure.
+    /// </summary>
     public string Message { get; set; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationError"/> class.
+    /// </summary>
+    /// <param name="fieldName">Name of the field that failed validation.</param>
+    /// <param name="message">Description of the failure.</param>
     public ValidationError(string fieldName, string message)
     {
         FieldName = fieldName;
         Message = message;
     }
 
+    /// <summary>
+    /// Returns a string in the form "FieldName: Message".
+    /// </summary>
+    /// <returns>The formatted validation error.</returns>
     public override string ToString() => $"{FieldName}: {Message}";
 }
 
+/// <summary>
+/// Holds the outcome of a <see cref="DataValidator"/> run.
+/// </summary>
 public sealed class ValidationResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether validation passed without errors.
+    /// </summary>
     public bool IsValid { get; set; }
+
+    /// <summary>
+    /// Gets or sets the collection of validation errors collected during the run.
+    /// </summary>
     public List<ValidationError> Errors { get; set; } = new();
 
+    /// <summary>
+    /// Joins all validation errors into a single message separated by "; ".
+    /// </summary>
+    /// <returns>A combined error message, or an empty string when there are no errors.</returns>
     public string GetErrorMessage()
     {
         return string.Join("; ", Errors.Select(e => e.ToString()));
