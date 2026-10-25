@@ -850,6 +850,120 @@ The following configuration options are available in `MultiTenantOptions` and re
 | EnableExternalIntegrations | bool | `false` | Indicates whether external integrations are enabled |
 | EnableAdvancedAnalytics | bool | `false` | Indicates whether advanced analytics are enabled |
 
+The configuration classes are defined in four files under `src/Configuration/`: `MultiTenantOptions.cs` (the table above), `ServiceConfiguration.cs` (`SqliteMultiTenantOptions`), `ServiceCollectionExtensions.cs` (`ServiceOptions`) and `OptionsValidator.cs`. Nothing is read from `appsettings.json` automatically. Your host has to bind each section, as shown in [Binding from appsettings.json](#binding-from-appsettingsjson).
+
+### SqliteMultiTenantOptions
+
+`SqliteMultiTenantOptions` (`src/Configuration/ServiceConfiguration.cs`) is the options object for the `AddSqliteMultiTenant(connectionString, configureOptions)` overload. That overload creates the instance, runs your delegate on it, and registers the instance as a singleton. The overload without a delegate registers nothing.
+
+| Property | Type | Default | Meaning |
+|----------|------|---------|---------|
+| MaxConnections | int | `10` | Maximum number of pooled connections. Stored in DI only; no library service reads it. |
+| ConnectionTimeoutSeconds | int | `30` | Connection timeout in seconds. Stored in DI only. |
+| BackupRetentionDays | int | `30` | Days to keep backups before cleanup. Stored in DI only. |
+| EnableEncryption | bool | `false` | Encryption switch. Stored in DI only. |
+| BackupDirectory | string | `"backups"` | Directory name for tenant backups. Stored in DI only. |
+| DatabaseDirectory | string | `"databases"` | Directory name for tenant databases. Stored in DI only. |
+| EnableLogging | bool | `true` | Logging switch. Stored in DI only. |
+| MaxBatchItems | int | `500` | Maximum number of items in one batch operation. Read by `BatchOperationHandler`; `0` or a negative value disables the limit. |
+| MaxBatchPayloadSizeBytes | long | `1048576` (1 MB) | Maximum total payload size of a batch operation. Read by `BatchOperationHandler`; `0` or a negative value disables the limit. |
+
+`BatchOperationHandler` picks up these two limits only when the delegate overload is used, because it receives the registered instance through its constructor. It is registered by `AddSqliteMultiTenantServices`, which must also be called.
+
+### ServiceOptions
+
+`ServiceOptions` (`src/Configuration/ServiceCollectionExtensions.cs`) configures `AddSqliteMultiTenantServices(configureOptions)`. The delegate is optional, and the defaults below apply without it. The `MaxCacheItems` and `HttpClientTimeoutSeconds` setters throw `ArgumentOutOfRangeException` for out-of-range values.
+
+| Property | Type | Default | Meaning |
+|----------|------|---------|---------|
+| MaxCacheItems | int | `1000` | Maximum number of items passed to `DistributedCacheService`. Must be `0` or greater. |
+| HttpClientTimeoutSeconds | int | `30` | Timeout of the `IHttpClientWrapper` HTTP client. Must be `1` or greater. |
+| EnableEventBus | bool | `true` | When `false`, `IEventBus` is not registered. |
+| EnableMetrics | bool | `true` | Not read by any code in the library. Setting it has no effect. |
+| EnableAuiting | bool | `true` | Not read by any code in the library. Setting it has no effect. The name is misspelled in the source and is kept as-is so existing code still compiles. |
+
+`AddSqliteMultiTenantServices` also registers `ConfigurationManager` as `IConfigurationManager`. Its constructor needs `IConfiguration` and `IOptions<MultiTenantOptions>` from the container, so resolving `IConfigurationManager` fails unless you register `MultiTenantOptions` as shown below.
+
+### MultiTenantOptions registration and OptionsValidator
+
+No `AddSqliteMultiTenant` overload registers `MultiTenantOptions`. Register it yourself with `services.Configure<MultiTenantOptions>(...)`. `ConfigurationManager` throws from its constructor when `DefaultMaxConnections` is `0` or less, or when `BasePath` is empty.
+
+`OptionsValidator` (`src/Configuration/OptionsValidator.cs`) has `Validate` overloads for `MultiTenantOptions`, `BackupOptions` and `SecurityOptions`. They throw `ArgumentException` for invalid values:
+
+- `MultiTenantOptions`: `BasePath` must not be empty or whitespace; `MaxConnectionsPerTenant`, `MaxBackupCount` and `BackupRetention` must be greater than zero.
+- `BackupOptions`: `MaxConcurrentBackups` and `BackupTimeoutSeconds` must be greater than zero.
+- `SecurityOptions`: `SessionTimeout`, `MaxFailedLoginAttempts` and `LockoutDuration` must be positive.
+
+The library never calls `OptionsValidator`. Call it at startup if you want these checks.
+
+### Binding from appsettings.json
+
+The sample below uses one section per class. The section names are only the keys the sample code binds, and the property names must match the ones in the tables above. Binding is case-insensitive. `TimeSpan` values use .NET's format: `"01:00:00"` is one hour and `"30.00:00:00"` is 30 days.
+
+```json
+{
+  "SqliteMultiTenant": {
+    "MaxConnections": 10,
+    "ConnectionTimeoutSeconds": 30,
+    "BackupRetentionDays": 30,
+    "EnableEncryption": false,
+    "BackupDirectory": "backups",
+    "DatabaseDirectory": "databases",
+    "EnableLogging": true,
+    "MaxBatchItems": 500,
+    "MaxBatchPayloadSizeBytes": 1048576
+  },
+  "MultiTenant": {
+    "BasePath": "./databases",
+    "MaxConnectionsPerTenant": 10,
+    "DefaultMaxConnections": 10,
+    "MaxBackupCount": 20,
+    "BackupRetention": "30.00:00:00",
+    "EnableBackupScheduling": true,
+    "BackupInterval": "01:00:00",
+    "EnableAuditLogging": true,
+    "EnablePerformanceMonitoring": true,
+    "EnableDataEncryption": false,
+    "MaxCacheSize": 1000,
+    "DefaultCacheTTL": "01:00:00",
+    "RateLimitRequestsPerMinute": 1000,
+    "EncryptionKeyPath": "./keys",
+    "VerboseLogging": false
+  },
+  "SqliteMultiTenantServices": {
+    "MaxCacheItems": 1000,
+    "HttpClientTimeoutSeconds": 30,
+    "EnableAuiting": true,
+    "EnableMetrics": true,
+    "EnableEventBus": true
+  }
+}
+```
+
+The matching startup code:
+
+```csharp
+using SqliteMultiTenant.Configuration;
+
+var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
+
+// SqliteMultiTenantOptions: the delegate receives the instance that is registered in DI
+builder.Services.AddSqliteMultiTenant("Data Source=master.db;Version=3;",
+    options => config.GetSection("SqliteMultiTenant").Bind(options));
+
+// ServiceOptions
+builder.Services.AddSqliteMultiTenantServices(
+    options => config.GetSection("SqliteMultiTenantServices").Bind(options));
+
+// MultiTenantOptions: required by ConfigurationManager
+builder.Services.Configure<MultiTenantOptions>(config.GetSection("MultiTenant"));
+
+// Optional startup check; the library does not run OptionsValidator itself
+var multiTenant = config.GetSection("MultiTenant").Get<MultiTenantOptions>() ?? new MultiTenantOptions();
+OptionsValidator.Validate(multiTenant);
+```
+
 ## Caching
 
 The library ships two caching layers and two pluggable cache strategies.
