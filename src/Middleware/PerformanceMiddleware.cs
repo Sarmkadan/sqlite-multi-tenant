@@ -163,6 +163,15 @@ public sealed class RequestMetrics
     /// Gets or sets the timestamp when the request was processed.
     /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Returns a short summary of the request metrics: method, path, status code, elapsed time and memory usage.
+    /// </summary>
+    /// <returns>A human-readable summary of this request's metrics.</returns>
+    public override string ToString()
+    {
+        return $"{Method} {Path} -> {StatusCode} in {ElapsedMs}ms (Memory: {MemoryUsedKb}KB)";
+    }
 }
 
 /// <summary>
@@ -174,6 +183,11 @@ public sealed class PerformanceMonitor
     private readonly SemaphoreSlim _semaphore = new(1);
     private const int MaxMetricsStored = 1000;
 
+    /// <summary>
+    /// Records a request metric, discarding the oldest entries once more than 1000 are stored.
+    /// </summary>
+    /// <param name="metric">The request metric to record.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task RecordMetricAsync(RequestMetrics metric)
     {
         await _semaphore.WaitAsync();
@@ -193,6 +207,10 @@ public sealed class PerformanceMonitor
         }
     }
 
+    /// <summary>
+    /// Computes aggregate statistics over the stored request metrics.
+    /// </summary>
+    /// <returns>The aggregated <see cref="PerformanceStats"/>; all values are zero when no metrics are stored.</returns>
     public async Task<PerformanceStats> GetStatsAsync()
     {
         await _semaphore.WaitAsync();
@@ -219,6 +237,11 @@ public sealed class PerformanceMonitor
         }
     }
 
+    /// <summary>
+    /// Gets the most recently recorded request metrics.
+    /// </summary>
+    /// <param name="count">The maximum number of metrics to return. Defaults to 10.</param>
+    /// <returns>A list of up to <paramref name="count"/> of the most recent metrics, oldest first.</returns>
     public async Task<List<RequestMetrics>> GetRecentMetricsAsync(int count = 10)
     {
         await _semaphore.WaitAsync();
@@ -233,14 +256,50 @@ public sealed class PerformanceMonitor
     }
 }
 
+/// <summary>
+/// Aggregated performance statistics over a set of request metrics.
+/// </summary>
 public sealed class PerformanceStats
 {
+    /// <summary>
+    /// Gets or sets the number of requests included in the statistics.
+    /// </summary>
     public int TotalRequests { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average elapsed time of the requests in milliseconds.
+    /// </summary>
     public double AverageElapsedMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum elapsed time of the requests in milliseconds.
+    /// </summary>
     public long MaxElapsedMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum elapsed time of the requests in milliseconds.
+    /// </summary>
     public long MinElapsedMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average memory used by the requests in kilobytes.
+    /// </summary>
     public double AverageMemoryUsedKb { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of requests that completed with a status code of 400 or higher.
+    /// </summary>
     public int ErrorCount { get; set; }
+
+    /// <summary>
+    /// Returns a short summary of the statistics: request count, average/min/max elapsed time, average memory and error count.
+    /// </summary>
+    /// <returns>A human-readable summary of the performance statistics.</returns>
+    public override string ToString()
+    {
+        return $"{TotalRequests} requests, avg {AverageElapsedMs:F1}ms (min {MinElapsedMs}ms, max {MaxElapsedMs}ms), " +
+            $"avg memory {AverageMemoryUsedKb:F1}KB, {ErrorCount} errors";
+    }
 }
 
 /// <summary>
