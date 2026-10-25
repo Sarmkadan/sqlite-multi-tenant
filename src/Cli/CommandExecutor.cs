@@ -31,6 +31,7 @@ public sealed class CommandExecutor
     /// <param name="connectionManager">The manager used to obtain database connections.</param>
     /// <param name="logger">The logger used to record command execution events.</param>
     /// <param name="formatter">The formatter used to produce command output.</param>
+    /// <exception cref="ArgumentNullException">Thrown when any dependency is <see langword="null"/>.</exception>
     public CommandExecutor(
         Services.ITenantService tenantService,
         Services.IBackupService backupService,
@@ -40,6 +41,14 @@ public sealed class CommandExecutor
         ILogger<CommandExecutor> logger,
         Formatters.OutputFormatter formatter)
     {
+        ArgumentNullException.ThrowIfNull(tenantService);
+        ArgumentNullException.ThrowIfNull(backupService);
+        ArgumentNullException.ThrowIfNull(migrationService);
+        ArgumentNullException.ThrowIfNull(healthService);
+        ArgumentNullException.ThrowIfNull(connectionManager);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(formatter);
+
         _tenantService = tenantService;
         _backupService = backupService;
         _migrationService = migrationService;
@@ -56,8 +65,11 @@ public sealed class CommandExecutor
     /// <param name="command">The command to execute</param>
     /// <param name="cancellationToken">Optional cancellation token</param>
     /// <returns>A command result</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="command"/> is <see langword="null"/>.</exception>
     public async Task<CommandResult> ExecuteAsync(ParsedCommand command, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(command);
+
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
