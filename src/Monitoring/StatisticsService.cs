@@ -266,6 +266,16 @@ public sealed class SystemEvent
     /// Additional key-value pairs for event metadata.
     /// </summary>
     public Dictionary<string, string> Tags { get; set; } = new();
+
+    /// <summary>
+    /// Returns a short summary of the event: type, value, timestamp, duration and tag count.
+    /// </summary>
+    /// <returns>A human-readable summary of this event.</returns>
+    public override string ToString()
+    {
+        var duration = Duration.HasValue ? $"{Duration.Value.TotalMilliseconds:F2} ms" : "n/a";
+        return $"SystemEvent {{ Id = {Id}, Type = {EventType}, Value = {Value}, Timestamp = {Timestamp:O}, Duration = {duration}, Tags = {Tags.Count} }}";
+    }
 }
 
 /// <summary>
@@ -307,6 +317,15 @@ public sealed class SystemStatistics
     /// Maximum number of events recorded in any single second within the period.
     /// </summary>
     public int PeakEventCount { get; set; }
+
+    /// <summary>
+    /// Returns a short summary of the statistics: period, totals, average response time and peak count.
+    /// </summary>
+    /// <returns>A human-readable summary of these statistics.</returns>
+    public override string ToString()
+    {
+        return $"SystemStatistics {{ Period = {Period}, Start = {StartTime:O}, End = {EndTime:O}, TotalEvents = {TotalEvents}, EventTypes = {EventTypeBreakdown.Count}, AverageResponseTimeMs = {AverageResponseTime:F2}, PeakEventCount = {PeakEventCount} }}";
+    }
 }
 
 /// <summary>
@@ -338,6 +357,15 @@ public sealed class AggregatedMetric
     /// The maximum value of the metric in the interval.
     /// </summary>
     public double Max { get; set; }
+
+    /// <summary>
+    /// Returns a short summary of the aggregated metric: interval start, average, count and range.
+    /// </summary>
+    /// <returns>A human-readable summary of this aggregated metric.</returns>
+    public override string ToString()
+    {
+        return $"AggregatedMetric {{ Timestamp = {Timestamp:O}, Value = {Value:F2}, Count = {Count}, Min = {Min:F2}, Max = {Max:F2} }}";
+    }
 }
 
 /// <summary>
@@ -394,4 +422,13 @@ public sealed class TrendAnalysis
     /// The timestamp when the analysis was performed (UTC).
     /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Returns a short summary of the trend analysis: metric, direction, strength, volatility and data points.
+    /// </summary>
+    /// <returns>A human-readable summary of this trend analysis.</returns>
+    public override string ToString()
+    {
+        return $"TrendAnalysis {{ MetricName = {MetricName}, Period = {Period}, DataPoints = {DataPoints}, Average = {AverageValue:F2}, Min = {MinValue:F2}, Max = {MaxValue:F2}, Direction = {TrendDirection}, Strength = {TrendStrength:G4}, Volatility = {Volatility:F2}, Timestamp = {Timestamp:O} }}";
+    }
 }
