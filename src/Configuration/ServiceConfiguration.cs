@@ -72,27 +72,72 @@ public static class ServiceConfiguration
 /// </summary>
 public class SqliteMultiTenantOptions
 {
-    public int MaxConnections { get; set; } = 10;
-    public int ConnectionTimeoutSeconds { get; set; } = 30;
-    public int BackupRetentionDays { get; set; } = 30;
-    public bool EnableEncryption { get; set; } = false;
-    public string BackupDirectory { get; set; } = "backups";
-    public string DatabaseDirectory { get; set; } = "databases";
-    public bool EnableLogging { get; set; } = true;
+    /// <summary>
+    /// Default maximum number of pooled connections.
+    /// </summary>
+    public const int DefaultMaxConnections = 10;
+
+    /// <summary>
+    /// Default connection timeout, in seconds.
+    /// </summary>
+    public const int DefaultConnectionTimeoutSeconds = 30;
+
+    /// <summary>
+    /// Default number of days backups are retained before cleanup.
+    /// </summary>
+    public const int DefaultBackupRetentionDays = 30;
+
+    /// <summary>
+    /// Default encryption setting (disabled).
+    /// </summary>
+    public const bool DefaultEnableEncryption = false;
+
+    /// <summary>
+    /// Default directory name for tenant backups.
+    /// </summary>
+    public const string DefaultBackupDirectory = "backups";
+
+    /// <summary>
+    /// Default directory name for tenant databases.
+    /// </summary>
+    public const string DefaultDatabaseDirectory = "databases";
+
+    /// <summary>
+    /// Default logging setting (enabled).
+    /// </summary>
+    public const bool DefaultEnableLogging = true;
+
+    /// <summary>
+    /// Default maximum number of items allowed in a single batch operation (500).
+    /// </summary>
+    public const int DefaultMaxBatchItems = 500;
+
+    /// <summary>
+    /// Default maximum total batch payload size in bytes (1 MB).
+    /// </summary>
+    public const long DefaultMaxBatchPayloadSizeBytes = 1024 * 1024;
+
+    public int MaxConnections { get; set; } = DefaultMaxConnections;
+    public int ConnectionTimeoutSeconds { get; set; } = DefaultConnectionTimeoutSeconds;
+    public int BackupRetentionDays { get; set; } = DefaultBackupRetentionDays;
+    public bool EnableEncryption { get; set; } = DefaultEnableEncryption;
+    public string BackupDirectory { get; set; } = DefaultBackupDirectory;
+    public string DatabaseDirectory { get; set; } = DefaultDatabaseDirectory;
+    public bool EnableLogging { get; set; } = DefaultEnableLogging;
 
     /// <summary>
     /// Gets or sets the maximum number of items allowed in a single batch operation.
     /// Defaults to 500 to prevent resource exhaustion attacks.
     /// Set to 0 or negative to disable the limit.
     /// </summary>
-    public int MaxBatchItems { get; set; } = 500;
+    public int MaxBatchItems { get; set; } = DefaultMaxBatchItems;
 
     /// <summary>
     /// Gets or sets the maximum total payload size in bytes for batch operation parameters.
     /// Defaults to 1 MB to prevent memory exhaustion from large parameter payloads.
     /// Set to 0 or negative to disable the limit.
     /// </summary>
-    public long MaxBatchPayloadSizeBytes { get; set; } = 1024 * 1024; // 1 MB
+    public long MaxBatchPayloadSizeBytes { get; set; } = DefaultMaxBatchPayloadSizeBytes;
 
     /// <summary>
     /// Returns a concise, informative representation of the options.
