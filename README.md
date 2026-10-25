@@ -617,6 +617,83 @@ catch (TenantNotFoundException ex)
 }
 ```
 
+## BackupService
+
+`src/Services/BackupService.cs` implements `IBackupService` and manages backup records and backup files. It creates backup records in the `Pending` state, marks them as completed or failed, verifies backup files with SQLite's `PRAGMA integrity_check`, sets retention expiration dates, tags backups and deletes them. `BackupWithProgressAsync` copies a SQLite database file with the SQLite online backup API and reports progress. It is registered as a scoped service by `AddSqliteMultiTenant`.
+
+**Key members:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `CreateBackupAsync(databaseId, backupType, createdBy, backupPath?)` | `Backup` | Inserts a `Pending` backup record with a new GUID identifier. If `backupPath` is omitted, a path is generated under the default backup directory. The record expires after `TenantConstants.BackupRetentionDays`. Does not write a backup file |
+| `GetBackupAsync(backupId)` | `Backup?` | Returns the backup or `null` |
+| `GetDatabaseBackupsAsync(databaseId)` | `List<Backup>` | Lists all backups of a database |
+| `GetCompletedBackupsAsync(databaseId)` | `List<Backup>` | Lists the completed backups of a database |
+| `GetLatestBackupAsync(databaseId)` | `Backup?` | Returns the most recent backup of a database, or `null` |
+| `GetBackupCountAsync(databaseId)` | `int` | Number of backups recorded for a database |
+| `GetExpiredBackupsAsync()` | `List<Backup>` | Lists backups whose expiration date has passed |
+| `MarkBackupAsCompletedAsync(backupId, sizeBytes, durationMs)` | `Task` | Stores the size and duration and sets the status to completed. Throws `BackupException` if the backup does not exist |
+| `MarkBackupAsFailedAsync(backupId, errorMessage)` | `Task` | Stores the error message and sets the status to failed. Throws `BackupException` if the backup does not exist |
+| `VerifyBackupAsync(backupId, verifiedBy)` | `BackupVerificationResult` | Opens the backup file read-only, runs `PRAGMA integrity_check` and, if the check passes, marks the backup as verified. Missing files, SQLite errors and a missing backup record are returned as a failed result (`IsValid == false`) rather than thrown |
+| `SetBackupExpirationAsync(backupId, expirationDate)` | `Task` | Changes the expiration date. Throws `BackupException` if the backup does not exist |
+| `AddBackupTagAsync(backupId, tag)` | `Task` | Adds a tag to the backup. Throws `BackupException` if the backup does not exist |
+| `DeleteBackupAsync(backupId)` | `Task` | Deletes the backup record. Throws `BackupException` if the backup does not exist. The backup file on disk is not removed by this method |
+| `BackupWithProgressAsync(sourceDatabasePath, destinationPath, progress?, pagesPerStep?)` | `Task` | Copies a database file with `SQLiteConnection.BackupDatabase`. `IProgress<BackupProgress>` receives the pages copied and remaining. `pagesPerStep` defaults to `-1` (copy all pages in one step). Cancellation is honored between steps |
+
+Argument validation failures throw `ArgumentException` or `ArgumentNullException`. Methods that touch the repository log failures with `ILogger<BackupService>` and rethrow the original exception, except `VerifyBackupAsync`, which returns a failed result.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Services;
+
+// Assume 'serviceProvider' is the application's IServiceProvider
+var backupService = serviceProvider.GetRequiredService<IBackupService>();
+
+// Create a backup record for a tenant database and copy the file
+var backup = await backupService.CreateBackupAsync(
+    databaseId: "tenant-database-id",
+    backupType: BackupType.Full,
+    createdBy: "nightly-job",
+    backupPath: "/var/backups/tenant-database-id.db");
+
+var progress = new Progress<BackupProgress>(p =>
+    Console.WriteLine($"{p.PagesCopied}/{p.TotalPages} pages copied"));
+
+await backupService.BackupWithProgressAsync(
+    sourceDatabasePath: "/var/data/tenant-database-id.db",
+    destinationPath: backup.BackupPath,
+    progress: progress);
+
+// Record the outcome of the copy
+await backupService.MarkBackupAsCompletedAsync(backup.BackupId, sizeBytes: 1048576, durationMs: 250);
+
+// Verify the file and check the result
+var verification = await backupService.VerifyBackupAsync(backup.BackupId, verifiedBy: "nightly-job");
+if (!verification.IsValid)
+{
+    Console.WriteLine($"Backup is not usable: {verification.ErrorMessage}");
+}
+
+// Keep the backup for longer, tag it and look up the latest one
+await backupService.SetBackupExpirationAsync(backup.BackupId, DateTime.UtcNow.AddYears(1));
+await backupService.AddBackupTagAsync(backup.BackupId, "monthly");
+var latest = await backupService.GetLatestBackupAsync("tenant-database-id");
+Console.WriteLine($"Latest backup: {latest?.BackupId}");
+
+// Handle missing backup records explicitly
+try
+{
+    await backupService.MarkBackupAsFailedAsync("does-not-exist", "disk full");
+}
+catch (BackupException ex)
+{
+    Console.WriteLine($"Backup not found: {ex.Message}");
+}
+```
+
 ## Configuration
 
 The following configuration options are available in `MultiTenantOptions` and related classes:
