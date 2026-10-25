@@ -60,8 +60,20 @@ public sealed record BackupVerificationResult
     /// <summary>
     /// Creates a successful verification result
     /// </summary>
+    /// <param name="integrityResult">SQLite integrity check result message</param>
+    /// <param name="fileSize">File size in bytes</param>
+    /// <param name="pageCount">Database page count</param>
+    /// <param name="pageSize">Database page size in bytes</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="integrityResult"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="integrityResult"/> is empty or white space.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="fileSize"/>, <paramref name="pageCount"/> or <paramref name="pageSize"/> is negative.</exception>
     public static BackupVerificationResult Success(string integrityResult, long fileSize, int pageCount, int pageSize)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(integrityResult);
+        ArgumentOutOfRangeException.ThrowIfNegative(fileSize);
+        ArgumentOutOfRangeException.ThrowIfNegative(pageCount);
+        ArgumentOutOfRangeException.ThrowIfNegative(pageSize);
+
         return new BackupVerificationResult
         {
             IsValid = true,
@@ -75,8 +87,13 @@ public sealed record BackupVerificationResult
     /// <summary>
     /// Creates a failed verification result
     /// </summary>
+    /// <param name="errorMessage">Error message describing why verification failed</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errorMessage"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="errorMessage"/> is empty or white space.</exception>
     public static BackupVerificationResult Failed(string errorMessage)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(errorMessage);
+
         return new BackupVerificationResult
         {
             IsValid = false,
