@@ -16,6 +16,26 @@ namespace SqliteMultiTenant.Models;
 public static class BackupExtensions
 {
     /// <summary>
+    /// Number of milliseconds in one second
+    /// </summary>
+    private const long MillisecondsPerSecond = 1000;
+
+    /// <summary>
+    /// Number of seconds in one minute
+    /// </summary>
+    private const long SecondsPerMinute = 60;
+
+    /// <summary>
+    /// Number of minutes in one hour
+    /// </summary>
+    private const long MinutesPerHour = 60;
+
+    /// <summary>
+    /// Number of bytes in one kilobyte (binary divisor used for size formatting)
+    /// </summary>
+    private const double BytesPerKilobyte = 1024;
+
+    /// <summary>
     /// Calculates the actual saved space in bytes by this backup
     /// </summary>
     /// <param name="backup">The backup instance</param>
@@ -88,10 +108,10 @@ public static class BackupExtensions
         int order = 0;
         double len = bytes;
 
-        while (len >= 1024 && order < sizes.Length - 1)
+        while (len >= BytesPerKilobyte && order < sizes.Length - 1)
         {
             order++;
-            len /= 1024;
+            len /= BytesPerKilobyte;
         }
 
         return $"{len:0.##} {sizes[order]}";
@@ -107,25 +127,25 @@ public static class BackupExtensions
     {
         ArgumentNullException.ThrowIfNull(backup);
 
-        long totalSeconds = backup.DurationMs / 1000;
+        long totalSeconds = backup.DurationMs / MillisecondsPerSecond;
 
-        if (totalSeconds < 60)
+        if (totalSeconds < SecondsPerMinute)
         {
             return $"{totalSeconds}s";
         }
 
-        long minutes = totalSeconds / 60;
-        long seconds = totalSeconds % 60;
+        long minutes = totalSeconds / SecondsPerMinute;
+        long seconds = totalSeconds % SecondsPerMinute;
 
-        if (minutes < 60)
+        if (minutes < MinutesPerHour)
         {
             return seconds == 0
                 ? $"{minutes}m"
                 : $"{minutes}m {seconds}s";
         }
 
-        long hours = minutes / 60;
-        minutes %= 60;
+        long hours = minutes / MinutesPerHour;
+        minutes %= MinutesPerHour;
 
         return minutes == 0
             ? $"{hours}h"
