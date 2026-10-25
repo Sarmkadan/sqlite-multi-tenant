@@ -23,13 +23,37 @@ public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker>
 {
     private readonly ILogger<DataConsistencyChecker> _logger;
 
+    /// <summary>
+    /// Gets or sets a value indicating whether the last consistency check found the database healthy.
+    /// </summary>
     public bool IsHealthy { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the last SQLite integrity check passed.
+    /// </summary>
     public bool IntegrityCheckPassed { get; set; }
+    /// <summary>
+    /// Gets or sets descriptions of the orphaned records found by the last check.
+    /// </summary>
     public List<string> OrphanedRecords { get; set; } = new List<string>();
+    /// <summary>
+    /// Gets or sets the foreign key constraint violations found by the last check.
+    /// </summary>
     public List<ConstraintViolation> ForeignKeyViolations { get; set; } = new List<ConstraintViolation>();
+    /// <summary>
+    /// Gets or sets the expected indexes that were not found by the last check.
+    /// </summary>
     public List<string> MissingIndexes { get; set; } = new List<string>();
+    /// <summary>
+    /// Gets or sets the per-table statistics from the last check, keyed by table name.
+    /// </summary>
     public Dictionary<string, TableStatistics> TableStatistics { get; set; } = new Dictionary<string, TableStatistics>();
+    /// <summary>
+    /// Gets or sets the UTC timestamp of the last consistency check.
+    /// </summary>
     public DateTime CheckedAt { get; set; }
+    /// <summary>
+    /// Gets or sets an optional table name associated with the results of this checker.
+    /// </summary>
     public string? Table { get; set; }
 
     /// <summary>
@@ -42,6 +66,11 @@ public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker>
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Determines whether the specified checker holds the same results as this instance.
+    /// </summary>
+    /// <param name="other">The checker to compare with this instance.</param>
+    /// <returns>True if both checkers have equal results; otherwise false.</returns>
     public bool Equals(DataConsistencyChecker? other)
     {
         if (other is null)
@@ -65,21 +94,42 @@ public sealed class DataConsistencyChecker : IEquatable<DataConsistencyChecker>
                Table == other.Table;
     }
 
+    /// <summary>
+    /// Determines whether the specified object is equal to this instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with this instance.</param>
+    /// <returns>True if the object is an equal <see cref="DataConsistencyChecker"/>; otherwise false.</returns>
     public override bool Equals(object? obj)
     {
         return ReferenceEquals(this, obj) || (obj is DataConsistencyChecker other && Equals(other));
     }
 
+    /// <summary>
+    /// Returns a hash code for this instance based on its check results.
+    /// </summary>
+    /// <returns>A hash code consistent with <see cref="Equals(DataConsistencyChecker?)"/>.</returns>
     public override int GetHashCode()
     {
         return HashCode.Combine(IsHealthy, IntegrityCheckPassed, OrphanedRecords, ForeignKeyViolations, MissingIndexes, TableStatistics, CheckedAt, Table);
     }
 
+    /// <summary>
+    /// Determines whether two checkers hold equal results.
+    /// </summary>
+    /// <param name="left">The first checker to compare.</param>
+    /// <param name="right">The second checker to compare.</param>
+    /// <returns>True if the checkers are equal; otherwise false.</returns>
     public static bool operator ==(DataConsistencyChecker? left, DataConsistencyChecker? right)
     {
         return Equals(left, right);
     }
 
+    /// <summary>
+    /// Determines whether two checkers hold different results.
+    /// </summary>
+    /// <param name="left">The first checker to compare.</param>
+    /// <param name="right">The second checker to compare.</param>
+    /// <returns>True if the checkers are not equal; otherwise false.</returns>
     public static bool operator !=(DataConsistencyChecker? left, DataConsistencyChecker? right)
     {
         return !Equals(left, right);
@@ -461,6 +511,12 @@ public sealed class ConsistencyCheckResult
     /// Gets or sets the timestamp when the consistency check was performed.
     /// </summary>
     public DateTime CheckedAt { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the consistency check result.
+    /// </summary>
+    /// <returns>A string containing the health status, issue counts, table count and check timestamp.</returns>
+    public override string ToString() => $"ConsistencyCheckResult {{ IsHealthy = {IsHealthy}, IntegrityCheckPassed = {IntegrityCheckPassed}, OrphanedRecords = {OrphanedRecords.Count}, ForeignKeyViolations = {ForeignKeyViolations.Count}, MissingIndexes = {MissingIndexes.Count}, Tables = {TableStatistics.Count}, CheckedAt = {CheckedAt:O} }}";
 }
 
 /// <summary>
@@ -484,6 +540,12 @@ public sealed class ConstraintViolation
     /// Gets or sets the row ID of the parent record that should have a valid reference.
     /// </summary>
     public long ParentRowid { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the constraint violation.
+    /// </summary>
+    /// <returns>A string containing the violating table and row, and the parent table and row.</returns>
+    public override string ToString() => $"ConstraintViolation {{ Table = {Table}, Rowid = {Rowid}, ParentTable = {ParentTable}, ParentRowid = {ParentRowid} }}";
 }
 
 /// <summary>
@@ -491,14 +553,47 @@ public sealed class ConstraintViolation
 /// </summary>
 public sealed class TableStatistics
 {
+    /// <summary>
+    /// Gets or sets the name of the table.
+    /// </summary>
     public required string TableName { get; set; }
+    /// <summary>
+    /// Gets or sets the number of rows in the table.
+    /// </summary>
     public long RowCount { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the table statistics.
+    /// </summary>
+    /// <returns>A string containing the table name and its row count.</returns>
+    public override string ToString() => $"TableStatistics {{ TableName = {TableName}, RowCount = {RowCount} }}";
 }
 
+/// <summary>
+/// Represents a pair of records in a table that were judged to be duplicates of each other.
+/// </summary>
 public sealed class DuplicateRecord
 {
+    /// <summary>
+    /// Gets or sets the name of the table that contains the duplicate records.
+    /// </summary>
     public required string TableName { get; set; }
+    /// <summary>
+    /// Gets or sets the index of the first record in the pair.
+    /// </summary>
     public int RecordIndex1 { get; set; }
+    /// <summary>
+    /// Gets or sets the index of the second record in the pair.
+    /// </summary>
     public int RecordIndex2 { get; set; }
+    /// <summary>
+    /// Gets or sets the similarity score (0-1) between the two records.
+    /// </summary>
     public double Similarity { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the duplicate record pair.
+    /// </summary>
+    /// <returns>A string containing the table name, both record indexes and the similarity score.</returns>
+    public override string ToString() => $"DuplicateRecord {{ TableName = {TableName}, RecordIndex1 = {RecordIndex1}, RecordIndex2 = {RecordIndex2}, Similarity = {Similarity} }}";
 }
