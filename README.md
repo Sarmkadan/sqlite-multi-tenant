@@ -2872,6 +2872,128 @@ List<Migration> pending = await migrations.GetPendingMigrationsAsync("acme-main"
 await tenants.DeleteAsync("acme");
 ```
 
+## Monitoring
+
+The classes in `src/Monitoring/` (namespace `SqliteMultiTenant.Monitoring`) collect metrics, time operations, build text reports and keep an audit trail. All of them keep their data in memory, so nothing survives a restart. `MetricsService` and `PerformanceMonitor` are plain classes that take an `ILogger<T>`. `AuditLogger` is registered as a singleton `IAuditLogger` by `AddSqliteMultiTenantServices`.
+
+`src/Middleware/PerformanceMiddleware.cs` defines a different `PerformanceMonitor` in namespace `SqliteMultiTenant.Middleware`. The sections below describe the one in `SqliteMultiTenant.Monitoring`.
+
+### MetricsService
+
+`MetricsService` (`src/Monitoring/MetricsService.cs`) implements `IMetricsService` and counts requests, backups, migrations and errors. `RecordRequest` groups requests by path. `GetSnapshot` returns a `MetricsSnapshot` with totals, error counts and per-endpoint `RequestMetrics`. `GetReport` returns a plain-text report, `ToPrometheusExpositionFormat` returns Prometheus exposition text, and `Reset` clears all counters.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Monitoring;
+
+IMetricsService metrics = new MetricsService(NullLogger<MetricsService>.Instance);
+
+// Record a request, a backup and a migration
+metrics.RecordRequest("/api/tenants", durationMs: 42, statusCode: 200);
+metrics.RecordBackup(sizeBytes: 1_048_576, durationMs: 850, success: true);
+metrics.RecordMigration("2026.10.1", durationMs: 120, success: true);
+metrics.RecordError("ValidationError", "Tenant name is required");
+
+// Read the totals back
+MetricsSnapshot snapshot = metrics.GetSnapshot();
+Console.WriteLine($"Requests: {snapshot.TotalRequests}, errors: {snapshot.TotalErrors}");
+
+// Text report, or Prometheus format for a scrape endpoint
+string report = metrics.GetReport();
+string prometheus = metrics.ToPrometheusExpositionFormat();
+```
+
+### PerformanceMonitor
+
+`PerformanceMonitor` times operations. `StartOperation` returns a `PerformanceTracker` that records the elapsed time when it is disposed. Only the last 1000 metrics are kept per operation name. `GetOperationStats` and `GetAllStatistics` aggregate those metrics, `GetSlowOperations` returns the slowest ones above a threshold, and `GetHealthSummary` returns a `SystemHealthSummary` with uptime, success rate and P95/P99 latency.
+
+`PerformanceTracker.RecordException` records the metric and disposing the tracker records it again, so calling both counts the operation twice. To record a failure, call `RecordMetric` with `isSuccess: false` and do not dispose a tracker for that operation.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Monitoring;
+
+var monitor = new PerformanceMonitor(NullLogger<PerformanceMonitor>.Instance);
+
+// Successful operation: the metric is recorded when the tracker is disposed
+using (monitor.StartOperation("ExportTenant", tenantId: "acme"))
+{
+    await Task.Delay(50);
+}
+
+// Failed operation: record it directly so it is counted once
+try
+{
+    await Task.Delay(10);
+    throw new InvalidOperationException("disk full");
+}
+catch (Exception ex)
+{
+    monitor.RecordMetric("ExportTenant", elapsedMilliseconds: 10, tenantId: "acme", isSuccess: false, exception: ex);
+}
+
+// Aggregated statistics and slow operations
+OperationStatistics? stats = monitor.GetOperationStats("ExportTenant");
+List<PerformanceMetric> slow = monitor.GetSlowOperations(thresholdMs: 500, limit: 10);
+SystemHealthSummary health = monitor.GetHealthSummary();
+```
+
+### ReportGenerator
+
+`ReportGenerator` turns `PerformanceMonitor` data into plain-text reports. `GenerateHealthReport` takes a `SystemHealthSummary` and the operation statistics. `GeneratePerformanceReport` and `GenerateErrorReport` take a list of `PerformanceMetric`. `GenerateTenantUsageReport` takes the per-tenant metrics. `GenerateCapacityReport` also takes total disk usage in bytes and the tenant count.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Monitoring;
+
+var monitor = new PerformanceMonitor(NullLogger<PerformanceMonitor>.Instance);
+var generator = new ReportGenerator(NullLogger<ReportGenerator>.Instance);
+
+SystemHealthSummary health = monitor.GetHealthSummary();
+Dictionary<string, OperationStatistics> stats = monitor.GetAllStatistics();
+
+string healthReport = generator.GenerateHealthReport(health, stats);
+string perfReport = generator.GeneratePerformanceReport(monitor.GetSlowOperations());
+string tenantReport = generator.GenerateTenantUsageReport(monitor.GetTenantMetrics("acme"));
+string capacityReport = generator.GenerateCapacityReport(health, totalDiskUsage: 512L * 1024 * 1024, tenantCount: 12);
+
+await File.WriteAllTextAsync("health-report.txt", healthReport);
+```
+
+### AuditLogger
+
+`AuditLogger` implements `IAuditLogger` and keeps at most 10,000 `AuditLogEntry` items in memory. `LogAsync` sets `Id` and `Timestamp` itself, so callers do not need to. `GetEntriesAsync` and `GetEntryCountAsync` take an `AuditLogFilter`, where unset properties do not restrict the result and `Limit` defaults to 100. `GetStatisticsAsync` returns an `AuditLogStatistics`, and `PurgeOldEntriesAsync` removes entries older than a retention period.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Monitoring;
+
+IAuditLogger audit = new AuditLogger(NullLogger<AuditLogger>.Instance);
+
+await audit.LogAsync(new AuditLogEntry
+{
+    EventType = "TenantUpdated",
+    Actor = "admin@acme.example.com",
+    ResourceType = "Tenant",
+    ResourceId = "acme",
+    Action = AuditAction.Update,
+    Description = "Changed contact email",
+    Changes = new Dictionary<string, object> { ["ContactEmail"] = "ops@acme.example.com" },
+    TenantId = "acme",
+});
+
+// Entries for one resource from the last 24 hours, newest first
+List<AuditLogEntry> recent = await audit.GetEntriesAsync(new AuditLogFilter
+{
+    ResourceId = "acme",
+    StartTime = DateTime.UtcNow.AddHours(-24),
+    Limit = 50,
+});
+
+// Keep only the last 30 days
+await audit.PurgeOldEntriesAsync(TimeSpan.FromDays(30));
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
