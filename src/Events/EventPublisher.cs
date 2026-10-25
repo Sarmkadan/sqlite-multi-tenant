@@ -174,20 +174,38 @@ public sealed class LoggingEventHandler<T> : IEventHandler<T> where T : DomainEv
 public sealed class EventPublisherOptions
 {
     /// <summary>
+    /// Default value for <see cref="EnableAsyncPublishing"/>.
+    /// </summary>
+    public const bool DefaultEnableAsyncPublishing = true;
+
+    /// <summary>
+    /// Default value for <see cref="HandlerTimeoutSeconds"/> (in seconds).
+    /// </summary>
+    public const int DefaultHandlerTimeoutSeconds = 30;
+
+    /// <summary>
+    /// Default value for <see cref="ContinueOnHandlerException"/>.
+    /// </summary>
+    public const bool DefaultContinueOnHandlerException = true;
+
+    /// <summary>
     /// Enable async event publishing (fire and forget).
     /// Default: true (recommended for performance).
     /// </summary>
-    public bool EnableAsyncPublishing { get; set; } = true;
+    public bool EnableAsyncPublishing { get; set; } = DefaultEnableAsyncPublishing;
 
     /// <summary>
     /// Maximum timeout for all handlers to complete (in seconds).
     /// Default: 30 seconds.
     /// </summary>
-    public int HandlerTimeoutSeconds { get; set; } = 30;
+    public int HandlerTimeoutSeconds { get; set; } = DefaultHandlerTimeoutSeconds;
 
     /// <summary>
     /// Continue publishing even if a handler throws exception.
     /// Default: true (prevents one bad handler from blocking others).
     /// </summary>
-    public bool ContinueOnHandlerException { get; set; } = true;
+    public bool ContinueOnHandlerException { get; set; } = DefaultContinueOnHandlerException;
+
+    /// <summary>Returns a single-line summary of these publishing options for logging.</summary>
+    public override string ToString() => $"EventPublisherOptions {{ EnableAsyncPublishing = {EnableAsyncPublishing}, HandlerTimeoutSeconds = {HandlerTimeoutSeconds}, ContinueOnHandlerException = {ContinueOnHandlerException} }}";
 }
