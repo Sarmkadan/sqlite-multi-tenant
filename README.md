@@ -2785,6 +2785,93 @@ foreach (var (tenantId, snapshot) in pools.GetStatistics())
 await pools.EvictTenantAsync("tenant-a");
 ```
 
+## Repositories
+
+The repositories in `src/Repositories/` are the data-access layer over the SQLite master database. `TenantRepository`, `BackupRepository` and `MigrationRepository` each implement an interface, take a SQLite connection string and an `ILogger<T>`, and create their table with `CREATE TABLE IF NOT EXISTS` in the constructor. Each method opens its own `SQLiteConnection`. `AddSqliteMultiTenant` registers the three interfaces as singletons.
+
+| Type | Interface | File | Entity | Table |
+|------|-----------|------|--------|-------|
+| `TenantRepository` | `ITenantRepository` | `src/Repositories/TenantRepository.cs` | `Tenant` | `Tenants` |
+| `BackupRepository` | `IBackupRepository` | `src/Repositories/BackupRepository.cs` | `Backup` | `Backups` |
+| `MigrationRepository` | `IMigrationRepository` | `src/Repositories/MigrationRepository.cs` | `Migration` | `Migrations` |
+| `GenericRepository<T>` | none | `src/Repositories/GenericRepository.cs` | any `T : class` | none |
+
+Passing a `null` connection string or logger to a constructor throws `ArgumentNullException`. The interface methods take an optional `CancellationToken` as their last parameter. `AddAsync` and `UpdateAsync` run the entity's `Validate` method first and throw `ArgumentException` when it fails.
+
+### ITenantRepository and TenantRepository
+
+Tenants are keyed by `TenantId`. `GetByIdAsync` and `GetByNameAsync` return `null` when nothing matches. `GetAllAsync` and `GetPagedAsync` order by `CreatedAt` descending. `GetPagedAsync` uses 1-based page numbers. `GetActiveTenantsAsync` returns tenants whose `Status` is `Active`, and `GetByStatusAsync` takes the raw `int` status value. `SearchAsync` matches `Name` or `ContactEmail` with `LIKE` and orders by `Name`. `DeleteAsync` runs a `DELETE` and does not report whether a row was removed.
+
+### IBackupRepository and BackupRepository
+
+Backups are keyed by `BackupId` and grouped by `DatabaseId`. List methods order by `CreatedAt` descending. `GetCompletedBackupsAsync` and `GetFailedBackupsAsync` filter on `Status`. `GetVerifiedBackupsAsync` returns backups with `IsVerified` set. `GetLatestBackupAsync` returns the newest backup for a database, or `null`. `GetExpiredBackupsAsync` returns backups whose `ExpiresAt` is in the past across all databases, earliest expiry first. `GetPagedAsync` uses 1-based page numbers.
+
+### IMigrationRepository and MigrationRepository
+
+Migrations are keyed by `MigrationId` and grouped by `DatabaseId`. `GetByDatabaseAsync` and `GetOrderedMigrationsAsync` order by `ExecutionOrder` ascending. `GetPendingMigrationsAsync` and `GetAppliedMigrationsAsync` return migrations with status `Pending` or `Completed`, in `ExecutionOrder`. `GetFailedMigrationsAsync` returns `Failed` migrations, newest first. `GetByVersionAsync` returns the migration with the given `Version` for a database, or `null`.
+
+### GenericRepository&lt;T&gt;
+
+`GenericRepository<T>` is an abstract base class for a repository over any entity type, not an interface. No concrete subclass exists in `src/`, so the three repositories above do not derive from it. Subclasses must implement the abstract CRUD, search and paging methods: `GetAllAsync`, `GetByIdAsync`, `CreateAsync`, `UpdateAsync`, `DeleteAsync` (by ID and by predicate), `FindAsync`, `GetCountAsync`, `ExistsAsync` and `GetPageAsync`. The base class provides these virtual methods:
+
+- `GetPagedAsync(pageNumber, pageSize)` pages in memory over `GetAllAsync()`, so use it only for small sets.
+- `BulkCreateAsync`, `BulkUpdateAsync` and `BulkDeleteAsync` call the single-entity method for each item. They do not run in a transaction.
+
+The same file defines `PagedResult<T>`, a record returned by `GetPageAsync`, and `PaginatedResult<T>`, a class returned by `GetPagedAsync`.
+
+`IUnitOfWork` and `UnitOfWork` are placeholders. `SaveChangesAsync` only logs and returns `1`, and `BeginTransactionAsync`, `CommitAsync` and `RollbackAsync` only set and clear an internal flag. None of them touch a database, so do not rely on them for atomicity.
+
+### Usage Example
+
+The three concrete repositories, used through their interfaces.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Constants;
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Repositories;
+
+const string connectionString = "Data Source=master.db;Version=3;";
+
+// Each repository creates its table when it is constructed
+ITenantRepository tenants = new TenantRepository(connectionString, NullLogger<TenantRepository>.Instance);
+IBackupRepository backups = new BackupRepository(connectionString, NullLogger<BackupRepository>.Instance);
+IMigrationRepository migrations = new MigrationRepository(connectionString, NullLogger<MigrationRepository>.Instance);
+
+// AddAsync validates the tenant first and throws ArgumentException when validation fails
+await tenants.AddAsync(new Tenant
+{
+    TenantId = "acme",
+    Name = "Acme Corp",
+    ContactEmail = "admin@acme.example.com",
+});
+
+// Lookups return null when nothing matches
+Tenant? byId = await tenants.GetByIdAsync("acme");
+Tenant? byName = await tenants.GetByNameAsync("Acme Corp");
+
+// Page numbers start at 1
+List<Tenant> firstPage = await tenants.GetPagedAsync(pageNumber: 1, pageSize: 20);
+
+// Record a completed backup and read the newest one back
+string backupId = Guid.NewGuid().ToString("N");
+await backups.AddAsync(new Backup
+{
+    BackupId = backupId,
+    DatabaseId = "acme-main",
+    BackupPath = $"backups/acme-main-{backupId}.db",
+    Status = BackupStatus.Completed,
+    CompletedAt = DateTime.UtcNow,
+});
+Backup? latest = await backups.GetLatestBackupAsync("acme-main");
+
+// Pending migrations for the database, in execution order
+List<Migration> pending = await migrations.GetPendingMigrationsAsync("acme-main");
+
+// Remove the tenant
+await tenants.DeleteAsync("acme");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
