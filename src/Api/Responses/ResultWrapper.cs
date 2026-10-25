@@ -55,8 +55,10 @@ public sealed class Result<T>
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <returns>A failed result.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="error"/> is null, empty, or consists only of white-space characters.</exception>
     public static Result<T> Fail(string error)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(error);
         return new Result<T>
         {
             Success = false,
@@ -69,8 +71,10 @@ public sealed class Result<T>
     /// </summary>
     /// <param name="errors">The list of error messages.</param>
     /// <returns>A failed result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errors"/> is null.</exception>
     public static Result<T> Fail(List<string> errors)
     {
+        ArgumentNullException.ThrowIfNull(errors);
         return new Result<T>
         {
             Success = false,
@@ -115,8 +119,10 @@ public sealed class PaginatedResult<T>
     /// <param name="pageSize">The number of items per page.</param>
     /// <param name="totalCount">The total number of items available.</param>
     /// <returns>A successful paginated result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="items"/> is null.</exception>
     public static PaginatedResult<T> Ok(List<T> items, int pageNumber, int pageSize, int totalCount)
     {
+        ArgumentNullException.ThrowIfNull(items);
         return new PaginatedResult<T>
         {
             Success = true,
@@ -136,8 +142,10 @@ public sealed class PaginatedResult<T>
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <returns>A failed paginated result.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="error"/> is null, empty, or consists only of white-space characters.</exception>
     public static PaginatedResult<T> Fail(string error)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(error);
         return new PaginatedResult<T>
         {
             Success = false,
@@ -241,8 +249,10 @@ public sealed class OperationResult
     /// </summary>
     /// <param name="error">The error message.</param>
     /// <returns>A failed operation result.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="error"/> is null, empty, or consists only of white-space characters.</exception>
     public static OperationResult Fail(string error)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(error);
         return new OperationResult
         {
             Success = false,
@@ -255,8 +265,10 @@ public sealed class OperationResult
     /// </summary>
     /// <param name="errors">The list of error messages.</param>
     /// <returns>A failed operation result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="errors"/> is null.</exception>
     public static OperationResult Fail(List<string> errors)
     {
+        ArgumentNullException.ThrowIfNull(errors);
         return new OperationResult
         {
             Success = false,
