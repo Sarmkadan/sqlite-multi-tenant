@@ -19,6 +19,11 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// </summary>
 public sealed class DataRetentionPolicy
 {
+    /// <summary>
+    /// Fallback retention period, in days, used when a rule's <see cref="RetentionType"/> is not recognized.
+    /// </summary>
+    private const int DefaultRetentionDays = 30;
+
     private readonly ILogger<DataRetentionPolicy> _logger;
 
     /// <summary>
@@ -103,7 +108,7 @@ public sealed class DataRetentionPolicy
                 RetentionType.DaysOld => DateTime.UtcNow.AddDays(-rule.RetentionValue),
                 RetentionType.MonthsOld => DateTime.UtcNow.AddMonths(-rule.RetentionValue),
                 RetentionType.YearsOld => DateTime.UtcNow.AddYears(-rule.RetentionValue),
-                _ => DateTime.UtcNow.AddDays(-30)
+                _ => DateTime.UtcNow.AddDays(-DefaultRetentionDays)
             };
 
             // Build DELETE query based on rule
@@ -219,7 +224,7 @@ public sealed class DataRetentionPolicy
                 RetentionType.DaysOld => DateTime.UtcNow.AddDays(-rule.RetentionValue),
                 RetentionType.MonthsOld => DateTime.UtcNow.AddMonths(-rule.RetentionValue),
                 RetentionType.YearsOld => DateTime.UtcNow.AddYears(-rule.RetentionValue),
-                _ => DateTime.UtcNow.AddDays(-30)
+                _ => DateTime.UtcNow.AddDays(-DefaultRetentionDays)
             };
 
             // Query to count records that would be deleted
