@@ -298,26 +298,75 @@ public sealed class CommandLineParser
 
     internal class CommandDefinition
     {
+        /// <summary>
+        /// Gets or sets the primary name of the command.
+        /// </summary>
         public required string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the human-readable description of the command.
+        /// </summary>
         public required string Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the action invoked when the command is parsed.
+        /// </summary>
         public required Action<LegacyParsedCommand> Handler { get; set; }
+
+        /// <summary>
+        /// Gets or sets the alternative names that also resolve to this command.
+        /// </summary>
         public List<string> Aliases { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Gets or sets the value options registered for this command, keyed by option name.
+        /// </summary>
         public Dictionary<string, OptionDefinition> Options { get; set; } = new Dictionary<string, OptionDefinition>();
+
+        /// <summary>
+        /// Gets or sets the flag options registered for this command, keyed by flag name.
+        /// </summary>
         public Dictionary<string, FlagDefinition> Flags { get; set; } = new Dictionary<string, FlagDefinition>();
     }
 
     internal class OptionDefinition
     {
+        /// <summary>
+        /// Gets or sets the long name of the option, used as <c>--name</c>.
+        /// </summary>
         public required string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the human-readable description of the option.
+        /// </summary>
         public required string Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the optional single-character short name of the option, used as <c>-x</c>.
+        /// </summary>
         public char? ShortName { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the option must be supplied.
+        /// </summary>
         public bool Required { get; set; }
     }
 
     internal class FlagDefinition
     {
+        /// <summary>
+        /// Gets or sets the long name of the flag, used as <c>--name</c>.
+        /// </summary>
         public required string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the human-readable description of the flag.
+        /// </summary>
         public required string Description { get; set; }
+
+        /// <summary>
+        /// Gets or sets the optional single-character short name of the flag, used as <c>-x</c>.
+        /// </summary>
         public char? ShortName { get; set; }
     }
 
@@ -336,11 +385,34 @@ public sealed class CommandLineParser
 /// </summary>
 public sealed class LegacyParsedCommand
 {
+    /// <summary>
+    /// Gets or sets the name of the command that was parsed.
+    /// </summary>
     public string? Command { get; set; }
+
+    /// <summary>
+    /// Gets or sets the parsed value options, keyed by option name.
+    /// </summary>
     public Dictionary<string, string> Options { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// Gets or sets the parsed flags, keyed by flag name.
+    /// </summary>
     public Dictionary<string, bool> Flags { get; set; } = new Dictionary<string, bool>();
+
+    /// <summary>
+    /// Gets or sets the arguments that were not recognised as options or flags, in their original order.
+    /// </summary>
     public List<string> PositionalArguments { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Gets or sets a value indicating whether parsing succeeded.
+    /// </summary>
     public bool IsValid { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message describing why parsing failed, or <c>null</c> when parsing succeeded.
+    /// </summary>
     public string? Error { get; set; }
 
     /// <summary>
@@ -383,5 +455,19 @@ public sealed class LegacyParsedCommand
         }
 
         return defaultValue;
+    }
+
+    /// <summary>
+    /// Returns a single-line summary of the parsed command, listing its name, positional arguments, options and flags.
+    /// </summary>
+    /// <returns>A string such as <c>Command: deploy; Positional: [a, b]; Options: {env=prod}; Flags: {force=True}</c>.</returns>
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        builder.Append("Command: ").Append(Command ?? "<none>");
+        builder.Append("; Positional: [").Append(string.Join(", ", PositionalArguments)).Append(']');
+        builder.Append("; Options: {").Append(string.Join(", ", Options.Select(o => $"{o.Key}={o.Value}"))).Append('}');
+        builder.Append("; Flags: {").Append(string.Join(", ", Flags.Select(f => $"{f.Key}={f.Value}"))).Append('}');
+        return builder.ToString();
     }
 }
