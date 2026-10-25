@@ -13,14 +13,40 @@ namespace SqliteMultiTenant.Caching;
 /// </summary>
 public interface IDistributedCache
 {
+    /// <summary>
+    /// Gets a cached value by key, or null if it is missing or expired.
+    /// </summary>
     Task<T?> GetAsync<T>(string key) where T : class;
+
+    /// <summary>
+    /// Stores a value under the given key with an optional time-to-live.
+    /// </summary>
     Task SetAsync<T>(string key, T value, TimeSpan? ttl = null) where T : class;
+
+    /// <summary>
+    /// Removes the entry for the given key and reports whether one existed.
+    /// </summary>
     Task<bool> RemoveAsync(string key);
+
+    /// <summary>
+    /// Removes all entries whose keys start with the given pattern.
+    /// </summary>
     Task RemoveByPatternAsync(string pattern);
+
+    /// <summary>
+    /// Removes all entries and resets the hit and miss counters.
+    /// </summary>
     Task ClearAsync();
+
+    /// <summary>
+    /// Gets a snapshot of the cache item count, size, hit and miss counts.
+    /// </summary>
     Task<DistributedCacheStatistics> GetStatisticsAsync();
 }
 
+/// <summary>
+/// In-memory implementation of <see cref="IDistributedCache"/> backed by a dictionary guarded by a semaphore.
+/// </summary>
 public sealed class DistributedCacheService : IDistributedCache
 {
     private readonly Dictionary<string, CacheEntry> _cache;
@@ -31,6 +57,11 @@ public sealed class DistributedCacheService : IDistributedCache
     private long _hits;
     private long _misses;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DistributedCacheService"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used for cache diagnostics.</param>
+    /// <param name="maxItems">Maximum number of entries before LRU eviction starts. Defaults to 1000.</param>
     public DistributedCacheService(ILogger<DistributedCacheService> logger, int maxItems = 1000)
     {
         _logger = logger;
@@ -116,6 +147,7 @@ public sealed class DistributedCacheService : IDistributedCache
 
             var entry = new CacheEntry
             {
+                Key = key,
                 Value = value,
                 CreatedAt = DateTime.UtcNow,
                 LastAccessedAt = DateTime.UtcNow,
@@ -305,22 +337,97 @@ public sealed class DistributedCacheService : IDistributedCache
     }
 }
 
+/// <summary>
+/// A single item stored in <see cref="DistributedCacheService"/>, with its expiry and access metadata.
+/// </summary>
 public sealed class CacheEntry
 {
+    /// <summary>
+    /// Gets or sets the cache key this entry is stored under.
+    /// </summary>
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the cached value.
+    /// </summary>
     public object? Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the entry was created.
+    /// </summary>
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the entry was last read or written.
+    /// </summary>
     public DateTime LastAccessedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC expiry time, or null if the entry never expires.
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of cache hits for this entry.
+    /// </summary>
     public long AccessCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the estimated size of the entry.
+    /// </summary>
     public long Size { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the key, expiry and size. The cached value is not included.
+    /// </summary>
+    /// <returns>A string with the entry key, expiry time and size.</returns>
+    public override string ToString()
+    {
+        return $"Key: {Key}, expires: {(ExpiresAt.HasValue ? ExpiresAt.Value.ToString("O") : "never")}, size: {Size}";
+    }
 }
 
+/// <summary>
+/// Snapshot of cache usage returned by <see cref="IDistributedCache.GetStatisticsAsync"/>.
+/// </summary>
 public sealed class DistributedCacheStatistics
 {
+    /// <summary>
+    /// Gets or sets the number of entries currently in the cache.
+    /// </summary>
     public int ItemCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total estimated size of all entries in bytes.
+    /// </summary>
     public long TotalSizeBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of cache hits since the last clear.
+    /// </summary>
     public long Hits { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of cache misses since the last clear.
+    /// </summary>
     public long Misses { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ratio of hits to total lookups, from 0 to 1.
+    /// </summary>
     public double HitRate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average estimated size of an entry in bytes.
+    /// </summary>
     public long AverageItemSize { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the item count, total size and hit rate.
+    /// </summary>
+    /// <returns>A string with the item count, total size in bytes and hit rate.</returns>
+    public override string ToString()
+    {
+        return $"Items: {ItemCount}, total size: {TotalSizeBytes} bytes, hit rate: {HitRate:P1}";
+    }
 }
