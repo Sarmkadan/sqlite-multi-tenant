@@ -2410,6 +2410,95 @@ public sealed record Customer(int Id, string Name);
 public sealed record Order(int Id, decimal Total);
 ```
 
+## Domain Events
+
+The `src/Events/` folder contains two in-memory publishers and the event types they carry. Both work inside one process only; nothing is sent to other machines.
+
+`EventBusImpl` (`src/Events/EventBusImpl.cs`) is a standalone bus. `Subscribe<TEvent>(handler, priority)` takes a `Func<TEvent, Task>` and returns an `IDisposable` that removes the handler when disposed. Higher priorities are placed first in the subscriber list. `PublishAsync` starts every handler for the event type, and they run concurrently; `Publish` blocks on `PublishAsync`. The bus keeps a publish history (`historySize`, default 1000, oldest entries evicted first), per-event-type counters from `GetEventStatistics()`, and a dead letter queue. The constructor takes an `ILogger<EventBusImpl>`, and it is not registered in the DI container, so create it yourself. It is `IDisposable`; `Dispose` removes all subscriptions and clears the history and dead letter queue.
+
+`EventPublisher` (`src/Events/EventPublisher.cs`) implements `IEventPublisher` and is registered as a singleton by `AddEventServices` (`src/Configuration/DependencyInjectionSetup.cs`). Handlers implement `IEventHandler<T>` and are added with `Subscribe`. `PublishAsync(event, cancellationToken)` runs all handlers for the event's type with `Task.WhenAll`. A handler that throws is logged and does not stop the other handlers. `GetHandlerCount<T>()` returns the number of handlers registered for a type. Its handler list is a plain `Dictionary`, so subscribe during startup, before publishing from several threads. `EventPublisherOptions` is defined in the same file, but nothing reads it: no handler timeout is applied, and `ContinueOnHandlerException` and `EnableAsyncPublishing` have no effect.
+
+All event types are in `src/Events/DomainEvent.cs`. They derive from `DomainEvent`, which provides `EventId` (a new GUID string), `OccurredAt` (UTC), `EventType` (the type name) and `TenantId`.
+
+| Event | Meaning | Payload properties |
+|-------|---------|--------------------|
+| `TenantCreatedEvent` | A tenant was created | `TenantName`, `ContactEmail` |
+| `TenantUpdatedEvent` | A tenant was updated | `OldName`, `NewName` |
+| `TenantSuspendedEvent` | A tenant was suspended | `SuspendedBy`, `Reason` |
+| `BackupStartedEvent` | A backup started | `BackupId`, `DatabaseId`, `BackupType` |
+| `BackupCompletedEvent` | A backup completed | `BackupId`, `DatabaseId`, `SizeBytes`, `DurationMilliseconds` |
+| `BackupFailedEvent` | A backup failed | `BackupId`, `DatabaseId`, `ErrorMessage` |
+| `MigrationAppliedEvent` | A migration was applied | `MigrationId`, `DatabaseId`, `Version`, `MigrationName` |
+| `MigrationFailedEvent` | A migration failed | `MigrationId`, `DatabaseId`, `Version`, `ErrorMessage` |
+| `MigrationRolledBackEvent` | A migration was rolled back | `MigrationId`, `DatabaseId`, `Version`, `RolledBackBy` |
+| `TenantClonedEvent` | A tenant was cloned from another tenant | `SourceTenantId`, `TargetTenantId`, `DatabasePath` |
+| `HealthCheckFailedEvent` | A health check failed | `ComponentName`, `ErrorMessage`, `ResponseTimeMs` |
+| `CustomDomainEvent` | Application-defined event | `Data` (`Dictionary<string, object>`) |
+
+`CustomDomainEvent` takes its event name in the constructor. Every custom event has the same .NET type, so both buses route by type: a handler subscribed to `CustomDomainEvent` receives all custom events, and it must check `EventType` itself.
+
+Known limitations to account for:
+
+- `TenantCreatedEvent`, `TenantUpdatedEvent` and `TenantSuspendedEvent` declare their own `TenantId`, which hides the base property. `EventBusImpl` reads the base `DomainEvent.TenantId` to choose the tenant scope for handlers, so a value set through the derived property (for example in an object initializer) is ignored by the bus. Set it on the base property with `((DomainEvent)evt).TenantId = "acme"`. A handler that reads the derived property still sees the value set there, but the bus does not use it to choose the tenant scope.
+- `EventBusImpl` catches handler exceptions and logs them; `PublishAsync` does not throw for them. Failures are counted per event type, not per handler, and any successful handler invocation of that type resets the count to 0. When the count goes above 3, the failing event is copied to the dead letter queue, which keeps at most 1000 entries per event type. There is no retry.
+- `Publish` blocks the calling thread until all handlers finish. From async code, use `PublishAsync`.
+
+### Usage Example
+
+`EventBusImpl`: subscribe with a priority, publish with a tenant, and unsubscribe. `EventPublisher`: implement `IEventHandler<T>`, subscribe it, and publish.
+
+```csharp
+using Microsoft.Extensions.Logging.Abstractions;
+using SqliteMultiTenant.Events;
+
+using var bus = new EventBusImpl(NullLogger<EventBusImpl>.Instance, historySize: 500);
+
+// The returned IDisposable removes this handler when disposed
+IDisposable subscription = bus.Subscribe<TenantCreatedEvent>(async evt =>
+{
+    Console.WriteLine($"Tenant created: {evt.TenantName} <{evt.ContactEmail}>");
+    await Task.CompletedTask;
+}, priority: 10);
+
+var created = new TenantCreatedEvent
+{
+    TenantName = "Acme Corp",
+    ContactEmail = "ops@acme.example"
+};
+
+// The bus reads the base DomainEvent.TenantId, so set it there (see limitations above)
+((DomainEvent)created).TenantId = "acme";
+
+await bus.PublishAsync(created);
+
+// Statistics are kept per event type that has a subscriber
+Dictionary<string, EventStatistics> stats = bus.GetEventStatistics();
+Console.WriteLine($"Successful invocations: {stats[nameof(TenantCreatedEvent)].SuccessfulHandlerInvocations}");
+
+subscription.Dispose();
+
+var publisher = new EventPublisher(NullLogger<EventPublisher>.Instance);
+publisher.Subscribe(new TenantSuspendedHandler());
+
+// Subscribe before publishing; the handler list is not thread-safe
+await publisher.PublishAsync(new TenantSuspendedEvent
+{
+    TenantId = "acme",
+    SuspendedBy = "admin",
+    Reason = "Payment overdue"
+});
+
+// Type declarations must follow the top-level statements
+public sealed class TenantSuspendedHandler : IEventHandler<TenantSuspendedEvent>
+{
+    public Task HandleAsync(TenantSuspendedEvent @event, CancellationToken cancellationToken)
+    {
+        Console.WriteLine($"Suspended {@event.TenantId} by {@event.SuspendedBy}: {@event.Reason}");
+        return Task.CompletedTask;
+    }
+}
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
