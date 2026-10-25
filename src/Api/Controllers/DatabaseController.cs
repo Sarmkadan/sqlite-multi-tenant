@@ -27,6 +27,10 @@ public sealed class DatabaseController : ControllerBase
 
     private readonly ILogger<DatabaseController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DatabaseController"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to record database operation requests and failures.</param>
     public DatabaseController(ILogger<DatabaseController> logger)
     {
         _logger = logger;
@@ -373,62 +377,205 @@ public sealed class DatabaseController : ControllerBase
         };
 }
 
+/// <summary>
+/// Statistics about a database file, returned by the stats endpoint.
+/// </summary>
 public sealed class DatabaseStats
 {
+    /// <summary>
+    /// Gets or sets the identifier of the database.
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the size of the database file in bytes.
+    /// </summary>
     public long FileSizeBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of user tables in the database.
+    /// </summary>
     public int TableCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of indexes in the database.
+    /// </summary>
     public int IndexCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC last-write time of the database file.
+    /// This value is taken from the file system and is used as a proxy for the last vacuum time.
+    /// </summary>
     public DateTime LastVacuumTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether <c>PRAGMA quick_check</c> reported a problem.
+    /// </summary>
     public bool IsCorrupted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the statistics were generated.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
 
+/// <summary>
+/// Result of a database optimization (VACUUM and ANALYZE) run.
+/// </summary>
 public sealed class OptimizationResult
 {
+    /// <summary>
+    /// Gets or sets the identifier of the optimized database.
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the time taken by the optimization, in milliseconds.
+    /// </summary>
     public long DurationMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets a human-readable summary of the outcome.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the result was produced.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
 
+/// <summary>
+/// Result of a database integrity check.
+/// </summary>
 public sealed class IntegrityCheckResult
 {
+    /// <summary>
+    /// Gets or sets the identifier of the checked database.
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the integrity check found no errors.
+    /// </summary>
     public bool IsValid { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of errors reported by the integrity check.
+    /// </summary>
     public int ErrorCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time taken by the integrity check, in milliseconds.
+    /// </summary>
     public long DurationMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the messages reported by <c>PRAGMA integrity_check</c> other than <c>ok</c>.
+    /// </summary>
     public List<string> Errors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the check was completed.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
 
+/// <summary>
+/// Schema of a database, listing its tables.
+/// </summary>
 public sealed class DatabaseSchema
 {
+    /// <summary>
+    /// Gets or sets the identifier of the database.
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the user tables in the database.
+    /// </summary>
     public List<TableSchema> Tables { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the schema was read.
+    /// </summary>
     public DateTime Timestamp { get; set; }
 }
 
+/// <summary>
+/// Schema of a single table, including its columns and row count.
+/// </summary>
 public sealed class TableSchema
 {
+    /// <summary>
+    /// Gets or sets the name of the table.
+    /// </summary>
     public string TableName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the columns of the table.
+    /// </summary>
     public List<ColumnSchema> Columns { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the number of rows in the table.
+    /// </summary>
     public int RowCount { get; set; }
 }
 
+/// <summary>
+/// Schema of a single column in a table.
+/// </summary>
 public sealed class ColumnSchema
 {
+    /// <summary>
+    /// Gets or sets the name of the column.
+    /// </summary>
     public string ColumnName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the declared data type of the column.
+    /// </summary>
     public string DataType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the column accepts <c>NULL</c> values.
+    /// </summary>
     public bool IsNullable { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the column is part of the primary key.
+    /// </summary>
     public bool IsPrimaryKey { get; set; }
 }
 
+/// <summary>
+/// Result of a database export request.
+/// </summary>
 public sealed class ExportResult
 {
+    /// <summary>
+    /// Gets or sets the identifier of the exported database.
+    /// </summary>
     public string DatabaseId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the requested export format (<c>json</c>, <c>csv</c> or <c>sql</c>).
+    /// </summary>
     public string Format { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the export was created.
+    /// </summary>
     public DateTime ExportedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the relative URL from which the export can be downloaded.
+    /// </summary>
     public string DownloadUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the UTC time after which the export is no longer available (24 hours after creation).
+    /// </summary>
     public DateTime ExpiresAt { get; set; }
 }
