@@ -23,10 +23,38 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 /// </summary>
 public interface IScheduledTaskService
 {
+    /// <summary>
+    /// Registers a new scheduled task.
+    /// </summary>
+    /// <param name="taskId">The unique identifier for the task.</param>
+    /// <param name="taskAction">The action to execute.</param>
+    /// <param name="interval">The interval between task executions.</param>
+    /// <param name="tenantId">Optional tenant ID to associate with the task.</param>
     void RegisterTask(string taskId, Func<Task> taskAction, TimeSpan interval, string? tenantId = null);
+
+    /// <summary>
+    /// Unregisters a scheduled task.
+    /// </summary>
+    /// <param name="taskId">The ID of the task to unregister.</param>
     void UnregisterTask(string taskId);
+
+    /// <summary>
+    /// Starts executing all registered tasks.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     Task StartAsync();
+
+    /// <summary>
+    /// Stops all scheduled tasks.
+    /// </summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     Task StopAsync();
+
+    /// <summary>
+    /// Gets the status of a scheduled task.
+    /// </summary>
+    /// <param name="taskId">The ID of the task to query.</param>
+    /// <returns>A <see cref="TaskExecutionStatus"/> object containing the task's status.</returns>
     Task<TaskExecutionStatus> GetTaskStatusAsync(string taskId);
 }
 
@@ -44,6 +72,12 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
     private readonly TenantContextHelper _tenantContextHelper;
     private bool _isRunning;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ScheduledTaskService"/> class.
+    /// </summary>
+    /// <param name="logger">The logger used to report task lifecycle and failures.</param>
+    /// <param name="tenantContextHelper">The helper used to run tenant-associated tasks within their tenant context.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> or <paramref name="tenantContextHelper"/> is null.</exception>
     public ScheduledTaskService(
         ILogger<ScheduledTaskService> logger,
         TenantContextHelper tenantContextHelper)
@@ -390,20 +424,77 @@ public sealed class ScheduledTaskService : IScheduledTaskService, IHostedService
     }
 }
 
+/// <summary>
+/// Internal state of a registered scheduled task, including its schedule and execution counters.
+/// </summary>
 public sealed class ScheduledTask
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of the task.
+    /// </summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asynchronous delegate executed on each run.
+    /// </summary>
     public Func<Task> Action { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the base interval between executions.
+    /// </summary>
     public TimeSpan Interval { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC timestamp of the last successful execution.
+    /// </summary>
     public DateTime? LastExecutedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC timestamp when the task is next due.
+    /// </summary>
     public DateTime NextExecutionAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of successful executions.
+    /// </summary>
     public long ExecutionCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of failed executions.
+    /// </summary>
     public long FailureCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the task is enabled.
+    /// </summary>
     public bool IsEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message of the most recent failure, or <c>null</c> if the last run succeeded.
+    /// </summary>
     public string? LastError { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the task is currently running.
+    /// </summary>
     public bool IsExecuting { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC timestamp of the most recent execution attempt.
+    /// </summary>
     public DateTime? LastAttemptedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tenant ID the task runs under, or <c>null</c> to run without tenant context.
+    /// </summary>
     public string? TenantId { get; set; }
+
+    /// <summary>
+    /// Returns a summary of the scheduled task, including its identifier, interval, state and counters.
+    /// </summary>
+    /// <returns>A string summarising this scheduled task.</returns>
+    public override string ToString() =>
+        $"ScheduledTask {{ Id = {Id}, Interval = {Interval}, IsEnabled = {IsEnabled}, IsExecuting = {IsExecuting}, ExecutionCount = {ExecutionCount}, FailureCount = {FailureCount}, NextExecutionAt = {NextExecutionAt:O}, TenantId = {TenantId ?? "(none)"} }}";
 }
 
 public sealed class TaskExecutionStatus : OperationStatusBase
@@ -490,6 +581,13 @@ public sealed class TaskExecutionStatus : OperationStatusBase
     {
         base.MarkRunning();
     }
+
+    /// <summary>
+    /// Returns a summary of the task execution status, including the task identifier, state and counters.
+    /// </summary>
+    /// <returns>A string summarising this task execution status.</returns>
+    public override string ToString() =>
+        $"TaskExecutionStatus {{ TaskId = {TaskId}, Status = {State}, IsEnabled = {IsEnabled}, ExecutionCount = {ExecutionCount}, FailureCount = {FailureCount}, LastExecutedAt = {LastExecutedAt?.ToString("O") ?? "null"}, NextExecutionAt = {NextExecutionAt:O}, TenantId = {TenantId ?? "(none)"} }}";
 
     /// <summary>
     /// Validates the task execution status.
