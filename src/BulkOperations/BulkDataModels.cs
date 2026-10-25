@@ -205,6 +205,12 @@ public sealed class ExportOptions
     /// When <c>null</c> the service uses <see cref="BulkDataOptions.DefaultExportDirectory"/>.
     /// </summary>
     public string? OutputFilePath { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the export options for logging and diagnostics.
+    /// </summary>
+    public override string ToString() =>
+        $"ExportOptions {{ BatchSize = {BatchSize}, WhereClause = {WhereClause ?? "<none>"}, IncludeSchema = {IncludeSchema}, IncludeMetadata = {IncludeMetadata}, IncludeCsvHeaders = {IncludeCsvHeaders}, OutputFilePath = {OutputFilePath ?? "<default>"} }}";
 }
 
 /// <summary>
@@ -232,4 +238,10 @@ public sealed class ImportOptions
 
     /// <summary>Whether the first line of a CSV payload contains column names.</summary>
     public bool CsvHasHeaders { get; set; } = true;
+
+    /// <summary>
+    /// Returns a one-line summary of the import options for logging and diagnostics.
+    /// </summary>
+    public override string ToString() =>
+        $"ImportOptions {{ TruncateBeforeImport = {TruncateBeforeImport}, SkipFailedRows = {SkipFailedRows}, DuplicateHandling = {DuplicateHandling}, CommitEveryNRows = {CommitEveryNRows}, CsvDelimiter = {CsvDelimiter}, CsvHasHeaders = {CsvHasHeaders} }}";
 }
