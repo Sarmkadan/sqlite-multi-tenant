@@ -280,6 +280,14 @@ public sealed class RequestLog
     /// The IP address of the client that made the request.
     /// </summary>
     public string IpAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Returns a compact summary of the request (method, path, header and query counts).
+    /// The body and header values are intentionally excluded.
+    /// </summary>
+    /// <returns>A short, single-line description of the request log entry.</returns>
+    public override string ToString() =>
+        $"RequestLog {{ Method = {Method}, Path = {Path}, Headers = {Headers.Count}, QueryParameters = {QueryParameters.Count} }}";
 }
 
 /// <summary>
@@ -315,6 +323,14 @@ public sealed class ResponseLog
     /// The HTTP headers of the response.
     /// </summary>
     public Dictionary<string, string> Headers { get; set; } = new();
+
+    /// <summary>
+    /// Returns a compact summary of the response (status code, duration, size and header count).
+    /// The body and header values are intentionally excluded.
+    /// </summary>
+    /// <returns>A short, single-line description of the response log entry.</returns>
+    public override string ToString() =>
+        $"ResponseLog {{ StatusCode = {StatusCode}, DurationMs = {DurationMs}, ResponseSize = {ResponseSize}, Headers = {Headers.Count} }}";
 }
 
 /// <summary>
@@ -350,6 +366,13 @@ public sealed class LogFilter
     /// The maximum number of log entries to return. Defaults to 100.
     /// </summary>
     public int Limit { get; set; } = 100;
+
+    /// <summary>
+    /// Returns a compact summary of the filter criteria. Unset criteria are shown as <c>&lt;none&gt;</c>.
+    /// </summary>
+    /// <returns>A short, single-line description of the filter.</returns>
+    public override string ToString() =>
+        $"LogFilter {{ Method = {Method ?? "<none>"}, Path = {Path ?? "<none>"}, StatusCode = {StatusCode?.ToString() ?? "<none>"}, StartTime = {StartTime?.ToString("o") ?? "<none>"}, EndTime = {EndTime?.ToString("o") ?? "<none>"}, MinDuration = {MinDuration?.ToString() ?? "<none>"}, Limit = {Limit} }}";
 }
 
 /// <summary>
@@ -381,4 +404,11 @@ public sealed class LoggingStatistics
     /// The most frequently used HTTP method.
     /// </summary>
     public string MostCommonMethod { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Returns a compact summary of the logging statistics.
+    /// </summary>
+    /// <returns>A short, single-line description of the statistics.</returns>
+    public override string ToString() =>
+        $"LoggingStatistics {{ TotalRequestsLogged = {TotalRequestsLogged}, TotalResponsesLogged = {TotalResponsesLogged}, AverageRequestSize = {AverageRequestSize:F2}, AverageResponseTime = {AverageResponseTime:F2}, MostCommonPath = {MostCommonPath}, MostCommonMethod = {MostCommonMethod} }}";
 }
