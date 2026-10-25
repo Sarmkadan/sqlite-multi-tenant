@@ -13,15 +13,39 @@ namespace SqliteMultiTenant.Exceptions;
 /// </summary>
 public interface IExceptionProcessor
 {
+    /// <summary>
+    /// Processes an exception and creates a user-friendly error response.
+    /// </summary>
+    /// <param name="exception">The exception to process.</param>
+    /// <returns>An <see cref="ErrorResponse"/> describing the exception.</returns>
     ErrorResponse ProcessException(Exception exception);
+
+    /// <summary>
+    /// Gets the HTTP status code that corresponds to an exception.
+    /// </summary>
+    /// <param name="exception">The exception to map.</param>
+    /// <returns>The HTTP status code for the exception.</returns>
     int GetHttpStatusCode(Exception exception);
+
+    /// <summary>
+    /// Gets the error category name for an exception.
+    /// </summary>
+    /// <param name="exception">The exception to categorize.</param>
+    /// <returns>The category name for the exception.</returns>
     string GetErrorCategory(Exception exception);
 }
 
+/// <summary>
+/// Default implementation of <see cref="IExceptionProcessor"/> that logs exceptions and maps them to error responses.
+/// </summary>
 public sealed class ExceptionProcessor : IExceptionProcessor
 {
     private readonly ILogger<ExceptionProcessor> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExceptionProcessor"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to record processed exceptions.</param>
     public ExceptionProcessor(ILogger<ExceptionProcessor> logger)
     {
         _logger = logger;
@@ -151,14 +175,44 @@ public sealed class ExceptionProcessor : IExceptionProcessor
     }
 }
 
+/// <summary>
+/// Error payload returned to callers when an exception is processed.
+/// </summary>
 public sealed class ErrorResponse
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of this error occurrence.
+    /// </summary>
     public string ErrorId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the error category (for example, "ValidationError" or "NotFound").
+    /// </summary>
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the user-friendly error message.
+    /// </summary>
     public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the HTTP status code associated with the error.
+    /// </summary>
     public int StatusCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the UTC time at which the error was processed.
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional diagnostic details about the error.
+    /// </summary>
     public Dictionary<string, object> Details { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the error describing the inner exception, if one exists.
+    /// </summary>
     public ErrorResponse? InnerException { get; set; }
 }
 
