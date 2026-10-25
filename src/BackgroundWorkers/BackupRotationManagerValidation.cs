@@ -18,6 +18,31 @@ namespace SqliteMultiTenant.BackgroundWorkers;
 public static class BackupRotationManagerValidation
 {
     /// <summary>
+    /// Maximum number of backups a rotation policy may retain.
+    /// </summary>
+    private const int MaxBackupCountLimit = 1000;
+
+    /// <summary>
+    /// Maximum total disk usage in bytes (100 TB).
+    /// </summary>
+    private const long MaxDiskUsageBytesLimit = 100L * 1024 * 1024 * 1024 * 1024;
+
+    /// <summary>
+    /// Maximum length of an error message in characters.
+    /// </summary>
+    private const int MaxErrorMessageLength = 1000;
+
+    /// <summary>
+    /// Maximum length of a backup file name in characters.
+    /// </summary>
+    private const int MaxFileNameLength = 255;
+
+    /// <summary>
+    /// Number of bytes in a kilobyte, used as the divisor when formatting byte counts.
+    /// </summary>
+    private const int BytesPerKilobyte = 1024;
+
+    /// <summary>
     /// Validates a <see cref="BackupRotationPolicy"/> instance.
     /// </summary>
     /// <param name="value">The policy to validate.</param>
@@ -44,9 +69,9 @@ public static class BackupRotationManagerValidation
         {
             errors.Add($"MaxBackupCount must be greater than zero (current: {value.MaxBackupCount}).");
         }
-        else if (value.MaxBackupCount > 1000)
+        else if (value.MaxBackupCount > MaxBackupCountLimit)
         {
-            errors.Add($"MaxBackupCount exceeds maximum allowed value of 1000 (current: {value.MaxBackupCount}).");
+            errors.Add($"MaxBackupCount exceeds maximum allowed value of {MaxBackupCountLimit} (current: {value.MaxBackupCount}).");
         }
 
         // Validate MaxDiskUsage
@@ -54,7 +79,7 @@ public static class BackupRotationManagerValidation
         {
             errors.Add($"MaxDiskUsage must be greater than zero bytes (current: {value.MaxDiskUsage} bytes).");
         }
-        else if (value.MaxDiskUsage > 100L * 1024 * 1024 * 1024 * 1024) // 100 TB
+        else if (value.MaxDiskUsage > MaxDiskUsageBytesLimit) // 100 TB
         {
             errors.Add($"MaxDiskUsage exceeds maximum allowed value of 100 TB (current: {FormatBytes(value.MaxDiskUsage)}).");
         }
@@ -121,9 +146,9 @@ public static class BackupRotationManagerValidation
         // Validate Error message
         if (!string.IsNullOrEmpty(value.Error))
         {
-            if (value.Error.Length > 1000)
+            if (value.Error.Length > MaxErrorMessageLength)
             {
-                errors.Add($"Error message exceeds maximum length of 1000 characters (current: {value.Error.Length}).");
+                errors.Add($"Error message exceeds maximum length of {MaxErrorMessageLength} characters (current: {value.Error.Length}).");
             }
 
             if (value.Error.Contains("\n", StringComparison.Ordinal) || value.Error.Contains("\r", StringComparison.Ordinal))
@@ -162,9 +187,9 @@ public static class BackupRotationManagerValidation
         }
 
         // Validate FileName
-        if (!string.IsNullOrEmpty(value.FileName) && value.FileName.Length > 255)
+        if (!string.IsNullOrEmpty(value.FileName) && value.FileName.Length > MaxFileNameLength)
         {
-            errors.Add($"FileName exceeds maximum length of 255 characters (current: {value.FileName.Length}).");
+            errors.Add($"FileName exceeds maximum length of {MaxFileNameLength} characters (current: {value.FileName.Length}).");
         }
 
         // Validate FileSize
@@ -200,9 +225,9 @@ public static class BackupRotationManagerValidation
         // Validate Error message
         if (!string.IsNullOrEmpty(value.Error))
         {
-            if (value.Error.Length > 1000)
+            if (value.Error.Length > MaxErrorMessageLength)
             {
-                errors.Add($"Error message exceeds maximum length of 1000 characters (current: {value.Error.Length}).");
+                errors.Add($"Error message exceeds maximum length of {MaxErrorMessageLength} characters (current: {value.Error.Length}).");
             }
 
             if (value.Error.Contains("\n", StringComparison.Ordinal) || value.Error.Contains("\r", StringComparison.Ordinal))
@@ -237,7 +262,7 @@ public static class BackupRotationManagerValidation
         {
             errors.Add($"TotalDiskUsage cannot be negative (current: {value.TotalDiskUsage} bytes).");
         }
-        else if (value.TotalDiskUsage > 100L * 1024 * 1024 * 1024 * 1024) // 100 TB
+        else if (value.TotalDiskUsage > MaxDiskUsageBytesLimit) // 100 TB
         {
             errors.Add($"TotalDiskUsage exceeds maximum allowed value of 100 TB (current: {FormatBytes(value.TotalDiskUsage)}).");
         }
@@ -390,9 +415,9 @@ public static class BackupRotationManagerValidation
         int counter = 0;
         double number = bytes;
 
-        while (number >= 1024 && counter < suffixes.Length - 1)
+        while (number >= BytesPerKilobyte && counter < suffixes.Length - 1)
         {
-            number /= 1024;
+            number /= BytesPerKilobyte;
             counter++;
         }
 
