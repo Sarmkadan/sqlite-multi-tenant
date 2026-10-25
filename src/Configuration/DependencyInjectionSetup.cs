@@ -209,35 +209,64 @@ public sealed class MultiTenantOptionsBuilder
 {
     private readonly SqliteMultiTenantOptions _options;
 
+    /// <summary>
+    /// Initializes a new builder with default <see cref="SqliteMultiTenantOptions"/> values.
+    /// </summary>
     public MultiTenantOptionsBuilder()
     {
         _options = new SqliteMultiTenantOptions();
     }
 
+    /// <summary>
+    /// Sets the number of days backups are retained.
+    /// </summary>
+    /// <param name="days">Retention period in days.</param>
+    /// <returns>This builder, for chaining.</returns>
     public MultiTenantOptionsBuilder WithBackupRetention(int days)
     {
         _options.BackupRetentionDays = days;
         return this;
     }
 
+    /// <summary>
+    /// Sets the maximum number of pooled database connections.
+    /// </summary>
+    /// <param name="count">Maximum connection count.</param>
+    /// <returns>This builder, for chaining.</returns>
     public MultiTenantOptionsBuilder WithMaxConnections(int count)
     {
         _options.MaxConnections = count;
         return this;
     }
 
+    /// <summary>
+    /// Sets the database connection timeout.
+    /// </summary>
+    /// <param name="seconds">Timeout in seconds.</param>
+    /// <returns>This builder, for chaining.</returns>
     public MultiTenantOptionsBuilder WithConnectionTimeout(int seconds)
     {
         _options.ConnectionTimeoutSeconds = seconds;
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables database encryption.
+    /// </summary>
+    /// <param name="enabled">True to enable encryption; otherwise false.</param>
+    /// <returns>This builder, for chaining.</returns>
     public MultiTenantOptionsBuilder WithEncryption(bool enabled)
     {
         _options.EnableEncryption = enabled;
         return this;
     }
 
+    /// <summary>
+    /// Sets the directory where backups are stored.
+    /// </summary>
+    /// <param name="path">Backup directory path. Must not be null or empty.</param>
+    /// <returns>This builder, for chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or empty.</exception>
     public MultiTenantOptionsBuilder WithBackupDirectory(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
@@ -245,6 +274,12 @@ public sealed class MultiTenantOptionsBuilder
         return this;
     }
 
+    /// <summary>
+    /// Sets the directory where tenant databases are stored.
+    /// </summary>
+    /// <param name="path">Database directory path. Must not be null or empty.</param>
+    /// <returns>This builder, for chaining.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is null or empty.</exception>
     public MultiTenantOptionsBuilder WithDatabaseDirectory(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
@@ -252,12 +287,21 @@ public sealed class MultiTenantOptionsBuilder
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables logging.
+    /// </summary>
+    /// <param name="enabled">True to enable logging; otherwise false.</param>
+    /// <returns>This builder, for chaining.</returns>
     public MultiTenantOptionsBuilder WithLogging(bool enabled)
     {
         _options.EnableLogging = enabled;
         return this;
     }
 
+    /// <summary>
+    /// Builds the configured options.
+    /// </summary>
+    /// <returns>The <see cref="SqliteMultiTenantOptions"/> instance held by this builder.</returns>
     public SqliteMultiTenantOptions Build()
     {
         return _options;
