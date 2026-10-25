@@ -16,6 +16,18 @@ namespace SqliteMultiTenant.Services;
 /// </summary>
 public sealed class MigrationService : IMigrationService
 {
+    /// <summary>
+    /// Percentage of simulated migration executions that fail at random, used to demonstrate
+    /// the fault isolation system. Applies only to the simulated execution path.
+    /// </summary>
+    private const int SimulatedFailurePercent = 5;
+
+    /// <summary>
+    /// Upper bound (exclusive) of the random roll used to evaluate <see cref="SimulatedFailurePercent"/>,
+    /// so that a roll below the percentage value occurs with that probability.
+    /// </summary>
+    private const int PercentScale = 100;
+
     private readonly IMigrationRepository _repository;
     private readonly ILogger<MigrationService> _logger;
     private readonly Random _random = new();
@@ -747,7 +759,7 @@ public sealed class MigrationService : IMigrationService
         }
 
         // Simulate occasional failures for demonstration (5% chance)
-        if (_random.Next(0, 100) < 5)
+        if (_random.Next(0, PercentScale) < SimulatedFailurePercent)
         {
             throw new MigrationException(
                 $"Random migration failure during execution of {migration.Name} (v{migration.Version})",
