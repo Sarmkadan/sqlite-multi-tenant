@@ -6,6 +6,7 @@
 // =========================================================================
 
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace SqliteMultiTenant.Models;
@@ -175,5 +176,37 @@ public abstract class OperationStatusBase
         Status = OperationStatus.Failed;
         CompletedAt = DateTime.UtcNow;
         Error = error;
+    }
+
+    /// <summary>
+    /// Returns a summary of the operation status, including the operation id,
+    /// current state, and any timestamps and error that are set.
+    /// </summary>
+    /// <returns>A string summarising this operation status.</returns>
+    public override string ToString()
+    {
+        var parts = new List<string>
+        {
+            $"OperationId={OperationId}",
+            $"Status={State}",
+            $"CreatedAt={CreatedAt:O}"
+        };
+
+        if (StartedAt != null)
+        {
+            parts.Add($"StartedAt={StartedAt.Value:O}");
+        }
+
+        if (CompletedAt != null)
+        {
+            parts.Add($"CompletedAt={CompletedAt.Value:O}");
+        }
+
+        if (!string.IsNullOrEmpty(Error))
+        {
+            parts.Add($"Error={Error}");
+        }
+
+        return $"{GetType().Name}[{string.Join(", ", parts)}]";
     }
 }
