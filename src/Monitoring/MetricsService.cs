@@ -17,10 +17,41 @@ namespace SqliteMultiTenant.Monitoring;
 /// </summary>
 public interface IMetricsService
 {
+    /// <summary>
+    /// Records an HTTP request with its duration and status code.
+    /// </summary>
+    /// <param name="path">Request path used as the endpoint key.</param>
+    /// <param name="durationMs">Request duration in milliseconds.</param>
+    /// <param name="statusCode">HTTP status code of the response.</param>
     void RecordRequest(string path, long durationMs, int statusCode);
+
+    /// <summary>
+    /// Records a backup operation.
+    /// </summary>
+    /// <param name="sizeBytes">Size of the backup in bytes.</param>
+    /// <param name="durationMs">Backup duration in milliseconds.</param>
+    /// <param name="success">Whether the backup succeeded.</param>
     void RecordBackup(long sizeBytes, long durationMs, bool success);
+
+    /// <summary>
+    /// Records a database migration.
+    /// </summary>
+    /// <param name="version">Migration version.</param>
+    /// <param name="durationMs">Migration duration in milliseconds.</param>
+    /// <param name="success">Whether the migration succeeded.</param>
     void RecordMigration(string version, long durationMs, bool success);
+
+    /// <summary>
+    /// Records an application error by type.
+    /// </summary>
+    /// <param name="errorType">Error category used as the counter key.</param>
+    /// <param name="message">Error message, written to the log.</param>
     void RecordError(string errorType, string message);
+
+    /// <summary>
+    /// Gets a snapshot of the current metrics.
+    /// </summary>
+    /// <returns>A point-in-time copy of the collected metrics.</returns>
     MetricsSnapshot GetSnapshot();
 }
 
@@ -29,17 +60,71 @@ public interface IMetricsService
 /// </summary>
 public sealed class MetricsSnapshot
 {
+    /// <summary>
+    /// Gets or sets the UTC time at which the snapshot was captured.
+    /// </summary>
     public DateTime CapturedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the total number of HTTP requests recorded.
+    /// </summary>
     public long TotalRequests { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of HTTP requests with a status code of 400 or higher.
+    /// </summary>
     public long TotalErrors { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average HTTP response time in milliseconds.
+    /// </summary>
     public double AverageResponseTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of bytes backed up across all backup operations.
+    /// </summary>
     public long TotalBackupBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of backup operations.
+    /// </summary>
     public int TotalBackups { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of failed backup operations.
+    /// </summary>
     public int FailedBackups { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of database migrations.
+    /// </summary>
     public int TotalMigrations { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of failed database migrations.
+    /// </summary>
     public int FailedMigrations { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error counts keyed by error type.
+    /// </summary>
     public Dictionary<string, int> ErrorCounts { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the per-endpoint request metrics keyed by endpoint path.
+    /// </summary>
     public Dictionary<string, RequestMetrics> EndpointMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Returns a one-line summary of the snapshot's totals.
+    /// </summary>
+    /// <returns>A summary of requests, errors, backups, migrations and endpoints.</returns>
+    public override string ToString()
+    {
+        return $"MetricsSnapshot: {TotalRequests} requests, {TotalErrors} errors, avg {AverageResponseTimeMs:F2}ms, " +
+            $"{TotalBackups} backups ({FailedBackups} failed), {TotalMigrations} migrations ({FailedMigrations} failed), " +
+            $"{ErrorCounts.Count} error types, {EndpointMetrics.Count} endpoints, captured {CapturedAt:O}";
+    }
 }
 
 /// <summary>
@@ -47,13 +132,50 @@ public sealed class MetricsSnapshot
 /// </summary>
 public sealed class RequestMetrics
 {
+    /// <summary>
+    /// Gets or sets the endpoint path.
+    /// </summary>
     public string? Endpoint { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of requests to the endpoint.
+    /// </summary>
     public long RequestCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of requests with a status code below 400.
+    /// </summary>
     public long SuccessCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of requests with a status code of 400 or higher.
+    /// </summary>
     public long ErrorCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average response time in milliseconds.
+    /// </summary>
     public double AverageResponseTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum response time in milliseconds.
+    /// </summary>
     public long MaxResponseTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum response time in milliseconds.
+    /// </summary>
     public long MinResponseTimeMs { get; set; }
+
+    /// <summary>
+    /// Returns a one-line summary of the endpoint's request metrics.
+    /// </summary>
+    /// <returns>A summary of request, success and error counts and response times.</returns>
+    public override string ToString()
+    {
+        return $"RequestMetrics: {Endpoint ?? "unknown"}, {RequestCount} requests ({SuccessCount} succeeded, {ErrorCount} failed), " +
+            $"avg {AverageResponseTimeMs:F2}ms, min {MinResponseTimeMs}ms, max {MaxResponseTimeMs}ms";
+    }
 }
 
 /// <summary>
@@ -78,6 +200,10 @@ public sealed class MetricsService : IMetricsService
     private readonly ConcurrentDictionary<string, RequestMetrics> _endpointMetrics = new();
     private readonly object _timeLock = new object();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MetricsService"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to record metric events.</param>
     public MetricsService(ILogger<MetricsService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
