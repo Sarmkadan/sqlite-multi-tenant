@@ -67,6 +67,14 @@ public sealed class BatchOperation
     /// Defaults to CrossTenant for backward compatibility.
     /// </summary>
     public BatchAtomicityMode AtomicityMode { get; set; } = BatchAtomicityMode.CrossTenant;
+
+    /// <summary>
+    /// Returns a summary of the batch operation. Parameter values are omitted
+    /// because they may contain credentials or other sensitive data.
+    /// </summary>
+    /// <returns>A string describing the batch operation without parameter values.</returns>
+    public override string ToString() =>
+        $"BatchOperation {{ OperationId = {OperationId}, OperationType = {OperationType}, ResourceIds = {ResourceIds.Count}, Parameters = {Parameters.Count}, CreatedAt = {CreatedAt:O}, ContinueOnError = {ContinueOnError}, AtomicityMode = {AtomicityMode} }}";
 }
 
 /// <summary>
@@ -105,6 +113,14 @@ public sealed class BatchOperationResult
 
         return BatchOperationAggregateStatus.PartialSuccess;
     }
+
+    /// <summary>
+    /// Returns a summary of the batch operation result, including resource counts and duration.
+    /// Individual resource messages are not included.
+    /// </summary>
+    /// <returns>A string summarising this batch operation result.</returns>
+    public override string ToString() =>
+        $"BatchOperationResult {{ OperationId = {OperationId}, TotalResources = {TotalResources}, SuccessCount = {SuccessCount}, FailureCount = {FailureCount}, ResourceResults = {ResourceResults.Count}, OverallStatus = {GetOverallStatus()}, CompletedAt = {CompletedAt:O}, Duration = {Duration} }}";
 }
 
 /// <summary>
@@ -122,6 +138,14 @@ public sealed class BatchResourceResult
     /// True if the operation was wrapped in a transaction and completed successfully.
     /// </summary>
     public bool Transactional { get; set; }
+
+    /// <summary>
+    /// Returns a summary of the resource result. The message is omitted because it
+    /// may contain error details from the underlying resource.
+    /// </summary>
+    /// <returns>A string describing the resource result without its message.</returns>
+    public override string ToString() =>
+        $"BatchResourceResult {{ ResourceId = {ResourceId}, Success = {Success}, DurationMs = {DurationMs}, Transactional = {Transactional} }}";
 }
 
 /// <summary>
@@ -187,6 +211,14 @@ public sealed class BatchOperationStatus : OperationStatusBase
     {
         ValidateStatus();
     }
+
+    /// <summary>
+    /// Returns a summary of the batch operation status, including progress and the
+    /// fields inherited from <see cref="OperationStatusBase"/>.
+    /// </summary>
+    /// <returns>A string summarising this batch operation status.</returns>
+    public override string ToString() =>
+        $"BatchOperationStatus {{ OperationId = {OperationId}, Status = {State}, TotalResources = {TotalResources}, ProcessedResources = {ProcessedResources}, ProgressPercent = {ProgressPercent} }}";
 }
 
 /// <summary>
@@ -220,6 +252,21 @@ public enum BatchOperationAggregateStatus
 /// </summary>
 public sealed class BatchOperationHandler : IBatchOperationHandler
 {
+    /// <summary>
+    /// Default maximum number of resources accepted in a single batch when no option is configured.
+    /// </summary>
+    private const int DefaultMaxBatchItems = 500;
+
+    /// <summary>
+    /// Default maximum approximate payload size, in bytes, accepted in a single batch when no option is configured (1 MB).
+    /// </summary>
+    private const long DefaultMaxBatchPayloadSizeBytes = 1024 * 1024;
+
+    /// <summary>
+    /// Number of bytes in one kilobyte, used when formatting sizes for display.
+    /// </summary>
+    private const int BytesPerKilobyte = 1024;
+
     private readonly ILogger<BatchOperationHandler> _logger;
     private readonly TenantContextHelper _tenantContextHelper;
     private readonly Dictionary<string, BatchOperationStatus> _statusTracker = new();
@@ -242,8 +289,8 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
         _tenantContextHelper = tenantContextHelper ?? throw new ArgumentNullException(nameof(tenantContextHelper));
 
         // Use configured values or defaults
-        _maxBatchItems = options?.MaxBatchItems ?? 500;
-        _maxBatchPayloadSizeBytes = options?.MaxBatchPayloadSizeBytes ?? (1024 * 1024); // 1 MB
+        _maxBatchItems = options?.MaxBatchItems ?? DefaultMaxBatchItems;
+        _maxBatchPayloadSizeBytes = options?.MaxBatchPayloadSizeBytes ?? DefaultMaxBatchPayloadSizeBytes;
     }
 
     /// <summary>
@@ -343,10 +390,10 @@ public sealed class BatchOperationHandler : IBatchOperationHandler
         string[] sizes = { "B", "KB", "MB", "GB", "TB" };
         int order = 0;
         double len = bytes;
-        while (len >= 1024 && order < sizes.Length - 1)
+        while (len >= BytesPerKilobyte && order < sizes.Length - 1)
         {
             order++;
-            len /= 1024;
+            len /= BytesPerKilobyte;
         }
         return $"{len:0.##} {sizes[order]}";
     }
