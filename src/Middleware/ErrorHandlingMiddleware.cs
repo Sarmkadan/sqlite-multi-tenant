@@ -20,6 +20,11 @@ public sealed class ErrorHandlingMiddleware
 {
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ErrorHandlingMiddleware"/> class.
+    /// </summary>
+    /// <param name="logger">Logger used to record handled exceptions.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="logger"/> is null.</exception>
     public ErrorHandlingMiddleware(ILogger<ErrorHandlingMiddleware> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -95,6 +100,10 @@ public sealed class ErrorHandlingMiddleware
         return context.Response.WriteAsync(json);
     }
 
+    /// <summary>
+    /// Returns a short string representation of the middleware for diagnostics.
+    /// </summary>
+    /// <returns>A string describing the middleware instance.</returns>
     public override string ToString() => "ErrorHandlingMiddleware { _logger = <ILogger> }";
 }
 
@@ -104,13 +113,39 @@ public sealed class ErrorHandlingMiddleware
 /// </summary>
 public sealed class Result<T>
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether the operation succeeded.
+    /// </summary>
     public bool IsSuccess { get; set; }
+
+    /// <summary>
+    /// Gets or sets the result value when the operation succeeded.
+    /// </summary>
     public T? Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message when the operation failed.
+    /// </summary>
     public string? ErrorMessage { get; set; }
 
+    /// <summary>
+    /// Creates a successful result carrying the specified value.
+    /// </summary>
+    /// <param name="value">The value to wrap.</param>
+    /// <returns>A result with <see cref="IsSuccess"/> set to true.</returns>
     public static Result<T> Success(T value) => new() { IsSuccess = true, Value = value };
+
+    /// <summary>
+    /// Creates a failed result carrying the specified error message.
+    /// </summary>
+    /// <param name="errorMessage">The description of the failure.</param>
+    /// <returns>A result with <see cref="IsSuccess"/> set to false.</returns>
     public static Result<T> Failure(string errorMessage) => new() { IsSuccess = false, ErrorMessage = errorMessage };
 
+    /// <summary>
+    /// Returns a string representation of the result for diagnostics.
+    /// </summary>
+    /// <returns>A string containing the success flag, value, and error message.</returns>
     public override string ToString()
     {
         return $"Result<T> {{ IsSuccess = {IsSuccess}, Value = {Value}, ErrorMessage = {ErrorMessage} }}";
