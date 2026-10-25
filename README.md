@@ -1421,6 +1421,158 @@ foreach (QuotaCheckResult result in atRisk)
 }
 ```
 
+## Background Workers
+
+The classes in `src/BackgroundWorkers/` run maintenance, backup and retention work. `ScheduledTaskService` runs delegates on an interval. `BackupSchedulerService`, `BackupCleanupService` and `DatabaseMaintenanceWorker` are `BackgroundService` implementations. `BackupRotationManager` and `DataRetentionPolicy` are helpers you call yourself. `AddBackgroundWorkers()` already registers the three hosted workers with their defaults, so do not register a second copy of any of them.
+
+### ScheduledTaskService
+
+`src/BackgroundWorkers/ScheduledTaskService.cs` runs `Func<Task>` delegates at a fixed interval. A task can be tied to a tenant with `tenantId`, in which case it runs inside that tenant's context. The constructor takes an `ILogger<ScheduledTaskService>` and a `TenantContextHelper`. The class implements both `IScheduledTaskService` and `IHostedService`.
+
+- Register tasks before calling `StartAsync`. A task registered after the service has started is not picked up.
+- The first run happens one interval after registration.
+- A task does not start a new run while its previous run is still executing.
+- After a failure, the interval is multiplied by 2 for each failure, up to 32 times the base interval and 24 hours. `FailureCount` is never reset on success, so a task that has failed at any point keeps the longer interval.
+
+```csharp
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.BackgroundWorkers;
+using SqliteMultiTenant.Utilities;
+
+// Assume 'loggerFactory' is the application's ILoggerFactory
+var tenantContextHelper = new TenantContextHelper(loggerFactory.CreateLogger<TenantContextHelper>());
+var scheduler = new ScheduledTaskService(
+    loggerFactory.CreateLogger<ScheduledTaskService>(),
+    tenantContextHelper);
+
+// Run every 15 minutes inside the "acme" tenant context
+scheduler.RegisterTask(
+    "acme-cleanup",
+    () => CleanupAcmeAsync(), // Your Func<Task>
+    TimeSpan.FromMinutes(15),
+    tenantId: "acme");
+
+await scheduler.StartAsync();
+
+TaskExecutionStatus status = await scheduler.GetTaskStatusAsync("acme-cleanup");
+Console.WriteLine($"Runs: {status.ExecutionCount}, failures: {status.FailureCount}, next: {status.NextExecutionAt:O}");
+
+await scheduler.StopAsync();
+```
+
+`GetTaskStatusAsync` throws `KeyNotFoundException` for an unknown task ID.
+
+### BackupSchedulerService
+
+`src/BackgroundWorkers/BackupScheduler.cs` is a `BackgroundService` that runs a backup job once per interval (default 24 hours). It checks the clock every minute. The constructor is `(IBackupService, ITenantService, ILogger<BackupSchedulerService>, TimeSpan? interval = null)`. See [Scheduled Backup of All Tenants via BackgroundService](#scheduled-backup-of-all-tenants-via-backgroundservice) for the full host setup.
+
+- The first run is scheduled two hours after startup. The class summary's "2 AM UTC" is not what the code does.
+- The job lists tenants and logs each one, but it does not call `IBackupService` yet. Treat it as a placeholder until that step is implemented.
+
+```csharp
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.BackgroundWorkers;
+using SqliteMultiTenant.Services;
+
+// Run the backup job every 6 hours instead of the default 24
+builder.Services.AddHostedService(sp => new BackupSchedulerService(
+    sp.GetRequiredService<IBackupService>(),
+    sp.GetRequiredService<ITenantService>(),
+    sp.GetRequiredService<ILogger<BackupSchedulerService>>(),
+    TimeSpan.FromHours(6)));
+```
+
+`BackupCleanupService` in the same file follows the same pattern. Its cleanup pass also only logs and does not delete anything yet.
+
+### BackupRotationManager
+
+`src/BackgroundWorkers/BackupRotationManager.cs` rotates and checks the `*.db` files in a backup directory. It is not a hosted service. The constructor takes an `ILogger<BackupRotationManager>`.
+
+`RotateBackupsAsync` deletes files older than `MaxBackupAge` first. It then deletes the oldest files beyond `MaxBackupCount`, ordering by `CreationTimeUtc`. Point it at a directory that holds only backups, because it deletes files.
+
+- `MaxDiskUsage` is not enforced. `RotateBackupsAsync` ignores it.
+
+```csharp
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.BackgroundWorkers;
+
+var rotation = new BackupRotationManager(loggerFactory.CreateLogger<BackupRotationManager>());
+
+var policy = new BackupRotationPolicy
+{
+    MaxBackupAge = TimeSpan.FromDays(14),
+    MaxBackupCount = 10
+};
+
+const string backupDirectory = "/var/backups/tenants";
+
+BackupRotationResult result = await rotation.RotateBackupsAsync(backupDirectory, policy);
+Console.WriteLine($"Deleted {result.DeletedByAge} by age and {result.DeletedByCount} over the count limit; {result.RemainingBackups} remain");
+
+List<BackupVerificationResult> checks = await rotation.VerifyBackupsAsync(backupDirectory);
+BackupStatistics stats = rotation.GetBackupStatistics(backupDirectory);
+Console.WriteLine($"{stats.TotalBackups} backups, {stats.TotalDiskUsage} bytes in total");
+```
+
+### DatabaseMaintenanceWorker
+
+`src/BackgroundWorkers/DatabaseMaintenanceWorker.cs` is a `BackgroundService`. It runs `ITenantDatabaseMaintenanceService.PerformFullMaintenanceOnAllAsync` (VACUUM, ANALYZE and `PRAGMA optimize`) on startup and then once per interval. The default interval is 24 hours. After an unexpected error it waits one hour before retrying.
+
+- `DatabaseMaintenanceOptions`, defined in the same file, is not read by the worker yet. It always runs the full maintenance pass.
+
+```csharp
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.BackgroundWorkers;
+using SqliteMultiTenant.Services;
+
+// Run maintenance every 12 hours instead of the default 24
+builder.Services.AddHostedService(sp => new DatabaseMaintenanceWorker(
+    sp.GetRequiredService<ILogger<DatabaseMaintenanceWorker>>(),
+    sp.GetRequiredService<ITenantDatabaseMaintenanceService>(),
+    TimeSpan.FromHours(12)));
+```
+
+### DataRetentionPolicy
+
+`src/BackgroundWorkers/DataRetentionPolicy.cs` applies retention rules to one tenant's SQLite connection. It is not registered in dependency injection, so create it yourself with an `ILogger<DataRetentionPolicy>`. Each `RetentionRule` deletes rows whose `DateColumn` is older than `RetentionValue` days, months or years. `GetDefaultPolicy(tenantId)` returns one rule that deletes `AuditLog.CreatedAt` values older than 7 years.
+
+- `SimulateRetentionPolicyAsync` counts the rows that would be deleted without deleting them. Use it before `ApplyRetentionPolicyAsync`.
+- Table and column names are written into the SQL text, so take them from trusted configuration, never from user input.
+- Do not set `ArchiveBeforeDelete` to `true` yet. The archive statement starts with a stray `@`, so the rule fails with `Failed: ...` and deletes nothing.
+- Errors from SQL execution are returned in `RetentionResult.Error` and each rule's `Status`. They are not thrown.
+
+```csharp
+using System.Data.SQLite;
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.BackgroundWorkers;
+
+var retention = new DataRetentionPolicy(loggerFactory.CreateLogger<DataRetentionPolicy>());
+
+// Start from the default AuditLog rule, then add a rule for another table
+RetentionPolicyConfig policy = retention.GetDefaultPolicy("acme");
+policy.Rules.Add(new RetentionRule
+{
+    TableName = "Sessions",
+    DateColumn = "LastSeenAt",
+    RetentionType = RetentionType.DaysOld,
+    RetentionValue = 90,
+    IsEnabled = true,
+    ArchiveBeforeDelete = false
+});
+
+using var connection = new SQLiteConnection("Data Source=acme.db;Version=3;");
+connection.Open();
+
+// Preview first: counts rows without deleting anything
+DryRunResult preview = await retention.SimulateRetentionPolicyAsync(connection, policy);
+Console.WriteLine($"{preview.TotalRecordsWouldDelete} rows would be deleted");
+
+RetentionResult result = await retention.ApplyRetentionPolicyAsync(connection, policy);
+Console.WriteLine($"Deleted {result.TotalRecordsDeleted} rows: {(result.IsSuccessful ? "ok" : result.Error)}");
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
