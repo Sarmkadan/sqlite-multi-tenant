@@ -345,6 +345,15 @@ public sealed class HealthStatusResult
     public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
     public long DurationMs { get; set; }
     public Dictionary<string, ComponentHealth> Checks { get; set; } = new();
+
+    /// <summary>
+    /// Returns a one-line summary of the overall status, number of checks and check timestamp.
+    /// </summary>
+    /// <returns>A summary such as "Status: healthy, 2 checks, checked at 2026-10-25T10:00:00.0000000Z".</returns>
+    public override string ToString()
+    {
+        return $"Status: {Status}, {Checks.Count} checks, checked at {CheckedAt:O}";
+    }
 }
 
 /// <summary>
