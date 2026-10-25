@@ -694,6 +694,99 @@ catch (BackupException ex)
 }
 ```
 
+## MigrationService
+
+`src/Services/MigrationService.cs` implements `IMigrationService` and manages migration definitions and their state for each database. It creates migrations in the `Pending` state, tracks them through `Running`, `Completed`, `Failed` and `RolledBack`, and applies pending migrations in `ExecutionOrder`. The batch methods isolate failures: a failing migration is recorded and the batch moves on to the next one. It is registered as a scoped service by `AddSqliteMultiTenant`.
+
+**Status lifecycle:** `Pending` → `Running` (set by `ExecuteMigrationAsync` or by the apply flow) → `Completed` or `Failed`. A `Completed` migration that has a down script can move to `RolledBack`.
+
+**Apply flow (`ApplyMigrationsWithFaultIsolationAsync`):**
+
+1. Loads the pending migrations of the database. If there are none, it returns a successful result with zero migrations attempted.
+2. For each migration in `ExecutionOrder`, marks it `Running`, saves it, runs the migration script, then marks it `Completed` with the execution time and saves it.
+3. If a migration throws, the error is stored in `ErrorMessage`, the migration is set to `Failed` and saved, and the next migration runs. Migrations that already completed are not rolled back.
+4. Returns a `MigrationBatchResult`. `IsSuccess` is `false` when any migration failed. Exceptions raised outside the per-migration loop are returned as a failure result instead of being thrown.
+
+**Multi-database flow (`ApplyMigrationsToMultipleDatabasesAsync`):** runs the apply flow for each database ID in the list, in order. An exception for one database is recorded as a `MigrationFailure` (migration ID and version `system`) and the loop continues with the next database. Totals are summed across all databases.
+
+**Rollback flow (`RollbackMigrationAsync`):** the migration is rolled back only when `Migration.CanRollback()` returns `true`: it is rollbackable, has a non-empty `DownScript`, is `Completed`, and has not been rolled back yet. Otherwise a failure result is returned. On success the status is set to `RolledBack` and saved. The method does not execute the `DownScript`; it updates the migration record only.
+
+> **Note:** the script execution step is currently a simulation (`ExecuteMigrationScriptAsync` in the source). It waits 50 ms, fails for any version that contains `fail` or `error` (case-insensitive), fails randomly about 5% of the time, and otherwise reports a random execution time between 10 and 200 ms. The `UpScript` is not run against the tenant database by this service yet.
+
+**Key members:**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `CreateMigrationAsync(databaseId, version, name, upScript, downScript?)` | `Migration` | Creates a `Pending` migration. `ExecutionOrder` is the existing migration count plus one, and `IsRollbackable` is `true` when a down script is supplied. Throws `MigrationException` when the version already exists for the database |
+| `GetMigrationAsync(migrationId)` | `Migration?` | Returns the migration or `null` |
+| `GetDatabaseMigrationsAsync(databaseId)` | `List<Migration>` | Lists all migrations of a database in execution order |
+| `GetPendingMigrationsAsync(databaseId)` | `List<Migration>` | Lists the pending migrations |
+| `GetAppliedMigrationsAsync(databaseId)` | `List<Migration>` | Lists the applied migrations |
+| `GetFailedMigrationsAsync(databaseId)` | `List<Migration>` | Lists the failed migrations |
+| `GetMigrationCountAsync(databaseId)` | `int` | Number of migrations recorded for a database |
+| `IsMigrationAppliedAsync(databaseId, version)` | `bool` | `true` only when the migration with that version is `Completed` |
+| `ExecuteMigrationAsync(migrationId, executedBy)` | `MigrationResult` | Sets the migration to `Running` and records the executor. Does not run the script. Returns a failure result when the migration is not found |
+| `MarkMigrationAsCompletedAsync(migrationId, executionTimeMs)` | `MigrationResult` | Sets the migration to `Completed` and stores the execution time. Throws `MigrationException` when the migration is not found |
+| `MarkMigrationAsFailedAsync(migrationId, errorMessage)` | `MigrationResult` | Sets the migration to `Failed`, stores the message and returns a failure result with it. Returns a failure result when the migration is not found |
+| `RollbackMigrationAsync(migrationId, executedBy)` | `MigrationResult` | Sets a rollbackable migration to `RolledBack`. See the rollback flow above. `executedBy` is validated but not stored |
+| `ApplyMigrationsWithFaultIsolationAsync(databaseId, executedBy)` | `MigrationBatchResult` | Applies the pending migrations of one database (apply flow above) |
+| `ApplyMigrationsToMultipleDatabasesAsync(databaseIds, executedBy)` | `MigrationBatchResult` | Applies the pending migrations of several databases (multi-database flow above). Throws `ArgumentException` when the list is `null` or empty |
+
+Empty or white-space arguments throw `ArgumentException`. Repository failures are logged with `ILogger<MigrationService>` and rethrown, except in the two batch methods, which return a failure result.
+
+### Usage Example
+
+```csharp
+using SqliteMultiTenant.Models;
+using SqliteMultiTenant.Services;
+
+// Assume 'serviceProvider' is the application's IServiceProvider
+var migrationService = serviceProvider.GetRequiredService<IMigrationService>();
+
+// Define a migration. The version must be unique within the database
+var migration = await migrationService.CreateMigrationAsync(
+    databaseId: "tenant-database-id",
+    version: "2026.10.25.1",
+    name: "add-invoices-table",
+    upScript: "CREATE TABLE Invoices (Id INTEGER PRIMARY KEY, Total REAL NOT NULL);",
+    downScript: "DROP TABLE Invoices;");
+
+// Apply all pending migrations. A failing migration does not stop the batch
+var batch = await migrationService.ApplyMigrationsWithFaultIsolationAsync(
+    databaseId: "tenant-database-id",
+    executedBy: "startup-job");
+
+if (!batch.IsSuccess)
+{
+    foreach (var tenant in batch.FailedTenantResults)
+    {
+        foreach (var failure in tenant.Failures)
+        {
+            Console.WriteLine($"{failure.Version} ({failure.Name}) failed: {failure.ErrorMessage}");
+        }
+    }
+}
+
+// Apply pending migrations to several databases. Each database is isolated
+var multi = await migrationService.ApplyMigrationsToMultipleDatabasesAsync(
+    databaseIds: new List<string> { "tenant-a-db", "tenant-b-db" },
+    executedBy: "startup-job");
+Console.WriteLine(multi.ResultSummary);
+
+// Check the state of a version
+var applied = await migrationService.IsMigrationAppliedAsync("tenant-database-id", "2026.10.25.1");
+var pending = await migrationService.GetPendingMigrationsAsync("tenant-database-id");
+Console.WriteLine($"Applied: {applied}, pending: {pending.Count}");
+
+// Rollback is only allowed for a completed migration that has a down script.
+// The migration created above is still pending, so this call returns a failure result
+var rollback = await migrationService.RollbackMigrationAsync(migration.MigrationId, executedBy: "ops-engineer");
+if (!rollback.IsSuccess)
+{
+    Console.WriteLine($"Rollback refused: {rollback.Error}");
+}
+```
+
 ## Configuration
 
 The following configuration options are available in `MultiTenantOptions` and related classes:
