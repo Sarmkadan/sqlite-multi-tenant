@@ -3067,6 +3067,56 @@ var xmlExport = new XmlExportFormatter(NullLogger<XmlExportFormatter>.Instance);
 string xml = xmlExport.Format(tenants, "tenants");
 ```
 
+## REST API Endpoints
+
+Three controllers in `src/Api/Controllers/` declare HTTP routes with attributes: `DatabaseController`, `SettingsController` and `AdminController`. The tables below list those routes as the attributes define them. `{databaseId}` and `{key}` are route parameters.
+
+None of the controllers applies an authorization attribute, although the `AdminController` summary says its operations should be restricted to administrators. Add authentication before exposing these routes.
+
+### Database Routes
+
+Base route `api/databases`. Each action reads `./databases/{databaseId}.db` and returns 404 when the file does not exist.
+
+| Method | Route | Purpose |
+|--------|-------|---------|
+| GET | `/api/databases/{databaseId}/stats` | File size, table and index counts, and a corruption flag from `PRAGMA quick_check` |
+| GET | `/api/databases/{databaseId}/schema` | Tables with their columns and row counts |
+| POST | `/api/databases/{databaseId}/integrity-check` | Runs `PRAGMA integrity_check` and returns the messages other than `ok` |
+| POST | `/api/databases/{databaseId}/optimize` | Runs `VACUUM` and then `ANALYZE`, and reports the duration |
+| POST | `/api/databases/{databaseId}/export` | Takes the `format` query parameter (`json`, `csv` or `sql`, default `json`) and returns metadata with a download URL that expires after 24 hours. It does not produce the export. The URL points to `/api/databases/{databaseId}/export/download`, which no controller defines |
+
+### Settings Routes
+
+Base route `api/settings`.
+
+| Method | Route | Purpose |
+|--------|-------|---------|
+| GET | `/api/settings` | All settings as key-value pairs |
+| GET | `/api/settings/{key}` | One setting with its .NET type name; 404 if the key is missing |
+| HEAD | `/api/settings/{key}` | 200 if the key exists, 404 otherwise |
+| POST | `/api/settings/{key}` | Sets the value from a body of the form `{ "value": ... }` |
+| POST | `/api/settings/batch` | Sets several keys from a JSON object. Each key is set on its own, and failures are collected rather than rolled back |
+| DELETE | `/api/settings/{key}` | Removes a setting |
+| GET | `/api/settings/app/info` | Application name, version, start time and uptime |
+
+### Admin Routes
+
+Base route `api/admin`.
+
+| Method | Route | Purpose |
+|--------|-------|---------|
+| GET | `/api/admin/health` | Overall health status, with the application version |
+| GET | `/api/admin/metrics` | Process memory, thread count and request metrics |
+| GET | `/api/admin/dashboard` | Full metrics snapshot from `MetricsService` |
+| GET | `/api/admin/diagnostics` | .NET and OS description, processor count, application version, start time and uptime |
+| GET | `/api/admin/quotas` | Per-tenant storage use against quota, with totals |
+| POST | `/api/admin/cache/clear` | Runs a garbage collection and reports the bytes freed. It does not clear an application cache |
+| POST | `/api/admin/gc/collect` | Runs a garbage collection and waits for finalizers |
+
+### Controllers Without HTTP Routes
+
+`TenantController`, `BackupController` and `MigrationController` have no routing attributes. They are plain classes rather than `ControllerBase` subclasses, and `AddApiControllers` registers them only as scoped services. They expose no HTTP endpoints. Their public methods, such as `TenantController.CreateTenantAsync` or `MigrationController.ApplyMigrationsToMultipleDatabasesAsync`, are called in-process only.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
