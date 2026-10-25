@@ -1330,6 +1330,97 @@ bool removed = await provisioner.DeprovisionTenantAsync("acme-staging");
 Console.WriteLine($"Validated: {healthy}, removed staging: {removed}");
 ```
 
+## TenantQuotaEnforcer
+
+`src/Tenants/TenantQuotaEnforcer.cs` is a sealed class that enforces a storage limit per tenant. The limit is stored in the tenant's metadata under the key `quota.maxBytes` (`TenantQuotaEnforcer.QuotaMetadataKey`), as an invariant-culture integer string. Usage is measured with `ITenantService.GetTenantDatabaseSizeAsync`, using `TotalSizeBytes`, which is the database file size plus the WAL file size. The class is not registered by `AddSqliteMultiTenant`; create it yourself or register it in your host.
+
+**Constructor**
+
+`TenantQuotaEnforcer(ITenantService tenantService)` throws `ArgumentNullException` when `tenantService` is null.
+
+**`WarningThreshold`**
+
+A fraction between 0 and 1 (default `0.9`). A tenant is near its quota when its usage is at or above this fraction and it is not over quota. Setting a value of 0 or less, or greater than 1, throws `ArgumentOutOfRangeException`.
+
+**Key members**
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `SetQuotaAsync(tenantId, maxBytes, cancellationToken = default)` | `Task` | Stores the quota through `SetTenantMetadataAsync`, replacing any previous value. Throws `ArgumentException` for a blank ID or when `maxBytes` is not positive |
+| `GetQuotaAsync(tenantId, cancellationToken = default)` | `long?` | Reads the quota. Returns `null` when the tenant does not exist, has no quota, or the stored value cannot be parsed |
+| `CheckQuotaAsync(tenantId, cancellationToken = default)` | `QuotaCheckResult` | Compares current size with the quota. Throws `TenantNotFoundException` when the tenant does not exist. Throws `InvalidOperationException` when the stored quota is zero or negative |
+| `EnforceAsync(tenantId, autoSuspend = true, cancellationToken = default)` | `QuotaCheckResult` | Runs `CheckQuotaAsync`. When the tenant is over quota and `autoSuspend` is `true`, calls `SuspendTenantAsync`. The result is returned in both cases |
+| `CheckAllTenantsAsync(maxDegreeOfParallelism = 4, cancellationToken = default)` | `List<QuotaCheckResult>` | Checks every tenant with bounded parallelism and returns the results ordered by `UsagePercent`, highest first. Throws `ArgumentOutOfRangeException` when `maxDegreeOfParallelism` is below 1 |
+| `GetTenantsOverQuotaAsync(cancellationToken = default)` | `List<QuotaCheckResult>` | Runs `CheckAllTenantsAsync` and returns only the results with `IsOverQuota` set |
+| `ScanAllAsync(cancellationToken = default)` | `List<QuotaCheckResult>` | Checks active tenants only (`GetActiveTenantsAsync`) and returns those that are near or over quota, worst first. Tenants that are not found while checking are skipped |
+
+Tenants without a quota are treated as unlimited. Their `QuotaCheckResult` has `QuotaBytes` set to `null`, `UsagePercent` set to `0`, and both flags set to `false`.
+
+`CheckAllTenantsAsync` and `GetTenantsOverQuotaAsync` do not skip tenants that disappear during the scan, so a concurrent delete can make them throw `TenantNotFoundException`. `ScanAllAsync` does skip them.
+
+`CheckQuotaAsync` calls `GetTenantAsync`, which updates the tenant's access time as a side effect.
+
+**`QuotaCheckResult`**
+
+A `sealed record` returned by the check methods.
+
+| Property | Description |
+|----------|-------------|
+| `TenantId` | The tenant that was checked |
+| `CurrentSizeBytes` | Database size plus WAL size, in bytes |
+| `QuotaBytes` | The configured quota in bytes, or `null` when the tenant has no quota |
+| `UsagePercent` | `CurrentSizeBytes / QuotaBytes * 100`, rounded to two decimals. `0` when unlimited. Can be above 100 |
+| `IsOverQuota` | `true` when `UsagePercent` is 100 or more |
+| `IsNearQuota` | `true` when `UsagePercent` is at or above `WarningThreshold * 100` and the tenant is not over quota |
+
+### Usage Example
+
+```csharp
+using Microsoft.Extensions.Logging;
+using SqliteMultiTenant.Repositories;
+using SqliteMultiTenant.Services;
+using SqliteMultiTenant.Tenants;
+
+// Assume 'loggerFactory' is the application's ILoggerFactory
+const string registryConnectionString = "Data Source=registry.db;";
+
+var tenantService = new TenantService(
+    new TenantRepository(registryConnectionString, loggerFactory.CreateLogger<TenantRepository>()),
+    loggerFactory.CreateLogger<TenantService>());
+
+var enforcer = new TenantQuotaEnforcer(tenantService)
+{
+    // Report "near quota" from 80% usage instead of the default 90%
+    WarningThreshold = 0.8
+};
+
+// Limit "acme" to 50 MB
+await enforcer.SetQuotaAsync("acme", 50L * 1024 * 1024);
+
+// Read the usage without changing anything
+QuotaCheckResult check = await enforcer.CheckQuotaAsync("acme");
+Console.WriteLine($"{check.TenantId}: {check.CurrentSizeBytes} bytes, {check.UsagePercent}% of quota");
+
+if (check.IsNearQuota)
+{
+    Console.WriteLine("Warning: acme is close to its storage limit");
+}
+
+// Check and suspend the tenant if it is over quota (autoSuspend defaults to true)
+QuotaCheckResult enforced = await enforcer.EnforceAsync("acme");
+if (enforced.IsOverQuota)
+{
+    Console.WriteLine("acme exceeded its quota and has been suspended");
+}
+
+// Periodic report: every tenant that is near or over quota, worst first
+List<QuotaCheckResult> atRisk = await enforcer.ScanAllAsync();
+foreach (QuotaCheckResult result in atRisk)
+{
+    Console.WriteLine($"{result.TenantId}: {result.UsagePercent}% (over quota: {result.IsOverQuota})");
+}
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for prerequisites, build and test commands, coding conventions, and the pull request process.
