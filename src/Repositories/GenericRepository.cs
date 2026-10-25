@@ -191,22 +191,73 @@ public abstract class GenericRepository<T> where T : class
     }
 }
 
+/// <summary>
+/// Immutable page of results together with paging metadata.
+/// </summary>
+/// <typeparam name="T">The entity type.</typeparam>
+/// <param name="Items">The items on the current page.</param>
+/// <param name="TotalCount">The total number of items across all pages.</param>
+/// <param name="PageNumber">The current page number (1-based).</param>
+/// <param name="PageSize">The number of items per page.</param>
+/// <param name="TotalPages">The total number of pages.</param>
 public sealed record PagedResult<T>(List<T> Items, int TotalCount, int PageNumber, int PageSize, int TotalPages) where T : class
 {
+    /// <summary>
+    /// Gets a value indicating whether a previous page exists.
+    /// </summary>
     public bool HasPreviousPage => PageNumber > 1;
+
+    /// <summary>
+    /// Gets a value indicating whether a next page exists.
+    /// </summary>
     public bool HasNextPage => PageNumber < TotalPages;
 }
 
+/// <summary>
+/// Mutable page of results together with paging metadata.
+/// </summary>
+/// <typeparam name="T">The entity type.</typeparam>
 public sealed class PaginatedResult<T> where T : class
 {
+    /// <summary>
+    /// Gets or sets the items on the current page.
+    /// </summary>
     public List<T> Items { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the total number of items across all pages.
+    /// </summary>
     public int TotalCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current page number (1-based).
+    /// </summary>
     public int PageNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of items per page.
+    /// </summary>
     public int PageSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total number of pages.
+    /// </summary>
     public int TotalPages { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether a previous page exists.
+    /// </summary>
     public bool HasPreviousPage => PageNumber > 1;
+
+    /// <summary>
+    /// Gets a value indicating whether a next page exists.
+    /// </summary>
     public bool HasNextPage => PageNumber < TotalPages;
 
+    /// <summary>
+    /// Returns a string summary of the paging state without the item contents.
+    /// </summary>
+    /// <returns>A string containing the item count and paging values.</returns>
     public override string ToString()
     {
         return $"PaginatedResult {{ Items = {Items.Count}, TotalCount = {TotalCount}, PageNumber = {PageNumber}, PageSize = {PageSize}, TotalPages = {TotalPages} }}";
@@ -218,17 +269,43 @@ public sealed class PaginatedResult<T> where T : class
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {
+    /// <summary>
+    /// Persists all pending changes.
+    /// </summary>
+    /// <returns>The number of changes saved.</returns>
     Task<int> SaveChangesAsync();
+
+    /// <summary>
+    /// Starts a new transaction.
+    /// </summary>
     Task BeginTransactionAsync();
+
+    /// <summary>
+    /// Commits the transaction in progress.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when no transaction is in progress.</exception>
     Task CommitAsync();
+
+    /// <summary>
+    /// Rolls back the transaction in progress.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when no transaction is in progress.</exception>
     Task RollbackAsync();
 }
 
+/// <summary>
+/// Default <see cref="IUnitOfWork"/> implementation that tracks transaction state.
+/// </summary>
 public sealed class UnitOfWork : IUnitOfWork
 {
     private readonly ILogger<UnitOfWork> _logger;
     private bool _transactionStarted;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnitOfWork"/> class.
+    /// </summary>
+    /// <param name="logger">The logger used to record unit of work activity.</param>
+    /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     public UnitOfWork(ILogger<UnitOfWork> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -236,6 +313,7 @@ public sealed class UnitOfWork : IUnitOfWork
         _transactionStarted = false;
     }
 
+    /// <inheritdoc/>
     public async Task<int> SaveChangesAsync()
     {
         try
@@ -251,6 +329,7 @@ public sealed class UnitOfWork : IUnitOfWork
         }
     }
 
+    /// <inheritdoc/>
     public async Task BeginTransactionAsync()
     {
         try
@@ -265,6 +344,7 @@ public sealed class UnitOfWork : IUnitOfWork
         }
     }
 
+    /// <inheritdoc/>
     public async Task CommitAsync()
     {
         try
@@ -284,6 +364,7 @@ public sealed class UnitOfWork : IUnitOfWork
         }
     }
 
+    /// <inheritdoc/>
     public async Task RollbackAsync()
     {
         try
@@ -303,6 +384,7 @@ public sealed class UnitOfWork : IUnitOfWork
         }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (_transactionStarted)
